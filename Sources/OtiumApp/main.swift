@@ -75,8 +75,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         // Per guardare le finestre normali come le vedi tu di sera, e per confrontare le livree
         // senza cambiare le impostazioni del Mac.
+        // Senza uno dei due flag il render eredita l'aspetto del Mac in quel momento: di sera
+        // «senza --dark» non significa chiaro, significa scuro lo stesso.
         if CommandLine.arguments.contains("--dark") {
             NSApp.appearance = NSAppearance(named: .darkAqua)
+        } else if CommandLine.arguments.contains("--light") {
+            NSApp.appearance = NSAppearance(named: .aqua)
         }
         if let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--theme=") }),
            let name = arg.split(separator: "=", maxSplits: 1).last.map(String.init),
@@ -125,7 +129,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // snapshot in modalità scura esce bianco su bianco — testo chiaro su niente.
         if surface != "break" {
             host.wantsLayer = true
-            host.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+            // `.cgColor` risolve un colore dinamico contro l'aspetto *corrente del thread*, non
+            // contro quello che ho appena messo su NSApp: senza questo, in chiaro lo sfondo
+            // resterebbe quello del buio.
+            let appearance = NSApp.appearance ?? NSApp.effectiveAppearance
+            appearance.performAsCurrentDrawingAppearance {
+                host.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+            }
         }
         host.frame = NSRect(origin: .zero, size: size)
 
