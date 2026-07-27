@@ -1,0 +1,975 @@
+import SwiftUI
+import OtiumCore
+
+extension Color {
+    init(_ rgb: RGB) { self.init(red: rgb.r, green: rgb.g, blue: rgb.b) }
+}
+
+/// I colori in uso, presi dal tema scelto.
+///
+/// Statici e non iniettati per una ragione pratica: sono letti da decine di punti, e passarli
+/// per parametro renderebbe illeggibile ogni vista. Cambiano quando cambi tema in preferenze,
+/// e la schermata di blocco si costruisce a ogni pausa — quindi il colore nuovo si vede subito.
+enum Palette {
+    private(set) static var current: ThemePalette = ThemeName.alloro.palette
+
+    static func apply(_ theme: ThemeName) { current = theme.palette }
+
+    static var ink: Color { Color(current.ink) }
+    static var paper: Color { Color(current.paper) }
+    static var accent: Color { Color(current.accent) }
+    /// Sulle finestre normali, che seguono l'aspetto chiaro o scuro del sistema.
+    static var accentOnLight: Color { Color(current.accentOnLight) }
+    static var dim: Color { Color(current.dim) }
+}
+
+// MARK: - La schermata di blocco
+
+struct BreakView: View {
+    @ObservedObject var model: AppModel
+    @State private var showEscape = false
+    @State private var escArmed = false
+    @FocusState private var escapeFocused: Bool
+
+    private var plan: BreakPlan? { model.plan }
+
+    var body: some View {
+        ZStack {
+            Palette.ink.ignoresSafeArea()
+            if let plan {
+                VStack(spacing: 0) {
+                    header(plan)
+                    Spacer()
+                    exercise(plan)
+                    Spacer()
+                    controls(plan)
+                    footer
+                }
+                .padding(48)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onReceive(NotificationCenter.default.publisher(for: .otiumEscapePressed)) { _ in
+            if escArmed {
+                model.emergencyExit()
+                escArmed = false
+            } else {
+                escArmed = true
+                // L'innesco scade: se hai premuto Esc per sbaglio e poi fai gli squat, non
+                // vuoi che il prossimo Esc distratto ti butti fuori.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 6) { escArmed = false }
+            }
+        }
+    }
+
+    private func header(_ plan: BreakPlan) -> some View {
+        VStack(spacing: 10) {
+            HStack {
+                Text(plan.kind == .long ? "PAUSA PIENA" : "MICRO-PAUSA")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .tracking(2)
+                    .foregroundStyle(Palette.accent)
+                Spacer()
+                Text("break n. \(plan.index) · oggi \(model.summary.totalReps) ripetizioni")
+                    .font(.system(size: 13, design: .rounded))
+                    .foregroundStyle(Palette.dim)
+            }
+            // Se ti interrompo perché credo che tu sia fermo davanti allo schermo, ti dico
+            // esattamente cosa ho riconosciuto. Un'app che agisce su una deduzione e non la
+            // mostra è un'app a cui non puoi dare torto.
+            if let presence = model.engine.lastPresence {
+                HStack(spacing: 8) {
+                    Image(systemName: presence.kind == .media ? "play.rectangle" : "doc.text")
+                        .foregroundStyle(Palette.dim)
+                    Text(presence.kind == .media
+                         ? "fermo davanti a un video: \(presence.detail)"
+                         : "fermo su un documento: \(presence.detail)")
+                        .foregroundStyle(Palette.dim)
+                    Spacer()
+                }
+                .font(.system(size: 12))
+            }
+        }
+    }
+
+    private func exercise(_ plan: BreakPlan) -> some View {
+        VStack(spacing: 20) {
+            Text("\(plan.exercise.reps)")
+                .font(.system(size: 140, weight: .bold, design: .rounded))
+                .foregroundStyle(Palette.paper)
+                .monospacedDigit()
+            Text(plan.exercise.kind.italianName)
+                .font(.system(size: 44, weight: .medium, design: .rounded))
+                .foregroundStyle(Palette.paper)
+            Text(plan.exercise.kind.cue)
+                .font(.system(size: 17))
+                .foregroundStyle(Palette.dim)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 560)
+                // Senza, la riga delle varianti le ruba spazio e l'istruzione finisce troncata
+                // a metà parola: il testo deve poter crescere in altezza, non accorciarsi.
+                .fixedSize(horizontal: false, vertical: true)
+
+            variantRow
+            breakQuoteView
+        }
+    }
+
+    /// La citazione, al centro della schermata.
+    ///
+    /// Sta qui e non in fondo perché i due testi hanno due mestieri diversi: **lo studio** in
+    /// fondo risponde a «perché mi stai interrompendo» ed è quello che ti tiene fedele al
+    /// quarantesimo giorno; **la citazione** riempie i secondi in cui stai lì a contare, ed è
+    /// quella che rende il momento sopportabile. Toglierei la citazione prima dello studio, se
+    /// dovessi sceglierne una — ma non devo, e non competono: occupano due punti diversi
+    /// dell'occhio e due momenti diversi della pausa.
+    @ViewBuilder
+    private var breakQuoteView: some View {
+        let quote = model.breakQuote
+        VStack(spacing: 6) {
+            Text("«\(quote.text)»")
+                .font(.system(size: 18, design: .serif))
+                .foregroundStyle(Palette.paper.opacity(0.62))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 620)
+            Text("\(quote.author) · \(quote.work)")
+                .font(.system(size: 11))
+                .foregroundStyle(Palette.dim.opacity(0.55))
+        }
+        .padding(.top, 26)
+    }
+
+    /// Le alternative, dentro la pausa.
+    ///
+    /// Il default resta quello che tocca alla rotazione: qui si sceglie il *come*, non il *se*.
+    /// Le ripetizioni cambiano con la difficoltà — un archer push-up non se ne fanno dieci — e
+    /// il cronometro del "fatto" riparte dal cambio, così non si passa al più corto un istante
+    /// prima di premere.
+    @ViewBuilder
+    private var variantRow: some View {
+        let options = model.variants
+        if !options.isEmpty {
+            VStack(spacing: 8) {
+                Text("oppure")
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .tracking(1.5)
+                    .foregroundStyle(Palette.dim.opacity(0.65))
+                HStack(spacing: 8) {
+                    ForEach(options, id: \.kind) { option in
+                        Button { model.swapExercise(to: option.kind) } label: {
+                            VStack(spacing: 2) {
+                                Text(option.kind.italianName)
+                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                                Text("\(option.reps)")
+                                    .font(.system(size: 11, design: .rounded))
+                                    .foregroundStyle(Palette.accent.opacity(0.85))
+                                    .monospacedDigit()
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .foregroundStyle(Palette.paper.opacity(0.8))
+                            .background(RoundedRectangle(cornerRadius: 9).fill(Color.white.opacity(0.06)))
+                            .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.white.opacity(0.14)))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.top, 6)
+        }
+    }
+
+    /// Il conto alla rovescia della **pausa intera**, da quando comincia.
+    ///
+    /// Prima il tempo mostrato era quello dell'esercizio, e dopo il "fatto" ne partiva un altro:
+    /// due cronometri diversi nella stessa schermata, nessuno dei quali era la pausa. Ora ce n'è
+    /// uno solo, va da 90 a 0, e il pulsante si accende quando arriva in fondo.
+    @ViewBuilder
+    private func controls(_ plan: BreakPlan) -> some View {
+        VStack(spacing: 16) {
+            Text(clock(model.secondsLeftOfBreak))
+                .font(.system(size: 34, weight: .light, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(model.canReturnToWork ? Palette.accent : Palette.dim)
+
+            progressBar(plan)
+
+            if model.canReturnToWork {
+                primary("Torna al lavoro", enabled: true) { model.returnToWork() }
+            } else if model.exerciseDone {
+                primary("ancora \(clock(model.secondsLeftOfBreak))", enabled: false) {}
+            } else if model.canFinishNow {
+                primary("Fatto", enabled: true) { model.markExerciseDone() }
+            } else {
+                primary("\(plan.exercise.label) — ancora \(Int(model.secondsUntilCanFinish.rounded(.up))) s",
+                        enabled: false) {}
+            }
+
+            if model.exerciseDone && !model.canReturnToWork {
+                Text("Esercizio fatto. Resta il tempo della pausa: alzati, guarda lontano.")
+                    .font(.system(size: 13, design: .rounded))
+                    .foregroundStyle(Palette.accent)
+            }
+        }
+    }
+
+    private func primary(_ title: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 19, weight: .semibold, design: .rounded))
+                .frame(width: 300, height: 54)
+        }
+        .buttonStyle(.plain)
+        .background(enabled ? Palette.accent : Color.white.opacity(0.07))
+        .foregroundStyle(enabled ? Palette.ink : Palette.dim)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .disabled(!enabled)
+        .keyboardShortcut(enabled ? .return : .end, modifiers: [])
+    }
+
+    private func progressBar(_ plan: BreakPlan) -> some View {
+        let fraction = min(1.0, max(0.0, model.breakElapsed / max(1, plan.duration)))
+        return ZStack(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 3)
+                .fill(Color.white.opacity(0.10))
+                .frame(width: 420, height: 6)
+            RoundedRectangle(cornerRadius: 3)
+                .fill(Palette.accent)
+                .frame(width: 420 * fraction, height: 6)
+        }
+    }
+
+    private var footer: some View {
+        VStack(spacing: 14) {
+            Divider().overlay(Color.white.opacity(0.08)).frame(width: 620)
+
+            // Le due voci che dichiarano i limiti non possono essere introdotte da "Perché":
+            // sarebbero una spiegazione di qualcosa che l'app non fa. Etichetta diversa, o il
+            // testo si legge al contrario di come è stato scritto.
+            Text("\(model.isCurrentStudyADisclaimer ? "Non promesso" : "Perché"): "
+               + "\(model.currentStudy.governs) — \(model.currentStudy.citation), \(String(model.currentStudy.year)).")
+                .font(.system(size: 12))
+                .foregroundStyle(Palette.dim)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 620)
+
+            HStack(spacing: 14) {
+                if model.canPostpone {
+                    SecondaryButton(title: "Rinvia 2 minuti", systemImage: "clock.arrow.circlepath") {
+                        model.postpone()
+                    }
+                }
+                SecondaryButton(title: "Emergenza", systemImage: "exclamationmark.triangle") {
+                    model.emergencyExit()
+                }
+                SecondaryButton(
+                    title: showEscape ? "Annulla" : "Non posso adesso",
+                    systemImage: showEscape ? "xmark" : "arrow.uturn.right"
+                ) {
+                    showEscape.toggle()
+                    escapeFocused = showEscape
+                }
+            }
+
+            if escArmed {
+                VStack(spacing: 6) {
+                    Text("Premi Esc di nuovo per uscire subito.")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(Palette.paper)
+                    Text("L'uscita d'emergenza viene contata e compare nelle statistiche.")
+                        .font(.system(size: 11)).foregroundStyle(Palette.dim)
+                }
+                .padding(.top, 4)
+            }
+
+            if showEscape {
+                VStack(spacing: 8) {
+                    Text("Per saltare questa pausa scrivi per intero: «\(model.settings.escapePhrase)»")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Palette.dim)
+                    TextField("", text: $model.escapeText)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 15, design: .monospaced))
+                        .foregroundStyle(Palette.paper)
+                        .padding(8)
+                        .frame(width: 320)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .focused($escapeFocused)
+                        .onSubmit { model.attemptEscape() }
+                    Text("Ogni salto finisce nel registro. Non è un giudizio: è un dato.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Palette.dim.opacity(0.7))
+                }
+            }
+        }
+    }
+
+    private func clock(_ seconds: Double) -> String {
+        let s = max(0, Int(seconds.rounded()))
+        return String(format: "%d:%02d", s / 60, s % 60)
+    }
+}
+
+
+/// I comandi in fondo alla schermata di blocco.
+///
+/// Prima erano parole grigie su fondo nero: sembravano didascalie, e una didascalia non si
+/// clicca. Un bordo, uno sfondo e una reazione al passaggio del mouse bastano a dire "questo
+/// è un comando" — su una schermata che ti sta bloccando il Mac, sapere dove sono le uscite
+/// non è un dettaglio estetico.
+struct SecondaryButton: View {
+    let title: String
+    var systemImage: String? = nil
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 7) {
+                if let systemImage { Image(systemName: systemImage).font(.system(size: 12)) }
+                Text(title).font(.system(size: 13, weight: .medium, design: .rounded))
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+            .foregroundStyle(hovering ? Palette.ink : Palette.paper.opacity(0.85))
+            .background(
+                Capsule().fill(hovering ? Palette.paper.opacity(0.92) : Color.white.opacity(0.09))
+            )
+            .overlay(
+                Capsule().stroke(Color.white.opacity(hovering ? 0.0 : 0.22), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.12), value: hovering)
+    }
+}
+
+// MARK: - Il preavviso
+
+struct HUDView: View {
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        HStack(spacing: 14) {
+            RoundedRectangle(cornerRadius: 2).fill(Palette.accent).frame(width: 4)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                Text(subtitle)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(16)
+        .frame(width: 320, height: 84, alignment: .leading)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+}
+
+/// Il gesto delle notifiche di macOS: si scorre via verso destra, o si chiude con un clic.
+///
+/// Un pannello che resta lì finché non scade è una cosa che *subisci*; uno che si può spostare
+/// con un dito è una cosa che *governi*. Sotto la soglia il pannello torna al suo posto, come
+/// fa il Centro Notifiche: lo scorrimento incerto non deve far sparire niente.
+struct Dismissible<Content: View>: View {
+    let onDismiss: () -> Void
+    @ViewBuilder var content: Content
+    @State private var offset: CGFloat = 0
+    private let threshold: CGFloat = 70
+
+    var body: some View {
+        content
+            .offset(x: offset)
+            .opacity(Double(1 - min(1, abs(offset) / 220)))
+            .gesture(
+                DragGesture(minimumDistance: 6)
+                    .onChanged { value in
+                        // Solo verso destra, come le notifiche di sistema: verso sinistra il
+                        // pannello non si muove, così un gesto sbagliato non lo fa sparire.
+                        offset = max(0, value.translation.width)
+                    }
+                    .onEnded { value in
+                        if value.translation.width > threshold {
+                            withAnimation(.easeIn(duration: 0.18)) { offset = 420 }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18, execute: onDismiss)
+                        } else {
+                            withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) { offset = 0 }
+                        }
+                    }
+            )
+            .onTapGesture { onDismiss() }
+    }
+}
+
+/// La citazione dell'avvio.
+struct QuoteHUDView: View {
+    let quote: Quote
+
+    var body: some View {
+        HStack(spacing: 14) {
+            RoundedRectangle(cornerRadius: 2).fill(Palette.accent).frame(width: 4)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("«\(quote.text)»")
+                    .font(.system(size: 14, design: .serif))
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("\(quote.author) · \(quote.work)")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .frame(width: 380, height: 132, alignment: .leading)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+}
+
+// MARK: - Il pannello del menu
+
+struct MenuPanel: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Otium").font(.system(size: 15, weight: .semibold, design: .rounded))
+                Spacer()
+                Text(model.phase == .paused ? "sospesa" : "prossima fra \(model.minutesToNextBreak) min")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+
+            ProgressView(value: model.engine.clock.fraction(of: model.settings.cadence.intervalSeconds))
+                .tint(Palette.accent)
+
+            Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 6) {
+                GridRow {
+                    Text("davanti al Mac").foregroundStyle(.secondary)
+                    Text(model.summary.activeHoursLabel).monospacedDigit()
+                }
+                GridRow {
+                    Text("pause fatte").foregroundStyle(.secondary)
+                    Text("\(model.summary.completed)").monospacedDigit()
+                }
+                GridRow {
+                    Text("saltate").foregroundStyle(.secondary)
+                    Text("\(model.summary.skipped)").monospacedDigit()
+                }
+                GridRow {
+                    Text("sessioni intense").foregroundStyle(.secondary)
+                    Text("\(model.summary.vigorousBouts) / \(model.settings.vigorousDailyTarget)")
+                        .monospacedDigit()
+                        .foregroundStyle(model.summary.vigorousBouts >= model.settings.vigorousDailyTarget
+                                         ? Color.green : Color.primary)
+                }
+            }
+            .font(.system(size: 13))
+
+            if !model.summary.repsByExercise.isEmpty {
+                Divider()
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(model.summary.repsByExercise.sorted(by: { $0.value > $1.value }), id: \.key) { kind, reps in
+                        HStack {
+                            Text(kind.italianName).foregroundStyle(.secondary)
+                            Spacer()
+                            Text("\(reps)").monospacedDigit()
+                        }
+                    }
+                }
+                .font(.system(size: 13))
+            }
+        }
+        .padding(16)
+        .frame(width: 280)
+    }
+}
+
+// MARK: - Le fonti
+
+struct EvidenceView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Da dove vengono questi numeri")
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                    // Niente asterischi: `Text` interpreta il markdown solo su una stringa
+                    // letterale, e su una concatenazione li stampa come sono — visto a schermo.
+                    Text("Ogni parametro di Otium risponde a uno studio: metabolismo, fatica e "
+                       + "concentrazione. Le ultime due voci sono le cose che l'app NON fa e NON "
+                       + "promette, con il motivo.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach(Evidence.all) { study in
+                    VStack(alignment: .leading, spacing: 6) {
+                        let isDisclaimer = Evidence.disclaimers.contains { $0.id == study.id }
+                        Text(study.governs)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(isDisclaimer ? Color.secondary : Palette.accentOnLight)
+                        Text(study.claim)
+                            .font(.system(size: 13))
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 6) {
+                            Text("\(study.citation), \(String(study.year)).")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        if let url = URL(string: study.url) {
+                            Link("apri la fonte", destination: url).font(.system(size: 12))
+                        }
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.primary.opacity(0.04))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+            }
+            .padding(28)
+        }
+        .frame(minWidth: 640, maxWidth: 640, minHeight: 520)
+    }
+}
+
+// MARK: - Preferenze
+
+struct PrefsView: View {
+    @ObservedObject var model: AppModel
+    /// Qualificato: in un file che importa SwiftUI, `Settings` da solo è ambiguo — SwiftUI ha
+    /// una sua `Settings` (la scena delle preferenze).
+    @State private var draft: OtiumCore.Settings
+    @State private var applied = false
+
+    init(model: AppModel) {
+        self.model = model
+        _draft = State(initialValue: model.settings)
+    }
+
+    var body: some View {
+        Form {
+            Section("Cadenza") {
+                Picker("Preset", selection: Binding(
+                    get: { presetName(draft.cadence) },
+                    set: { applyPreset($0) }
+                )) {
+                    Text("A — 30 min + pausa piena ogni 90 (consigliata)").tag("A")
+                    Text("B — 5 min ogni 50 (deep work)").tag("B")
+                    Text("C — 5 min ogni 30 (protocollo Duran)").tag("C")
+                    Text("personalizzata").tag("X")
+                }
+                .pickerStyle(.menu)
+
+                LabeledContent("Intervallo") {
+                    minuteField($draft.cadence.intervalSeconds)
+                }
+                LabeledContent("Durata micro-pausa") {
+                    secondField($draft.cadence.microDurationSeconds)
+                }
+                LabeledContent("Durata pausa piena") {
+                    minuteField($draft.cadence.longDurationSeconds)
+                }
+                Stepper("Pausa piena ogni \(draft.cadence.longEveryNBreaks) break",
+                        value: $draft.cadence.longEveryNBreaks, in: 1...8)
+                LabeledContent("Preavviso") {
+                    secondField($draft.cadence.warningSeconds)
+                }
+            }
+
+            Section("Esercizi") {
+                ForEach(ExerciseKind.allCases, id: \.self) { kind in
+                    Toggle(isOn: binding(for: kind)) {
+                        HStack {
+                            Text(kind.italianName)
+                            Text("\(kind.baseReps) rip. · \(kind.muscleGroup)")
+                                .foregroundStyle(.secondary)
+                            if kind.isVigorous {
+                                Text("vigoroso").font(.caption).foregroundStyle(Palette.accent)
+                            }
+                        }
+                    }
+                }
+                Toggle("Offri le varianti dentro la pausa", isOn: $draft.offerVariants)
+                Text("Durante una pausa push-up puoi passare a diamond, archer, dip su sedia, "
+                   + "pike o inclinati con un clic. Le ripetizioni si adeguano alla difficoltà.")
+                    .font(.caption).foregroundStyle(.secondary)
+                Stepper("Rampa in \(draft.rampWeeks) settimane", value: $draft.rampWeeks, in: 1...12)
+                Text("Oggi sei al \(Int(draft.rampFactor(now: Date()) * 100))% del volume pieno.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section("Comportamento") {
+                Picker("Livrea", selection: $draft.theme) {
+                    ForEach(ThemeName.allCases, id: \.self) { Text($0.palette.name).tag($0) }
+                }
+                Text(draft.theme.palette.description)
+                    .font(.caption).foregroundStyle(.secondary)
+                LabeledContent("Suono del preavviso") {
+                    HStack {
+                        Picker("", selection: $draft.notificationSound) {
+                            Text("nessuno").tag(NotificationSounds.silent)
+                            ForEach(NotificationSounds.names, id: \.self) { Text($0).tag($0) }
+                        }
+                        .labelsHidden()
+                        .frame(width: 150)
+                        // Sceglierlo senza sentirlo è come scegliere un colore al buio.
+                        Button("ascolta") { model.previewSound(draft.notificationSound) }
+                            .disabled(draft.notificationSound.isEmpty)
+                    }
+                }
+                Toggle("Rimanda se un microfono è in uso (call)", isOn: $draft.deferWhenMicrophoneActive)
+                Toggle("Conta anche video e lettura come tempo fermo", isOn: $draft.detectQuietPresence)
+                Text("Un film o un PDF sono immobilità perfetta: senza questo, guardare Netflix "
+                   + "vale come una pausa ben fatta. Tetti senza un solo input: 45 min per un "
+                   + "video, 15 per un documento.")
+                    .font(.caption).foregroundStyle(.secondary)
+                Stepper("Consenti \(draft.cadence.postponesAllowed) rinvio/i a mano",
+                        value: $draft.cadence.postponesAllowed, in: 0...3)
+                LabeledContent("Frase per saltare") {
+                    TextField("", text: $draft.escapePhrase).frame(width: 180)
+                }
+                LabeledContent("Ore attive") {
+                    HStack {
+                        Stepper("\(draft.activeFromHour)", value: $draft.activeFromHour, in: 0...23)
+                        Text("→")
+                        Stepper("\(draft.activeToHour)", value: $draft.activeToHour, in: 0...23)
+                    }
+                }
+            }
+
+            Section("Avvio automatico") {
+                switch model.launchAgentState {
+                case .notInstalled:
+                    HStack {
+                        Text("Otium non riparte da sola.").foregroundStyle(.secondary)
+                        Button("Installa") { model.installLaunchAgent() }
+                    }
+                case .healthy:
+                    HStack {
+                        Label("Attivo e puntato a questa copia", systemImage: "checkmark.seal")
+                            .foregroundStyle(.green)
+                        Spacer()
+                        Button("Rimuovi") { model.removeLaunchAgent() }
+                    }
+                case .danglingTarget(let path):
+                    VStack(alignment: .leading) {
+                        Label("L'avvio automatico punta a un file che non esiste più",
+                              systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+                        Text(path).font(.caption).foregroundStyle(.secondary)
+                        Button("Ripara") { model.installLaunchAgent() }
+                    }
+                case .pointsElsewhere(let path):
+                    VStack(alignment: .leading) {
+                        Label("L'avvio automatico punta a un'altra copia di Otium",
+                              systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+                        Text(path).font(.caption).foregroundStyle(.secondary)
+                        Button("Punta a questa") { model.installLaunchAgent() }
+                    }
+                }
+            }
+
+            Section {
+                HStack {
+                    // Un pulsante che non risponde è indistinguibile da un pulsante rotto: prima
+                    // "Applica" salvava in silenzio, e l'unico modo di sapere se aveva funzionato
+                    // era riaprire la finestra.
+                    if applied {
+                        Label("Preferenze aggiornate", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(Palette.accentOnLight)
+                            .font(.system(size: 13, weight: .medium))
+                            .transition(.opacity)
+                    }
+                    Spacer()
+                    Button("Applica") {
+                        model.update(settings: draft)
+                        withAnimation { applied = true }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                            withAnimation { applied = false }
+                        }
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(draft == model.settings)
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .frame(width: 520, height: 620)
+    }
+
+    private func binding(for kind: ExerciseKind) -> Binding<Bool> {
+        Binding(
+            get: {
+                kind.isVigorous ? draft.vigorousPool.contains(kind) : draft.exercisePool.contains(kind)
+            },
+            set: { on in
+                if kind.isVigorous {
+                    var pool = draft.vigorousPool
+                    if on { if !pool.contains(kind) { pool.append(kind) } } else { pool.removeAll { $0 == kind } }
+                    draft.vigorousPool = pool.isEmpty ? [.jumpingJack] : pool
+                } else {
+                    var pool = draft.exercisePool
+                    if on { if !pool.contains(kind) { pool.append(kind) } } else { pool.removeAll { $0 == kind } }
+                    draft.exercisePool = pool.isEmpty ? [.squat] : pool
+                }
+            }
+        )
+    }
+
+    private func minuteField(_ value: Binding<Double>) -> some View {
+        HStack {
+            TextField("", value: Binding(
+                get: { Int(value.wrappedValue / 60) },
+                set: { value.wrappedValue = Double(max(1, $0)) * 60 }
+            ), format: .number)
+            .frame(width: 60)
+            Text("min").foregroundStyle(.secondary)
+        }
+    }
+
+    private func secondField(_ value: Binding<Double>) -> some View {
+        HStack {
+            TextField("", value: Binding(
+                get: { Int(value.wrappedValue) },
+                set: { value.wrappedValue = Double(max(0, $0)) }
+            ), format: .number)
+            .frame(width: 60)
+            Text("s").foregroundStyle(.secondary)
+        }
+    }
+
+    private func presetName(_ c: Cadence) -> String {
+        if c == .optionA { return "A" }
+        if c == .optionB { return "B" }
+        if c == .optionC { return "C" }
+        return "X"
+    }
+
+    private func applyPreset(_ name: String) {
+        switch name {
+        case "A": draft.cadence = .optionA
+        case "B": draft.cadence = .optionB
+        case "C": draft.cadence = .optionC
+        default: break
+        }
+    }
+}
+
+// MARK: - Statistiche
+
+/// La scheda: una sola forma, un solo raggio, un solo respiro interno.
+///
+/// Il report prima era un collage — riquadri con bordi diversi, spaziature diverse, titoli di
+/// tre misure. Armonia qui non vuol dire "più bello": vuol dire che l'occhio non deve
+/// ricominciare da capo a ogni blocco.
+private struct Card<Content: View>: View {
+    var title: String? = nil
+    var subtitle: String? = nil
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let title {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.system(size: 13, weight: .semibold))
+                    if let subtitle {
+                        Text(subtitle).font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            content
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.primary.opacity(0.045))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+struct StatsView: View {
+    @ObservedObject var model: AppModel
+    @State private var period: StatsPeriod = .day
+
+    private var stats: PeriodStats { model.stats(for: period) }
+    private var previous: PeriodStats { model.previousStats(for: period) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            header
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    numbers
+                    compliance
+                    muscleCards
+                    hourStrip
+                    insights
+                }
+                .padding(.horizontal, 22).padding(.bottom, 24)
+            }
+        }
+        .frame(minWidth: 640, minHeight: 540)
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Otium").font(.system(size: 22, weight: .semibold, design: .rounded))
+            Picker("", selection: $period) {
+                ForEach(StatsPeriod.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented).labelsHidden()
+        }
+        .padding(.horizontal, 22).padding(.top, 18).padding(.bottom, 14)
+    }
+
+    private var numbers: some View {
+        let s = stats, p = previous
+        return HStack(spacing: 10) {
+            tile("\(s.interruptions)", "interruzioni", delta: s.interruptions - p.interruptions)
+            tile("\(s.totalReps)", "ripetizioni", delta: s.totalReps - p.totalReps)
+            tile(s.label(s.activeSeconds), "davanti al Mac", delta: nil)
+            tile("\(s.vigorousBouts)", "sessioni intense", delta: s.vigorousBouts - p.vigorousBouts)
+        }
+    }
+
+    private func tile(_ value: String, _ caption: String, delta: Int?) -> some View {
+        VStack(spacing: 4) {
+            Text(value).font(.system(size: 25, weight: .semibold, design: .rounded))
+                .monospacedDigit().foregroundStyle(Palette.accentOnLight)
+                .lineLimit(1).minimumScaleFactor(0.6)
+            Text(caption).font(.system(size: 10)).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Text(delta.map { $0 == 0 ? " " : "\($0 > 0 ? "+" : "")\($0) vs \(period == .day ? "ieri" : "prima")" } ?? " ")
+                .font(.system(size: 9))
+                .foregroundStyle((delta ?? 0) > 0 ? Palette.accentOnLight : Color.secondary)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 14)
+        .background(Color.primary.opacity(0.045))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    @ViewBuilder
+    private var compliance: some View {
+        let s = stats
+        if s.completed + s.skipped + s.emergency > 0 {
+            Card {
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text("\(Int(s.complianceRate * 100))%")
+                                .font(.system(size: 20, weight: .semibold, design: .rounded))
+                                .foregroundStyle(Palette.accentOnLight).monospacedDigit()
+                            Text("delle pause proposte").font(.system(size: 13, weight: .medium))
+                        }
+                        ProgressView(value: s.complianceRate).tint(Palette.accentOnLight)
+                            .frame(width: 260)
+                        Text(s.complianceRate < 0.5
+                             ? "Sotto la metà: è la cadenza a essere sbagliata, non tu. Allungala nelle preferenze."
+                             : "\(s.completed) fatte · \(s.skipped) saltate\(s.emergency > 0 ? " · \(s.emergency) d'emergenza" : "")")
+                            .font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if s.streakDays > 1 {
+                        VStack(spacing: 2) {
+                            Text("\(s.streakDays)").font(.system(size: 22, weight: .semibold, design: .rounded))
+                                .foregroundStyle(Palette.accentOnLight)
+                            Text("giorni\ndi fila").font(.system(size: 10))
+                                .multilineTextAlignment(.center).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var muscleCards: some View {
+        let groups = stats.repsByMuscleGroup
+        if !groups.isEmpty {
+            let peak = Double(groups.first?.reps ?? 1)
+            Card(title: "Dove è andato il lavoro", subtitle: "ripetizioni per catena muscolare") {
+                VStack(spacing: 9) {
+                    ForEach(groups, id: \.group) { g in
+                        HStack(spacing: 12) {
+                            Text(g.group).font(.system(size: 12, weight: .medium))
+                                .frame(width: 96, alignment: .leading)
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 4).fill(Color.primary.opacity(0.06))
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Palette.accentOnLight.opacity(g.group == "tutto il corpo" ? 1 : 0.55))
+                                        .frame(width: max(6, geo.size.width * Double(g.reps) / max(1, peak)))
+                                }
+                            }
+                            .frame(height: 16)
+                            Text("\(g.reps)").font(.system(size: 12, weight: .medium))
+                                .monospacedDigit().frame(width: 34, alignment: .trailing)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var hourStrip: some View {
+        let hours = stats.byHour
+        if !hours.isEmpty {
+            let peak = Double(hours.map { $0.done + $0.missed }.max() ?? 1)
+            Card(title: "Come va nella giornata",
+                 subtitle: "verde: pause fatte · rosso: saltate — se un'ora è sempre rossa, cambia quell'ora") {
+                HStack(alignment: .bottom, spacing: 5) {
+                    ForEach(hours, id: \.hour) { h in
+                        VStack(spacing: 4) {
+                            VStack(spacing: 2) {
+                                Spacer(minLength: 0)
+                                if h.missed > 0 {
+                                    RoundedRectangle(cornerRadius: 3).fill(Color.red.opacity(0.6))
+                                        .frame(height: max(4, 44 * Double(h.missed) / peak))
+                                }
+                                if h.done > 0 {
+                                    RoundedRectangle(cornerRadius: 3).fill(Palette.accentOnLight)
+                                        .frame(height: max(4, 44 * Double(h.done) / peak))
+                                }
+                            }
+                            .frame(height: 48)
+                            Text("\(h.hour)").font(.system(size: 9)).foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+            }
+        }
+    }
+
+    private var insights: some View {
+        Card(title: "Cosa dicono gli studi per numeri come questi",
+             subtitle: "non è una misura su di te: è ciò che è stato osservato su chi ha fatto numeri simili") {
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(Stats.insights(for: stats, target: model.settings.vigorousDailyTarget)) { insight in
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: insight.met ? "checkmark.circle.fill" : "circle.dashed")
+                            .foregroundStyle(insight.met ? Palette.accentOnLight : Color.secondary)
+                            .font(.system(size: 13))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(insight.headline).font(.system(size: 12, weight: .medium))
+                            Text(insight.detail).font(.system(size: 11)).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if let study = insight.study {
+                                Text("\(study.citation), \(String(study.year)).")
+                                    .font(.system(size: 9)).foregroundStyle(.tertiary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
