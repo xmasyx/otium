@@ -150,17 +150,38 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         }
     }
 
-    /// Gruppo muscolare, usato per non caricare due volte di fila la stessa catena.
+    /// Gruppo muscolare, usato per non caricare due volte di fila la stessa catena — e mostrato
+    /// in «Dove è andato il lavoro».
+    ///
+    /// Sono i nomi di **quello che lavora**, non della famiglia in cui l'esercizio è archiviato:
+    /// «spinta» era il nome del movimento e diceva poco a chi legge il recap accanto a «gambe» e
+    /// «tricipiti». Il pike push-up sta a parte perché di petto ne fa poco: sono spalle.
     public var muscleGroup: String {
         switch self {
         case .squat, .lunge, .splitSquat: return "gambe"
         case .gluteBridge: return "glutei"
         case .calfRaise: return "polpacci"
-        case .pushUp, .diamondPushUp, .archerPushUp, .inclinePushUp, .pikePushUp: return "spinta"
+        case .pushUp, .diamondPushUp, .archerPushUp, .inclinePushUp: return "petto"
+        case .pikePushUp: return "spalle"
         case .benchDip: return "tricipiti"
         case .crunch, .sitUp, .legRaise, .bicycleCrunch, .deadBug, .russianTwist,
              .plank, .sidePlank, .hollowHold: return "addome"
-        case .burpee, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return "tutto il corpo"
+        case .burpee, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return "total body"
+        }
+    }
+
+    /// Il movimento alterna i due lati, e il numero sensato è **per lato**.
+    ///
+    /// Un archer push-up da sei si fa tre di qua e tre di là: scrivere «6 archer push-up» fa
+    /// contare sei ripetizioni per braccio, che è il doppio del lavoro previsto. Il totale resta
+    /// il numero vero — il cancello anti-bluff conta quello — ma a schermo va il per lato, che è
+    /// l'unico numero che sai usare mentre li fai.
+    public var isPerSide: Bool {
+        switch self {
+        case .archerPushUp, .lunge, .splitSquat, .bicycleCrunch, .russianTwist, .sidePlank:
+            return true
+        default:
+            return false
         }
     }
 
@@ -320,14 +341,37 @@ public struct Exercise: Equatable, Codable, Sendable {
         Double(reps) * kind.secondsPerRep
     }
 
+    /// Il numero da **mostrare**: per gli esercizi che alternano i lati è quello per lato, non il
+    /// totale. Il totale resta `reps` e governa il tempo minimo: mostrarne metà non sconta nulla.
+    public var displayReps: Int {
+        kind.isPerSide ? max(1, reps / 2) : reps
+    }
+
     public var label: String {
-        kind.isTimed ? "\(reps) s di \(kind.italianName)" : "\(reps) \(kind.italianName)"
+        // Il plank laterale è l'unico che è insieme a tempo e a lati alterni: 40 secondi vogliono
+        // dire venti per lato, e senza dirlo se ne farebbero ottanta.
+        if kind.isTimed && kind.isPerSide { return "\(displayReps) s per lato di \(kind.italianName)" }
+        if kind.isTimed { return "\(displayReps) s di \(kind.italianName)" }
+        if kind.isPerSide { return "\(displayReps) \(kind.italianName) per lato" }
+        return "\(reps) \(kind.italianName)"
+    }
+
+    /// Nel pannello «Ho già fatto una pausa» il numero che si digita è il **totale** — è quello
+    /// che finisce nel registro — ma accanto va detto quanto fa per lato, o si sbaglia il conto.
+    public var stepperLabel: String {
+        kind.isTimed
+            ? "\(reps) secondi" + (kind.isPerSide ? " (\(displayReps) per lato)" : "")
+            : "\(reps) ripetizioni" + (kind.isPerSide ? " (\(displayReps) per lato)" : "")
     }
 
     /// Cosa scrivere **sotto il numero grande** nella schermata di blocco. Per una tenuta il
-    /// numero è in secondi, e senza l'unità «45 plank» si legge come quarantacinque plank.
+    /// numero è in secondi, e senza l'unità «45 plank» si legge come quarantacinque plank; per un
+    /// esercizio a lati alterni senza «per lato» si leggerebbe come il doppio del lavoro.
     public var title: String {
-        kind.isTimed ? "secondi di \(kind.italianName)" : kind.italianName
+        if kind.isTimed && kind.isPerSide { return "secondi per lato di \(kind.italianName)" }
+        if kind.isTimed { return "secondi di \(kind.italianName)" }
+        if kind.isPerSide { return "\(kind.italianName) per lato" }
+        return kind.italianName
     }
 }
 
@@ -349,8 +393,16 @@ public enum Ramp {
         return Int(seconds / (7 * 24 * 3600))
     }
 
+    /// Le ripetizioni di oggi, rampa applicata.
+    ///
+    /// Per gli esercizi a lati alterni il totale è **arrotondato al pari**: la rampa al 55% su un
+    /// archer push-up da sei darebbe 3, cioè un lato e mezzo, e «1,5 per lato» non è un'istruzione
+    /// eseguibile. Si arrotonda una volta sola qui, dove il numero nasce, invece di rattoppare la
+    /// divisione in ogni punto che lo mostra.
     public static func reps(for kind: ExerciseKind, factor: Double) -> Int {
-        max(1, Int((Double(kind.baseReps) * factor).rounded()))
+        let scaled = Double(kind.baseReps) * factor
+        guard kind.isPerSide else { return max(1, Int(scaled.rounded())) }
+        return max(2, Int((scaled / 2).rounded()) * 2)
     }
 }
 

@@ -110,7 +110,7 @@ Rampa: settimana 1 al 55% delle ripetizioni, +15% a settimana fino al 100% in se
 
 ## Criteria
 
-> **Stato al 2026-07-27, iterazione 3: 37 chiusi su 38.** L'unico aperto resta ISC-28.
+> **Stato al 2026-07-27, iterazione 4: 41 chiusi su 42.** L'unico aperto resta ISC-28.
 >
 > Chiusi 28 su 29 il 2026-07-26. L'unico aperto è ISC-28, che è esperienziale: si chiude usando
 > l'app per qualche giorno, non con un probe.
@@ -566,6 +566,24 @@ guardando l'app funzionare, non leggendo il codice: è la ragione per cui ISC-28
       `autoStartAtLogin` acceso di serie, il LaunchAgent si installa da solo al primo avvio e si
       ripara se punta altrove; toglierlo dalle preferenze **spegne anche la preferenza**, così
       l'app non se lo rimette. Verificato: `--agent-status` → `healthy`.
+
+### Iterazione 4 — rifiniture dall'uso (2026-07-27, sera)
+
+- [x] **ISC-39** Gli esercizi che alternano i lati mostrano le ripetizioni **per lato**, e il
+      totale resta pari a ogni gradino della rampa. — «6 archer push-up» si leggeva come sei per
+      braccio, il doppio del lavoro previsto. Ora «2 archer push-up per lato», con il totale (4)
+      nel registro e nel cancello anti-bluff; `Ramp.reps` arrotonda al pari, o al 55% uscirebbe
+      «1,5 per lato». Vale anche per affondi, split squat, crunch bicicletta, russian twist e
+      plank laterale — che è insieme a tempo e a lati alterni.
+- [x] **ISC-40** La notifica che registra la pausa appena chiusa **non suona**. — il suono avvisa
+      di ciò che non ti aspetti; l'hai appena chiusa tu con un clic. Il preavviso, che arriva
+      mentre fai altro, il suono ce l'ha ancora.
+- [x] **ISC-41** Il pannello del menu non elenca più gli esercizi del giorno. — con dieci tipi in
+      rotazione la lista cresceva e i nomi lunghi («archer push-up») finivano tagliati contro la
+      larghezza fissa. Il dettaglio vive nelle Statistiche. Reso e guardato con `--surface=menu`.
+- [x] **ISC-42** In «Dove è andato il lavoro» i gruppi dicono cosa lavora, non il movimento. —
+      «spinta» → **petto** (e **spalle** per il pike push-up, che di petto ne fa poco), «tutto il
+      corpo» → **total body**. Guardato: gambe 15 · tricipiti 14 · total body 4 · petto 3.
 
 ## Test Strategy
 

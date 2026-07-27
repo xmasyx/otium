@@ -95,7 +95,9 @@ struct BreakView: View {
     private func exercise(_ plan: BreakPlan) -> some View {
         VStack(spacing: 20) {
             if plan.circuitActive { circuitTrack(plan) }
-            Text("\(plan.exercise.reps)")
+            // Il numero grande è quello **da eseguire adesso**: per gli esercizi a lati alterni è
+            // il per lato, non il totale.
+            Text("\(plan.exercise.displayReps)")
                 .font(.system(size: 140, weight: .bold, design: .rounded))
                 .foregroundStyle(Palette.paper)
                 .monospacedDigit()
@@ -232,7 +234,9 @@ struct BreakView: View {
                             VStack(spacing: 2) {
                                 Text(option.kind.italianName)
                                     .font(.system(size: 12, weight: .medium, design: .rounded))
-                                Text("\(option.reps)")
+                                Text(option.kind.isPerSide
+                                     ? "\(option.displayReps) per lato"
+                                     : "\(option.displayReps)")
                                     .font(.system(size: 11, design: .rounded))
                                     .foregroundStyle(Palette.accent.opacity(0.85))
                                     .monospacedDigit()
@@ -565,19 +569,11 @@ struct MenuPanel: View {
             }
             .font(.system(size: 13))
 
-            if !model.summary.repsByExercise.isEmpty {
-                Divider()
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(model.summary.repsByExercise.sorted(by: { $0.value > $1.value }), id: \.key) { kind, reps in
-                        HStack {
-                            Text(kind.italianName).foregroundStyle(.secondary)
-                            Spacer()
-                            Text("\(reps)").monospacedDigit()
-                        }
-                    }
-                }
-                .font(.system(size: 13))
-            }
+            // **Niente elenco degli esercizi qui.** Con dieci tipi in rotazione la lista cresce
+            // per tutta la giornata, il pannello del menu ha una larghezza fissa, e i nomi lunghi
+            // — «archer push-up», l'ultimo fatto — finivano tagliati. Il dettaglio per esercizio
+            // vive nelle Statistiche, dove c'è spazio per leggerlo: ripeterlo qui costava una
+            // riga tagliata in cambio di niente.
         }
         .padding(16)
         .frame(width: 280)
@@ -1029,7 +1025,7 @@ struct StatsView: View {
                                 ZStack(alignment: .leading) {
                                     RoundedRectangle(cornerRadius: 4).fill(Color.primary.opacity(0.06))
                                     RoundedRectangle(cornerRadius: 4)
-                                        .fill(Palette.accentOnLight.opacity(g.group == "tutto il corpo" ? 1 : 0.55))
+                                        .fill(Palette.accentOnLight.opacity(g.group == "total body" ? 1 : 0.55))
                                         .frame(width: max(6, geo.size.width * Double(g.reps) / max(1, peak)))
                                 }
                             }

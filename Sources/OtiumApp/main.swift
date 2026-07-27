@@ -88,6 +88,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case "evidence":
             size = NSSize(width: 640, height: 3200)   // alta: si vuole vedere tutta, non scorrerla
             host = NSHostingView(rootView: EvidenceView().frame(width: size.width, height: size.height))
+        case "menu":
+            size = NSSize(width: 280, height: 260)
+            host = NSHostingView(rootView: MenuPanel(model: model).frame(width: size.width))
         case "declare":
             size = NSSize(width: 420, height: 330)
             host = NSHostingView(rootView: DeclareBreakView(model: model, onDone: {}).frame(width: size.width, height: size.height))

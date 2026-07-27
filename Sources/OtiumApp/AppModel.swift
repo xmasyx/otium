@@ -182,7 +182,8 @@ final class AppModel: ObservableObject {
             // Il momento che merita di più i complimenti è questo: la pausa l'hai fatta davvero,
             // sotto il blocco, non l'hai dichiarata.
             announce(title: Praise.line(at: plan.index, hard: plan.exercise.kind.isVigorous),
-                     subtitle: "\(plan.exercise.label) · oggi \(summary.totalReps + plan.exercise.reps) ripetizioni")
+                     subtitle: "\(plan.exercise.label) · oggi \(summary.totalReps + plan.exercise.reps) ripetizioni",
+                     silent: true)
         case .breakSkipped:
             hud.hide()
             blocker.hide()
@@ -237,8 +238,12 @@ final class AppModel: ObservableObject {
     /// Mostra il pannellino di stato. Serve al secondo avvio: cercare Otium quando è già viva
     /// deve produrre una risposta visibile, non silenzio — il silenzio è indistinguibile da
     /// un'app morta, ed è per questo che si finisce col lanciarla due volte.
-    func announce(title: String, subtitle: String) {
-        hud.show(title: title, subtitle: subtitle, sound: settings.notificationSound)
+    /// - Parameter silent: senza suono. Serve al momento in cui **hai appena premuto tu**: il
+    ///   suono avvisa di qualcosa che non ti aspetti, e quando chiudi la pausa con un clic non c'è
+    ///   niente da avvisare — la riga che compare basta a dire che è stata registrata. Il suono
+    ///   resta dov'è utile: il preavviso, che arriva mentre stai facendo altro.
+    func announce(title: String, subtitle: String, silent: Bool = false) {
+        hud.show(title: title, subtitle: subtitle, sound: silent ? nil : settings.notificationSound)
     }
 
     /// Fa sentire un suono senza aspettare la prossima pausa: serve a sceglierlo.
@@ -382,7 +387,9 @@ final class AppModel: ObservableObject {
                                   exercise: exercise, reps: reps, reason: "dichiarata"))
         RotationStore.save(engine.snapshot)
         refreshSummary()
-        let cosa = (exercise != nil && reps != nil) ? "\(reps!) \(exercise!.italianName)" : "pausa segnata"
+        let cosa = (exercise != nil && reps != nil)
+            ? Exercise(kind: exercise!, reps: reps!).label
+            : "pausa segnata"
         announce(title: Praise.line(at: engine.breakIndex, hard: exercise?.isVigorous ?? false),
                  subtitle: "\(cosa) · prossima fra \(minutesToNextBreak) min")
         objectWillChange.send()

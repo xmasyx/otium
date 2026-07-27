@@ -158,7 +158,60 @@ final class CircuitTests: XCTestCase {
             XCTAssertEqual(exercise.minimumSeconds, Double(kind.baseReps), accuracy: 0.001,
                            "\(kind): il cancello chiederebbe un tempo che non è quello dichiarato")
             XCTAssertTrue(exercise.label.contains(" s "), "\(kind): l'etichetta deve dire i secondi")
-            XCTAssertTrue(exercise.title.hasPrefix("secondi di"), "\(kind): sotto il numero grande")
+            XCTAssertTrue(exercise.title.hasPrefix("secondi"), "\(kind): sotto il numero grande")
+        }
+    }
+
+    // MARK: - Esercizi a lati alterni
+
+    /// Il caso segnalato il 2026-07-27: «6 archer push-up» si legge come sei per braccio, che è
+    /// il doppio del lavoro previsto. A schermo va il **per lato**, il totale resta nel registro.
+    func testAlternatingExercisesShowRepsPerSide() {
+        let archer = Exercise(kind: .archerPushUp, reps: 6)
+        XCTAssertEqual(archer.displayReps, 3)
+        XCTAssertEqual(archer.label, "3 archer push-up per lato")
+        XCTAssertEqual(archer.title, "archer push-up per lato")
+        XCTAssertEqual(archer.reps, 6, "il totale non cambia: è quello che va nel registro")
+        XCTAssertEqual(archer.minimumSeconds, 6 * ExerciseKind.archerPushUp.secondsPerRep, accuracy: 0.001,
+                       "il cancello anti-bluff conta il totale, o mostrare metà scontererebbe il tempo")
+    }
+
+    /// «1,5 per lato» non è un'istruzione eseguibile: il totale di un esercizio a lati alterni
+    /// dev'essere pari a ogni gradino della rampa.
+    func testPerSideTotalsAreAlwaysEven() {
+        for kind in ExerciseKind.allCases where kind.isPerSide {
+            for factor in stride(from: 0.3, through: 1.0, by: 0.05) {
+                let reps = Ramp.reps(for: kind, factor: factor)
+                XCTAssertEqual(reps % 2, 0, "\(kind) al \(Int(factor * 100))%: totale dispari (\(reps))")
+                XCTAssertGreaterThanOrEqual(reps, 2)
+            }
+        }
+    }
+
+    /// Il plank laterale è insieme a tempo e a lati alterni: deve dirlo tutto e due.
+    func testSidePlankSaysBothSecondsAndPerSide() {
+        let side = Exercise(kind: .sidePlank, reps: 40)
+        XCTAssertEqual(side.label, "20 s per lato di plank laterale")
+        XCTAssertEqual(side.title, "secondi per lato di plank laterale")
+    }
+
+    /// Gli esercizi che **non** alternano restano com'erano: nessuna dicitura di troppo.
+    func testNonAlternatingExercisesAreUnchanged() {
+        XCTAssertEqual(Exercise(kind: .squat, reps: 15).label, "15 squat")
+        XCTAssertEqual(Exercise(kind: .pushUp, reps: 10).title, "push-up")
+        XCTAssertFalse(ExerciseKind.pushUp.isPerSide)
+    }
+
+    /// I nomi che compaiono in «Dove è andato il lavoro»: quello che lavora, non il movimento.
+    func testMuscleGroupNamesAreTheOnesShownInTheRecap() {
+        XCTAssertEqual(ExerciseKind.archerPushUp.muscleGroup, "petto")
+        XCTAssertEqual(ExerciseKind.pushUp.muscleGroup, "petto")
+        XCTAssertEqual(ExerciseKind.pikePushUp.muscleGroup, "spalle")
+        XCTAssertEqual(ExerciseKind.benchDip.muscleGroup, "tricipiti")
+        XCTAssertEqual(ExerciseKind.burpee.muscleGroup, "total body")
+        for kind in ExerciseKind.allCases {
+            XCTAssertNotEqual(kind.muscleGroup, "spinta", "«spinta» è il movimento, non ciò che lavora")
+            XCTAssertNotEqual(kind.muscleGroup, "tutto il corpo")
         }
     }
 

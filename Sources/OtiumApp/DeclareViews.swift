@@ -38,8 +38,11 @@ struct DeclareBreakView: View {
                     if let new { reps = model.suggestedReps(for: new) }
                 }
 
-                if exercise != nil {
-                    Stepper("\(reps) ripetizioni", value: $reps, in: 1...200)
+                if let exercise {
+                    // Il numero che digiti è il **totale**, come nel registro; accanto si legge
+                    // quanto fa per lato, così non devi fare il conto tu.
+                    Stepper(Exercise(kind: exercise, reps: reps).stepperLabel,
+                            value: $reps, in: 1...200)
                 } else {
                     Text("Senza esercizio la pausa viene contata, le ripetizioni no.")
                         .font(.caption).foregroundStyle(.secondary)
