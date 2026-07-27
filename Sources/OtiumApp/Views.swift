@@ -32,6 +32,14 @@ enum Palette {
         isDarkAppearance ? Color(current.accent) : Color(current.accentOnLight)
     }
 
+    /// Il testo che sta **sopra** un riempimento d'accento.
+    ///
+    /// Non è sempre bianco: in chiaro l'accento è verde bosco e vuole testo bianco, in scuro è
+    /// salvia chiara e il bianco sopra sparirebbe — lì serve il verde notte del fondo.
+    static var onAccentOnWindow: Color {
+        isDarkAppearance ? Color(current.ink) : .white
+    }
+
     static var isDarkAppearance: Bool {
         NSApp?.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
     }
@@ -966,13 +974,42 @@ struct StatsView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Otium").font(.system(size: 22, weight: .semibold, design: .rounded))
-            Picker("", selection: Binding(get: { model.statsPeriod },
-                                          set: { model.statsPeriod = $0 })) {
-                ForEach(StatsPeriod.allCases, id: \.self) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented).labelsHidden()
+            periodPicker
         }
         .padding(.horizontal, 22).padding(.top, 18).padding(.bottom, 14)
+    }
+
+    /// Il selettore del periodo, scritto a mano invece che con `.pickerStyle(.segmented)`.
+    ///
+    /// Il controllo di sistema prende l'accento **del Mac**, non quello dell'app: restava blu in
+    /// tutte e tre le livree, l'unico pezzo della finestra che non seguiva il tema. Restano
+    /// pulsanti veri, non testo cliccabile, o si perderebbero tastiera e VoiceOver.
+    private var periodPicker: some View {
+        HStack(spacing: 2) {
+            ForEach(StatsPeriod.allCases, id: \.self) { p in
+                let selected = model.statsPeriod == p
+                Button { model.statsPeriod = p } label: {
+                    Text(p.title)
+                        .font(.system(size: 12, weight: selected ? .semibold : .regular))
+                        .foregroundStyle(selected ? Palette.onAccentOnWindow : Color.primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(selected ? Palette.accentOnWindow : Color.clear)
+                        )
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? [.isSelected] : [])
+            }
+        }
+        .padding(3)
+        .background(
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(Color.primary.opacity(Palette.isDarkAppearance ? 0.10 : 0.06))
+        )
+        .frame(width: 300)
     }
 
     private var numbers: some View {

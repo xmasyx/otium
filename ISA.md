@@ -110,7 +110,7 @@ Rampa: settimana 1 al 55% delle ripetizioni, +15% a settimana fino al 100% in se
 
 ## Criteria
 
-> **Stato al 2026-07-27, iterazione 7: 47 chiusi su 48.** L'unico aperto resta ISC-28.
+> **Stato al 2026-07-27, iterazione 8: 49 chiusi su 50.** L'unico aperto resta ISC-28.
 >
 > Chiusi 28 su 29 il 2026-07-26. L'unico aperto è ISC-28, che è esperienziale: si chiude usando
 > l'app per qualche giorno, non con un probe.
@@ -622,6 +622,23 @@ guardando l'app funzionare, non leggendo il codice: è la ragione per cui ISC-28
       scura si vedeva `accentOnLight`, cioè il verde **nato per la carta bianca**: su fondo scuro
       diventava fango. La palette aveva già la tinta per il buio — è quella della schermata di
       blocco — e non veniva mai usata. Reso e guardato nelle tre livree in scuro.
+
+### Iterazione 8 — la livrea arriva fino in fondo (2026-07-27)
+
+- [x] **ISC-49** Le livree si possono guardare in chiaro **e** in scuro senza cambiare le
+      impostazioni del Mac. — il render aveva solo `--dark`, e senza quel flag ereditava
+      l'aspetto vivo del sistema: rese di sera, le sei immagini uscivano tutte scure e sembravano
+      identiche. Aggiunto `--light`. Dentro c'era un secondo difetto, `.cgColor` risolve un
+      colore dinamico contro l'aspetto **corrente del thread**, non contro quello messo su
+      `NSApp`, quindi lo sfondo della finestra restava quello del buio anche in chiaro.
+- [x] **ISC-50** Il selettore Oggi/Settimana/Mese porta il colore della livrea. — con
+      `.pickerStyle(.segmented)` il controllo prende l'accento **del Mac**, non quello dell'app:
+      restava blu in tutte e tre le livree, l'unico pezzo della finestra fuori dal tema. Riscritto
+      a mano con pulsanti veri, non testo cliccabile, per non perdere tastiera e VoiceOver. Il
+      testo sopra il riempimento non è sempre bianco: in chiaro l'accento è verde bosco e vuole
+      bianco, in scuro è salvia chiara e vuole il verde notte del fondo.
+- **Livrea scelta dal principale: Alloro**, le sfumature verdi. Era già la predefinita, ora è
+  anche una decisione presa guardando le tre in entrambi gli aspetti.
 
 ## Test Strategy
 
