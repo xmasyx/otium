@@ -110,7 +110,7 @@ Rampa: settimana 1 al 55% delle ripetizioni, +15% a settimana fino al 100% in se
 
 ## Criteria
 
-> **Stato al 2026-07-27, iterazione 5: 43 chiusi su 44.** L'unico aperto resta ISC-28.
+> **Stato al 2026-07-27, iterazione 6: 45 chiusi su 46.** L'unico aperto resta ISC-28.
 >
 > Chiusi 28 su 29 il 2026-07-26. L'unico aperto è ISC-28, che è esperienziale: si chiude usando
 > l'app per qualche giorno, non con un probe.
@@ -597,6 +597,19 @@ guardando l'app funzionare, non leggendo il codice: è la ragione per cui ISC-28
       funzione deliberatamente assente — regola 20-20-20». Vero, ma risponde a una domanda che
       nessuno fa mentre esegue: la riga sotto il blocco esiste per dire perché ti sto
       interrompendo. Le due voci restano nella finestra delle fonti. Test su 200 pause di fila.
+
+### Iterazione 6 — il recap dice la verità nell'istante in cui lo apri (2026-07-27)
+
+- [x] **ISC-45** Le ripetizioni finiscono nel registro **quando confermi l'esercizio**, non alla
+      chiusura della pausa. — prima si scrivevano al «Torna al lavoro», cioè fino a cinque minuti
+      dopo averle eseguite: il recap aperto nel frattempo non le vedeva. Ora la conferma emette
+      `exerciseConfirmed` e scrive la sua riga `exerciseDone`; la riga della pausa conserva il
+      nome dell'esercizio ma **non** le ripetizioni, o sarebbero contate due volte. Le righe
+      scritte prima hanno le ripetizioni sulla riga della pausa e continuano a contare.
+- [x] **ISC-46** Aprire il recap o il menu **scrive** il tempo attivo non ancora registrato. — il
+      tempo si accumula a blocchi di cinque minuti (3.600 righe l'ora sarebbero insostenibili),
+      e il prezzo era un numero vecchio fino a cinque minuti proprio mentre lo guardavi. Ora
+      `flushForDisplay()` paga la scrittura una volta, quando apri.
 
 ## Test Strategy
 

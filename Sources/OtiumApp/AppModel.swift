@@ -21,6 +21,12 @@ final class AppModel: ObservableObject {
     /// Con `true` il motore gira ma nessuna finestra si apre: serve a rendere la schermata di
     /// blocco fuori schermo, per guardarla, senza coprire il Mac di nessuno.
     var headless = false
+    /// Inattività finta, **solo per le sonde da riga di comando**.
+    ///
+    /// Serve a una ragione precisa, pagata subito: durante una sonda nessuno tocca la tastiera,
+    /// quindi l'inattività vera cresce e il motore chiude la pausa come «naturale» — e la sonda
+    /// finisce per misurare *che non c'era nessuno*, invece di quello che le avevo chiesto.
+    var idleOverride: Double?
 
     let ledger: Ledger
     private var timer: Timer?
@@ -115,7 +121,7 @@ final class AppModel: ObservableObject {
         let now = Date()
         let elapsed = now.timeIntervalSince(lastTick)
         lastTick = now
-        let idle = IdleProbe.seconds()
+        let idle = idleOverride ?? IdleProbe.seconds()
 
         if engine.phase == .working || engine.phase == .warning || engine.phase == .postponed {
             if idle < engine.settings.cadence.idleThresholdSeconds, elapsed <= 5 {
@@ -144,18 +150,6 @@ final class AppModel: ObservableObject {
             ledger.append(entry)
             refreshSummary()
         }
-        // Le stazioni del circuito, una riga ciascuna. Non contano come pause — quattro stazioni
-        // sono una pausa sola — ma le ripetizioni sono vere e devono comparire nel totale.
-        // A pausa chiusa la stazione in corso è confermata; a pausa saltata no: si accredita solo
-        // quello che risulta fatto.
-        switch event {
-        case .breakCompleted(let plan):
-            logStations(plan.allStationsDone(currentConfirmed: true), now: now)
-        case .breakSkipped(let plan, _):
-            logStations(plan.allStationsDone(currentConfirmed: false), now: now)
-        default:
-            break
-        }
         // Ogni volta che la rotazione avanza, la si mette al sicuro: un'app che vive nella barra
         // dei menu viene chiusa senza cerimonie, e non c'è un "salva prima di uscire".
         switch event {
@@ -176,13 +170,20 @@ final class AppModel: ObservableObject {
             escapeText = ""
             currentPhrase = drawPhrase(launch: false)
             if !headless { blocker.show(plan: plan) }
+        case .exerciseConfirmed:
+            // La riga nel registro l'ha già scritta il mapping qui sopra; qui non c'è niente da
+            // mostrare — il conto in alto nella schermata di blocco si aggiorna da solo, perché
+            // legge il riassunto appena ricalcolato.
+            break
         case .breakCompleted(let plan):
             hud.hide()
             blocker.hide()
             // Il momento che merita di più i complimenti è questo: la pausa l'hai fatta davvero,
             // sotto il blocco, non l'hai dichiarata.
+            // Il totale è già comprensivo di questo esercizio: la riga delle ripetizioni è stata
+            // scritta alla conferma, non adesso. Sommarlo di nuovo lo mostrerebbe doppio.
             announce(title: Praise.line(at: plan.index, hard: plan.exercise.kind.isVigorous),
-                     subtitle: "\(plan.exercise.label) · oggi \(summary.totalReps + plan.exercise.reps) ripetizioni",
+                     subtitle: "\(plan.exercise.label) · oggi \(summary.totalReps) ripetizioni",
                      silent: true)
         case .breakSkipped:
             hud.hide()
@@ -196,16 +197,6 @@ final class AppModel: ObservableObject {
         case .naturalBreak:
             break
         }
-    }
-
-    private func logStations(_ stations: [Exercise], now: Date) {
-        guard !stations.isEmpty else { return }
-        for station in stations {
-            ledger.append(LedgerEntry(timestamp: now, type: .circuitStation,
-                                      exercise: station.kind, reps: station.reps,
-                                      reason: "stazione"))
-        }
-        refreshSummary()
     }
 
     /// Chiudere il coperchio non è lavoro. `NSWorkspace` lo dice prima e meglio del salto fra
@@ -233,6 +224,18 @@ final class AppModel: ObservableObject {
 
     func refreshSummary() {
         summary = ledger.summary()
+    }
+
+    /// Da chiamare **nel momento in cui apri** il recap o il menu.
+    ///
+    /// Il tempo attivo si accumula in memoria e finisce nel registro a blocchi di cinque minuti:
+    /// scriverne uno al secondo vorrebbe dire 3.600 righe l'ora su un file che va riletto per
+    /// intero a ogni ridisegno. Il prezzo era che il numero «davanti al Mac» poteva essere
+    /// vecchio di cinque minuti proprio mentre lo guardavi. Qui si paga la scrittura una volta,
+    /// quando serve: aprire una finestra è raro, e in quel momento il numero dev'essere esatto.
+    func flushForDisplay() {
+        flushActiveTime()
+        refreshSummary()
     }
 
     /// Mostra il pannellino di stato. Serve al secondo avvio: cercare Otium quando è già viva

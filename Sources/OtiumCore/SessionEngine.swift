@@ -14,10 +14,6 @@ public struct BreakPlan: Equatable, Sendable {
     public var circuitActive: Bool = false
     /// Quale stazione, 0-based.
     public var stationIndex: Int = 0
-    /// Stazioni già confermate e messe al sicuro: ci finiscono quelle fatte prima di uscire dal
-    /// circuito. Viaggiano **dentro il piano** e non nel motore perché il motore si azzera quando
-    /// la pausa finisce, e il registro va scritto dopo — con il piano che l'evento porta con sé.
-    public var bankedStations: [Exercise] = []
 
     public init(index: Int, kind: BreakKind, duration: Double, exercise: Exercise,
                 circuit: [Exercise] = []) {
@@ -26,20 +22,6 @@ public struct BreakPlan: Equatable, Sendable {
         self.duration = duration
         self.exercise = exercise
         self.circuit = circuit
-    }
-
-    /// Le stazioni del circuito confermate finora. La stazione in corso conta solo se l'hai
-    /// davvero confermata.
-    public func stationsDone(currentConfirmed: Bool) -> [Exercise] {
-        guard circuitActive, !circuit.isEmpty else { return [] }
-        let last = currentConfirmed ? stationIndex : stationIndex - 1
-        guard last >= 0 else { return [] }
-        return Array(circuit.prefix(min(last + 1, circuit.count)))
-    }
-
-    /// Tutto il lavoro del circuito in questa pausa, da scrivere nel registro.
-    public func allStationsDone(currentConfirmed: Bool) -> [Exercise] {
-        bankedStations + stationsDone(currentConfirmed: currentConfirmed)
     }
 }
 
@@ -94,6 +76,10 @@ public struct EngineSnapshot: Codable, Equatable, Sendable {
 public enum EngineEvent: Equatable, Sendable {
     case warningStarted(BreakPlan)
     case breakStarted(BreakPlan)
+    /// L'esercizio è stato confermato: **le ripetizioni sono fatte adesso**, e adesso vanno
+    /// contate. Prima finivano nel registro solo alla chiusura della pausa — cioè fino a cinque
+    /// minuti dopo averle eseguite — e il recap aperto nel frattempo non le vedeva.
+    case exerciseConfirmed(Exercise)
     case breakCompleted(BreakPlan)
     case breakSkipped(BreakPlan, SkipReason)
     case naturalBreak(seconds: Double, creditedLong: Bool)
@@ -401,16 +387,20 @@ public struct SessionEngine {
         guard phase == .breaking, var current = plan else { return [] }
         guard timer - exerciseBaseline >= current.exercise.minimumSeconds else { return [] }
 
+        // Le ripetizioni si contano **qui**, dove sono state fatte. Che poi la pausa duri altri
+        // quattro minuti, o che tu esca d'emergenza, non toglie nulla al lavoro già svolto.
+        let done = current.exercise
+
         if current.circuitActive, current.stationIndex + 1 < current.circuit.count {
             current.stationIndex += 1
             current.exercise = current.circuit[current.stationIndex]
             plan = current
             exerciseBaseline = timer
             exerciseDone = false
-            return []
+            return [.exerciseConfirmed(done)]
         }
         exerciseDone = true
-        return []
+        return [.exerciseConfirmed(done)]
     }
 
     /// Il circuito è proponibile adesso? Solo dentro una pausa piena che ne ha uno pronto e non
@@ -436,12 +426,12 @@ public struct SessionEngine {
         return true
     }
 
-    /// «Basta così, torno all'esercizio singolo.» Le stazioni già confermate restano fatte —
-    /// sono lavoro davvero svolto — ma la pausa torna a chiudersi con un esercizio solo.
+    /// «Basta così, torno all'esercizio singolo.» Le stazioni già confermate restano fatte — sono
+    /// già nel registro, scritte nel momento in cui le hai confermate — e la pausa torna a
+    /// chiudersi con un esercizio solo.
     @discardableResult
     public mutating func leaveCircuit() -> Bool {
         guard phase == .breaking, var current = plan, current.circuitActive else { return false }
-        current.bankedStations += current.stationsDone(currentConfirmed: false)
         current.circuitActive = false
         current.stationIndex = 0
         current.exercise = singleExercise ?? current.exercise

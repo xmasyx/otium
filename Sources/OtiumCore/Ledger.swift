@@ -11,9 +11,14 @@ public enum EntryType: String, Codable, Equatable, Sendable {
     /// Una pausa segnata a mano e poi tolta. Il registro è append-only: non si cancella una
     /// riga, se ne scrive una che la annulla — così la storia resta leggibile com'è andata.
     case undo
-    /// Una stazione del microcircuito. Porta le sue ripetizioni ma **non** conta come pausa:
-    /// quattro stazioni sono una pausa sola, e contarle come quattro gonfierebbe il numero che
-    /// serve a decidere se la cadenza regge.
+    /// **Ripetizioni confermate.** Porta le sue ripetizioni e **non** conta come pausa: quattro
+    /// stazioni di circuito sono una pausa sola, e un esercizio confermato a metà pausa non è
+    /// una pausa finita. Si scrive nell'istante in cui premi «Fatto», non alla chiusura della
+    /// pausa: il recap aperto nel frattempo deve già vederle.
+    case exerciseDone
+    /// Come sopra, ma è il nome vecchio: le stazioni di circuito scritte prima del 2026-07-27
+    /// hanno questo tipo. Resta solo per non perdere quelle righe in lettura — il registro è
+    /// append-only, e una riga che non si decodifica è una riga persa.
     case circuitStation
 }
 
@@ -141,7 +146,7 @@ public final class Ledger: @unchecked Sendable {
                 s.postponed += 1
             case .deferred:
                 s.deferred += 1
-            case .circuitStation:
+            case .exerciseDone, .circuitStation:
                 if let kind = e.exercise, let reps = e.reps {
                     s.repsByExercise[kind, default: 0] += reps
                     if kind.isVigorous { s.vigorousBouts += 1 }
@@ -159,16 +164,19 @@ public final class Ledger: @unchecked Sendable {
         switch event {
         case .warningStarted, .breakStarted:
             return nil
+        case .exerciseConfirmed(let exercise):
+            return LedgerEntry(timestamp: now, type: .exerciseDone,
+                               exercise: exercise.kind, reps: exercise.reps)
         case .breakCompleted(let plan):
-            // Con il circuito le ripetizioni stanno nelle righe delle stazioni: qui si scrive
-            // la pausa **senza** esercizio, o le ripetizioni della prima stazione finirebbero
-            // contate due volte.
-            let isCircuit = plan.circuitActive || !plan.bankedStations.isEmpty
+            // **Senza ripetizioni**: quelle hanno già la loro riga, scritta quando le hai
+            // confermate. Qui resta il nome dell'esercizio, che serve alla cronologia a dire
+            // *cosa* era quella pausa; il numero no, o finirebbe contato due volte.
+            // Le righe scritte prima del 2026-07-27 hanno ancora `reps` qui, e continuano a
+            // contare: il registro non si riscrive.
             return LedgerEntry(
                 timestamp: now, type: .completed, breakKind: plan.kind,
-                exercise: isCircuit ? nil : plan.exercise.kind,
-                reps: isCircuit ? nil : plan.exercise.reps,
-                reason: isCircuit ? "circuito" : nil
+                exercise: plan.exercise.kind, reps: nil,
+                reason: plan.circuitActive ? "circuito" : nil
             )
         case .breakSkipped(let plan, let reason):
             return LedgerEntry(

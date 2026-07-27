@@ -40,6 +40,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         runHudDemoIfRequested()
         renderSnapshotIfRequested()
         runWindowProbeIfRequested()
+        runConfirmProbeIfRequested()
+        runFlushProbeIfRequested()
 
         // Il secondo avvio non apre niente di nuovo: chiede a questa istanza di farsi vedere.
         // Su un'app della barra dei menu "farsi vedere" significa dire come sta, altrimenti
@@ -144,6 +146,84 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         let killswitch = Timer(timeInterval: seconds + 2, repeats: false) { _ in NSApp.terminate(nil) }
         RunLoop.main.add(killswitch, forMode: .common)
+    }
+
+    /// `--confirm-probe` — le ripetizioni finiscono nel registro **alla conferma**?
+    ///
+    /// I test coprono il motore e la traduzione in righe di registro; questa sonda copre il pezzo
+    /// che `swift test` non può toccare: il collante dell'app, cioè che l'evento arrivi davvero
+    /// alla penna. Gira **senza coprire lo schermo** (modello headless) e **su un registro usa e
+    /// getta**, o proverebbe una cosa vera sporcando i dati veri con ripetizioni mai fatte.
+    private func runConfirmProbeIfRequested() {
+        guard CommandLine.arguments.contains("--confirm-probe") else { return }
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("otium-sonda-\(UUID().uuidString).jsonl")
+        var s = Settings(exercisePool: [.calfRaise], vigorousPool: [.jumpingJack])
+        s.startDate = Date()   // rampa al minimo: l'attesa della sonda resta corta
+        s.cadence.longEveryNBreaks = 99
+
+        let probe = AppModel(settings: s, ledger: Ledger(url: url))
+        probe.headless = true
+        // Durante la sonda nessuno tocca la tastiera: senza questo il motore leggerebbe
+        // l'inattività vera e chiuderebbe la pausa come «naturale» prima della conferma.
+        probe.idleOverride = 0
+        probe.start()
+        probe.forceBreakNow()
+
+        guard let plan = probe.plan else { print("nessuna pausa"); NSApp.terminate(nil); return }
+        let attesa = plan.exercise.minimumSeconds + 2
+        print("esercizio: \(plan.exercise.label) — tempo minimo \(Int(plan.exercise.minimumSeconds)) s")
+        print("righe nel registro prima della conferma: \(probe.ledger.entries().count)")
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + attesa) {
+            probe.markExerciseDone()
+            let righe = probe.ledger.entries()
+            print("righe dopo la conferma: \(righe.count)")
+            for r in righe {
+                print("  \(r.type.rawValue) · \(r.exercise?.rawValue ?? "—") · \(r.reps.map(String.init) ?? "—")")
+            }
+            let ok = righe.contains { $0.type == .exerciseDone && $0.reps == plan.exercise.reps }
+            let pausaAncoraAperta = probe.phase == .breaking
+            print("pausa ancora aperta: \(pausaAncoraAperta ? "sì" : "no")")
+            print(ok && pausaAncoraAperta
+                  ? "RISULTATO: contate alla conferma, a pausa ancora aperta"
+                  : "RISULTATO: NON contate alla conferma")
+            try? FileManager.default.removeItem(at: url)
+            NSApp.terminate(nil)
+        }
+    }
+
+    /// `--flush-probe` — aprire il recap scrive davvero il tempo non ancora registrato?
+    ///
+    /// Deterministica di proposito: con inattività finta a zero il modello accumula secondi veri,
+    /// e la sonda confronta il registro prima e dopo `flushForDisplay()`. Sull'app vera la stessa
+    /// prova sarebbe ambigua — se in quel momento non stai toccando il Mac non c'è niente da
+    /// scrivere, e «nessuna riga nuova» significherebbe insieme «funziona» e «non funziona».
+    private func runFlushProbeIfRequested() {
+        guard CommandLine.arguments.contains("--flush-probe") else { return }
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("otium-flush-\(UUID().uuidString).jsonl")
+        let probe = AppModel(settings: Settings(), ledger: Ledger(url: url))
+        probe.headless = true
+        probe.idleOverride = 0
+        probe.start()
+        print("righe prima: \(probe.ledger.entries().count) — accumulo 4 secondi di lavoro")
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+            let prima = probe.ledger.entries().count
+            probe.flushForDisplay()
+            let righe = probe.ledger.entries()
+            let scritte = righe.filter { $0.type == .active }
+            print("righe prima dello svuotamento: \(prima)")
+            print("righe dopo: \(righe.count)")
+            for r in scritte { print(String(format: "  active · %.0f s", r.seconds ?? 0)) }
+            let ok = scritte.count == 1 && (scritte.first?.seconds ?? 0) >= 3 && (scritte.first?.seconds ?? 0) < 300
+            print(ok ? "RISULTATO: l'apertura scrive il tempo parziale, senza aspettare i 5 minuti"
+                     : "RISULTATO: l'apertura NON scrive niente")
+            try? FileManager.default.removeItem(at: url)
+            NSApp.terminate(nil)
+        }
     }
 
     /// `--window-probe=<superficie>` — costruisce una finestra e **misura** se ci sta nello schermo.
@@ -261,7 +341,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func menuWillOpen(_ menu: NSMenu) {
-        model.refreshSummary()
+        model.flushForDisplay()
         if let item = menu.items.first(where: { $0.title == "Sospendi" || $0.title == "Riprendi" }) {
             item.title = model.phase == .paused ? "Riprendi" : "Sospendi"
         }
@@ -303,6 +383,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func undoLong() { model.undoDeclaredBreak(kind: .long); updateStatusTitle() }
 
     @objc private func showStats() {
+        // Il tempo attivo non ancora scritto va nel registro **adesso**: la finestra lo legge da
+        // lì, e deve trovarci anche l'ultimo minuto.
+        model.flushForDisplay()
         if statsWindow == nil {
             let view = NSHostingView(rootView: StatsView(model: model))
             view.frame = NSRect(x: 0, y: 0, width: 620, height: 680)

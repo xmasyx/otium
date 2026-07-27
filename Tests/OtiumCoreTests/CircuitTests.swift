@@ -98,18 +98,20 @@ final class CircuitTests: XCTestCase {
         XCTAssertTrue(engine.exerciseDone, "finito il giro, l'esercizio è fatto")
     }
 
-    /// Uscire a metà è ammesso, e quello che hai fatto resta fatto.
+    /// Uscire a metà è ammesso, e quello che hai fatto resta fatto: la stazione confermata è già
+    /// nel registro, scritta al momento della conferma.
     func testLeavingTheCircuitKeepsTheStationsAlreadyDone() {
         var engine = engineInLongBreak()
         let single = engine.plan?.exercise
         engine.startCircuit()
-        advanceThroughStation(&engine)          // prima stazione confermata
+        let prima = engine.plan!.circuit[0]
+        let eventi = advanceThroughStation(&engine)          // prima stazione confermata
+        XCTAssertEqual(eventi, [.exerciseConfirmed(prima)], "la stazione fatta va contata subito")
         XCTAssertTrue(engine.leaveCircuit())
 
         guard let plan = engine.plan else { return XCTFail() }
         XCTAssertFalse(plan.circuitActive)
         XCTAssertEqual(plan.exercise, single, "si torna all'esercizio che toccava")
-        XCTAssertEqual(plan.bankedStations.count, 1, "la stazione fatta non si perde")
     }
 
     /// Le ripetizioni del circuito finiscono nel registro **una volta sola**, e la pausa resta
@@ -118,23 +120,22 @@ final class CircuitTests: XCTestCase {
         var engine = engineInLongBreak()
         engine.startCircuit()
         let stations = engine.plan!.circuit
-        for _ in 0..<stations.count { advanceThroughStation(&engine) }
-        advance(&engine, seconds: engine.plan!.duration + 5)
 
-        guard let plan = engine.plan else { return XCTFail("la pausa è sparita") }
-        let events = engine.returnToWork()
-        guard let entry = events.compactMap({ Ledger.entry(for: $0, now: Date()) }).first else {
-            return XCTFail("nessuna riga di registro")
+        var righe: [LedgerEntry] = []
+        for _ in 0..<stations.count {
+            righe += advanceThroughStation(&engine).compactMap { Ledger.entry(for: $0, now: Date()) }
         }
+        XCTAssertEqual(righe.count, stations.count, "una riga per stazione, alla conferma")
+        XCTAssertTrue(righe.allSatisfy { $0.type == .exerciseDone })
+
+        advance(&engine, seconds: engine.plan!.duration + 5)
+        let chiusura = engine.returnToWork().compactMap { Ledger.entry(for: $0, now: Date()) }
+        guard let entry = chiusura.first else { return XCTFail("nessuna riga di chiusura") }
         XCTAssertEqual(entry.type, .completed)
-        XCTAssertNil(entry.exercise, "con il circuito le ripetizioni stanno nelle righe delle stazioni")
-        XCTAssertNil(entry.reps)
+        XCTAssertNil(entry.reps, "le ripetizioni hanno già la loro riga: qui sarebbero doppie")
         XCTAssertEqual(entry.reason, "circuito")
 
-        let rows = plan.allStationsDone(currentConfirmed: true).map {
-            LedgerEntry(timestamp: Date(), type: .circuitStation, exercise: $0.kind, reps: $0.reps)
-        }
-        let summary = Ledger.summarize([entry] + rows)
+        let summary = Ledger.summarize(righe + [entry])
         XCTAssertEqual(summary.completed, 1, "una pausa, non quattro")
         XCTAssertEqual(summary.totalReps, stations.reduce(0) { $0 + $1.reps })
     }
@@ -147,6 +148,80 @@ final class CircuitTests: XCTestCase {
         guard let alternative = engine.variants(now: Date()).first else { return XCTFail() }
         XCTAssertTrue(engine.swapExercise(to: alternative.kind, now: Date()))
         XCTAssertEqual(engine.plan?.circuit[0].kind, alternative.kind)
+    }
+
+    // MARK: - Quando si contano le ripetizioni
+
+    /// Segnalato il 2026-07-27: il recap non vedeva le ripetizioni finché la pausa non era
+    /// chiusa — fino a cinque minuti dopo averle fatte. Ora si contano alla **conferma**.
+    func testRepsAreCountedWhenTheExerciseIsConfirmedNotWhenTheBreakCloses() {
+        var engine = engineInLongBreak()
+        let esercizio = engine.plan!.exercise
+
+        // Prima del tempo minimo, «Fatto» non fa niente: nessuna riga.
+        XCTAssertEqual(engine.markExerciseDone(), [])
+
+        advance(&engine, seconds: esercizio.minimumSeconds + 1)
+        let eventi = engine.markExerciseDone()
+        XCTAssertEqual(eventi, [.exerciseConfirmed(esercizio)])
+
+        guard let riga = eventi.compactMap({ Ledger.entry(for: $0, now: Date()) }).first else {
+            return XCTFail("la conferma non ha prodotto una riga di registro")
+        }
+        XCTAssertEqual(riga.type, .exerciseDone)
+        XCTAssertEqual(riga.exercise, esercizio.kind)
+        XCTAssertEqual(riga.reps, esercizio.reps)
+        XCTAssertEqual(Ledger.summarize([riga]).totalReps, esercizio.reps,
+                       "il recap deve poterle contare già adesso")
+        XCTAssertEqual(Ledger.summarize([riga]).completed, 0,
+                       "confermare un esercizio non è aver finito la pausa")
+    }
+
+    /// L'altra metà della stessa regola: alla chiusura le ripetizioni **non** si contano di
+    /// nuovo. Senza questo, ogni pausa varrebbe il doppio.
+    func testClosingTheBreakDoesNotCountTheRepsASecondTime() {
+        var engine = engineInLongBreak()
+        let esercizio = engine.plan!.exercise
+        advance(&engine, seconds: esercizio.minimumSeconds + 1)
+        let conferma = engine.markExerciseDone().compactMap { Ledger.entry(for: $0, now: Date()) }
+        advance(&engine, seconds: engine.plan!.duration + 5)
+        let chiusura = engine.returnToWork().compactMap { Ledger.entry(for: $0, now: Date()) }
+
+        XCTAssertEqual(chiusura.first?.type, .completed)
+        XCTAssertNil(chiusura.first?.reps)
+        XCTAssertEqual(chiusura.first?.exercise, esercizio.kind,
+                       "il nome resta: la cronologia deve dire cos'era quella pausa")
+
+        let summary = Ledger.summarize(conferma + chiusura)
+        XCTAssertEqual(summary.totalReps, esercizio.reps, "contate una volta sola")
+        XCTAssertEqual(summary.completed, 1)
+    }
+
+    /// Se esci d'emergenza dopo aver fatto l'esercizio, quelle ripetizioni restano tue: sono
+    /// state eseguite. La pausa risulta saltata, il lavoro no.
+    func testConfirmedRepsSurviveAnEmergencyExit() {
+        var engine = engineInLongBreak()
+        let esercizio = engine.plan!.exercise
+        advance(&engine, seconds: esercizio.minimumSeconds + 1)
+        let conferma = engine.markExerciseDone().compactMap { Ledger.entry(for: $0, now: Date()) }
+        let uscita = engine.emergencyExit().compactMap { Ledger.entry(for: $0, now: Date()) }
+
+        let summary = Ledger.summarize(conferma + uscita)
+        XCTAssertEqual(summary.totalReps, esercizio.reps)
+        XCTAssertEqual(summary.skipped, 1)
+        XCTAssertEqual(summary.completed, 0)
+    }
+
+    /// Il registro è append-only: le righe scritte prima di questa regola portano le ripetizioni
+    /// sulla riga della pausa, e devono continuare a contare.
+    func testOldRowsWithRepsOnTheCompletedLineStillCount() {
+        let vecchia = LedgerEntry(timestamp: Date(), type: .completed, breakKind: .micro,
+                                  exercise: .squat, reps: 15)
+        let vecchiaStazione = LedgerEntry(timestamp: Date(), type: .circuitStation,
+                                          exercise: .burpee, reps: 4)
+        let summary = Ledger.summarize([vecchia, vecchiaStazione])
+        XCTAssertEqual(summary.totalReps, 19, "la storia non si riscrive")
+        XCTAssertEqual(summary.completed, 1)
     }
 
     // MARK: - Esercizi a tempo
@@ -248,10 +323,11 @@ final class CircuitTests: XCTestCase {
     // MARK: - Attrezzi da banco
 
     /// Porta la stazione in corso fino alla conferma, passando il tempo minimo.
-    private func advanceThroughStation(_ engine: inout SessionEngine) {
+    @discardableResult
+    private func advanceThroughStation(_ engine: inout SessionEngine) -> [EngineEvent] {
         let needed = engine.plan?.exercise.minimumSeconds ?? 0
         advance(&engine, seconds: needed + 1)
-        engine.markExerciseDone()
+        return engine.markExerciseDone()
     }
 
     private func advance(_ engine: inout SessionEngine, seconds: Double, step: Double = 1) {

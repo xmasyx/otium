@@ -832,13 +832,20 @@ final class ReportTests: XCTestCase {
     }
 
     /// La cronologia minuto per minuto non serviva; sapere in che ora la giornata si rompe sì.
+    ///
+    /// **Righe allo stesso istante, e l'ora presa da quell'istante.** La prima versione le metteva
+    /// «uno e due minuti fa» e poi le cercava nell'ora *corrente*: nei primi due minuti di ogni ora
+    /// finivano in quella precedente e il test diventava rosso da solo. Scoperto alle 20:00:21 del
+    /// 2026-07-27, cioè ventun secondi dentro la finestra in cui falliva. Un test che dipende da
+    /// che ore sono non misura il codice: misura l'orologio.
     func testHourlyBreakdownSeparatesDoneFromMissed() {
-        let cal = Calendar.current
-        let now = Date()
-        let hour = cal.component(.hour, from: now)
+        let istante = Date()
+        let hour = Calendar.current.component(.hour, from: istante)
         let rows = [
-            e(1, .completed, exercise: .squat, reps: 8),
-            e(2, .skipped, reason: SkipReason.emergency.rawValue),
+            LedgerEntry(timestamp: istante, type: .completed, breakKind: .micro,
+                        exercise: .squat, reps: 8),
+            LedgerEntry(timestamp: istante, type: .skipped, breakKind: .micro,
+                        reason: SkipReason.emergency.rawValue),
         ]
         let byHour = Stats.compute(entries: rows, period: .day).byHour
         let slot = byHour.first { $0.hour == hour }
