@@ -88,7 +88,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             size = NSSize(width: 420, height: 330)
             host = NSHostingView(rootView: DeclareBreakView(model: model, onDone: {}).frame(width: size.width, height: size.height))
         case "seated":
-            size = NSSize(width: 420, height: 230)
+            size = NSSize(width: 460, height: 420)
             host = NSHostingView(rootView: DeclareSeatedView(model: model, onDone: {}).frame(width: size.width, height: size.height))
         case "stats":
             size = NSSize(width: 620, height: 1400)

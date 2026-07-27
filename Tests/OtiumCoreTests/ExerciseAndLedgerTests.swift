@@ -526,13 +526,20 @@ final class ResumeTests: XCTestCase {
         XCTAssertEqual(engine.secondsUntilNextBreak, 0, accuracy: 1, "mezz'ora seduto: la pausa è dovuta")
     }
 
-    /// Dichiarare meno di quanto l'app ha già misurato non toglie tempo: il misurato è vero.
-    func testDeclaringLessThanMeasuredDoesNotShrinkTheCounter() {
+    /// **Contratto cambiato il 2026-07-27.** Prima dichiarare meno del misurato non toglieva
+    /// tempo — sembrava prudente, e invece rendeva impossibile correggere un errore all'insù:
+    /// se avevi dichiarato tre ore per sbaglio, restavano lì per sempre. Ora «in tutto» vuol
+    /// dire *esattamente*, in entrambe le direzioni; «in più» è l'altra frase, e somma.
+    func testTotalModeCanCorrectDownwardsWhileAddModeSums() {
         var engine = makeEngine()
         for _ in 0..<100 { engine.tick(elapsed: 10, idle: 0, now: Date()) }
         let measured = engine.clock.activeSeconds
-        XCTAssertEqual(engine.declareTimeAlreadySeated(60), measured, accuracy: 1)
-        XCTAssertEqual(engine.clock.activeSeconds, measured, accuracy: 1)
+        XCTAssertGreaterThan(measured, 900)
+
+        XCTAssertEqual(engine.declareTimeAlreadySeated(60, mode: .total), 60, accuracy: 1,
+                       "«in tutto 1 minuto» significa un minuto, non il massimo")
+        XCTAssertEqual(engine.declareTimeAlreadySeated(600, mode: .add), 660, accuracy: 1,
+                       "«in più 10 minuti» si somma a quello che c'è")
     }
 
     /// La citazione della pausa non è quella dell'avvio, e cambia a ogni pausa.
@@ -851,5 +858,46 @@ final class ReportTests: XCTestCase {
         XCTAssertNotEqual(Praise.line(at: 3, hard: true), Praise.line(at: 3, hard: false),
                           "la pausa dura ha parole sue")
         XCTAssertNoThrow(Praise.line(at: -5))
+    }
+}
+
+/// I due modi di dichiarare il tempo già seduto — e il fatto che sono due numeri diversi.
+final class SeatedTimeTests: XCTestCase {
+
+    private func engineWith(_ seconds: Double) -> SessionEngine {
+        var s = Settings(); s.startDate = Date()
+        var e = SessionEngine(settings: s, maxCredibleElapsed: 120)
+        e.declareTimeAlreadySeated(seconds, mode: .total)
+        return e
+    }
+
+    /// «In tutto sono 100 minuti»: il conto diventa esattamente quello, anche se prima era di più.
+    /// La prima versione prendeva il massimo, quindi un errore all'insù non si poteva correggere.
+    func testTotalModeSetsTheCounterExactlyEvenDownwards() {
+        var engine = engineWith(180 * 60)
+        XCTAssertEqual(engine.declareTimeAlreadySeated(100 * 60, mode: .total), 6000, accuracy: 1)
+        XCTAssertEqual(engine.clock.activeSeconds, 6000, accuracy: 1, "si può correggere all'ingiù")
+    }
+
+    func testAddModeSumsInsteadOfReplacing() {
+        var engine = engineWith(20 * 60)
+        XCTAssertEqual(engine.declareTimeAlreadySeated(30 * 60, mode: .add), 3000, accuracy: 1)
+    }
+
+    func testDeclaringZeroTotalResetsTheCounter() {
+        var engine = engineWith(45 * 60)
+        XCTAssertEqual(engine.declareTimeAlreadySeated(0, mode: .total), 0, accuracy: 0.001)
+    }
+
+    /// Il totale del giorno è una **somma di righe**: correggerlo all'ingiù significa scriverne
+    /// una negativa, non riscrivere il registro.
+    func testTheDailyTotalIsCorrectedWithASignedRow() {
+        let now = Date()
+        let rows = [
+            LedgerEntry(timestamp: now, type: .active, seconds: 10800),           // 3 ore
+            LedgerEntry(timestamp: now, type: .active, seconds: -3600, reason: "correzione"),
+        ]
+        let s = Stats.compute(entries: rows, period: .day)
+        XCTAssertEqual(s.activeSeconds, 7200, accuracy: 1, "tre ore meno una: due")
     }
 }

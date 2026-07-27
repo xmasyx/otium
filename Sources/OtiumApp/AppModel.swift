@@ -233,19 +233,40 @@ final class AppModel: ObservableObject {
 
     /// Dichiara di essere già al computer da un po'. Finisce anche nel registro: è tempo
     /// davanti allo schermo, e il totale del giorno deve dirlo.
-    func declareTimeAlreadySeated(minutes: Int) {
-        let seconds = Double(max(0, minutes)) * 60
+    func declareTimeAlreadySeated(minutes: Int, mode: SessionEngine.SeatedMode = .total) {
         let before = engine.clock.activeSeconds
-        let after = engine.declareTimeAlreadySeated(seconds)
-        let added = max(0, after - before)
-        if added > 0 {
+        let after = engine.declareTimeAlreadySeated(Double(max(0, minutes)) * 60, mode: mode)
+        // Nel registro va **solo la differenza**, e con segno: il totale di oggi davanti al Mac
+        // è una somma di righe, quindi correggere all'ingiù significa scriverne una negativa.
+        let delta = after - before
+        if abs(delta) >= 1 {
             ledger.append(LedgerEntry(timestamp: Date(), type: .active,
-                                      seconds: added, reason: "dichiarato"))
+                                      seconds: delta, reason: "dichiarato"))
             refreshSummary()
         }
         RotationStore.save(engine.snapshot)
-        announce(title: "Contati \(minutes) minuti già seduto",
+        announce(title: mode == .total ? "Contati \(minutes) minuti in tutto" : "Aggiunti \(minutes) minuti",
                  subtitle: "prossima pausa fra \(minutesToNextBreak) min")
+        objectWillChange.send()
+    }
+
+    /// Il totale di oggi davanti al Mac, e il modo di **correggerlo** quando è sbagliato.
+    ///
+    /// È un numero diverso dal conto per la prossima pausa, e confonderli è esattamente ciò che
+    /// è successo: il conto prende il massimo, il totale del giorno somma. Se il totale dice tre
+    /// ore e tu ne hai fatte due, qui si rimette a posto — con una riga di correzione, perché il
+    /// registro non si riscrive.
+    var todayActiveMinutes: Int { Int(summary.activeSeconds / 60) }
+
+    func correctTodayActiveTime(toMinutes minutes: Int) {
+        let target = Double(max(0, minutes)) * 60
+        let delta = target - summary.activeSeconds
+        guard abs(delta) >= 30 else { return }
+        ledger.append(LedgerEntry(timestamp: Date(), type: .active,
+                                  seconds: delta, reason: "correzione"))
+        refreshSummary()
+        announce(title: "Totale di oggi corretto",
+                 subtitle: "\(minutes) minuti davanti al Mac")
         objectWillChange.send()
     }
 

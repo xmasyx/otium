@@ -70,43 +70,77 @@ struct DeclareBreakView: View {
     }
 }
 
-/// «Sono già al computer da…», con la possibilità di scrivere il numero invece di sceglierlo.
+/// «Sono già al computer da…», e il totale di oggi quando è sbagliato.
+///
+/// Due sezioni perché sono **due numeri diversi**, ed è la confusione che è costata un errore
+/// vero: il *conto per la prossima pausa* prende il valore che dichiari; il *totale di oggi
+/// davanti al Mac* è una somma di righe del registro. Chiamarli entrambi "tempo al computer" li
+/// faceva sembrare uno solo, e correggerne uno sballava l'altro.
 struct DeclareSeatedView: View {
     @ObservedObject var model: AppModel
     var onDone: () -> Void
 
     @State private var minutes: Int = 30
+    @State private var mode: SessionEngine.SeatedMode = .total
+    @State private var totalMinutes: Int = 0
 
     var body: some View {
         Form {
-            Section("Da quanto sei già al computer") {
+            Section("Il conto per la prossima pausa") {
+                Picker("", selection: $mode) {
+                    Text("in tutto sono").tag(SessionEngine.SeatedMode.total)
+                    Text("aggiungine").tag(SessionEngine.SeatedMode.add)
+                }
+                .pickerStyle(.segmented).labelsHidden()
+
                 HStack {
                     TextField("", value: $minutes, format: .number)
-                        .frame(width: 70)
+                        .frame(width: 74)
                     Text("minuti").foregroundStyle(.secondary)
                     Spacer()
-                    ForEach([15, 30, 45, 60, 90], id: \.self) { m in
+                    ForEach([30, 60, 90, 120, 180], id: \.self) { m in
                         Button("\(m)") { minutes = m }.buttonStyle(.bordered)
                     }
                 }
-                Text("Il contatore sale a questo valore: se sei seduto da un'ora, la pausa è "
-                   + "in ritardo, non fra mezz'ora. Dichiarare meno di quanto l'app ha già "
-                   + "misurato non toglie tempo.")
+                Text(mode == .total
+                     ? "Il conto diventa esattamente questo: se ti sei seduto alle 13 e adesso sono 100 minuti, scrivi 100. Serve anche per abbassarlo, quando hai dichiarato troppo."
+                     : "Questi minuti si sommano a quelli già contati.")
                     .font(.caption).foregroundStyle(.secondary)
-            }
-            Section {
+
                 HStack {
+                    Text("adesso il conto dice \(Int(model.engine.clock.activeSeconds / 60)) min")
+                        .font(.caption).foregroundStyle(.secondary)
                     Spacer()
-                    Button("Annulla") { onDone() }
-                    Button("Conta") {
-                        model.declareTimeAlreadySeated(minutes: minutes)
-                        onDone()
+                    Button("Applica") {
+                        model.declareTimeAlreadySeated(minutes: minutes, mode: mode)
                     }
                     .keyboardShortcut(.defaultAction)
                 }
             }
+
+            Section("Il totale di oggi davanti al Mac") {
+                HStack {
+                    TextField("", value: $totalMinutes, format: .number)
+                        .frame(width: 74)
+                    Text("minuti in tutto oggi").foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Correggi") { model.correctTodayActiveTime(toMinutes: totalMinutes) }
+                }
+                Text("È un numero diverso da quello sopra: qui è quanto sei stato al Mac in "
+                   + "tutta la giornata. Correggerlo scrive una riga di rettifica — il registro "
+                   + "non si riscrive mai.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section {
+                HStack {
+                    Spacer()
+                    Button("Chiudi") { onDone() }
+                }
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 420, height: 230)
+        .frame(width: 460, height: 420)
+        .onAppear { totalMinutes = model.todayActiveMinutes }
     }
 }

@@ -492,6 +492,17 @@ Rampa: settimana 1 al 55% delle ripetizioni, +15% a settimana fino al 100% in se
 - [x] **ISC-87** Il progetto è **salvato e ripartibile a freddo**: `RESUME.md` con comandi,
       stato, cosa manca e le sette trappole già pagate; repo git locale con la storia.
 
+- [x] **ISC-88** «Sono già al computer da…» distingue **«in tutto»** da **«in più»**, accetta un
+      numero libero senza tetto, e permette di **abbassare** il conto. — Difetto vero: prima
+      prendeva sempre il massimo, quindi una dichiarazione sbagliata all'insù restava lì per
+      sempre. `testTotalModeCanCorrectDownwardsWhileAddModeSums` — e il vecchio test, che diceva
+      l'opposto, è stato riscritto perché il contratto è cambiato, non ammorbidito.
+- [x] **ISC-89** Il **totale di oggi davanti al Mac** è un numero **diverso** dal conto per la
+      prossima pausa, ed è correggibile. — È la confusione che ha prodotto il «più di tre ore»
+      sbagliato: il conto prende il valore dichiarato, il totale del giorno **somma le righe**.
+      Ora sono due sezioni separate con due spiegazioni, e la correzione scrive una **riga
+      negativa** invece di riscrivere il registro (`testTheDailyTotalIsCorrectedWithASignedRow`).
+
 ### Impacchettamento
 
 - [x] **ISC-25** `Scripts/build-app.sh` produce `Otium.app` avviabile con doppio clic, firmata

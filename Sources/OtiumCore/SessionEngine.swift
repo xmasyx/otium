@@ -483,16 +483,26 @@ public struct SessionEngine {
     /// Un avvio in più: la citazione cambia.
     public mutating func countLaunch() { launchCount += 1 }
 
-    /// «Sono già al computer da mezz'ora, mi sono scordato di aprirti.»
+    /// Come interpretare il tempo che dichiari.
+    public enum SeatedMode: String, CaseIterable, Sendable {
+        /// «Sono seduto da 100 minuti in tutto»: il conto diventa esattamente quello.
+        case total
+        /// «Aggiungine altri 20 a quello che hai già»: si somma.
+        case add
+
+        public var title: String { self == .total ? "in tutto" : "in più" }
+    }
+
+    /// «Sono già al computer da un'ora, mi sono scordato di aprirti.»
     ///
-    /// Il conto sale a quel valore invece di ripartire da zero: se ti sei seduto alle 9 e apri
-    /// l'app alle 9:40, la prossima pausa è **in ritardo**, non fra mezz'ora. Prende il massimo
-    /// fra dichiarato e già contato — dichiarare meno di quanto l'app ha misurato non toglie
-    /// tempo, perché quello misurato è già vero.
+    /// Due modi, e servono entrambi perché sono due frasi diverse: *«mi sono seduto alle 13, in
+    /// tutto sono 100 minuti»* è un **totale** — e deve poter anche **abbassare** il conto, se
+    /// prima avevi dichiarato troppo. *«aggiungi mezz'ora»* è una **somma**. La prima versione
+    /// prendeva sempre il massimo: non si poteva correggere all'ingiù, e un errore restava lì.
     @discardableResult
-    public mutating func declareTimeAlreadySeated(_ seconds: Double) -> Double {
-        let target = max(0, seconds)
-        guard target > clock.activeSeconds else { return clock.activeSeconds }
+    public mutating func declareTimeAlreadySeated(_ seconds: Double, mode: SeatedMode = .total) -> Double {
+        let value = max(0, seconds)
+        let target = mode == .total ? value : clock.activeSeconds + value
         clock.seed(activeSeconds: target)
         return target
     }
