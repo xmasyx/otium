@@ -110,7 +110,7 @@ Rampa: settimana 1 al 55% delle ripetizioni, +15% a settimana fino al 100% in se
 
 ## Criteria
 
-> **Stato al 2026-07-27, iterazione 4: 41 chiusi su 42.** L'unico aperto resta ISC-28.
+> **Stato al 2026-07-27, iterazione 5: 43 chiusi su 44.** L'unico aperto resta ISC-28.
 >
 > Chiusi 28 su 29 il 2026-07-26. L'unico aperto è ISC-28, che è esperienziale: si chiude usando
 > l'app per qualche giorno, non con un probe.
@@ -584,6 +584,19 @@ guardando l'app funzionare, non leggendo il codice: è la ragione per cui ISC-28
 - [x] **ISC-42** In «Dove è andato il lavoro» i gruppi dicono cosa lavora, non il movimento. —
       «spinta» → **petto** (e **spalle** per il pike push-up, che di petto ne fa poco), «tutto il
       corpo» → **total body**. Guardato: gambe 15 · tricipiti 14 · total body 4 · petto 3.
+
+### Iterazione 5 — due segnalazioni dallo schermo (2026-07-27, sera)
+
+- [x] **ISC-43** In «Dove è andato il lavoro» ogni gruppo si apre e mostra **quali** esercizi e
+      con quante ripetizioni. — «petto 3» non faceva distinguere tre push-up da tre archer, che
+      non sono la stessa giornata. Reso e guardato aperto con `--surface=stats --expanded`:
+      gambe → affondi 11 (5 per lato) e squat 8; petto → archer push-up 3 (1 per lato). Gli
+      esercizi a tempo dicono i secondi, quelli a lati alterni il per lato.
+- [x] **ISC-44** Durante una pausa non compare mai una fonte che dichiara una funzione **assente**.
+      — segnalato con una foto dello schermo: a esercizio finito era comparso «Non promesso: una
+      funzione deliberatamente assente — regola 20-20-20». Vero, ma risponde a una domanda che
+      nessuno fa mentre esegue: la riga sotto il blocco esiste per dire perché ti sto
+      interrompendo. Le due voci restano nella finestra delle fonti. Test su 200 pause di fila.
 
 ## Test Strategy
 

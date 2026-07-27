@@ -341,11 +341,12 @@ struct BreakView: View {
         VStack(spacing: 14) {
             Divider().overlay(Color.white.opacity(0.08)).frame(width: 620)
 
-            // Le due voci che dichiarano i limiti non possono essere introdotte da "Perché":
-            // sarebbero una spiegazione di qualcosa che l'app non fa. Etichetta diversa, o il
-            // testo si legge al contrario di come è stato scritto.
-            Text("\(model.isCurrentStudyADisclaimer ? "Non promesso" : "Perché"): "
-               + "\(model.currentStudy.governs) — \(model.currentStudy.citation), \(String(model.currentStudy.year)).")
+            // Sempre "Perché": qui girano solo le fonti che giustificano qualcosa che sta
+            // succedendo. Le due voci «non promesso» sono uscite dal giro della pausa — nel
+            // mezzo di un esercizio spiegavano una funzione assente — e vivono nella finestra
+            // delle fonti, dove le apri tu.
+            Text("Perché: \(model.currentStudy.governs) — "
+               + "\(model.currentStudy.citation), \(String(model.currentStudy.year)).")
                 .font(.system(size: 12))
                 .foregroundStyle(Palette.dim)
                 .multilineTextAlignment(.center)
@@ -918,6 +919,11 @@ private struct Card<Content: View>: View {
 struct StatsView: View {
     @ObservedObject var model: AppModel
     @State private var period: StatsPeriod = .day
+    /// Solo per `--snapshot --surface=stats --expanded`: un gruppo chiuso in un'immagine ferma
+    /// non mostra cosa c'è dentro, e quello che non si vede non si può dire di aver verificato.
+    /// A schermo i gruppi partono chiusi — la carta deve restare compatta.
+    static var expandGroupsForSnapshot = false
+    @State private var openGroups: Set<String> = []
 
     private var stats: PeriodStats { model.stats(for: period) }
     private var previous: PeriodStats { model.previousStats(for: period) }
@@ -1015,28 +1021,69 @@ struct StatsView: View {
         let groups = stats.repsByMuscleGroup
         if !groups.isEmpty {
             let peak = Double(groups.first?.reps ?? 1)
-            Card(title: "Dove è andato il lavoro", subtitle: "ripetizioni per catena muscolare") {
-                VStack(spacing: 9) {
+            Card(title: "Dove è andato il lavoro",
+                 subtitle: "ripetizioni per catena muscolare — apri un gruppo per vedere quali esercizi") {
+                VStack(spacing: 4) {
                     ForEach(groups, id: \.group) { g in
-                        HStack(spacing: 12) {
-                            Text(g.group).font(.system(size: 12, weight: .medium))
-                                .frame(width: 96, alignment: .leading)
-                            GeometryReader { geo in
-                                ZStack(alignment: .leading) {
-                                    RoundedRectangle(cornerRadius: 4).fill(Color.primary.opacity(0.06))
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(Palette.accentOnLight.opacity(g.group == "total body" ? 1 : 0.55))
-                                        .frame(width: max(6, geo.size.width * Double(g.reps) / max(1, peak)))
+                        // La barra dice **quanto**, il gruppo aperto dice **cosa**: senza, «petto
+                        // 3» non fa distinguere tre push-up normali da tre archer, che non sono
+                        // affatto la stessa giornata.
+                        DisclosureGroup(isExpanded: Binding(
+                            get: { Self.expandGroupsForSnapshot || openGroups.contains(g.group) },
+                            set: { open in
+                                if open { openGroups.insert(g.group) } else { openGroups.remove(g.group) }
+                            }
+                        )) {
+                            VStack(spacing: 5) {
+                                ForEach(g.exercises, id: \.0) { kind, reps in
+                                    HStack(spacing: 8) {
+                                        Text(kind.italianName)
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(.secondary)
+                                        if let nota = detail(kind, reps) {
+                                            Text(nota)
+                                                .font(.system(size: 11))
+                                                .foregroundStyle(.tertiary)
+                                        }
+                                        Spacer()
+                                        Text(kind.isTimed ? "\(reps) s" : "\(reps)")
+                                            .font(.system(size: 12, weight: .medium))
+                                            .monospacedDigit()
+                                    }
                                 }
                             }
-                            .frame(height: 16)
-                            Text("\(g.reps)").font(.system(size: 12, weight: .medium))
-                                .monospacedDigit().frame(width: 34, alignment: .trailing)
+                            .padding(.top, 6)
+                            .padding(.leading, 4)
+                        } label: {
+                            HStack(spacing: 12) {
+                                Text(g.group).font(.system(size: 12, weight: .medium))
+                                    .frame(width: 84, alignment: .leading)
+                                GeometryReader { geo in
+                                    ZStack(alignment: .leading) {
+                                        RoundedRectangle(cornerRadius: 4).fill(Color.primary.opacity(0.06))
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(Palette.accentOnLight.opacity(g.group == "total body" ? 1 : 0.55))
+                                            .frame(width: max(6, geo.size.width * Double(g.reps) / max(1, peak)))
+                                    }
+                                }
+                                .frame(height: 16)
+                                Text("\(g.reps)").font(.system(size: 12, weight: .medium))
+                                    .monospacedDigit().frame(width: 34, alignment: .trailing)
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    /// La riga piccola accanto al nome, quando il numero da solo si legge male: i secondi di una
+    /// tenuta e il conto per lato di un esercizio che alterna. Il numero grande resta il totale,
+    /// così le somme del gruppo tornano.
+    private func detail(_ kind: ExerciseKind, _ reps: Int) -> String? {
+        guard kind.isPerSide else { return nil }
+        let perSide = max(1, reps / 2)
+        return kind.isTimed ? "\(perSide) s per lato" : "\(perSide) per lato"
     }
 
     @ViewBuilder

@@ -168,11 +168,19 @@ public enum Evidence {
     /// Le fonti che dichiarano cosa l'app **non** fa e non promette.
     public static let disclaimers: [Study] = [twentyTwentyTwenty, exerciseAndCognition]
 
-    /// La fonte da mostrare alla pausa numero `breakIndex`. Gira: ogni pausa ne mostra una
-    /// diversa, comprese le due che dichiarano i limiti. Deterministica, così non se ne perde
-    /// nessuna e non se ne ripetono due di fila.
+    /// La fonte da mostrare alla pausa numero `breakIndex`.
+    ///
+    /// **Solo quelle che giustificano qualcosa che sta succedendo.** Le due voci «non promesso»
+    /// finivano nel giro e capitavano addosso a metà pausa: *«Non promesso: una funzione
+    /// deliberatamente assente — Johnson & Rosenfield, regola 20-20-20»*, mentre stai facendo i
+    /// push-up. Sono oneste e stanno in piedi, ma lì rispondono a una domanda che nessuno ha
+    /// fatto: la riga sotto il blocco esiste per dire **perché ti sto interrompendo**, e una
+    /// funzione che non c'è non interrompe nessuno. Restano dove hanno senso, nella finestra
+    /// «Da dove vengono questi numeri», che si apre quando sei tu a volerle leggere.
+    ///
+    /// Deterministica, così non se ne perde nessuna e non se ne ripetono due di fila.
     public static func study(forBreak breakIndex: Int) -> Study {
-        let list = all
+        let list = implemented
         let i = ((breakIndex - 1) % list.count + list.count) % list.count
         return list[i]
     }

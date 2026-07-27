@@ -98,6 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             size = NSSize(width: 460, height: 420)
             host = NSHostingView(rootView: DeclareSeatedView(model: model, onDone: {}).frame(width: size.width, height: size.height))
         case "stats":
+            StatsView.expandGroupsForSnapshot = CommandLine.arguments.contains("--expanded")
             size = NSSize(width: 620, height: 1400)
             host = NSHostingView(rootView: StatsView(model: model).frame(width: size.width, height: size.height))
         case "prefs":

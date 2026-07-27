@@ -381,15 +381,27 @@ final class VariantTests: XCTestCase {
 /// Le fonti ruotano, e le citazioni pure.
 final class RotatingTextTests: XCTestCase {
 
-    /// Ogni pausa mostra una fonte diversa: nove pause, nove testi, poi si ricomincia.
+    /// Ogni pausa mostra una fonte diversa, e il giro si chiude sulle sole fonti che
+    /// giustificano qualcosa che sta accadendo.
     func testTheStudyChangesAtEveryBreak() {
-        let shown = (1...Evidence.all.count).map { Evidence.study(forBreak: $0).id }
-        XCTAssertEqual(Set(shown).count, Evidence.all.count, "nessuna fonte ripetuta nel giro")
+        let shown = (1...Evidence.implemented.count).map { Evidence.study(forBreak: $0).id }
+        XCTAssertEqual(Set(shown).count, Evidence.implemented.count, "nessuna fonte ripetuta nel giro")
         for (a, b) in zip(shown, shown.dropFirst()) {
             XCTAssertNotEqual(a, b, "due pause di fila con lo stesso testo")
         }
         XCTAssertEqual(Evidence.study(forBreak: 1).id,
-                       Evidence.study(forBreak: 1 + Evidence.all.count).id, "il giro si chiude")
+                       Evidence.study(forBreak: 1 + Evidence.implemented.count).id, "il giro si chiude")
+    }
+
+    /// Segnalato guardando lo schermo il 2026-07-27: durante un esercizio era comparso
+    /// «Non promesso: una funzione deliberatamente assente — regola 20-20-20». Vero, ma risponde
+    /// a una domanda che nessuno ha fatto mentre fa i push-up. Fuori dal giro della pausa.
+    func testNoDisclaimerEverAppearsDuringABreak() {
+        for index in 1...200 {
+            let study = Evidence.study(forBreak: index)
+            XCTAssertFalse(Evidence.disclaimers.contains { $0.id == study.id },
+                           "pausa \(index): mostrata una non-promessa (\(study.id))")
+        }
     }
 
     func testStudyRotationSurvivesAbsurdIndexes() {

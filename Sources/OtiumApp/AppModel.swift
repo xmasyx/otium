@@ -490,15 +490,12 @@ final class AppModel: ObservableObject {
 
     /// Lo studio che giustifica quello che sta succedendo adesso. La citazione è il prodotto:
     /// se l'app ti interrompe, deve saperti dire perché, mentre ti interrompe.
-    /// La fonte cambia a ogni pausa: gira su tutte, comprese le due che dichiarano quello che
-    /// l'app **non** promette. Nove pause, nove testi diversi, poi ricomincia.
+    /// La fonte cambia a ogni pausa e gira **solo su quelle che giustificano qualcosa che sta
+    /// succedendo**: sette pause, sette testi, poi ricomincia. Le due voci «non promesso» stanno
+    /// nella finestra delle fonti, dove le apri tu.
     var currentStudy: Study {
         guard let plan else { return Evidence.sittingInterval }
         return Evidence.study(forBreak: plan.index)
     }
 
-    /// La fonte in mostra dichiara un limite invece di giustificare una scelta?
-    var isCurrentStudyADisclaimer: Bool {
-        Evidence.disclaimers.contains { $0.id == currentStudy.id }
-    }
 }
