@@ -10,6 +10,11 @@ final class AppModel: ObservableObject {
     @Published private(set) var summary = DailySummary()
     @Published private(set) var launchAgentState: LaunchAgent.State = .notInstalled
     @Published var escapeText: String = ""
+    /// La frase di questa pausa. **Si estrae una volta sola, quando la pausa comincia**, e resta
+    /// ferma finché dura: calcolarla dentro la vista significherebbe ripescarla a ogni ridisegno,
+    /// e il testo cambierebbe sotto gli occhi mentre lo leggi.
+    @Published private(set) var currentPhrase: Phrase?
+    @Published private(set) var launchPhrase: Phrase?
     /// Cosa è successo all'avvio: conto ripreso o ripartito. Si dice, non si fa in silenzio.
     private(set) var resumeOutcome: SessionEngine.Resume?
 
@@ -27,6 +32,11 @@ final class AppModel: ObservableObject {
 
     private lazy var blocker = BlockerController(model: self)
     private lazy var hud = WarningHUD()
+
+    /// I mazzi delle frasi, che sopravvivono alla chiusura: senza, ogni riavvio ricomincerebbe da
+    /// un mazzo pieno e le prime frasi tornerebbero spesso — proprio il difetto da curare.
+    private var decks = DeckStore.load()
+    private var rng = SystemRandomNumberGenerator()
 
     init(settings: Settings = SettingsStore.load(), ledger: Ledger = Ledger()) {
         var s = settings
@@ -48,6 +58,39 @@ final class AppModel: ObservableObject {
         RotationStore.save(engine.snapshot)
         refreshSummary()
         launchAgentState = LaunchAgent.state()
+        applyAutoStartPreference()
+        launchPhrase = drawPhrase(launch: true)
+    }
+
+    /// Pesca dal mazzo giusto e lo mette subito al sicuro su disco.
+    ///
+    /// Il salvataggio è immediato e non differito: un'app della barra dei menu viene chiusa senza
+    /// cerimonie, e un mazzo salvato «più tardi» rimetterebbe in gioco frasi già uscite.
+    private func drawPhrase(launch: Bool) -> Phrase? {
+        let pool = launch ? PhraseLibrary.launchPool() : PhraseLibrary.breakPool()
+        let phrase = launch
+            ? decks.launch.draw(from: pool, using: &rng)
+            : decks.breaks.draw(from: pool, using: &rng)
+        DeckStore.save(decks)
+        return phrase
+    }
+
+    /// Otium riparte a ogni accensione, senza che tu debba ricordartene.
+    ///
+    /// Si installa da sola quando la preferenza è accesa e l'avvio automatico non c'è o punta a
+    /// un'altra copia — il caso vero è ricostruire l'app in un'altra cartella e ritrovarsi un
+    /// LaunchAgent che punta al nulla. **Non** si reinstalla se l'hai tolto dalle preferenze:
+    /// quel gesto spegne anche la preferenza, e un'app che si rimette da sola ciò che hai appena
+    /// rimosso è un'app che non ti ascolta.
+    private func applyAutoStartPreference() {
+        guard engine.settings.autoStartAtLogin else { return }
+        switch launchAgentState {
+        case .healthy:
+            return
+        case .notInstalled, .danglingTarget, .pointsElsewhere:
+            LaunchAgent.install()
+            launchAgentState = LaunchAgent.state()
+        }
     }
 
     // MARK: - Ciclo
@@ -101,6 +144,18 @@ final class AppModel: ObservableObject {
             ledger.append(entry)
             refreshSummary()
         }
+        // Le stazioni del circuito, una riga ciascuna. Non contano come pause — quattro stazioni
+        // sono una pausa sola — ma le ripetizioni sono vere e devono comparire nel totale.
+        // A pausa chiusa la stazione in corso è confermata; a pausa saltata no: si accredita solo
+        // quello che risulta fatto.
+        switch event {
+        case .breakCompleted(let plan):
+            logStations(plan.allStationsDone(currentConfirmed: true), now: now)
+        case .breakSkipped(let plan, _):
+            logStations(plan.allStationsDone(currentConfirmed: false), now: now)
+        default:
+            break
+        }
         // Ogni volta che la rotazione avanza, la si mette al sicuro: un'app che vive nella barra
         // dei menu viene chiusa senza cerimonie, e non c'è un "salva prima di uscire".
         switch event {
@@ -119,6 +174,7 @@ final class AppModel: ObservableObject {
         case .breakStarted(let plan):
             hud.hide()
             escapeText = ""
+            currentPhrase = drawPhrase(launch: false)
             if !headless { blocker.show(plan: plan) }
         case .breakCompleted(let plan):
             hud.hide()
@@ -139,6 +195,16 @@ final class AppModel: ObservableObject {
         case .naturalBreak:
             break
         }
+    }
+
+    private func logStations(_ stations: [Exercise], now: Date) {
+        guard !stations.isEmpty else { return }
+        for station in stations {
+            ledger.append(LedgerEntry(timestamp: now, type: .circuitStation,
+                                      exercise: station.kind, reps: station.reps,
+                                      reason: "stazione"))
+        }
+        refreshSummary()
     }
 
     /// Chiudere il coperchio non è lavoro. `NSWorkspace` lo dice prima e meglio del salto fra
@@ -181,9 +247,10 @@ final class AppModel: ObservableObject {
         NSSound(named: name)?.play()
     }
 
-    /// La citazione dell'avvio, in alto a destra come tutto il resto.
+    /// La frase dell'avvio, in alto a destra come tutto il resto.
     func showLaunchQuote() {
-        hud.showQuote(engine.launchQuote)
+        guard let launchPhrase else { return }
+        hud.showQuote(launchPhrase)
     }
 
     // MARK: - Azioni
@@ -215,6 +282,29 @@ final class AppModel: ObservableObject {
 
     func swapExercise(to kind: ExerciseKind) {
         engine.swapExercise(to: kind, now: Date())
+        objectWillChange.send()
+    }
+
+    // MARK: - Il microcircuito della pausa piena
+
+    var canStartCircuit: Bool { engine.canStartCircuit }
+    var circuitActive: Bool { engine.plan?.circuitActive ?? false }
+    var circuit: [Exercise] { engine.plan?.circuit ?? [] }
+    var stationIndex: Int { engine.plan?.stationIndex ?? 0 }
+
+    /// Confermare questa stazione porta alla prossima invece di chiudere l'esercizio.
+    var moreStationsAhead: Bool {
+        guard let plan = engine.plan, plan.circuitActive else { return false }
+        return plan.stationIndex + 1 < plan.circuit.count
+    }
+
+    func startCircuit() {
+        engine.startCircuit()
+        objectWillChange.send()
+    }
+
+    func leaveCircuit() {
+        engine.leaveCircuit()
         objectWillChange.send()
     }
 
@@ -344,11 +434,18 @@ final class AppModel: ObservableObject {
     func installLaunchAgent() {
         LaunchAgent.install()
         launchAgentState = LaunchAgent.state()
+        var s = engine.settings
+        s.autoStartAtLogin = true
+        update(settings: s)
     }
 
     func removeLaunchAgent() {
         LaunchAgent.uninstall()
         launchAgentState = LaunchAgent.state()
+        // Toglierlo spegne anche la preferenza, o al prossimo avvio se lo rimetterebbe da solo.
+        var s = engine.settings
+        s.autoStartAtLogin = false
+        update(settings: s)
     }
 
     // MARK: - Lettura per l'interfaccia
@@ -382,9 +479,6 @@ final class AppModel: ObservableObject {
         guard let plan else { return Evidence.sittingInterval }
         return Evidence.study(forBreak: plan.index)
     }
-
-    var launchQuote: Quote { engine.launchQuote }
-    var breakQuote: Quote { engine.breakQuote }
 
     /// La fonte in mostra dichiara un limite invece di giustificare una scelta?
     var isCurrentStudyADisclaimer: Bool {

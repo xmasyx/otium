@@ -1,5 +1,37 @@
 import Foundation
 
+/// Le quattro famiglie, nell'ordine in cui hanno senso in un allenamento e nelle preferenze.
+///
+/// Esistono per due motivi arrivati insieme il 2026-07-27: scegliere fra 25 caselle in fila è
+/// una fatica inutile quando 25 caselle sono in realtà quattro decisioni; e il microcircuito
+/// deve poter dire «una stazione per famiglia» senza indovinare quale sia quale.
+public enum ExerciseCategory: String, Codable, CaseIterable, Sendable {
+    case gambe
+    case spinta
+    case addome
+    case vigorosi
+
+    public var italianName: String {
+        switch self {
+        case .gambe: return "Gambe"
+        case .spinta: return "Spinta e braccia"
+        case .addome: return "Addome"
+        case .vigorosi: return "Vigorosi"
+        }
+    }
+
+    /// Una riga che dice a cosa serve la famiglia, perché una casella senza motivo non si spunta
+    /// con criterio.
+    public var subtitle: String {
+        switch self {
+        case .gambe: return "le masse grosse: sono loro ad abbassare la glicemia"
+        case .spinta: return "petto, spalle, tricipiti"
+        case .addome: return "il core, che stando seduti non lavora mai"
+        case .vigorosi: return "il fiatone: contano verso le 3 sessioni intense del giorno"
+        }
+    }
+}
+
 /// Un esercizio a corpo libero, eseguibile accanto alla scrivania.
 /// L'unico "attrezzo" ammesso è una sedia, che c'è già.
 public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
@@ -16,6 +48,17 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     case inclinePushUp
     case pikePushUp
     case benchDip
+    // Addome — aggiunti il 2026-07-27: senza, la giornata allenava gambe e spinta e lasciava
+    // fuori il core, che è metà del lavoro di chi sta seduto.
+    case crunch
+    case sitUp
+    case legRaise
+    case bicycleCrunch
+    case deadBug
+    case russianTwist
+    case plank
+    case sidePlank
+    case hollowHold
     // Vigorosi — sono questi che contano verso i 3 sessione intensa VILPA al giorno
     case burpee
     case jumpingJack
@@ -38,11 +81,34 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .inclinePushUp: return 12
         case .pikePushUp: return 8
         case .benchDip: return 12
+        case .crunch: return 20
+        case .sitUp: return 15
+        case .legRaise: return 12
+        case .bicycleCrunch: return 24
+        case .deadBug: return 16
+        case .russianTwist: return 24
+        // Per i tre esercizi a tempo questo numero è **secondi**, non ripetizioni: vedi `isTimed`.
+        case .plank: return 45
+        case .sidePlank: return 40
+        case .hollowHold: return 30
         case .burpee: return 8
         case .jumpingJack: return 25
         case .jumpSquat: return 10
         case .mountainClimber: return 24
         case .highKnees: return 30
+        }
+    }
+
+    /// Si misura in **secondi tenuti**, non in ripetizioni.
+    ///
+    /// Non è un dettaglio di etichetta: il cancello anti-bluff calcola il tempo minimo come
+    /// `reps × secondsPerRep`, e un plank "da 45" con 2,5 s per ripetizione pretenderebbe due
+    /// minuti di tenuta per sbloccare il pulsante. Con `secondsPerRep = 1` il conto torna a
+    /// dire la verità: 45 significa 45 secondi.
+    public var isTimed: Bool {
+        switch self {
+        case .plank, .sidePlank, .hollowHold: return true
+        default: return false
         }
     }
 
@@ -61,6 +127,13 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .inclinePushUp: return 2.5
         case .pikePushUp: return 3.2
         case .benchDip: return 2.5
+        case .crunch: return 2.0
+        case .sitUp: return 2.5
+        case .legRaise: return 3.0
+        case .bicycleCrunch: return 1.4
+        case .deadBug: return 2.5
+        case .russianTwist: return 1.2
+        case .plank, .sidePlank, .hollowHold: return 1.0   // un "rep" è un secondo di tenuta
         case .burpee: return 4.5
         case .jumpingJack: return 1.2
         case .jumpSquat: return 2.2
@@ -85,7 +158,25 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .calfRaise: return "polpacci"
         case .pushUp, .diamondPushUp, .archerPushUp, .inclinePushUp, .pikePushUp: return "spinta"
         case .benchDip: return "tricipiti"
+        case .crunch, .sitUp, .legRaise, .bicycleCrunch, .deadBug, .russianTwist,
+             .plank, .sidePlank, .hollowHold: return "addome"
         case .burpee, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return "tutto il corpo"
+        }
+    }
+
+    /// La famiglia sotto cui l'esercizio compare nelle preferenze, e da cui il microcircuito
+    /// pesca una stazione per ciascuna.
+    ///
+    /// È più grossolana di `muscleGroup` di proposito: `muscleGroup` serve a non far lavorare due
+    /// volte di fila la stessa catena — quindi distingue glutei da polpacci — mentre qui serve a
+    /// far scegliere in fretta a un umano, e "glutei" e "polpacci" sono gambe.
+    public var category: ExerciseCategory {
+        switch self {
+        case .squat, .lunge, .splitSquat, .gluteBridge, .calfRaise: return .gambe
+        case .pushUp, .diamondPushUp, .archerPushUp, .inclinePushUp, .pikePushUp, .benchDip: return .spinta
+        case .crunch, .sitUp, .legRaise, .bicycleCrunch, .deadBug, .russianTwist,
+             .plank, .sidePlank, .hollowHold: return .addome
+        case .burpee, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return .vigorosi
         }
     }
 
@@ -102,6 +193,15 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .inclinePushUp: return "push-up inclinati"
         case .pikePushUp: return "pike push-up"
         case .benchDip: return "dip su sedia"
+        case .crunch: return "crunch"
+        case .sitUp: return "sit-up"
+        case .legRaise: return "sollevamento gambe"
+        case .bicycleCrunch: return "crunch bicicletta"
+        case .deadBug: return "dead bug"
+        case .russianTwist: return "russian twist"
+        case .plank: return "plank"
+        case .sidePlank: return "plank laterale"
+        case .hollowHold: return "hollow hold"
         case .burpee: return "burpee"
         case .jumpingJack: return "jumping jack"
         case .jumpSquat: return "jump squat"
@@ -134,6 +234,24 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
             return "A V rovesciata, bacino alto, scendi con la testa fra le mani. Lavorano le spalle."
         case .benchDip:
             return "Mani sul bordo della sedia dietro di te, gomiti indietro, scendi e risali. Sedia stabile, contro il muro."
+        case .crunch:
+            return "A terra, ginocchia piegate: stacca solo le scapole, mento lontano dal petto. Non tirarti il collo."
+        case .sitUp:
+            return "Salita completa fino a sederti, discesa lenta. Se i piedi si alzano, mettili sotto la scrivania."
+        case .legRaise:
+            return "Schiena a terra, mani sotto i glutei: gambe tese salgono e scendono senza toccare terra."
+        case .bicycleCrunch:
+            return "Gomito verso il ginocchio opposto, alternando. Conta una ripetizione per lato."
+        case .deadBug:
+            return "Schiena piatta a terra: allunga braccio e gamba opposti, torna, cambia lato. Lentissimo."
+        case .russianTwist:
+            return "Seduto, busto inclinato indietro, ruota le spalle da un lato all'altro. Un lato, una ripetizione."
+        case .plank:
+            return "Gomiti sotto le spalle, corpo in linea, glutei stretti. Se la schiena si inarca, fermati."
+        case .sidePlank:
+            return "Su un gomito, corpo in linea vista di lato. Metà del tempo per lato, cambia a metà."
+        case .hollowHold:
+            return "Schiena a terra e ben aderente, braccia e gambe sollevate. Se la lombare si stacca, alza le gambe."
         case .burpee:
             return "Squat, gambe indietro, torna su, salto. Il pezzo duro della giornata: 60-90 secondi."
         case .jumpingJack:
@@ -170,6 +288,14 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
             return [.squat, .splitSquat, .lunge]
         case .calfRaise:
             return [.jumpingJack, .squat]
+        case .crunch, .sitUp, .bicycleCrunch, .russianTwist:
+            return [.crunch, .sitUp, .bicycleCrunch, .russianTwist, .legRaise].filter { $0 != self }
+        case .legRaise, .deadBug:
+            return [.legRaise, .deadBug, .hollowHold, .crunch].filter { $0 != self }
+        // Le tenute stanno fra loro: passare da un plank a un crunch a metà pausa cambia il
+        // mestiere dell'esercizio, non la sua difficoltà.
+        case .plank, .sidePlank, .hollowHold:
+            return [.plank, .sidePlank, .hollowHold, .deadBug].filter { $0 != self }
         case .burpee:
             return [.jumpSquat, .mountainClimber, .highKnees, .jumpingJack]
         case .jumpingJack, .jumpSquat, .mountainClimber, .highKnees:
@@ -195,7 +321,13 @@ public struct Exercise: Equatable, Codable, Sendable {
     }
 
     public var label: String {
-        "\(reps) \(kind.italianName)"
+        kind.isTimed ? "\(reps) s di \(kind.italianName)" : "\(reps) \(kind.italianName)"
+    }
+
+    /// Cosa scrivere **sotto il numero grande** nella schermata di blocco. Per una tenuta il
+    /// numero è in secondi, e senza l'unità «45 plank» si legge come quarantacinque plank.
+    public var title: String {
+        kind.isTimed ? "secondi di \(kind.italianName)" : kind.italianName
     }
 }
 
@@ -263,5 +395,33 @@ public struct ExercisePlanner: Sendable {
         let idx = max(0, breakIndex - 1) % table.count
         let chosen = table[idx]
         return Exercise(kind: chosen, reps: Ramp.reps(for: chosen, factor: factor))
+    }
+
+    /// Quanto vale una stazione dentro il circuito rispetto allo stesso esercizio da solo.
+    ///
+    /// Quattro esercizi al volume pieno non stanno in cinque minuti, e chi ci prova la seconda
+    /// volta non lo rifà. Tre quarti è la quota che tiene il circuito sotto i due minuti di
+    /// lavoro effettivo lasciando il resto della pausa a quello per cui esiste: stare lontano
+    /// dallo schermo.
+    public static let circuitFactor: Double = 0.75
+
+    /// Il microcircuito della pausa piena: **una stazione per famiglia**, esplosivo compreso.
+    ///
+    /// È facoltativo per costruzione — lo si sceglie dentro la pausa, non lo si subisce — e per
+    /// questo pesca dagli stessi pool delle preferenze: se hai spento l'addome, il circuito non
+    /// te lo rimette dentro dalla finestra. Ruota con `breakIndex` come tutto il resto, così due
+    /// pause piene di fila non propongono lo stesso giro.
+    public func circuit(breakIndex: Int, factor: Double) -> [Exercise] {
+        let order: [ExerciseCategory] = [.gambe, .spinta, .addome, .vigorosi]
+        let scaled = factor * Self.circuitFactor
+        return order.compactMap { category in
+            let table = (category == .vigorosi ? vigorousPool : pool).filter { $0.category == category }
+            guard !table.isEmpty else { return nil }
+            // Lo sfasamento per famiglia evita che tutte e quattro avanzino insieme e ripetano
+            // sempre lo stesso accoppiamento.
+            let offset = order.firstIndex(of: category) ?? 0
+            let chosen = table[(max(0, breakIndex - 1) + offset) % table.count]
+            return Exercise(kind: chosen, reps: Ramp.reps(for: chosen, factor: scaled))
+        }
     }
 }

@@ -36,6 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         runDemoIfRequested()
         renderSnapshotIfRequested()
+        runWindowProbeIfRequested()
 
         // Il secondo avvio non apre niente di nuovo: chiede a questa istanza di farsi vedere.
         // Su un'app della barra dei menu "farsi vedere" significa dire come sta, altrimenti
@@ -117,6 +118,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
             NSApp.terminate(nil)
         }
+    }
+
+    /// `--window-probe=<superficie>` — costruisce una finestra e **misura** se ci sta nello schermo.
+    ///
+    /// Esiste per lo stesso motivo di `--snapshot`: il difetto delle fonti — finestra più alta del
+    /// monitor, fondo fuori dallo schermo — non si vede in uno screenshot del contenuto, perché il
+    /// contenuto era giusto. Si vede solo confrontando l'altezza della finestra con l'area
+    /// visibile, ed è quello che stampa questa sonda. Una misura, non un'impressione.
+    private func runWindowProbeIfRequested() {
+        guard let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--window-probe=") }),
+              let surface = arg.split(separator: "=", maxSplits: 1).last.map(String.init)
+        else { return }
+
+        let content: NSView
+        switch surface {
+        case "prefs":
+            content = NSHostingView(rootView: PrefsView(model: model))
+        case "stats":
+            let view = NSHostingView(rootView: StatsView(model: model))
+            view.frame = NSRect(x: 0, y: 0, width: 620, height: 680)
+            content = view
+        default:
+            let view = NSHostingView(rootView: EvidenceView())
+            view.frame = NSRect(x: 0, y: 0, width: 640, height: 620)
+            content = view
+        }
+
+        let visible = (NSScreen.main ?? NSScreen.screens.first)!.visibleFrame
+        let wanted = content.fittingSize
+        let window = makeWindow(title: "sonda", content: content)
+        let frame = window.frame
+
+        print("superficie: \(surface)")
+        print(String(format: "area visibile dello schermo: %.0f × %.0f", visible.width, visible.height))
+        print(String(format: "altezza che il contenuto chiederebbe: %.0f", wanted.height))
+        print(String(format: "finestra costruita: %.0f × %.0f a y=%.0f", frame.width, frame.height, frame.minY))
+        let fits = frame.height <= visible.height && frame.minY >= visible.minY - 1
+        print(fits ? "STA NELLO SCHERMO" : "ESCE DALLO SCHERMO")
+        print("ridimensionabile: \(window.styleMask.contains(.resizable) ? "sì" : "no")")
+        NSApp.terminate(nil)
     }
 
     /// `--demo-break[=secondi]` — apre subito la schermata di blocco e **si spegne da solo**
@@ -264,18 +305,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         present(prefsWindow)
     }
 
+    /// Una finestra che ci sta **dentro lo schermo**, e che si può ridimensionare.
+    ///
+    /// Difetto segnalato il 2026-07-27 sulle fonti: `fittingSize` di una `ScrollView` è l'altezza
+    /// del contenuto **srotolato** — qui oltre 3000 punti — quindi la finestra nasceva più alta
+    /// del monitor, veniva centrata, e il fondo restava fuori dallo schermo. Lo scorrimento
+    /// arrivava in fondo al contenuto e sembrava comunque tagliato, perché tagliata era la
+    /// finestra. Senza `.resizable` non si poteva nemmeno rimediare a mano.
+    ///
+    /// Il tetto è l'area **visibile** (`visibleFrame`: già al netto di barra dei menu e Dock),
+    /// con un margine perché una finestra alta esattamente quanto lo schermo tocca i bordi.
     private func makeWindow(title: String, content: NSView) -> NSWindow {
+        let wanted = content.frame.size.width > 0 ? content.frame.size : content.fittingSize
+        let requested = wanted.width > 0 ? wanted : NSSize(width: 560, height: 560)
+        let limit = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame.size
+            ?? NSSize(width: 1200, height: 800)
+        let size = NSSize(
+            width: min(requested.width, limit.width - 40),
+            height: min(requested.height, limit.height - 40)
+        )
+
         let window = NSWindow(
-            contentRect: content.fittingSize.width > 0
-                ? NSRect(origin: .zero, size: content.fittingSize)
-                : NSRect(x: 0, y: 0, width: 560, height: 560),
-            styleMask: [.titled, .closable],
+            contentRect: NSRect(origin: .zero, size: size),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
         window.title = title
         window.contentView = content
         window.isReleasedWhenClosed = false
+        window.setContentSize(size)
         window.center()
         return window
     }

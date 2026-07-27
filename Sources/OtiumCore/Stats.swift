@@ -189,6 +189,15 @@ public enum Stats {
                 s.natural += 1
                 s.moments.append(BreakMoment(at: e.timestamp, kind: e.breakKind ?? .micro,
                                              exercise: nil, reps: nil, outcome: .natural))
+            // Una stazione del circuito porta ripetizioni vere, ma **non** è una pausa in più:
+            // niente `completed`, niente momento nella cronologia. La pausa che la contiene ha
+            // già la sua riga, e contarla due volte falserebbe proprio il numero — pause fatte
+            // contro saltate — su cui si decide se la cadenza regge.
+            case .circuitStation:
+                if let kind = e.exercise, let reps = e.reps {
+                    s.repsByExercise[kind, default: 0] += reps
+                    if kind.isVigorous { s.vigorousBouts += 1 }
+                }
             case .undo:
                 // Una pausa segnata a mano e poi tolta: sparisce dai conti, non resta a metà.
                 if let index = s.moments.lastIndex(where: { $0.outcome == .completed && $0.kind == (e.breakKind ?? .micro) }) {

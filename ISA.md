@@ -110,6 +110,8 @@ Rampa: settimana 1 al 55% delle ripetizioni, +15% a settimana fino al 100% in se
 
 ## Criteria
 
+> **Stato al 2026-07-27, iterazione 3: 37 chiusi su 38.** L'unico aperto resta ISC-28.
+>
 > Chiusi 28 su 29 il 2026-07-26. L'unico aperto è ISC-28, che è esperienziale: si chiude usando
 > l'app per qualche giorno, non con un probe.
 
@@ -521,6 +523,50 @@ Rampa: settimana 1 al 55% delle ripetizioni, +15% a settimana fino al 100% in se
       `URLSession|NSURLConnection|Network\.|CFSocket|socket\(`: zero occorrenze (gli unici
       `https://` sono le stringhe delle citazioni).
 
+### Iterazione 3 — segnalata dall'uso vero (2026-07-27)
+
+Sei difetti e due funzioni chieste dal principale dopo il primo giorno d'uso. Tutti nati
+guardando l'app funzionare, non leggendo il codice: è la ragione per cui ISC-28 è esperienziale.
+
+- [x] **ISC-30** Dichiarare il tempo già seduto **mentre l'app è sospesa** non perde il numero
+      dichiarato: il conto alla prossima pausa diventa `intervallo − dichiarato`. — riprodotto
+      prima di correggere (test rosso: «paused non è working», poi conto a 30 invece che a 10);
+      causa in `setPaused(false)`, che azzerava l'orologio **dopo** la dichiarazione. Chiuso da
+      due test: quello del caso vero, e quello che protegge il comportamento normale (una ripresa
+      senza dichiarazione riparte comunque da zero).
+- [x] **ISC-31** Il pulsante grande della pausa si clicca **su tutta la sua superficie**, non solo
+      sul testo. — causa: sfondo applicato fuori dal `Button`, area sensibile ridotta alla forma
+      del testo. Corretto con `contentShape(Rectangle())` e sfondo dentro l'etichetta.
+- [x] **ISC-32** Nessuna finestra dell'app supera l'area visibile dello schermo, e tutte si
+      ridimensionano. — misurato con `--window-probe`: le fonti chiedevano **1303 punti** di
+      altezza su uno schermo visibile di **888**, ed è per questo che il fondo restava fuori pur
+      arrivando in fondo allo scorrimento. Ora la finestra è 640×652 e la sonda risponde
+      `STA NELLO SCHERMO`, `ridimensionabile: sì`.
+- [x] **ISC-33** Gli esercizi di addome esistono e sono in rotazione. — nove nuovi tipi (crunch,
+      sit-up, sollevamento gambe, crunch bicicletta, dead bug, russian twist, plank, plank
+      laterale, hollow hold), ognuno con istruzione e alternative; quattro accesi nelle
+      preferenze del principale.
+- [x] **ISC-34** Gli esercizi **a tempo** dicono secondi, non ripetizioni, e il cancello
+      anti-bluff conta di conseguenza. — `isTimed` con `secondsPerRep = 1`; test su tutti e tre:
+      etichetta «45 s di plank», tempo minimo pari ai secondi dichiarati.
+- [x] **ISC-35** Le preferenze raggruppano gli esercizi per famiglia, con «tutti/nessuno» per
+      gruppo. — quattro sezioni (Gambe, Spinta e braccia, Addome, Vigorosi), rese e guardate.
+- [x] **ISC-36** La pausa piena **propone** un microcircuito — una stazione per famiglia,
+      esplosivo compreso — e resta facoltativo. — 15 test: proposta presente solo nelle pause
+      piene, non attiva finché non la scegli, cancello anti-bluff che riparte a ogni stazione
+      (provato anche al contrario: rimuovendo il reset, il test diventa rosso), uscita a metà che
+      conserva le stazioni fatte, e **una pausa sola nel registro** anche con quattro stazioni.
+- [x] **ISC-37** Le frasi sono casuali e non si ripetono per almeno un mese di uso. — mazzo che
+      si estrae senza rimettere dentro, persistito su disco, che scarta le frasi tolte da un
+      aggiornamento; **489 frasi** contro le 480 di un mese (16 pause al giorno × 30 giorni), test
+      che fallisce se qualcuno taglia il corpus. Le frasi senza fonte tracciabile sono ammesse
+      come **anonime**, mai attribuite per bellezza: il pool `Quotes` resta a fonte verificata e
+      un test vieta le attribuzioni tentennanti.
+- [x] **ISC-38** Otium riparte a ogni accensione senza che il principale se ne ricordi. —
+      `autoStartAtLogin` acceso di serie, il LaunchAgent si installa da solo al primo avvio e si
+      ripara se punta altrove; toglierlo dalle preferenze **spegne anche la preferenza**, così
+      l'app non se lo rimette. Verificato: `--agent-status` → `healthy`.
+
 ## Test Strategy
 
 Tre strumenti: `swift test` per tutta la logica pura (orologio, motore, rampa, registro), che è
@@ -664,6 +710,12 @@ uno che non copre la barra dei menu sono indistinguibili nei test.
 
 ## Changelog
 
+- **2026-07-27 (iterazione 3)** — Primo giorno d'uso vero, e l'uso ha trovato quello che il
+  codice non diceva: il conto perso dopo la sospensione, il pulsante cliccabile solo sul testo,
+  la finestra delle fonti più alta dello schermo. Aggiunti addome, esercizi a tempo, preferenze
+  per famiglia, microcircuito facoltativo nelle pause piene, avvio automatico, e un corpus di
+  489 frasi estratte a mazzo invece che in rotazione fissa. **156 test verdi** (da 128), di cui
+  uno sondato al contrario per provare che vedrebbe il guasto.
 - **2026-07-26** — ISA creata e chiusa a 28/29 nello stesso giorno. Ricerca sulle fonti e sul
   panorama fatta *prima* della scrittura del codice; cadenza scelta dal principale fra tre
   opzioni; sonda dell'ambiente (Swift 6.3, Xcode 26.6, `HIDIdleTime` vivo, nessun Developer ID).

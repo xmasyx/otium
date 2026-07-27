@@ -105,6 +105,14 @@ public struct Settings: Codable, Equatable, Sendable {
     /// Offri le varianti dentro la pausa (diamond, archer, dip su sedia…). Restano opzionali:
     /// spegnendolo, la pausa propone solo l'esercizio che tocca alla rotazione.
     public var offerVariants: Bool
+    /// Proponi il microcircuito nelle pause piene: una stazione per famiglia — gambe, spinta,
+    /// addome, esplosivo. **Proposta, non imposizione**: dentro la pausa scegli tu se fare il
+    /// giro completo o il solo esercizio del turno.
+    public var offerCircuit: Bool
+    /// Otium riparte da sola a ogni accensione. Diventa `false` quando l'avvio automatico viene
+    /// rimosso dalle preferenze, così l'app non se lo rimette da sola al riavvio successivo —
+    /// una preferenza che si riscrive addosso all'utente è un difetto, non una comodità.
+    public var autoStartAtLogin: Bool
     /// Conta come tempo sedentario anche quando non tocchi niente ma sei lì: video in
     /// riproduzione, documento aperto davanti. Spegnendolo, guardare un film torna a valere
     /// come una pausa — che è comodo e sbagliato.
@@ -130,13 +138,16 @@ public struct Settings: Codable, Equatable, Sendable {
         startDate: Date = Date(),
         rampWeeks: Int = 4,
         rampStartFactor: Double = 0.55,
-        exercisePool: [ExerciseKind] = [.squat, .pushUp, .lunge, .calfRaise, .gluteBridge, .benchDip],   // split squat non c'è: è una variante dell'affondo, non un esercizio a sé in rotazione
+        exercisePool: [ExerciseKind] = [.squat, .pushUp, .crunch, .lunge, .benchDip, .plank,
+                                        .calfRaise, .gluteBridge, .legRaise],   // split squat non c'è: è una variante dell'affondo, non un esercizio a sé in rotazione
         vigorousPool: [ExerciseKind] = [.burpee, .jumpingJack, .mountainClimber, .highKnees],
         vigorousDailyTarget: Int = 3,
         escapePhrase: String = "salto la pausa",
         deferWhenMicrophoneActive: Bool = true,
         detectQuietPresence: Bool = true,
         offerVariants: Bool = true,
+        offerCircuit: Bool = true,
+        autoStartAtLogin: Bool = true,
         maxAutoDefers: Int = 6,
         autoDeferSeconds: Double = 5 * 60,
         theme: ThemeName = .alloro,
@@ -156,6 +167,8 @@ public struct Settings: Codable, Equatable, Sendable {
         self.deferWhenMicrophoneActive = deferWhenMicrophoneActive
         self.detectQuietPresence = detectQuietPresence
         self.offerVariants = offerVariants
+        self.offerCircuit = offerCircuit
+        self.autoStartAtLogin = autoStartAtLogin
         self.maxAutoDefers = max(0, maxAutoDefers)
         self.autoDeferSeconds = autoDeferSeconds
         self.theme = theme
@@ -193,6 +206,8 @@ public struct Settings: Codable, Equatable, Sendable {
         deferWhenMicrophoneActive = (try? c.decode(Bool.self, forKey: .deferWhenMicrophoneActive)) ?? d.deferWhenMicrophoneActive
         detectQuietPresence = (try? c.decode(Bool.self, forKey: .detectQuietPresence)) ?? d.detectQuietPresence
         offerVariants = (try? c.decode(Bool.self, forKey: .offerVariants)) ?? d.offerVariants
+        offerCircuit = (try? c.decode(Bool.self, forKey: .offerCircuit)) ?? d.offerCircuit
+        autoStartAtLogin = (try? c.decode(Bool.self, forKey: .autoStartAtLogin)) ?? d.autoStartAtLogin
         maxAutoDefers = (try? c.decode(Int.self, forKey: .maxAutoDefers)) ?? d.maxAutoDefers
         autoDeferSeconds = (try? c.decode(Double.self, forKey: .autoDeferSeconds)) ?? d.autoDeferSeconds
         theme = (try? c.decode(ThemeName.self, forKey: .theme)) ?? d.theme
@@ -215,6 +230,10 @@ public enum Paths {
     public static var settingsFile: URL { supportDirectory.appendingPathComponent("settings.json") }
     public static var ledgerFile: URL { supportDirectory.appendingPathComponent("ledger.jsonl") }
     public static var rotationFile: URL { supportDirectory.appendingPathComponent("rotation.json") }
+    /// I mazzi delle frasi: quali sono già uscite e quali restano.
+    public static var decksFile: URL { supportDirectory.appendingPathComponent("decks.json") }
+    /// Le frasi aggiunte a mano. L'app le legge e non le scrive mai.
+    public static var userPhrasesFile: URL { supportDirectory.appendingPathComponent("frasi-mie.json") }
 
     @discardableResult
     public static func ensureDirectory() -> Bool {

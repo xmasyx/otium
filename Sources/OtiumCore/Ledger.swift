@@ -11,6 +11,10 @@ public enum EntryType: String, Codable, Equatable, Sendable {
     /// Una pausa segnata a mano e poi tolta. Il registro è append-only: non si cancella una
     /// riga, se ne scrive una che la annulla — così la storia resta leggibile com'è andata.
     case undo
+    /// Una stazione del microcircuito. Porta le sue ripetizioni ma **non** conta come pausa:
+    /// quattro stazioni sono una pausa sola, e contarle come quattro gonfierebbe il numero che
+    /// serve a decidere se la cadenza regge.
+    case circuitStation
 }
 
 public struct LedgerEntry: Codable, Equatable, Sendable {
@@ -137,6 +141,11 @@ public final class Ledger: @unchecked Sendable {
                 s.postponed += 1
             case .deferred:
                 s.deferred += 1
+            case .circuitStation:
+                if let kind = e.exercise, let reps = e.reps {
+                    s.repsByExercise[kind, default: 0] += reps
+                    if kind.isVigorous { s.vigorousBouts += 1 }
+                }
             case .undo:
                 s.completed = max(0, s.completed - 1)
             }
@@ -151,9 +160,15 @@ public final class Ledger: @unchecked Sendable {
         case .warningStarted, .breakStarted:
             return nil
         case .breakCompleted(let plan):
+            // Con il circuito le ripetizioni stanno nelle righe delle stazioni: qui si scrive
+            // la pausa **senza** esercizio, o le ripetizioni della prima stazione finirebbero
+            // contate due volte.
+            let isCircuit = plan.circuitActive || !plan.bankedStations.isEmpty
             return LedgerEntry(
                 timestamp: now, type: .completed, breakKind: plan.kind,
-                exercise: plan.exercise.kind, reps: plan.exercise.reps
+                exercise: isCircuit ? nil : plan.exercise.kind,
+                reps: isCircuit ? nil : plan.exercise.reps,
+                reason: isCircuit ? "circuito" : nil
             )
         case .breakSkipped(let plan, let reason):
             return LedgerEntry(

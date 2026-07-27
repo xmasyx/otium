@@ -6,12 +6,40 @@ public struct BreakPlan: Equatable, Sendable {
     public let duration: Double
     /// Sostituibile durante la pausa: puoi scegliere una variante senza saltare il break.
     public var exercise: Exercise
+    /// Il microcircuito **proposto** per questa pausa piena: una stazione per famiglia. Vuoto
+    /// sulle micro-pause e quando è spento nelle preferenze. Proposto non vuol dire attivo:
+    /// finché non lo scegli, la pausa resta a esercizio singolo.
+    public var circuit: [Exercise] = []
+    /// L'hai scelto: `exercise` ora è la stazione in corso.
+    public var circuitActive: Bool = false
+    /// Quale stazione, 0-based.
+    public var stationIndex: Int = 0
+    /// Stazioni già confermate e messe al sicuro: ci finiscono quelle fatte prima di uscire dal
+    /// circuito. Viaggiano **dentro il piano** e non nel motore perché il motore si azzera quando
+    /// la pausa finisce, e il registro va scritto dopo — con il piano che l'evento porta con sé.
+    public var bankedStations: [Exercise] = []
 
-    public init(index: Int, kind: BreakKind, duration: Double, exercise: Exercise) {
+    public init(index: Int, kind: BreakKind, duration: Double, exercise: Exercise,
+                circuit: [Exercise] = []) {
         self.index = index
         self.kind = kind
         self.duration = duration
         self.exercise = exercise
+        self.circuit = circuit
+    }
+
+    /// Le stazioni del circuito confermate finora. La stazione in corso conta solo se l'hai
+    /// davvero confermata.
+    public func stationsDone(currentConfirmed: Bool) -> [Exercise] {
+        guard circuitActive, !circuit.isEmpty else { return [] }
+        let last = currentConfirmed ? stationIndex : stationIndex - 1
+        guard last >= 0 else { return [] }
+        return Array(circuit.prefix(min(last + 1, circuit.count)))
+    }
+
+    /// Tutto il lavoro del circuito in questa pausa, da scrivere nel registro.
+    public func allStationsDone(currentConfirmed: Bool) -> [Exercise] {
+        bankedStations + stationsDone(currentConfirmed: currentConfirmed)
     }
 }
 
@@ -135,6 +163,8 @@ public struct SessionEngine {
     /// riparte da lì: altrimenti basterebbe aspettare col push-up e passare al più corto un
     /// istante prima di premere "fatto".
     private var exerciseBaseline: Double = 0
+    /// L'esercizio singolo messo da parte quando entri nel circuito, per poterci tornare.
+    private var singleExercise: Exercise?
 
     /// Quando l'assenza durante un blocco significa "se n'è andato davvero".
     ///
@@ -324,6 +354,7 @@ public struct SessionEngine {
         exerciseDone = false
         idleDuringBreak = 0
         exerciseBaseline = 0
+        singleExercise = nil
         return [event]
     }
 
@@ -331,16 +362,18 @@ public struct SessionEngine {
         let kind: BreakKind = forcedKind
             ?? ((microsSinceLong + 1 >= settings.cadence.longEveryNBreaks) ? .long : .micro)
         breakIndex += 1
-        let exercise = settings.planner.exercise(
-            breakIndex: breakIndex,
-            kind: kind,
-            factor: settings.rampFactor(now: now)
-        )
+        let factor = settings.rampFactor(now: now)
+        let exercise = settings.planner.exercise(breakIndex: breakIndex, kind: kind, factor: factor)
+        // Il circuito si prepara solo dove ha senso — la pausa piena — e resta una proposta.
+        let circuit = (kind == .long && settings.offerCircuit)
+            ? settings.planner.circuit(breakIndex: breakIndex, factor: factor)
+            : []
         return BreakPlan(
             index: breakIndex,
             kind: kind,
             duration: settings.cadence.duration(for: kind),
-            exercise: exercise
+            exercise: exercise,
+            circuit: circuit
         )
     }
 
@@ -359,12 +392,63 @@ public struct SessionEngine {
     /// "fatto" non è cliccabile e questa chiamata non fa niente.
     /// Conferma l'esercizio. Non chiude la pausa: quella finisce quando il tempo è scaduto e
     /// premi tu.
+    ///
+    /// Dentro il circuito lo stesso gesto vale «stazione fatta, avanti la prossima»: il cancello
+    /// riparte da capo su ogni stazione, così le quattro non si sbloccano tutte con il tempo
+    /// della prima.
     @discardableResult
     public mutating func markExerciseDone() -> [EngineEvent] {
-        guard phase == .breaking, let current = plan else { return [] }
+        guard phase == .breaking, var current = plan else { return [] }
         guard timer - exerciseBaseline >= current.exercise.minimumSeconds else { return [] }
+
+        if current.circuitActive, current.stationIndex + 1 < current.circuit.count {
+            current.stationIndex += 1
+            current.exercise = current.circuit[current.stationIndex]
+            plan = current
+            exerciseBaseline = timer
+            exerciseDone = false
+            return []
+        }
         exerciseDone = true
         return []
+    }
+
+    /// Il circuito è proponibile adesso? Solo dentro una pausa piena che ne ha uno pronto e non
+    /// è già cominciato.
+    public var canStartCircuit: Bool {
+        guard phase == .breaking, let current = plan else { return false }
+        return !current.circuitActive && current.circuit.count >= 2
+    }
+
+    /// «Faccio il giro completo.» Facoltativo: si sceglie dentro la pausa, non lo decide l'app.
+    @discardableResult
+    public mutating func startCircuit() -> Bool {
+        guard canStartCircuit, var current = plan else { return false }
+        singleExercise = current.exercise
+        current.circuitActive = true
+        current.stationIndex = 0
+        current.exercise = current.circuit[0]
+        plan = current
+        // Il cronometro dell'esercizio riparte: entrare nel circuito dopo aver aspettato non
+        // deve regalare la prima stazione già sbloccata.
+        exerciseBaseline = timer
+        exerciseDone = false
+        return true
+    }
+
+    /// «Basta così, torno all'esercizio singolo.» Le stazioni già confermate restano fatte —
+    /// sono lavoro davvero svolto — ma la pausa torna a chiudersi con un esercizio solo.
+    @discardableResult
+    public mutating func leaveCircuit() -> Bool {
+        guard phase == .breaking, var current = plan, current.circuitActive else { return false }
+        current.bankedStations += current.stationsDone(currentConfirmed: false)
+        current.circuitActive = false
+        current.stationIndex = 0
+        current.exercise = singleExercise ?? current.exercise
+        plan = current
+        exerciseBaseline = timer
+        exerciseDone = false
+        return true
     }
 
     /// Il pulsante è cliccabile solo quando **entrambe** le condizioni sono vere: l'esercizio
@@ -412,7 +496,15 @@ public struct SessionEngine {
     public mutating func swapExercise(to kind: ExerciseKind, now: Date) -> Bool {
         guard phase == .breaking, var current = plan else { return false }
         guard current.exercise.kind.variants.contains(kind) else { return false }
-        current.exercise = Exercise(kind: kind, reps: Ramp.reps(for: kind, factor: settings.rampFactor(now: now)))
+        let factor = current.circuitActive
+            ? settings.rampFactor(now: now) * ExercisePlanner.circuitFactor
+            : settings.rampFactor(now: now)
+        current.exercise = Exercise(kind: kind, reps: Ramp.reps(for: kind, factor: factor))
+        // Dentro il circuito la stazione sostituita è quella che va nel registro: senza questa
+        // riga il registro scriverebbe l'esercizio proposto e non quello davvero fatto.
+        if current.circuitActive, current.circuit.indices.contains(current.stationIndex) {
+            current.circuit[current.stationIndex] = current.exercise
+        }
         plan = current
         exerciseDone = false
         exerciseBaseline = timer
@@ -477,10 +569,9 @@ public struct SessionEngine {
                        launchCount: launchCount, activeSeconds: clock.activeSeconds)
     }
 
-    /// La citazione di questo avvio.
-    public var launchQuote: Quote { Quotes.quote(at: launchCount) }
-
-    /// Un avvio in più: la citazione cambia.
+    /// Un avvio in più. Le frasi non dipendono più da questo numero — le estrae il mazzo, che è
+    /// casuale e senza ripetizioni — ma il conteggio resta: dice quante volte l'app è partita, e
+    /// serve a distinguere un riavvio da una sessione lunga.
     public mutating func countLaunch() { launchCount += 1 }
 
     /// Come interpretare il tempo che dichiari.
@@ -499,9 +590,17 @@ public struct SessionEngine {
     /// tutto sono 100 minuti»* è un **totale** — e deve poter anche **abbassare** il conto, se
     /// prima avevi dichiarato troppo. *«aggiungi mezz'ora»* è una **somma**. La prima versione
     /// prendeva sempre il massimo: non si poteva correggere all'ingiù, e un errore restava lì.
+    ///
+    /// **Dichiarare mentre l'app è sospesa la riprende.** Non è una comodità: è l'unico modo di
+    /// non perdere il numero appena scritto. Il caso vero — sospendi, ti dimentichi di riprendere,
+    /// e quando te ne accorgi dichiari i minuti — finiva contro `setPaused(false)`, che azzera
+    /// l'orologio: i 20 minuti dichiarati sparivano **dopo** essere stati accettati, e il conto
+    /// tornava a 30. Dire «sono al computer da 20 minuti» *è* dire che non sei più sospeso.
     @discardableResult
     public mutating func declareTimeAlreadySeated(_ seconds: Double, mode: SeatedMode = .total) -> Double {
         let value = max(0, seconds)
+        // Prima del seed, o la ripresa lo cancellerebbe: `setPaused(false)` fa `clock.reset()`.
+        if phase == .paused { phase = .working }
         let target = mode == .total ? value : clock.activeSeconds + value
         clock.seed(activeSeconds: target)
         return target
@@ -536,11 +635,6 @@ public struct SessionEngine {
             microsSinceLong = max(0, microsSinceLong - 1)
         }
         return true
-    }
-
-    /// La citazione di questa pausa. Cambia a ogni break, e non è quella dell'avvio.
-    public var breakQuote: Quote {
-        Quotes.quote(at: launchCount + breakIndex)
     }
 
     /// Esito del ripristino, per poterlo dire invece di farlo in silenzio.

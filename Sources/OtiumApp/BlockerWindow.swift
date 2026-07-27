@@ -164,12 +164,12 @@ final class WarningHUD {
     private var panel: NSPanel?
     private var dismissTimer: Timer?
 
-    /// La citazione dell'avvio: stesso angolo delle altre notifiche, pannello un po' più alto
+    /// La frase dell'avvio: stesso angolo delle altre notifiche, pannello un po' più alto
     /// perché una riga di Seneca non sta in due righe da barra dei menu.
-    func showQuote(_ quote: Quote) {
+    func showQuote(_ phrase: Phrase) {
         present(
             NSHostingView(rootView: Dismissible(onDismiss: { [weak self] in self?.hide() }) {
-                QuoteHUDView(quote: quote)
+                QuoteHUDView(phrase: phrase)
             }),
             size: NSSize(width: 380, height: 132),
             sound: nil,

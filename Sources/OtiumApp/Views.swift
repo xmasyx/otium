@@ -94,13 +94,17 @@ struct BreakView: View {
 
     private func exercise(_ plan: BreakPlan) -> some View {
         VStack(spacing: 20) {
+            if plan.circuitActive { circuitTrack(plan) }
             Text("\(plan.exercise.reps)")
                 .font(.system(size: 140, weight: .bold, design: .rounded))
                 .foregroundStyle(Palette.paper)
                 .monospacedDigit()
-            Text(plan.exercise.kind.italianName)
+            // Per una tenuta il numero grande è in secondi: senza l'unità, «45 plank» si legge
+            // come quarantacinque plank.
+            Text(plan.exercise.title)
                 .font(.system(size: 44, weight: .medium, design: .rounded))
                 .foregroundStyle(Palette.paper)
+                .multilineTextAlignment(.center)
             Text(plan.exercise.kind.cue)
                 .font(.system(size: 17))
                 .foregroundStyle(Palette.dim)
@@ -111,7 +115,73 @@ struct BreakView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             variantRow
+            circuitOffer(plan)
             breakQuoteView
+        }
+    }
+
+    /// La proposta del giro completo, dentro la pausa piena.
+    ///
+    /// Sta qui e non nelle preferenze perché è una decisione che dipende da come stai **adesso**:
+    /// alcune pause piene meritano quattro esercizi, altre no, e chiedertelo a freddo una volta
+    /// per tutte darebbe la risposta sbagliata quasi sempre. Il default resta l'esercizio singolo:
+    /// il circuito è un sì che devi dare tu.
+    @ViewBuilder
+    private func circuitOffer(_ plan: BreakPlan) -> some View {
+        if model.canStartCircuit {
+            VStack(spacing: 8) {
+                Button { model.startCircuit() } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "figure.strengthtraining.functional").font(.system(size: 13))
+                        Text("Fai il microcircuito — \(plan.circuit.count) esercizi")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 11)
+                    .foregroundStyle(Palette.paper)
+                    .background(Capsule().fill(Palette.accent.opacity(0.22)))
+                    .overlay(Capsule().stroke(Palette.accent.opacity(0.55), lineWidth: 1))
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+
+                Text(plan.circuit.map(\.label).joined(separator: " · "))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Palette.dim)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 620)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.top, 10)
+        }
+    }
+
+    /// Dove sei dentro il circuito: quattro pallini con la stazione in corso accesa.
+    private func circuitTrack(_ plan: BreakPlan) -> some View {
+        VStack(spacing: 10) {
+            Text("CIRCUITO · STAZIONE \(plan.stationIndex + 1) DI \(plan.circuit.count)")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .tracking(1.8)
+                .foregroundStyle(Palette.accent)
+
+            HStack(spacing: 10) {
+                ForEach(Array(plan.circuit.enumerated()), id: \.offset) { index, station in
+                    let done = index < plan.stationIndex
+                    let current = index == plan.stationIndex
+                    Text(station.kind.italianName)
+                        .font(.system(size: 12, weight: current ? .semibold : .regular, design: .rounded))
+                        .padding(.horizontal, 11)
+                        .padding(.vertical, 5)
+                        .foregroundStyle(current ? Palette.ink : Palette.paper.opacity(done ? 0.45 : 0.75))
+                        .background(
+                            Capsule().fill(current ? Palette.accent : Color.white.opacity(done ? 0.04 : 0.08))
+                        )
+                        .overlay(
+                            Capsule().stroke(Color.white.opacity(current ? 0 : 0.14), lineWidth: 1)
+                        )
+                        .strikethrough(done, color: Palette.paper.opacity(0.4))
+                }
+            }
         }
     }
 
@@ -125,19 +195,20 @@ struct BreakView: View {
     /// dell'occhio e due momenti diversi della pausa.
     @ViewBuilder
     private var breakQuoteView: some View {
-        let quote = model.breakQuote
-        VStack(spacing: 6) {
-            Text("«\(quote.text)»")
-                .font(.system(size: 18, design: .serif))
-                .foregroundStyle(Palette.paper.opacity(0.62))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: 620)
-            Text("\(quote.author) · \(quote.work)")
-                .font(.system(size: 11))
-                .foregroundStyle(Palette.dim.opacity(0.55))
+        if let phrase = model.currentPhrase {
+            VStack(spacing: 6) {
+                Text("«\(phrase.text)»")
+                    .font(.system(size: 18, design: .serif))
+                    .foregroundStyle(Palette.paper.opacity(0.62))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: 620)
+                Text(phrase.credit)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Palette.dim.opacity(0.55))
+            }
+            .padding(.top, 26)
         }
-        .padding(.top, 26)
     }
 
     /// Le alternative, dentro la pausa.
@@ -200,10 +271,21 @@ struct BreakView: View {
             } else if model.exerciseDone {
                 primary("ancora \(clock(model.secondsLeftOfBreak))", enabled: false) {}
             } else if model.canFinishNow {
-                primary("Fatto", enabled: true) { model.markExerciseDone() }
+                primary(model.moreStationsAhead ? "Fatto — avanti" : "Fatto", enabled: true) {
+                    model.markExerciseDone()
+                }
             } else {
                 primary("\(plan.exercise.label) — ancora \(Int(model.secondsUntilCanFinish.rounded(.up))) s",
                         enabled: false) {}
+            }
+
+            // Uscire dal circuito resta possibile a metà: le stazioni già confermate restano
+            // fatte, e la pausa si chiude con l'esercizio singolo che le toccava.
+            if plan.circuitActive && !model.canReturnToWork {
+                Button("Basta così, torno all'esercizio singolo") { model.leaveCircuit() }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Palette.dim)
             }
 
             if model.exerciseDone && !model.canReturnToWork {
@@ -214,16 +296,27 @@ struct BreakView: View {
         }
     }
 
+    /// Il pulsante grande della pausa. **Si clicca tutto**, non solo dove ci sono le lettere.
+    ///
+    /// Prima lo sfondo stava fuori dal `Button` e l'etichetta era un `Text` dentro una `frame`:
+    /// SwiftUI prende come area sensibile la forma del contenuto disegnato, e il contenuto era il
+    /// testo. Risultato: un rettangolo ambra da 300×54 che risponde solo sulla parola «Fatto» —
+    /// e un pulsante che non risponde dove sembra un pulsante è indistinguibile da uno rotto.
+    /// `contentShape(Rectangle())` dentro l'etichetta dichiara che l'area sensibile è tutto il
+    /// rettangolo; lo sfondo entra nell'etichetta perché la forma sensibile segua la forma vista.
     private func primary(_ title: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 19, weight: .semibold, design: .rounded))
                 .frame(width: 300, height: 54)
+                .foregroundStyle(enabled ? Palette.ink : Palette.dim)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(enabled ? Palette.accent : Color.white.opacity(0.07))
+                )
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .background(enabled ? Palette.accent : Color.white.opacity(0.07))
-        .foregroundStyle(enabled ? Palette.ink : Palette.dim)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
         .disabled(!enabled)
         .keyboardShortcut(enabled ? .return : .end, modifiers: [])
     }
@@ -407,18 +500,18 @@ struct Dismissible<Content: View>: View {
     }
 }
 
-/// La citazione dell'avvio.
+/// La frase dell'avvio.
 struct QuoteHUDView: View {
-    let quote: Quote
+    let phrase: Phrase
 
     var body: some View {
         HStack(spacing: 14) {
             RoundedRectangle(cornerRadius: 2).fill(Palette.accent).frame(width: 4)
             VStack(alignment: .leading, spacing: 8) {
-                Text("«\(quote.text)»")
+                Text("«\(phrase.text)»")
                     .font(.system(size: 14, design: .serif))
                     .fixedSize(horizontal: false, vertical: true)
-                Text("\(quote.author) · \(quote.work)")
+                Text(phrase.credit)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
@@ -584,22 +677,47 @@ struct PrefsView: View {
                 }
             }
 
-            Section("Esercizi") {
-                ForEach(ExerciseKind.allCases, id: \.self) { kind in
-                    Toggle(isOn: binding(for: kind)) {
-                        HStack {
-                            Text(kind.italianName)
-                            Text("\(kind.baseReps) rip. · \(kind.muscleGroup)")
-                                .foregroundStyle(.secondary)
-                            if kind.isVigorous {
-                                Text("vigoroso").font(.caption).foregroundStyle(Palette.accent)
+            // Una sezione per famiglia invece di venticinque caselle in fila: sono quattro
+            // decisioni, non venticinque, e con gli addominali l'elenco piatto era diventato
+            // illeggibile.
+            ForEach(ExerciseCategory.allCases, id: \.self) { category in
+                Section {
+                    ForEach(ExerciseKind.allCases.filter { $0.category == category }, id: \.self) { kind in
+                        Toggle(isOn: binding(for: kind)) {
+                            HStack {
+                                Text(kind.italianName)
+                                Text(kind.isTimed
+                                     ? "\(kind.baseReps) s · tenuta"
+                                     : "\(kind.baseReps) rip. · \(kind.muscleGroup)")
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
+                } header: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(category.italianName)
+                            Text(category.subtitle).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("tutti") { setAll(category, on: true) }
+                            .buttonStyle(.link).font(.caption)
+                        Button("nessuno") { setAll(category, on: false) }
+                            .buttonStyle(.link).font(.caption)
+                    }
                 }
+            }
+
+            Section("Come vengono proposti") {
                 Toggle("Offri le varianti dentro la pausa", isOn: $draft.offerVariants)
                 Text("Durante una pausa push-up puoi passare a diamond, archer, dip su sedia, "
                    + "pike o inclinati con un clic. Le ripetizioni si adeguano alla difficoltà.")
+                    .font(.caption).foregroundStyle(.secondary)
+                Toggle("Proponi il microcircuito nelle pause piene", isOn: $draft.offerCircuit)
+                Text("Nella pausa piena puoi scegliere il giro completo — una stazione per "
+                   + "famiglia, esplosivo compreso — invece del solo esercizio del turno. Resta "
+                   + "una proposta: si decide dentro la pausa, e le stazioni valgono i tre quarti "
+                   + "delle ripetizioni, o quattro esercizi non stanno in cinque minuti.")
                     .font(.caption).foregroundStyle(.secondary)
                 Stepper("Rampa in \(draft.rampWeeks) settimane", value: $draft.rampWeeks, in: 1...12)
                 Text("Oggi sei al \(Int(draft.rampFactor(now: Date()) * 100))% del volume pieno.")
@@ -702,6 +820,14 @@ struct PrefsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 520, height: 620)
+    }
+
+    /// «Tutti» e «nessuno» su una famiglia intera. `nessuno` non può svuotare del tutto un pool:
+    /// una rotazione senza esercizi non è una preferenza, è un'app che non fa più niente — e il
+    /// modello ricadrebbe comunque sul suo default, mentendo alla casella.
+    private func setAll(_ category: ExerciseCategory, on: Bool) {
+        let kinds = ExerciseKind.allCases.filter { $0.category == category }
+        for kind in kinds { binding(for: kind).wrappedValue = on }
     }
 
     private func binding(for kind: ExerciseKind) -> Binding<Bool> {

@@ -424,40 +424,50 @@ final class RotatingTextTests: XCTestCase {
         }
     }
 
-    /// Il criterio di ammissione, congelato in un test: niente attribuzioni generiche, e in
-    /// particolare niente Lao Tzu — la frase più bella era una parafrasi moderna.
+    /// Il criterio di ammissione, congelato in un test: in questo pool niente attribuzioni
+    /// generiche, e nessun anonimo travestito da autore.
+    ///
+    /// La versione precedente vietava la stringa «lao» **nell'autore**, per tenere fuori la frase
+    /// «la natura non ha fretta» — una parafrasi moderna che circola come di Lao Tzu. Vietava
+    /// però anche le citazioni **vere** dal Tao Te Ching, che hanno capitolo e traduzione. Il
+    /// divieto giusto è sul testo conteso, non sul nome di un autore reale.
     func testNoUnsourcedAttributions() {
         for q in Quotes.all {
-            XCTAssertFalse(q.author.lowercased().contains("lao"),
-                           "la citazione «natura non ha fretta» non è nel Tao Te Ching: verificata e scartata")
             XCTAssertFalse(q.work.lowercased().contains("anonim"))
             XCTAssertFalse(q.work.lowercased().hasPrefix("http"), "l'opera, non il sito")
+            XCTAssertFalse(q.text.contains("non ha fretta"),
+                           "quella frase non è nel Tao Te Ching: vive fra le anonime, non qui")
+            // Un'opera che si dichiara incerta non è un'opera identificabile: quelle frasi
+            // stanno in `Mindful`, dove essere anonime è previsto.
+            for hedge in ["tradizione", "attr.", "attribuit"] {
+                XCTAssertFalse(q.work.lowercased().contains(hedge),
+                               "attribuzione tentennante in un pool che le vieta: \(q.text)")
+            }
         }
     }
 
-    func testQuotesRotateAndWrapAround() {
-        let shown = (0..<Quotes.all.count).map { Quotes.quote(at: $0).id }
-        XCTAssertEqual(Set(shown).count, Quotes.all.count)
-        XCTAssertEqual(Quotes.quote(at: 0).id, Quotes.quote(at: Quotes.all.count).id)
-        XCTAssertNoThrow(Quotes.quote(at: -3))
+    /// Nessuna frase ripetuta dentro tutto il corpus: due copie della stessa riga con id diverso
+    /// tornerebbero due volte nello stesso giro di mazzo, ed è proprio ciò che il mazzo evita.
+    func testNoDuplicateTextsAcrossThePools() {
+        let texts = PhraseLibrary.breakPool(includingUser: false).map(\.text)
+        let unique = Set(texts)
+        XCTAssertEqual(unique.count, texts.count, "frasi duplicate nel corpus")
+
+        let ids = PhraseLibrary.breakPool(includingUser: false).map(\.id)
+        XCTAssertEqual(Set(ids).count, ids.count, "id duplicati: il mazzo ne perderebbe una")
     }
 
-    /// L'avvio conta, e la citazione cambia: sopravvive alla chiusura come la rotazione.
-    func testLaunchCountDrivesTheQuoteAndPersists() {
-        var s = Settings(); s.startDate = Date()
-        var engine = SessionEngine(settings: s)
-        let first = engine.launchQuote
-        engine.countLaunch()
-        XCTAssertNotEqual(engine.launchQuote.id, first.id, "un avvio nuovo, una citazione nuova")
-
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("otium-q-\(UUID().uuidString).json")
-        defer { try? FileManager.default.removeItem(at: url) }
-        RotationStore.save(engine.snapshot, to: url)
-
-        var reopened = SessionEngine(settings: s)
-        reopened.restore(RotationStore.load(from: url)!)
-        XCTAssertEqual(reopened.launchQuote.id, engine.launchQuote.id)
+    /// Il numero che rende vera la promessa «frasi sempre diverse per almeno un mese».
+    ///
+    /// Il conto: una pausa ogni 30 minuti di lavoro attivo fa ~16 pause al giorno; su 30 giorni
+    /// sono ~480 estrazioni. Se il corpus è più piccolo, il mazzo si rimescola prima e le frasi
+    /// tornano. Questo test è la promessa messa per iscritto: se qualcuno taglia il corpus, cade.
+    func testCorpusIsLargeEnoughForAMonthWithoutRepeats() {
+        let pool = PhraseLibrary.breakPool(includingUser: false)
+        let breaksPerDay = (8 * 60) / 30          // otto ore di lavoro attivo, una pausa ogni 30'
+        let month = breaksPerDay * 30
+        XCTAssertGreaterThanOrEqual(pool.count, month,
+                                    "servono almeno \(month) frasi per un mese senza ripetizioni, ce ne sono \(pool.count)")
     }
 
     /// Un file scritto prima che le citazioni esistessero non deve azzerare la rotazione.
@@ -542,30 +552,15 @@ final class ResumeTests: XCTestCase {
                        "«in più 10 minuti» si somma a quello che c'è")
     }
 
-    /// La citazione della pausa non è quella dell'avvio, e cambia a ogni pausa.
-    ///
-    /// Guidato passando da uno stato all'altro invece che con `forceBreakNow` ripetuto: dopo il
-    /// primo il motore è **dentro** la pausa e il secondo verrebbe rifiutato, così il test
-    /// misurava sempre la stessa cosa e diceva "non gira" a un codice che gira.
-    func testBreakQuoteDiffersFromLaunchQuoteAndRotates() {
-        var engine = makeEngine()
-        var seen: Set<String> = []
-        for index in 1...4 {
-            engine.restore(EngineSnapshot(breakIndex: index, microsSinceLong: 0, launchCount: 1))
-            seen.insert(engine.breakQuote.id)
-            XCTAssertNotEqual(engine.breakQuote.id, engine.launchQuote.id,
-                              "pausa e avvio non devono mostrare la stessa riga")
-        }
-        XCTAssertEqual(seen.count, 4, "una citazione diversa per ogni pausa")
-    }
-
-    /// La citazione contesa è ammessa, ma **senza il nome che non le spetta**.
+    /// La frase contesa è ammessa, ma **senza il nome che non le spetta**: vive fra le anonime.
     func testTheDisputedQuoteIsPresentAsAnonymous() {
-        guard let q = Quotes.all.first(where: { $0.text.contains("La natura non ha fretta") }) else {
-            return XCTFail("la citazione doveva restare, come anonima")
+        guard let phrase = Mindful.all.first(where: { $0.text.contains("La natura non ha fretta") }) else {
+            return XCTFail("la frase doveva restare, come anonima")
         }
-        XCTAssertEqual(q.author, "anonimo")
-        XCTAssertTrue(q.work.contains("Lao Tzu"), "e la nota deve dire perché non è sua")
+        XCTAssertTrue(phrase.attribution.isEmpty, "nessuna firma: non si sa di chi sia")
+        XCTAssertEqual(phrase.credit, "anonimo", "e a schermo si dice così, non si lascia vuoto")
+        XCTAssertFalse(Quotes.all.contains { $0.text.contains("non ha fretta") },
+                       "e non deve rientrare dalla finestra nel pool delle verificate")
     }
 }
 
@@ -852,7 +847,9 @@ final class ReportTests: XCTestCase {
 
     /// I complimenti girano: uno sempre uguale smette di essere un complimento.
     func testPraiseRotatesAndNeverRepeatsTwiceInARow() {
-        let lines = (0..<8).map { Praise.line(at: $0) }
+        // Il giro dura quanto l'elenco: legato alla lista, non a un 8 scritto a mano che diventa
+        // falso appena si aggiunge un complimento.
+        let lines = (0..<Praise.afterBreak.count).map { Praise.line(at: $0) }
         XCTAssertEqual(Set(lines).count, Praise.afterBreak.count)
         for (a, b) in zip(lines, lines.dropFirst()) { XCTAssertNotEqual(a, b) }
         XCTAssertNotEqual(Praise.line(at: 3, hard: true), Praise.line(at: 3, hard: false),

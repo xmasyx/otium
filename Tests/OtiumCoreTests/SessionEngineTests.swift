@@ -412,6 +412,35 @@ final class SessionEngineTests: XCTestCase {
         XCTAssertEqual(engine.clock.activeSeconds, 0, accuracy: 0.001)
     }
 
+    /// Il caso vero, segnalato il 2026-07-27: sospendi, ti dimentichi di riprendere, e quando te
+    /// ne accorgi dichiari «sono al computer da 20 minuti». Il conto deve dire 10 minuti alla
+    /// prossima pausa, non 30.
+    ///
+    /// Prima falliva perché `setPaused(false)` azzerava l'orologio **dopo** la dichiarazione:
+    /// i 20 minuti dichiarati venivano cancellati dalla ripresa, in silenzio.
+    func testDeclaringTimeWhileSuspendedResumesInsteadOfLosingIt() {
+        var engine = makeEngine()
+        engine.setPaused(true)
+
+        engine.declareTimeAlreadySeated(20 * 60, mode: .total)
+
+        XCTAssertEqual(engine.phase, .working, "dichiarare di essere al computer riprende l'app")
+        XCTAssertEqual(engine.clock.activeSeconds, 20 * 60, accuracy: 0.001)
+        XCTAssertEqual(engine.secondsUntilNextBreak, 10 * 60, accuracy: 0.001,
+                       "30 minuti di intervallo meno i 20 dichiarati")
+    }
+
+    /// L'altro verso della stessa moneta: una ripresa **senza** dichiarazione riparte pulita,
+    /// perché una sospensione di due ore non è lavoro. Se questo test cade, la correzione sopra
+    /// ha rotto il comportamento normale.
+    func testResumingWithoutDeclaringStillStartsFromZero() {
+        var engine = makeEngine()
+        advance(&engine, seconds: 20 * 60)
+        engine.setPaused(true)
+        engine.setPaused(false)
+        XCTAssertEqual(engine.clock.activeSeconds, 0, accuracy: 0.001)
+    }
+
     /// Cambiare preferenze a metà mattina non deve buttare via il lavoro già contato.
     func testChangingSettingsKeepsTheAccumulatedTime() {
         var engine = makeEngine()
