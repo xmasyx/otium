@@ -15,6 +15,9 @@ final class AppModel: ObservableObject {
     /// e il testo cambierebbe sotto gli occhi mentre lo leggi.
     @Published private(set) var currentPhrase: Phrase?
     @Published private(set) var launchPhrase: Phrase?
+    /// Quale periodo mostrano le statistiche. Sta qui e non nella vista perché la finestra si
+    /// ricostruisce a ogni apertura.
+    @Published var statsPeriod: StatsPeriod = .day
     /// Cosa è successo all'avvio: conto ripreso o ripartito. Si dice, non si fa in silenzio.
     private(set) var resumeOutcome: SessionEngine.Resume?
 

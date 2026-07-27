@@ -18,8 +18,23 @@ enum Palette {
     static var ink: Color { Color(current.ink) }
     static var paper: Color { Color(current.paper) }
     static var accent: Color { Color(current.accent) }
-    /// Sulle finestre normali, che seguono l'aspetto chiaro o scuro del sistema.
+    /// L'accento **scuro**, quello che regge su carta bianca.
     static var accentOnLight: Color { Color(current.accentOnLight) }
+
+    /// L'accento giusto per una finestra normale, che segue l'aspetto del sistema.
+    ///
+    /// Difetto segnalato il 2026-07-27 guardando le statistiche in modalità scura: le barre
+    /// usavano `accentOnLight` sempre — un verde scuro nato per il fondo bianco — e su fondo
+    /// scuro diventava fango. Non è una questione di gusto, è la variante sbagliata: la palette
+    /// ha già `accent`, che è **la stessa tinta pensata per il buio** ed è quella della schermata
+    /// di blocco. Qui si sceglie in base all'aspetto vivo, non a un'ipotesi scritta nel nome.
+    static var accentOnWindow: Color {
+        isDarkAppearance ? Color(current.accent) : Color(current.accentOnLight)
+    }
+
+    static var isDarkAppearance: Bool {
+        NSApp?.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+    }
     static var dim: Color { Color(current.dim) }
 }
 
@@ -604,7 +619,7 @@ struct EvidenceView: View {
                         let isDisclaimer = Evidence.disclaimers.contains { $0.id == study.id }
                         Text(study.governs)
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(isDisclaimer ? Color.secondary : Palette.accentOnLight)
+                            .foregroundStyle(isDisclaimer ? Color.secondary : Palette.accentOnWindow)
                         Text(study.claim)
                             .font(.system(size: 13))
                             .fixedSize(horizontal: false, vertical: true)
@@ -798,7 +813,7 @@ struct PrefsView: View {
                     // era riaprire la finestra.
                     if applied {
                         Label("Preferenze aggiornate", systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(Palette.accentOnLight)
+                            .foregroundStyle(Palette.accentOnWindow)
                             .font(.system(size: 13, weight: .medium))
                             .transition(.opacity)
                     }
@@ -918,13 +933,16 @@ private struct Card<Content: View>: View {
 
 struct StatsView: View {
     @ObservedObject var model: AppModel
-    @State private var period: StatsPeriod = .day
+    /// Il periodo scelto vive nel **modello**, non nella vista: la finestra viene ricostruita a
+    /// ogni apertura per non mostrare i numeri di quando l'hai chiusa, e uno `@State` qui
+    /// riporterebbe la scelta su «Oggi» ogni volta.
     /// Solo per `--snapshot --surface=stats --expanded`: un gruppo chiuso in un'immagine ferma
     /// non mostra cosa c'è dentro, e quello che non si vede non si può dire di aver verificato.
     /// A schermo i gruppi partono chiusi — la carta deve restare compatta.
     static var expandGroupsForSnapshot = false
     @State private var openGroups: Set<String> = []
 
+    private var period: StatsPeriod { model.statsPeriod }
     private var stats: PeriodStats { model.stats(for: period) }
     private var previous: PeriodStats { model.previousStats(for: period) }
 
@@ -948,7 +966,8 @@ struct StatsView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Otium").font(.system(size: 22, weight: .semibold, design: .rounded))
-            Picker("", selection: $period) {
+            Picker("", selection: Binding(get: { model.statsPeriod },
+                                          set: { model.statsPeriod = $0 })) {
                 ForEach(StatsPeriod.allCases, id: \.self) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented).labelsHidden()
@@ -969,13 +988,13 @@ struct StatsView: View {
     private func tile(_ value: String, _ caption: String, delta: Int?) -> some View {
         VStack(spacing: 4) {
             Text(value).font(.system(size: 25, weight: .semibold, design: .rounded))
-                .monospacedDigit().foregroundStyle(Palette.accentOnLight)
+                .monospacedDigit().foregroundStyle(Palette.accentOnWindow)
                 .lineLimit(1).minimumScaleFactor(0.6)
             Text(caption).font(.system(size: 10)).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Text(delta.map { $0 == 0 ? " " : "\($0 > 0 ? "+" : "")\($0) vs \(period == .day ? "ieri" : "prima")" } ?? " ")
                 .font(.system(size: 9))
-                .foregroundStyle((delta ?? 0) > 0 ? Palette.accentOnLight : Color.secondary)
+                .foregroundStyle((delta ?? 0) > 0 ? Palette.accentOnWindow : Color.secondary)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 14)
         .background(Color.primary.opacity(0.045))
@@ -992,10 +1011,10 @@ struct StatsView: View {
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
                             Text("\(Int(s.complianceRate * 100))%")
                                 .font(.system(size: 20, weight: .semibold, design: .rounded))
-                                .foregroundStyle(Palette.accentOnLight).monospacedDigit()
+                                .foregroundStyle(Palette.accentOnWindow).monospacedDigit()
                             Text("delle pause proposte").font(.system(size: 13, weight: .medium))
                         }
-                        ProgressView(value: s.complianceRate).tint(Palette.accentOnLight)
+                        ProgressView(value: s.complianceRate).tint(Palette.accentOnWindow)
                             .frame(width: 260)
                         Text(s.complianceRate < 0.5
                              ? "Sotto la metà: è la cadenza a essere sbagliata, non tu. Allungala nelle preferenze."
@@ -1006,7 +1025,7 @@ struct StatsView: View {
                     if s.streakDays > 1 {
                         VStack(spacing: 2) {
                             Text("\(s.streakDays)").font(.system(size: 22, weight: .semibold, design: .rounded))
-                                .foregroundStyle(Palette.accentOnLight)
+                                .foregroundStyle(Palette.accentOnWindow)
                             Text("giorni\ndi fila").font(.system(size: 10))
                                 .multilineTextAlignment(.center).foregroundStyle(.secondary)
                         }
@@ -1062,7 +1081,7 @@ struct StatsView: View {
                                     ZStack(alignment: .leading) {
                                         RoundedRectangle(cornerRadius: 4).fill(Color.primary.opacity(0.06))
                                         RoundedRectangle(cornerRadius: 4)
-                                            .fill(Palette.accentOnLight.opacity(g.group == "total body" ? 1 : 0.55))
+                                            .fill(Palette.accentOnWindow.opacity(g.group == "total body" ? 1 : 0.55))
                                             .frame(width: max(6, geo.size.width * Double(g.reps) / max(1, peak)))
                                     }
                                 }
@@ -1103,7 +1122,7 @@ struct StatsView: View {
                                         .frame(height: max(4, 44 * Double(h.missed) / peak))
                                 }
                                 if h.done > 0 {
-                                    RoundedRectangle(cornerRadius: 3).fill(Palette.accentOnLight)
+                                    RoundedRectangle(cornerRadius: 3).fill(Palette.accentOnWindow)
                                         .frame(height: max(4, 44 * Double(h.done) / peak))
                                 }
                             }
@@ -1124,7 +1143,7 @@ struct StatsView: View {
                 ForEach(Stats.insights(for: stats, target: model.settings.vigorousDailyTarget)) { insight in
                     HStack(alignment: .top, spacing: 10) {
                         Image(systemName: insight.met ? "checkmark.circle.fill" : "circle.dashed")
-                            .foregroundStyle(insight.met ? Palette.accentOnLight : Color.secondary)
+                            .foregroundStyle(insight.met ? Palette.accentOnWindow : Color.secondary)
                             .font(.system(size: 13))
                         VStack(alignment: .leading, spacing: 3) {
                             Text(insight.headline).font(.system(size: 12, weight: .medium))

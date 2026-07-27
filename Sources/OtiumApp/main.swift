@@ -73,6 +73,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
               let path = arg.split(separator: "=", maxSplits: 1).last.map(String.init)
         else { return }
 
+        // Per guardare le finestre normali come le vedi tu di sera, e per confrontare le livree
+        // senza cambiare le impostazioni del Mac.
+        if CommandLine.arguments.contains("--dark") {
+            NSApp.appearance = NSAppearance(named: .darkAqua)
+        }
+        if let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--theme=") }),
+           let name = arg.split(separator: "=", maxSplits: 1).last.map(String.init),
+           let theme = ThemeName(rawValue: name) {
+            Palette.apply(theme)
+        }
+
         let long = CommandLine.arguments.contains("--long")
         // Il timer va fermato **prima**: girando, leggerebbe l'inattività di un Mac che nessuno
         // sta toccando e chiuderebbe il break come pausa naturale, lasciando una schermata vuota.
@@ -109,6 +120,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         default:
             size = NSSize(width: 1440, height: 900)
             host = NSHostingView(rootView: BreakView(model: model).frame(width: size.width, height: size.height))
+        }
+        // Lo sfondo della finestra nell'app vera lo mette AppKit, non la vista: senza, uno
+        // snapshot in modalità scura esce bianco su bianco — testo chiaro su niente.
+        if surface != "break" {
+            host.wantsLayer = true
+            host.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
         }
         host.frame = NSRect(origin: .zero, size: size)
 
@@ -386,10 +403,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Il tempo attivo non ancora scritto va nel registro **adesso**: la finestra lo legge da
         // lì, e deve trovarci anche l'ultimo minuto.
         model.flushForDisplay()
+        // **Contenuto nuovo a ogni apertura.** Una finestra nascosta non ridisegna: riaprendola
+        // mostrava per un istante i numeri di quando l'avevi chiusa, e poi si aggiornava sotto
+        // gli occhi al primo battito. Segnalato guardandolo succedere il 2026-07-27.
+        let view = NSHostingView(rootView: StatsView(model: model))
+        view.frame = NSRect(x: 0, y: 0, width: 620, height: 680)
         if statsWindow == nil {
-            let view = NSHostingView(rootView: StatsView(model: model))
-            view.frame = NSRect(x: 0, y: 0, width: 620, height: 680)
             statsWindow = makeWindow(title: "Otium — statistiche", content: view)
+        } else {
+            statsWindow?.contentView = view
         }
         present(statsWindow)
     }

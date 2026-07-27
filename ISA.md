@@ -110,7 +110,7 @@ Rampa: settimana 1 al 55% delle ripetizioni, +15% a settimana fino al 100% in se
 
 ## Criteria
 
-> **Stato al 2026-07-27, iterazione 6: 45 chiusi su 46.** L'unico aperto resta ISC-28.
+> **Stato al 2026-07-27, iterazione 7: 47 chiusi su 48.** L'unico aperto resta ISC-28.
 >
 > Chiusi 28 su 29 il 2026-07-26. L'unico aperto è ISC-28, che è esperienziale: si chiude usando
 > l'app per qualche giorno, non con un probe.
@@ -610,6 +610,18 @@ guardando l'app funzionare, non leggendo il codice: è la ragione per cui ISC-28
       tempo si accumula a blocchi di cinque minuti (3.600 righe l'ora sarebbero insostenibili),
       e il prezzo era un numero vecchio fino a cinque minuti proprio mentre lo guardavi. Ora
       `flushForDisplay()` paga la scrittura una volta, quando apri.
+
+### Iterazione 7 — quello che si vede all'apertura (2026-07-27)
+
+- [x] **ISC-47** La finestra delle statistiche mostra i numeri di **adesso** nell'istante in cui
+      si apre. — riaprendola compariva per un attimo il disegno di quando l'avevi chiusa, poi si
+      aggiornava sotto gli occhi al primo battito: una finestra nascosta non ridisegna. Ora il
+      contenuto si ricostruisce a ogni apertura, dopo lo svuotamento del tempo; il periodo scelto
+      è passato dalla vista al modello, o la ricostruzione lo riporterebbe su «Oggi» ogni volta.
+- [x] **ISC-48** Nelle finestre normali l'accento segue l'aspetto del sistema. — in modalità
+      scura si vedeva `accentOnLight`, cioè il verde **nato per la carta bianca**: su fondo scuro
+      diventava fango. La palette aveva già la tinta per il buio — è quella della schermata di
+      blocco — e non veniva mai usata. Reso e guardato nelle tre livree in scuro.
 
 ## Test Strategy
 
