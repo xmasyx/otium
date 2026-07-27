@@ -166,26 +166,98 @@ final class WarningHUD {
 
     /// La frase dell'avvio: stesso angolo delle altre notifiche, pannello un po' più alto
     /// perché una riga di Seneca non sta in due righe da barra dei menu.
-    func showQuote(_ phrase: Phrase) {
+    func showQuote(_ phrase: Phrase, seconds: Double = 12) {
         present(
             NSHostingView(rootView: Dismissible(onDismiss: { [weak self] in self?.hide() }) {
                 QuoteHUDView(phrase: phrase)
             }),
             size: NSSize(width: 380, height: 132),
             sound: nil,
-            seconds: 12
+            seconds: seconds
         )
     }
 
-    func show(title: String, subtitle: String, sound: String? = "Tink") {
+    func show(title: String, subtitle: String, sound: String? = "Tink", seconds: Double = 8) {
         present(
             NSHostingView(rootView: Dismissible(onDismiss: { [weak self] in self?.hide() }) {
                 HUDView(title: title, subtitle: subtitle)
             }),
             size: NSSize(width: 320, height: 84),
             sound: (sound?.isEmpty ?? true) ? nil : sound,
-            seconds: 8
+            seconds: seconds
         )
+    }
+
+    /// Il gesto vero delle notifiche di macOS: **due dita sul trackpad**, senza premere.
+    ///
+    /// Non è un trascinamento. Un trascinamento è pulsante premuto e mouse che si muove, e
+    /// SwiftUI lo intercetta con `DragGesture`; due dita che scorrono sono eventi di
+    /// **scorrimento**, che a `DragGesture` non arrivano mai. Misurato il 2026-07-27 con due
+    /// sonde sulla notifica vera: il trascinamento la scartava già, lo scorrimento la lasciava
+    /// lì. È questo che rendeva il gesto «non implementato» per chi usa il trackpad come con le
+    /// notifiche di sistema — cioè sempre.
+    ///
+    /// Sta in AppKit e non in SwiftUI perché lo scorrimento orizzontale su una vista non
+    /// scorrevole SwiftUI non lo espone: `scrollWheel(with:)` è l'unico punto in cui l'evento
+    /// esiste davvero.
+    private final class ScrollDismissView: NSView {
+        var onDismiss: (() -> Void)?
+        /// Quanto è stato spostato finora, in punti, verso destra.
+        private var travelled: CGFloat = 0
+        private let threshold: CGFloat = 70
+        private let fadeOver: CGFloat = 220
+        private var card: NSView? { subviews.first }
+
+        override func scrollWheel(with event: NSEvent) {
+            // Il verso è quello che il sistema chiama "destra" con le impostazioni dell'utente:
+            // si somma il delta così com'è, senza correggerlo, o l'inversione dello scorrimento
+            // naturale ribalterebbe il gesto senza dirlo.
+            switch event.phase {
+            case .began:
+                travelled = 0
+            case .changed:
+                travelled += event.scrollingDeltaX
+                // Solo verso destra, come le notifiche di sistema: a sinistra non si muove.
+                travelled = max(0, travelled)
+                apply(travelled, animated: false)
+            case .ended, .cancelled:
+                finish()
+            default:
+                // Rotella classica o eventi senza fase: si accumula e si decide subito.
+                if event.phase == [] && event.momentumPhase == [] {
+                    travelled = max(0, travelled + event.scrollingDeltaX)
+                    apply(travelled, animated: false)
+                    if travelled > threshold { finish() }
+                }
+            }
+        }
+
+        private func finish() {
+            if travelled > threshold {
+                apply(bounds.width, animated: true)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { [weak self] in
+                    self?.onDismiss?()
+                }
+            } else {
+                travelled = 0
+                apply(0, animated: true)
+            }
+        }
+
+        private func apply(_ x: CGFloat, animated: Bool) {
+            guard let card else { return }
+            let alpha = Double(1 - min(1, x / fadeOver))
+            if animated {
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = 0.18
+                    card.animator().setFrameOrigin(NSPoint(x: x, y: card.frame.origin.y))
+                    card.animator().alphaValue = alpha
+                }
+            } else {
+                card.setFrameOrigin(NSPoint(x: x, y: card.frame.origin.y))
+                card.alphaValue = alpha
+            }
+        }
     }
 
     private func present(_ content: NSView, size: NSSize, sound: String?, seconds: Double) {
@@ -212,8 +284,10 @@ final class WarningHUD {
         p.hasShadow = true
         p.level = .statusBar
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-        // Il contenuto resta ancorato a sinistra dentro la finestra allargata.
-        let host = NSView(frame: NSRect(x: 0, y: 0, width: size.width + travel, height: size.height))
+        // Il contenuto resta ancorato a sinistra dentro la finestra allargata; il contenitore
+        // ascolta lo scorrimento a due dita, che a SwiftUI non arriva.
+        let host = ScrollDismissView(frame: NSRect(x: 0, y: 0, width: size.width + travel, height: size.height))
+        host.onDismiss = { [weak self] in self?.hide() }
         content.frame = NSRect(x: 0, y: 0, width: size.width, height: size.height)
         host.addSubview(content)
         p.contentView = host

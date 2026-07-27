@@ -253,6 +253,16 @@ final class AppModel: ObservableObject {
         hud.showQuote(launchPhrase)
     }
 
+    /// Le due varianti che restano a schermo quanto dici tu: servono a **provare a mano** il gesto
+    /// di scarto, che nessun test automatico può toccare.
+    func announceForSeconds(title: String, subtitle: String, seconds: Double) {
+        hud.show(title: title, subtitle: subtitle, sound: nil, seconds: seconds)
+    }
+
+    func showLaunchPhraseForSeconds(_ phrase: Phrase, seconds: Double) {
+        hud.showQuote(phrase, seconds: seconds)
+    }
+
     // MARK: - Azioni
 
     var canReturnToWork: Bool { engine.canReturnToWork }

@@ -28,13 +28,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         refreshTimer = t
 
         // Una riga da leggere mentre l'app si mette in ascolto. Cambia a ogni avvio.
-        if !CommandLine.arguments.contains(where: { $0.hasPrefix("--snapshot") }) {
+        // Non durante le sonde: la frase d'avvio **sostituisce** il pannello che si sta provando,
+        // e la sonda finirebbe per misurare una superficie diversa da quella che ha chiesto.
+        if !CommandLine.arguments.contains(where: { $0.hasPrefix("--snapshot") || $0.hasPrefix("--demo-hud") }) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
                 self?.model.showLaunchQuote()
             }
         }
 
         runDemoIfRequested()
+        runHudDemoIfRequested()
         renderSnapshotIfRequested()
         runWindowProbeIfRequested()
 
@@ -118,6 +121,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
             NSApp.terminate(nil)
         }
+    }
+
+    /// `--demo-hud[=secondi]` — fa comparire una notifica e la lascia lì, per provarla a mano.
+    ///
+    /// Il gesto di scarto non si può provare con `swift test`: dipende da come AppKit consegna il
+    /// mouse a un pannello che non prende il fuoco, e quello si vede solo su una notifica vera.
+    private func runHudDemoIfRequested() {
+        guard let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--demo-hud") })
+        else { return }
+        let seconds = arg.split(separator: "=").last.flatMap { Double($0) } ?? 60
+        let quote = CommandLine.arguments.contains("--quote")
+        if quote, let phrase = model.launchPhrase {
+            model.showLaunchPhraseForSeconds(phrase, seconds: seconds)
+        } else {
+            model.announceForSeconds(title: "Pausa fra un minuto", subtitle: "12 affondi",
+                                     seconds: seconds)
+        }
+        let killswitch = Timer(timeInterval: seconds + 2, repeats: false) { _ in NSApp.terminate(nil) }
+        RunLoop.main.add(killswitch, forMode: .common)
     }
 
     /// `--window-probe=<superficie>` — costruisce una finestra e **misura** se ci sta nello schermo.
