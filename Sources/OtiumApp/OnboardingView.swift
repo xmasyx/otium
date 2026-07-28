@@ -17,6 +17,9 @@ struct OnboardingView: View {
 
     @State private var language: AppLanguage = AppLanguage.systemDefault
     @State private var sex: Sex?
+    /// Solo per le rese: permette di guardare com'è fatta la schermata **a scelta già fatta**,
+    /// che è l'unico modo di giudicare il bottone selezionato senza cliccarlo a mano.
+    var preselectedSex: Sex?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 26) {
@@ -89,6 +92,7 @@ struct OnboardingView: View {
         }
         .padding(34)
         .frame(width: 540)
+        .onAppear { if let preselectedSex { sex = preselectedSex } }
     }
 
     private func question<Content: View>(

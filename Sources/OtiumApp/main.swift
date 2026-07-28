@@ -167,7 +167,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             // Il primo avvio si guarda nelle due lingue: è la prima cosa che vede chi installa
             // l'app, e l'unica schermata che non ha una seconda occasione.
             if CommandLine.arguments.contains("--inglese") { L.language = .english }
-            let ob = NSHostingView(rootView: OnboardingView(model: model, onDone: {}))
+            let scelto: Sex? = CommandLine.arguments.contains("--donna") ? .female
+                : CommandLine.arguments.contains("--uomo") ? .male : nil
+            let ob = NSHostingView(rootView: OnboardingView(model: model, onDone: {},
+                                                            preselectedSex: scelto))
             size = NSSize(width: 540, height: ob.fittingSize.height)
             host = ob
         case "menu":
