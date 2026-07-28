@@ -779,8 +779,8 @@ struct PrefsView: View {
                             get: { Int((draft.rampStartFactor * 100).rounded()) },
                             set: { draft.rampStartFactor = Double($0) / 100 }
                         ), in: 20...100, step: 5)
-                Text(L.t("Le prime settimane le ripetizioni sono ridotte, poi si arriva al numero pieno. Oggi sei \(ItalianNumber.al(Int(draft.rampFactor(now: Date()) * 100)))%.",
-                         "For the first weeks the reps are reduced, then you reach the full number. Today you are at \(Int(draft.rampFactor(now: Date()) * 100))%."))
+                Text(L.t("Le ripetizioni partono ridotte e salgono un pochino ogni giorno, fino al numero pieno. Oggi sei \(ItalianNumber.al(Int(draft.rampFactor(now: Date()) * 100)))%.",
+                         "The reps start reduced and go up a little every day, until the full number. Today you are at \(Int(draft.rampFactor(now: Date()) * 100))%."))
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
