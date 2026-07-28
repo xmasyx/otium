@@ -39,6 +39,28 @@ final class QuoteLanguageTests: XCTestCase {
                       "\(senza.count) frasi mindful su \(pool.count) non hanno l'inglese. Prime:\n  \(esempi)")
     }
 
+    /// **Nessuna frase deborda dallo schermo, in nessuna delle due lingue.**
+    ///
+    /// Il limite di 145 caratteri esisteva solo dentro `verifica-citazioni.ts`, cioè fuori
+    /// dall'app: proteggeva quello che entrava dal cancello e niente altro. Una frase scritta a
+    /// mano nel sorgente, o un inglese più lungo del suo italiano — e l'inglese lo è spesso —
+    /// non incontrava nessuna guardia fino allo schermo, dove il difetto si vede solo se quella
+    /// frase capita di uscire durante una pausa. Che è il modo più lento di scoprirlo.
+    func testNoPhraseOverflowsTheScreenInEitherLanguage() {
+        let limite = 145
+        var lunghe: [String] = []
+        for q in Quotes.all {
+            if q.text.count > limite { lunghe.append("IT \(q.text.count) — \(q.author): \(q.text.prefix(50))…") }
+            if q.textEN.count > limite { lunghe.append("EN \(q.textEN.count) — \(q.author): \(q.textEN.prefix(50))…") }
+        }
+        for p in Mindful.all {
+            if p.text.count > limite { lunghe.append("IT \(p.text.count) — \(p.text.prefix(50))…") }
+            if p.textEN.count > limite { lunghe.append("EN \(p.textEN.count) — \(p.textEN.prefix(50))…") }
+        }
+        XCTAssertTrue(lunghe.isEmpty,
+                      "frasi oltre \(limite) caratteri:\n  \(lunghe.joined(separator: "\n  "))")
+    }
+
     // MARK: - I nomi
 
     /// Ogni segmento di titolo che non sia un numero deve avere la sua voce in `QuoteNames`.
