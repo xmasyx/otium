@@ -35,7 +35,7 @@ public enum Evidence {
         citation: "Duran et al., «Breaking Up Prolonged Sitting to Improve Cardiometabolic Risk: "
                 + "Dose-Response Analysis of a Randomized Crossover Trial», Med Sci Sports Exerc",
         year: 2023,
-        url: "https://www.cuimc.columbia.edu/news/rx-prolonged-sitting-five-minute-stroll-every-half-hour",
+        url: "https://pubmed.ncbi.nlm.nih.gov/36728338/",
         governs: "Intervallo fra i break: 30 minuti di tempo attivo."
     )
 
@@ -49,7 +49,7 @@ public enum Evidence {
         citation: "Gao, Li, Finni & Pesola, «Enhanced muscle activity during interrupted sitting "
                 + "improves glycemic control in overweight and obese men», Scand J Med Sci Sports",
         year: 2024,
-        url: "https://onlinelibrary.wiley.com/doi/abs/10.1111/sms.14628",
+        url: "https://pubmed.ncbi.nlm.nih.gov/38629807/",
         governs: "La scelta degli esercizi di forza a corpo libero invece di «alzati e cammina»."
     )
 
@@ -76,7 +76,7 @@ public enum Evidence {
         citation: "Albulescu et al., «Give me a break! A systematic review and meta-analysis on "
                 + "the efficacy of micro-breaks for increasing well-being and performance», PLOS ONE 17(8)",
         year: 2022,
-        url: "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0272460",
+        url: "https://pubmed.ncbi.nlm.nih.gov/36044424/",
         governs: "I 90 secondi del micro-snack, e l'esistenza della pausa piena ogni 90 minuti."
     )
 
@@ -89,7 +89,7 @@ public enum Evidence {
         citation: "Stamatakis et al., «Association of wearable device-measured vigorous "
                 + "intermittent lifestyle physical activity with mortality», Nature Medicine 28",
         year: 2022,
-        url: "https://www.wcrf.org/about-us/news-and-blogs/vigorous-exercise-and-the-science-behind-exercise-snacking/",
+        url: "https://pubmed.ncbi.nlm.nih.gov/36482104/",
         governs: "I 60-90 secondi vigorosi della pausa piena, e il bersaglio di 3 sessioni al giorno."
     )
 
@@ -105,7 +105,7 @@ public enum Evidence {
         citation: "Johnson & Rosenfield, sul valore terapeutico della regola 20-20-20 "
                 + "(discusso in Optometry Advisor / Ophthalmic Physiol Opt)",
         year: 2023,
-        url: "https://www.optometryadvisor.com/features/digital-eye-strain-may-not-be-solved-by-the-20-20-20-rule/",
+        url: "https://pubmed.ncbi.nlm.nih.gov/36473088/",
         governs: "Una funzione deliberatamente assente."
     )
 
@@ -122,7 +122,7 @@ public enum Evidence {
         citation: "Biwer, Wiradhany, oude Egbrink & de Bruin, «Understanding effort regulation: "
                 + "Comparing 'Pomodoro' breaks and self-regulated breaks», Br J Educ Psychol",
         year: 2023,
-        url: "https://bpspsychub.onlinelibrary.wiley.com/doi/abs/10.1111/bjep.12593",
+        url: "https://pubmed.ncbi.nlm.nih.gov/36859717/",
         governs: "Perché la pausa la decide l'app e non tu, al momento."
     )
 
@@ -137,7 +137,7 @@ public enum Evidence {
         citation: "Ariga & Lleras, «Brief and rare mental breaks keep you focused: deactivation "
                 + "and reactivation of task goals preempt vigilance decrements», Cognition 118(3)",
         year: 2011,
-        url: "https://www.sciencedirect.com/science/article/abs/pii/S0010027710002994",
+        url: "https://pubmed.ncbi.nlm.nih.gov/21211793/",
         governs: "Perché la pausa ti fa fare un esercizio invece di lasciarti guardare il muro."
     )
 
@@ -151,10 +151,13 @@ public enum Evidence {
              + "l'effetto delle micro-pause motorie sulla cognizione resta dichiarato "
              + "inconcludente. Otium interrompe per ragioni metaboliche e di fatica, non perché "
              + "ti renda più intelligente nei dieci minuti successivi.",
-        citation: "Meta-analisi sull'esercizio acuto e funzioni esecutive (Ludyga et al.; "
-                + "Nature Comms Psychology 2024) e revisione sulle pause dal sedentario",
+        // Il nome era sbagliato: il lavoro puntato dal link è di Garrett, Chak e Bullock, non di
+        // Ludyga. Verificato su PubMed il 2026-07-28 (PMID 39242965).
+        citation: "Garrett, Chak & Bullock, «A systematic review and Bayesian meta-analysis "
+                + "provide evidence for an effect of acute physical activity on cognition», "
+                + "Communications Psychology 2, 2024",
         year: 2024,
-        url: "https://www.nature.com/articles/s44271-024-00124-2",
+        url: "https://pubmed.ncbi.nlm.nih.gov/39242965/",
         governs: "Una promessa che l'app si rifiuta di fare."
     )
 

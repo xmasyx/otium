@@ -817,6 +817,25 @@ final class SourceUrlTests: XCTestCase {
             XCTAssertNotNil(URL(string: study.url), "\(study.id): URL non costruibile")
         }
     }
+
+    /// **Ogni fonte punta a PubMed, non a un sito qualunque.**
+    ///
+    /// Richiesta del principale il 2026-07-28, e non è una preferenza estetica: prima si andava su
+    /// comunicati stampa di università, blog di fondazioni e riviste di settore, cioè pagine che
+    /// *parlano* dello studio invece di essere lo studio. Un link a PubMed porta a un record
+    /// stabile con PMID, autori e rivista, che è verificabile da chiunque e non sparisce quando
+    /// il sito si rifà la grafica.
+    func testEveryStudyLinksToPubMed() {
+        for study in Evidence.all {
+            XCTAssertTrue(study.url.hasPrefix("https://pubmed.ncbi.nlm.nih.gov/"),
+                          "\(study.id): la fonte non è su PubMed → \(study.url)")
+            let pmid = study.url
+                .replacingOccurrences(of: "https://pubmed.ncbi.nlm.nih.gov/", with: "")
+                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            XCTAssertFalse(pmid.isEmpty, "\(study.id): PMID mancante")
+            XCTAssertTrue(pmid.allSatisfy(\.isNumber), "\(study.id): PMID non numerico → \(pmid)")
+        }
+    }
 }
 
 /// Il report riorganizzato: confronto, tasso di rispetto, gruppi muscolari, fasce orarie.
