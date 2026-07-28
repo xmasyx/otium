@@ -28,15 +28,17 @@ struct PaceCheckInView: View {
                 Text(L.t("Due settimane.", "Two weeks in."))
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundStyle(Palette.accentOnWindow)
-                Text(L.t("Sei partito piano, come si deve: oggi fai il \(percentualeOggi)% delle ripetizioni piene. Se ti stanno venendo facili, puoi passare al numero pieno da adesso.",
+                Text(L.t("Sei partito piano, come si deve: oggi fai \(ItalianNumber.il(percentualeOggi))% delle ripetizioni piene. Se ti stanno venendo facili, puoi passare al numero pieno da adesso.",
                          "You started gently, as you should: today you do \(percentualeOggi)% of the full reps. If they are coming easy, you can move to the full number right now."))
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Text(L.t("Non c'è una risposta giusta. Il numero pieno non è un traguardo da raggiungere in fretta: è quello a cui la salita arriva da sola fra qualche settimana.",
-                     "There is no right answer. The full number is not a target to rush: it is where the gradual climb gets to on its own in a few weeks."))
+            // Prima diceva «è quello a cui la salita arriva da sola», che è contorto e non
+            // significa niente a prima lettura. Segnalato dal principale il 2026-07-28.
+            Text(L.t("Non c'è una risposta giusta: se rispondi «non ancora», al numero pieno ci arrivi comunque fra qualche settimana.",
+                     "There is no right answer: if you say «not yet», you get to the full number anyway in a few weeks."))
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

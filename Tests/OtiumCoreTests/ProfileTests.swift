@@ -149,6 +149,29 @@ final class ProfileTests: XCTestCase {
                        ExerciseKind.squat.baseReps)
     }
 
+    /// **L'articolo davanti al numero.** «Oggi fai il 85%» è sbagliato, e sbaglia da solo:
+    /// la frase la scrive il codice e il numero cambia ogni settimana, quindi una stringa giusta
+    /// al 55% diventa sbagliata all'85% senza che nessuno la riguardi.
+    func testItalianArticleBeforeNumbers() {
+        XCTAssertEqual(ItalianNumber.il(55), "il 55")
+        XCTAssertEqual(ItalianNumber.il(50), "il 50")
+        XCTAssertEqual(ItalianNumber.il(70), "il 70")
+        XCTAssertEqual(ItalianNumber.il(90), "il 90")
+        XCTAssertEqual(ItalianNumber.il(100), "il 100")
+        XCTAssertEqual(ItalianNumber.il(85), "l'85", "ottantacinque comincia per vocale")
+        XCTAssertEqual(ItalianNumber.il(80), "l'80")
+        XCTAssertEqual(ItalianNumber.il(89), "l'89")
+        XCTAssertEqual(ItalianNumber.il(8), "l'8")
+        XCTAssertEqual(ItalianNumber.il(11), "l'11")
+        XCTAssertEqual(ItalianNumber.il(18), "l'18")
+        XCTAssertEqual(ItalianNumber.il(1), "l'1")
+        XCTAssertEqual(ItalianNumber.al(85), "all'85")
+        XCTAssertEqual(ItalianNumber.al(55), "al 55")
+        // Il 21 e il 28 si leggono ventuno e ventotto: cominciano per consonante.
+        XCTAssertEqual(ItalianNumber.il(21), "il 21")
+        XCTAssertEqual(ItalianNumber.il(28), "il 28")
+    }
+
     /// Le impostazioni scritte prima che l'onboarding esistesse non devono morire, e devono
     /// **chiedere**: lingua e sesso restano nil, che è l'innesco della prima schermata.
     func testOldSettingsFileTriggersOnboarding() throws {

@@ -39,3 +39,27 @@ public enum L {
             : "\(count) \(count == 1 ? singularEN : pluralEN)"
     }
 }
+
+/// L'articolo davanti a un numero, in italiano.
+///
+/// «Oggi fai il 85%» è sbagliato: ottantacinque comincia per vocale, quindi vuole l'elisione —
+/// «l'85%». Non è un dettaglio da correggere a mano frase per frase, perché la frase la scrive
+/// il codice e il numero cambia ogni settimana: una stringa che va bene al 50% e sbaglia all'85%
+/// è un errore che compare da solo, quando nessuno sta guardando.
+///
+/// Il dominio sono le percentuali e i conteggi piccoli, cioè 0-100: lì i numeri che si leggono
+/// cominciando per vocale sono uno, otto, undici, diciotto e tutti gli ottanta.
+public enum ItalianNumber {
+
+    public static func startsWithVowel(_ n: Int) -> Bool {
+        let m = abs(n)
+        if m == 1 || m == 8 || m == 11 || m == 18 { return true }
+        return (80...89).contains(m)
+    }
+
+    /// «il 50» · «l'85»
+    public static func il(_ n: Int) -> String { startsWithVowel(n) ? "l'\(n)" : "il \(n)" }
+
+    /// «al 50» · «all'85»
+    public static func al(_ n: Int) -> String { startsWithVowel(n) ? "all'\(n)" : "al \(n)" }
+}

@@ -93,6 +93,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         runHotKeyProbeIfRequested()
         runPolicyProbeIfRequested()
         runCircuitProbeIfRequested()
+        runPaceDemoIfRequested()
         runRadarProbeIfRequested()
 
         // Il secondo avvio non apre niente di nuovo: chiede a questa istanza di farsi vedere.
@@ -190,6 +191,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             size = NSSize(width: 540, height: ob.fittingSize.height)
             host = ob
         case "ritmo":
+            // `--giorni=N` simula un'installazione di N giorni fa: la finestra ha senso solo
+            // dentro la partenza graduale, e a giorno zero mostrerebbe una percentuale che nella
+            // vita vera non si vede mai.
+            if let g = CommandLine.arguments.first(where: { $0.hasPrefix("--giorni=") })?
+                .split(separator: "=", maxSplits: 1).last.flatMap({ Int($0) }) {
+                var sim = model.settings
+                sim.startDate = Date().addingTimeInterval(-Double(g) * 24 * 3600)
+                sim.rampStartFactor = 0.55
+                sim.fullPaceAnswered = false
+                model.update(settings: sim)
+            }
             let pace = NSHostingView(rootView: PaceCheckInView(model: model, onDone: {}))
             size = NSSize(width: 480, height: pace.fittingSize.height)
             host = pace
@@ -500,6 +512,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                 exit(ok ? 0 : 1)
             }
         }
+    }
+
+    /// `--demo-ritmo` — la domanda delle due settimane, **come la vede chi ci è dentro**.
+    ///
+    /// Simula un'installazione di due settimane fa ancora in partenza graduale, che è l'unico
+    /// stato in cui quella finestra compare nella vita vera. Gira dentro `ProbeMode`, quindi i
+    /// dati veri del principale non li tocca: se premi un pulsante, la scelta finisce in una
+    /// cartella usa e getta. È il motivo per cui una demo può essere premuta davvero.
+    private func runPaceDemoIfRequested() {
+        guard CommandLine.arguments.contains("--demo-ritmo") else { return }
+        let giorni = CommandLine.arguments.first { $0.hasPrefix("--giorni=") }?
+            .split(separator: "=", maxSplits: 1).last.flatMap { Int($0) } ?? 14
+
+        var s = Settings()
+        s.startDate = Date().addingTimeInterval(-Double(giorni) * 24 * 3600)
+        s.sex = .male
+        s.language = model.settings.language ?? .italian
+        L.language = s.language ?? .italian
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("otium-demo-\(UUID().uuidString).jsonl")
+        let finto = AppModel(settings: s, ledger: Ledger(url: url))
+        print("installazione simulata di \(giorni) giorni fa")
+        print(String(format: "oggi sarebbe al %.0f%% delle ripetizioni piene",
+                     s.rampFactor(now: Date()) * 100))
+        print("la domanda comparirebbe: \(s.shouldOfferFullPace(now: Date()) ? "sì" : "no")")
+
+        let hosting = NSHostingView(rootView: PaceCheckInView(model: finto) { NSApp.terminate(nil) })
+        hosting.frame = NSRect(x: 0, y: 0, width: 480, height: hosting.fittingSize.height)
+        let w = makeWindow(title: L.t("Otium", "Otium"), content: hosting)
+        present(w)
+        paceWindow = w
+        // Una demo che resta aperta per sempre diventa una finestra dimenticata.
+        let killswitch = Timer(timeInterval: 600, repeats: false) { _ in NSApp.terminate(nil) }
+        RunLoop.main.add(killswitch, forMode: .common)
     }
 
     /// `--circuit-probe` — alla fine di un circuito la notifica dice **tutto** il giro?

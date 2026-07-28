@@ -17,6 +17,8 @@ struct OnboardingView: View {
 
     @State private var language: AppLanguage = AppLanguage.systemDefault
     @State private var sex: Sex?
+    /// Terza domanda: si comincia a metà e si sale, o si parte dai numeri interi.
+    @State private var gradual = true
     /// Solo per le rese: permette di guardare com'è fatta la schermata **a scelta già fatta**,
     /// che è l'unico modo di giudicare il bottone selezionato senza cliccarlo a mano.
     var preselectedSex: Sex?
@@ -73,6 +75,35 @@ struct OnboardingView: View {
                 }
             }
 
+            question(
+                number: 3,
+                title: L.t("Da che numeri parti", "Where you start from"),
+                detail: L.t("Si cambia dalle preferenze.", "You can change it in preferences.")
+            ) {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 12) {
+                        choice(title: L.t("Partenza graduale", "Gradual start"),
+                               selected: gradual, wide: true) { gradual = true }
+                        choice(title: L.t("Numeri pieni", "Full numbers"),
+                               selected: !gradual, wide: true) { gradual = false }
+                    }
+                    // **I numeri veri, non una percentuale.** «Parti al 55%» non dice niente a
+                    // nessuno; «8 squat invece di 15» si capisce senza pensarci, e cambia sotto
+                    // gli occhi quando tocchi la domanda qui sopra.
+                    Text(esempio)
+                        .font(.system(size: 12, design: .rounded))
+                        .foregroundStyle(Palette.accentOnWindow)
+                    Text(gradual
+                         ? L.t("Si sale un po' ogni settimana fino ai numeri interi, in quattro settimane. Serve a non smettere dopo tre giorni.",
+                               "It goes up a little each week to the whole numbers, over four weeks. It is there so you don't quit after three days.")
+                         : L.t("Nessuna partenza morbida: da domani i numeri sono quelli. Se sei già allenato è la scelta giusta.",
+                               "No soft start: from tomorrow those are the numbers. If you already train, this is the right choice."))
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
             HStack {
                 Spacer()
                 Button(action: finish) {
@@ -93,6 +124,17 @@ struct OnboardingView: View {
         .padding(34)
         .frame(width: 540)
         .onAppear { if let preselectedSex { sex = preselectedSex } }
+    }
+
+    /// Due esercizi che tutti conoscono, coi numeri che vedrebbe davvero questa persona: il
+    /// sesso scelto qui sopra entra nel conto, quindi la riga cambia anche cambiando la seconda
+    /// risposta.
+    private var esempio: String {
+        let fattore = gradual ? Settings().rampStartFactor : 1.0
+        let squat = Ramp.reps(for: .squat, factor: fattore, sex: sex ?? .male)
+        let push = Ramp.reps(for: .pushUp, factor: fattore, sex: sex ?? .male)
+        return L.t("Il primo giorno: \(squat) squat, \(push) push-up.",
+                   "Day one: \(squat) squats, \(push) push-ups.")
     }
 
     private func question<Content: View>(
@@ -124,11 +166,12 @@ struct OnboardingView: View {
     /// livrea (#8FC2A4) è chiara, e il bianco sopra darebbe un contrasto vicino a 1,5:1, cioè
     /// illeggibile. Steso al 55% sul verde notte del fondo diventa scuro quanto basta perché il
     /// bianco stia largo sopra, restando inequivocabilmente verde.
-    private func choice(title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+    private func choice(title: String, selected: Bool, wide: Bool = false,
+                        action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 14, weight: selected ? .semibold : .medium, design: .rounded))
-                .frame(width: 130, height: 38)
+                .frame(width: wide ? 175 : 130, height: 38)
                 // Scelto: il testo sta **sopra** il riempimento pieno, quindi prende il colore
                 // che regge su quel verde — bianco su fondo chiaro, verde notte su fondo scuro.
                 // Non scelto: il testo sta sulla finestra, quindi è il colore normale del testo,
@@ -158,6 +201,12 @@ struct OnboardingView: View {
         // creazione del file delle impostazioni, che l'app scrive al primo avvio prima ancora di
         // sapere chi sei: significherebbe cominciare a settimane già passate.
         s.startDate = Date()
+        // Chi sceglie i numeri pieni qui ha già risposto anche alla domanda delle due settimane:
+        // rifargliela sarebbe chiedere due volte la stessa cosa.
+        if !gradual {
+            s.rampStartFactor = 1.0
+            s.fullPaceAnswered = true
+        }
         model.update(settings: s)
         onDone()
     }
