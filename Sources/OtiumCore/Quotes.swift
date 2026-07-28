@@ -31,15 +31,31 @@ import Foundation
 /// Tolti anche cinque doppioni: lo stesso passo compariva due volte con parole diverse (Seneca
 /// due volte, Epitteto, Confucio, Franklin).
 public struct Quote: Equatable, Sendable, Identifiable {
+    /// L'italiano. Resta la forma canonica anche quando a schermo c'è l'inglese — vedi `id`.
     public let text: String
+    /// L'inglese. Vuoto solo durante la migrazione: `QuoteLanguageTests` lo pretende pieno.
+    public let textEN: String
     public let author: String
     /// L'opera, non il sito da cui l'ho presa.
     public let work: String
 
+    /// **L'identità è ancorata all'italiano, in tutte e due le lingue.**
+    ///
+    /// Il mazzo persiste su disco la lista degli id già estratti (`decks.json`). Se l'id seguisse
+    /// il testo mostrato, cambiare lingua cambierebbe l'identità di tutte le citazioni in una
+    /// volta: il mazzo le vedrebbe come frasi nuove, si rimescolerebbe, e la promessa «un mese
+    /// senza ripetizioni» ripartirebbe da zero a ogni cambio — **in silenzio**, perché nessun
+    /// errore compare e le frasi continuano a uscire. L'italiano è la chiave e non si muove.
     public var id: String { "\(author)-\(text.prefix(24))" }
 
-    public init(_ text: String, author: String, work: String) {
+    /// Cosa finisce davvero a schermo.
+    public var localizedText: String { L.t(text, textEN) }
+    public var localizedAuthor: String { QuoteNames.author(author) }
+    public var localizedWork: String { QuoteNames.work(work, author: author) }
+
+    public init(_ text: String, en: String = "", author: String, work: String) {
         self.text = text
+        self.textEN = en
         self.author = author
         self.work = work
     }
@@ -47,7 +63,16 @@ public struct Quote: Equatable, Sendable, Identifiable {
 
 public enum Quotes {
 
-    /// Scorciatoia per tenere leggibile un elenco lungo.
+    /// Scorciatoia per tenere leggibile un elenco lungo — italiano e inglese a fronte.
+    private static func q(_ text: String, _ en: String, _ author: String, _ work: String) -> Quote {
+        Quote(text, en: en, author: author, work: work)
+    }
+
+    /// **Ponte di migrazione: da togliere quando l'ultima citazione ha il suo inglese.**
+    ///
+    /// Finché esiste, una citazione può entrare senza traduzione e il test la conta invece di
+    /// bloccare la compilazione di tutto il pool. Quando sparisce, la guardia diventa il
+    /// compilatore, che è più forte di qualunque test: una citazione monca non compila.
     private static func q(_ text: String, _ author: String, _ work: String) -> Quote {
         Quote(text, author: author, work: work)
     }

@@ -19,16 +19,32 @@ public struct Phrase: Equatable, Sendable, Identifiable {
 
     public let id: String
     public let kind: Kind
+    /// L'italiano. **L'`id` non deriva da qui a caso: deriva dall'italiano apposta.** Vedi la
+    /// nota su `Quote.id` — un id che seguisse la lingua mostrata azzererebbe il mazzo a ogni
+    /// cambio, senza un errore che lo dica.
     public let text: String
+    /// L'inglese. Vuoto durante la migrazione; per i pool già convertiti il test lo pretende.
+    public let textEN: String
     /// Chi l'ha detta e dove — «Seneca · Lettere a Lucilio, 82». Vuota quando non esiste una
     /// fonte tracciabile: allora si mostra «anonimo», che è la verità.
     public let attribution: String
+    /// La stessa firma in inglese. Vuota quando la firma non c'è, o non è ancora tradotta.
+    public let attributionEN: String
 
-    public init(id: String, kind: Kind, text: String, attribution: String = "") {
+    public init(id: String, kind: Kind, text: String, textEN: String = "",
+                attribution: String = "", attributionEN: String = "") {
         self.id = id
         self.kind = kind
         self.text = text
+        self.textEN = textEN
         self.attribution = attribution
+        self.attributionEN = attributionEN
+    }
+
+    /// Il testo nella lingua corrente. Ricade sull'italiano se l'inglese non c'è ancora: meglio
+    /// una frase nella lingua sbagliata che uno schermo vuoto durante una pausa.
+    public var localizedText: String {
+        L.language == .italian || textEN.isEmpty ? text : textEN
     }
 
     /// Cosa scrivere sotto la frase. Mai vuoto: una riga senza firma sembra un errore di
@@ -36,12 +52,22 @@ public struct Phrase: Equatable, Sendable, Identifiable {
     public var credit: String {
         attribution.isEmpty ? "anonimo" : attribution
     }
+
+    /// La firma nella lingua corrente, con lo stesso ripiego del testo.
+    public var localizedCredit: String {
+        if L.language == .italian { return credit }
+        if !attributionEN.isEmpty { return attributionEN }
+        return attribution.isEmpty ? "anonymous" : attribution
+    }
 }
 
 public extension Quote {
     /// Una citazione verificata, vista come frase del mazzo.
     var phrase: Phrase {
-        Phrase(id: "q:\(id)", kind: .citazione, text: text, attribution: "\(author) · \(work)")
+        Phrase(id: "q:\(id)", kind: .citazione,
+               text: text, textEN: textEN,
+               attribution: "\(author) · \(work)",
+               attributionEN: "\(QuoteNames.authorEN(author)) · \(QuoteNames.workEN(work, author: author))")
     }
 }
 

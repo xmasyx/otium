@@ -13,12 +13,19 @@ import Foundation
 /// verificate arriva lì restando onesto.
 public enum Mindful {
 
-    /// Anonima: bella, vera, e senza un padre certo.
-    private static func m(_ text: String) -> Phrase {
-        Phrase(id: "m:\(text.prefix(28))", kind: .mindful, text: text)
+    /// Anonima: bella, vera, e senza un padre certo. L'inglese è il secondo parametro, ed è
+    /// facoltativo solo finché dura la migrazione: poi lo pretende `QuoteLanguageTests`.
+    private static func m(_ text: String, _ en: String = "") -> Phrase {
+        Phrase(id: "m:\(text.prefix(28))", kind: .mindful, text: text, textEN: en)
     }
 
-    /// Con la sua tradizione dichiarata.
+    /// Con la sua tradizione dichiarata, nelle due lingue.
+    private static func t(_ text: String, _ en: String, _ source: String, _ sourceEN: String) -> Phrase {
+        Phrase(id: "t:\(text.prefix(28))", kind: .mindful, text: text, textEN: en,
+               attribution: source, attributionEN: sourceEN)
+    }
+
+    /// **Ponte di migrazione, come in `Quotes`: da togliere quando l'ultima è tradotta.**
     private static func t(_ text: String, _ source: String) -> Phrase {
         Phrase(id: "t:\(text.prefix(28))", kind: .mindful, text: text, attribution: source)
     }
