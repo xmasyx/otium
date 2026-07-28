@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var statsWindow: NSWindow?
     private var seatedWindow: NSWindow?
     private var declareWindow: NSWindow?
+    private var onboardingWindow: NSWindow?
     private var refreshTimer: Timer?
     private var statsHotKey: GlobalHotKey?
 
@@ -47,6 +48,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                 )
             }
         }
+
+        // Il primo avvio chiede due cose e poi sparisce. Non durante le sonde: una finestra
+        // modale in mezzo a una misura misura la finestra.
+        if model.needsOnboarding, !ProbeMode.active { showOnboarding() }
 
         let t = Timer(timeInterval: 5.0, repeats: true) { [weak self] _ in self?.updateStatusTitle() }
         RunLoop.main.add(t, forMode: .common)
@@ -87,9 +92,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private func announcePresence() {
         model.refreshSummary()
         let subtitle = model.phase == .paused
-            ? "sospesa — riprendila dal menu"
-            : "prossima pausa fra \(model.minutesToNextBreak) min di lavoro attivo"
-        model.announce(title: "Otium è già attiva", subtitle: subtitle)
+            ? L.t("sospesa — riprendila dal menu", "paused — resume it from the menu")
+            : L.t("prossima pausa fra \(model.minutesToNextBreak) min di lavoro attivo", "next break in \(model.minutesToNextBreak) min of active work")
+        model.announce(title: L.t("Otium è già attiva", "Otium is already running"), subtitle: subtitle)
         updateStatusTitle()
     }
 
@@ -108,6 +113,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // senza cambiare le impostazioni del Mac.
         // Senza uno dei due flag il render eredita l'aspetto del Mac in quel momento: di sera
         // «senza --dark» non significa chiaro, significa scuro lo stesso.
+        // `--inglese` vale per ogni superficie, non solo per l'onboarding: la schermata di
+        // blocco in inglese è quella che si vede ogni mezz'ora, ed è l'unica prova che la
+        // traduzione sia arrivata dove conta.
+        if CommandLine.arguments.contains("--inglese") { L.language = .english }
         if CommandLine.arguments.contains("--dark") {
             NSApp.appearance = NSAppearance(named: .darkAqua)
         } else if CommandLine.arguments.contains("--light") {
@@ -154,6 +163,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             ))
             size = hud.fittingSize
             host = hud
+        case "onboarding":
+            // Il primo avvio si guarda nelle due lingue: è la prima cosa che vede chi installa
+            // l'app, e l'unica schermata che non ha una seconda occasione.
+            if CommandLine.arguments.contains("--inglese") { L.language = .english }
+            let ob = NSHostingView(rootView: OnboardingView(model: model, onDone: {}))
+            size = NSSize(width: 540, height: ob.fittingSize.height)
+            host = ob
         case "menu":
             size = NSSize(width: 280, height: 260)
             host = NSHostingView(rootView: MenuPanel(model: model).frame(width: size.width))
@@ -707,17 +723,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         menu.addItem(panel)
 
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Sospendi", action: #selector(togglePause), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Fai una pausa adesso", action: #selector(breakNow), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: L.t("Sospendi", "Pause"), action: #selector(togglePause), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: L.t("Fai una pausa adesso", "Take a break now"), action: #selector(breakNow), keyEquivalent: ""))
 
         // Due pannelli invece di due sottomenu: servono due informazioni per volta (quale
         // esercizio, quante ripetizioni), e un menu sa fare una domanda sola.
-        menu.addItem(NSMenuItem(title: "Sono già al computer da…", action: #selector(showSeated), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Ho già fatto una pausa…", action: #selector(showDeclare), keyEquivalent: ""))
-        let undo = NSMenuItem(title: "Togli l'ultima pausa segnata", action: nil, keyEquivalent: "")
+        menu.addItem(NSMenuItem(title: L.t("Sono già al computer da…", "I've been at the computer for…"), action: #selector(showSeated), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: L.t("Ho già fatto una pausa…", "I already took a break…"), action: #selector(showDeclare), keyEquivalent: ""))
+        let undo = NSMenuItem(title: L.t("Togli l'ultima pausa segnata", "Remove the last logged break"), action: nil, keyEquivalent: "")
         let undoMenu = NSMenu()
-        let um = NSMenuItem(title: "micro-pausa", action: #selector(undoMicro), keyEquivalent: "")
-        let ul = NSMenuItem(title: "pausa piena", action: #selector(undoLong), keyEquivalent: "")
+        let um = NSMenuItem(title: L.t("micro-pausa", "micro-break"), action: #selector(undoMicro), keyEquivalent: "")
+        let ul = NSMenuItem(title: L.t("pausa piena", "full break"), action: #selector(undoLong), keyEquivalent: "")
         for item in [um, ul] { item.target = self; undoMenu.addItem(item) }
         undo.submenu = undoMenu
         menu.addItem(undo)
@@ -734,16 +750,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // Restano lettere nude, che a menu aperto funzionano davvero e non promettono niente
         // altrove. ⌘Q su «Esci» sopravvive perché lì il simbolo non si legge come una promessa:
         // si legge come «questa è la voce che chiude», ed è la convenzione di ogni menu su macOS.
-        let stats = NSMenuItem(title: "Statistiche…", action: #selector(showStats), keyEquivalent: "s")
+        let stats = NSMenuItem(title: L.t("Statistiche…", "Statistics…"), action: #selector(showStats), keyEquivalent: "s")
         stats.keyEquivalentModifierMask = []
         menu.addItem(stats)
-        menu.addItem(NSMenuItem(title: "Da dove vengono questi numeri…", action: #selector(showEvidence), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Apri il registro", action: #selector(revealLedger), keyEquivalent: ""))
-        let prefs = NSMenuItem(title: "Preferenze…", action: #selector(showPrefs), keyEquivalent: ",")
+        menu.addItem(NSMenuItem(title: L.t("Da dove vengono questi numeri…", "Where these numbers come from…"), action: #selector(showEvidence), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: L.t("Apri il registro", "Open the log"), action: #selector(revealLedger), keyEquivalent: ""))
+        let prefs = NSMenuItem(title: L.t("Preferenze…", "Preferences…"), action: #selector(showPrefs), keyEquivalent: ",")
         prefs.keyEquivalentModifierMask = []
         menu.addItem(prefs)
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Esci da Otium", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: L.t("Esci da Otium", "Quit Otium"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         for item in menu.items where item.action != nil && item.target == nil {
             if item.action != #selector(NSApplication.terminate(_:)) { item.target = self }
@@ -753,8 +769,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     func menuWillOpen(_ menu: NSMenu) {
         model.flushForDisplay()
-        if let item = menu.items.first(where: { $0.title == "Sospendi" || $0.title == "Riprendi" }) {
-            item.title = model.phase == .paused ? "Riprendi" : "Sospendi"
+        if let item = menu.items.first(where: { $0.title == L.t("Sospendi", "Pause") || $0.title == L.t("Riprendi", "Resume") }) {
+            item.title = model.phase == .paused ? L.t("Riprendi", "Resume") : L.t("Sospendi", "Pause")
         }
         if let hosting = menu.items.first?.view as? NSHostingView<MenuPanel> {
             hosting.rootView = MenuPanel(model: model)
@@ -772,8 +788,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         updateStatusTitle()
     }
 
+    /// La finestra del primo avvio. Chiuderla senza rispondere non salva niente: al prossimo
+    /// avvio la domanda torna, perché senza risposta l'app non sa da che numero partire.
+    private func showOnboarding() {
+        let hosting = NSHostingView(rootView: OnboardingView(model: model) { [weak self] in
+            self?.onboardingWindow?.close()
+            self?.onboardingWindow = nil
+            self?.statusItem.menu = self?.buildMenu()
+            self?.updateStatusTitle()
+            self?.model.announce(
+                title: L.t("Otium è attiva", "Otium is running"),
+                subtitle: L.t("La trovi nella barra dei menu, in alto a destra.",
+                              "You'll find it in the menu bar, top right.")
+            )
+        })
+        hosting.frame = NSRect(x: 0, y: 0, width: 540, height: hosting.fittingSize.height)
+        onboardingWindow = makeWindow(title: L.t("Benvenuto in Otium", "Welcome to Otium"),
+                                      content: hosting)
+        present(onboardingWindow)
+    }
+
     @objc private func showSeated() {
-        seatedWindow = makeWindow(title: "Sono già al computer da…",
+        seatedWindow = makeWindow(title: L.t("Sono già al computer da…", "I've been at the computer for…"),
                                   content: NSHostingView(rootView: DeclareSeatedView(model: model) { [weak self] in
                                       self?.seatedWindow?.close(); self?.seatedWindow = nil
                                       self?.updateStatusTitle()
@@ -782,7 +818,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     }
 
     @objc private func showDeclare() {
-        declareWindow = makeWindow(title: "Ho già fatto una pausa…",
+        declareWindow = makeWindow(title: L.t("Ho già fatto una pausa…", "I already took a break…"),
                                    content: NSHostingView(rootView: DeclareBreakView(model: model) { [weak self] in
                                        self?.declareWindow?.close(); self?.declareWindow = nil
                                        self?.updateStatusTitle()
@@ -803,7 +839,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         let view = NSHostingView(rootView: StatsView(model: model))
         view.frame = NSRect(x: 0, y: 0, width: 620, height: 680)
         if statsWindow == nil {
-            statsWindow = makeWindow(title: "Otium — statistiche", content: view)
+            statsWindow = makeWindow(title: L.t("Otium — statistiche", "Otium — statistics"), content: view)
         } else {
             statsWindow?.contentView = view
         }
@@ -818,14 +854,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         if evidenceWindow == nil {
             let view = NSHostingView(rootView: EvidenceView())
             view.frame = NSRect(x: 0, y: 0, width: 640, height: 620)
-            evidenceWindow = makeWindow(title: "Otium — le fonti", content: view)
+            evidenceWindow = makeWindow(title: L.t("Otium — le fonti", "Otium — the sources"), content: view)
         }
         present(evidenceWindow)
     }
 
     @objc private func showPrefs() {
         if prefsWindow == nil {
-            prefsWindow = makeWindow(title: "Preferenze di Otium", content: NSHostingView(rootView: PrefsView(model: model)))
+            prefsWindow = makeWindow(title: L.t("Preferenze di Otium", "Otium Preferences"), content: NSHostingView(rootView: PrefsView(model: model)))
         }
         present(prefsWindow)
     }

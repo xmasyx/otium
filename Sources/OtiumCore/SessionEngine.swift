@@ -381,10 +381,11 @@ public struct SessionEngine {
             ?? ((microsSinceLong + 1 >= settings.cadence.longEveryNBreaks) ? .long : .micro)
         breakIndex += 1
         let factor = settings.rampFactor(now: now)
-        let exercise = settings.planner.exercise(breakIndex: breakIndex, kind: kind, factor: factor)
+        let exercise = settings.planner.exercise(breakIndex: breakIndex, kind: kind,
+                                                 factor: factor, sex: settings.sex)
         // Il circuito si prepara solo dove ha senso — la pausa piena — e resta una proposta.
         let circuit = (kind == .long && settings.offerCircuit)
-            ? settings.planner.circuit(breakIndex: breakIndex, factor: factor)
+            ? settings.planner.circuit(breakIndex: breakIndex, factor: factor, sex: settings.sex)
             : []
         return BreakPlan(
             index: breakIndex,
@@ -508,7 +509,7 @@ public struct SessionEngine {
         guard phase == .breaking, let current = plan else { return [] }
         let factor = settings.rampFactor(now: now)
         return current.exercise.kind.variants.map {
-            Exercise(kind: $0, reps: Ramp.reps(for: $0, factor: factor))
+            Exercise(kind: $0, reps: Ramp.reps(for: $0, factor: factor, sex: settings.sex))
         }
     }
 
@@ -521,7 +522,7 @@ public struct SessionEngine {
         let factor = current.circuitActive
             ? settings.rampFactor(now: now) * ExercisePlanner.circuitFactor
             : settings.rampFactor(now: now)
-        current.exercise = Exercise(kind: kind, reps: Ramp.reps(for: kind, factor: factor))
+        current.exercise = Exercise(kind: kind, reps: Ramp.reps(for: kind, factor: factor, sex: settings.sex))
         // Dentro il circuito la stazione sostituita è quella che va nel registro: senza questa
         // riga il registro scriverebbe l'esercizio proposto e non quello davvero fatto.
         if current.circuitActive, current.circuit.indices.contains(current.stationIndex) {

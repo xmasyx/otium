@@ -107,6 +107,9 @@ final class AppModel: ObservableObject {
         // Un avvio in più, subito messo al sicuro: la citazione deve cambiare anche se la
         // sessione finisce senza mai arrivare a una pausa.
         Palette.apply(s.theme)
+        // La lingua prima di qualunque cosa parli: la frase d'avvio, il menu, la schermata.
+        // Senza scelta ancora fatta si propone quella del Mac, che l'onboarding conferma.
+        L.language = s.language ?? AppLanguage.systemDefault
         engine.countLaunch()
         RotationStore.save(engine.snapshot)
         refreshSummary()
@@ -257,7 +260,8 @@ final class AppModel: ObservableObject {
         switch event {
         case .warningStarted(let plan):
             hud.show(
-                title: plan.kind == .long ? "Pausa piena fra un minuto" : "Pausa fra un minuto",
+                title: plan.kind == .long ? L.t("Pausa piena fra un minuto", "Full break in one minute")
+                          : L.t("Pausa fra un minuto", "Break in one minute"),
                 subtitle: plan.exercise.label,
                 sound: settings.notificationSound
             )
@@ -279,17 +283,18 @@ final class AppModel: ObservableObject {
             // Il totale è già comprensivo di questo esercizio: la riga delle ripetizioni è stata
             // scritta alla conferma, non adesso. Sommarlo di nuovo lo mostrerebbe doppio.
             announce(title: Praise.line(at: plan.index, hard: plan.exercise.kind.isVigorous),
-                     subtitle: "\(plan.exercise.label) · oggi \(summary.totalReps) ripetizioni",
+                     subtitle: L.t("\(plan.exercise.label) · oggi \(summary.totalReps) ripetizioni",
+                                   "\(plan.exercise.label) · \(summary.totalReps) reps today"),
                      silent: true)
         case .breakSkipped:
             hud.hide()
             blocker.hide()
         case .postponed(let plan):
             blocker.hide()
-            hud.show(title: "Rinviata di 2 minuti", subtitle: plan.exercise.label)
+            hud.show(title: L.t("Rinviata di 2 minuti", "Postponed by 2 minutes"), subtitle: plan.exercise.label)
         case .autoDeferred(let plan, let reason):
             blocker.hide()
-            hud.show(title: "Pausa rimandata — \(reason)", subtitle: plan.exercise.label)
+            hud.show(title: L.t("Pausa rimandata — \(reason)", "Break deferred — \(reason)"), subtitle: plan.exercise.label)
         case .naturalBreak:
             // Arriva da due posti diversi. Mentre lavori è solo contabilità — ti sei alzato da
             // solo, e va bene così. Ma arriva **anche** dalla pausa in corso, quando l'assenza
@@ -394,7 +399,7 @@ final class AppModel: ObservableObject {
     /// Le ripetizioni che l'app proporrebbe oggi per quell'esercizio: è il valore di partenza
     /// sensato quando dichiari una pausa fatta, invece di farti digitare un numero da zero.
     func suggestedReps(for kind: ExerciseKind) -> Int {
-        Ramp.reps(for: kind, factor: settings.rampFactor(now: Date()))
+        Ramp.reps(for: kind, factor: settings.rampFactor(now: Date()), sex: settings.sex)
     }
 
     /// Le alternative da mostrare adesso. Vuoto se le hai spente nelle preferenze.
@@ -459,8 +464,9 @@ final class AppModel: ObservableObject {
             refreshSummary()
         }
         RotationStore.save(engine.snapshot)
-        announce(title: mode == .total ? "Contati \(minutes) minuti in tutto" : "Aggiunti \(minutes) minuti",
-                 subtitle: "prossima pausa fra \(minutesToNextBreak) min")
+        announce(title: mode == .total ? L.t("Contati \(minutes) minuti in tutto", "Counted \(minutes) minutes in total")
+                               : L.t("Aggiunti \(minutes) minuti", "Added \(minutes) minutes"),
+                 subtitle: L.t("prossima pausa fra \(minutesToNextBreak) min", "next break in \(minutesToNextBreak) min"))
         objectWillChange.send()
     }
 
@@ -479,8 +485,8 @@ final class AppModel: ObservableObject {
         ledger.append(LedgerEntry(timestamp: Date(), type: .active,
                                   seconds: delta, reason: "correzione"))
         refreshSummary()
-        announce(title: "Totale di oggi corretto",
-                 subtitle: "\(minutes) minuti davanti al Mac")
+        announce(title: L.t("Totale di oggi corretto", "Today's total corrected"),
+                 subtitle: L.t("\(minutes) minuti davanti al Mac", "\(minutes) minutes at the Mac"))
         objectWillChange.send()
     }
 
@@ -503,7 +509,7 @@ final class AppModel: ObservableObject {
             ? Exercise(kind: exercise!, reps: reps!).label
             : "pausa segnata"
         announce(title: Praise.line(at: engine.breakIndex, hard: exercise?.isVigorous ?? false),
-                 subtitle: "\(cosa) · prossima fra \(minutesToNextBreak) min")
+                 subtitle: L.t("\(cosa) · prossima fra \(minutesToNextBreak) min", "\(cosa) · next in \(minutesToNextBreak) min"))
         objectWillChange.send()
     }
 
@@ -511,14 +517,14 @@ final class AppModel: ObservableObject {
     /// contata due volte.
     func undoDeclaredBreak(kind: BreakKind) {
         guard engine.undoDeclaredBreak(kind: kind) else {
-            announce(title: "Niente da togliere", subtitle: "nessuna pausa segnata")
+            announce(title: L.t("Niente da togliere", "Nothing to remove"), subtitle: L.t("nessuna pausa segnata", "no break logged"))
             return
         }
         ledger.append(LedgerEntry(timestamp: Date(), type: .undo, breakKind: kind,
                                   reason: "tolta a mano"))
         RotationStore.save(engine.snapshot)
         refreshSummary()
-        announce(title: "Pausa tolta", subtitle: "prossima fra \(minutesToNextBreak) min")
+        announce(title: L.t("Pausa tolta", "Break removed"), subtitle: L.t("prossima fra \(minutesToNextBreak) min", "next in \(minutesToNextBreak) min"))
         objectWillChange.send()
     }
 
@@ -565,8 +571,12 @@ final class AppModel: ObservableObject {
         objectWillChange.send()
     }
 
+    /// Il primo avvio non è ancora stato completato: manca la lingua o il sesso.
+    var needsOnboarding: Bool { engine.settings.language == nil || engine.settings.sex == nil }
+
     func update(settings: Settings) {
         Palette.apply(settings.theme)
+        L.language = settings.language ?? L.language
         engine.settings = settings
         SettingsStore.save(settings)
         objectWillChange.send()

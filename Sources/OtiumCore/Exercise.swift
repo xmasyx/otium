@@ -22,6 +22,17 @@ public enum ExerciseCategory: String, Codable, CaseIterable, Sendable {
 
     /// Una riga che dice a cosa serve la famiglia, perché una casella senza motivo non si spunta
     /// con criterio.
+    public var englishName: String {
+        switch self {
+        case .gambe: return "Legs"
+        case .spinta: return "Push and arms"
+        case .addome: return "Core"
+        case .vigorosi: return "Vigorous"
+        }
+    }
+
+    public var localizedName: String { L.t(italianName, englishName) }
+
     public var subtitle: String {
         switch self {
         case .gambe: return "le masse grosse: sono loro ad abbassare la glicemia"
@@ -231,6 +242,41 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         }
     }
 
+    public var englishName: String {
+        switch self {
+        case .squat: return "squat"
+        case .lunge: return "lunges"
+        case .splitSquat: return "split squat"
+        case .gluteBridge: return "glute bridge"
+        case .calfRaise: return "calf raises"
+        case .pushUp: return "push-ups"
+        case .diamondPushUp: return "diamond push-ups"
+        case .archerPushUp: return "archer push-ups"
+        case .inclinePushUp: return "incline push-ups"
+        case .pikePushUp: return "pike push-ups"
+        case .benchDip: return "chair dips"
+        case .crunch: return "crunches"
+        case .sitUp: return "sit-ups"
+        case .legRaise: return "leg raises"
+        case .bicycleCrunch: return "bicycle crunches"
+        case .deadBug: return "dead bug"
+        case .russianTwist: return "russian twists"
+        case .plank: return "plank"
+        case .sidePlank: return "side plank"
+        case .hollowHold: return "hollow hold"
+        case .burpee: return "burpees"
+        case .jumpingJack: return "jumping jacks"
+        case .jumpSquat: return "jump squats"
+        case .mountainClimber: return "mountain climbers"
+        case .highKnees: return "high knees"
+        }
+    }
+
+    /// Il nome nella lingua scelta. `italianName` resta il nome canonico usato dal registro e
+    /// dai test: quello non si traduce mai, o una riga scritta in inglese e riletta in italiano
+    /// diventerebbe un altro esercizio.
+    public var localizedName: String { L.t(italianName, englishName) }
+
     public var cue: String {
         switch self {
         case .squat:
@@ -350,28 +396,36 @@ public struct Exercise: Equatable, Codable, Sendable {
     public var label: String {
         // Il plank laterale è l'unico che è insieme a tempo e a lati alterni: 40 secondi vogliono
         // dire venti per lato, e senza dirlo se ne farebbero ottanta.
-        if kind.isTimed && kind.isPerSide { return "\(displayReps) s per lato di \(kind.italianName)" }
-        if kind.isTimed { return "\(displayReps) s di \(kind.italianName)" }
-        if kind.isPerSide { return "\(displayReps) \(kind.italianName) per lato" }
-        return "\(reps) \(kind.italianName)"
+        let nome = kind.localizedName
+        if kind.isTimed && kind.isPerSide {
+            return L.t("\(displayReps) s per lato di \(nome)", "\(displayReps) s per side of \(nome)")
+        }
+        if kind.isTimed { return L.t("\(displayReps) s di \(nome)", "\(displayReps) s of \(nome)") }
+        if kind.isPerSide { return L.t("\(displayReps) \(nome) per lato", "\(displayReps) \(nome) per side") }
+        return "\(reps) \(nome)"
     }
 
     /// Nel pannello «Ho già fatto una pausa» il numero che si digita è il **totale** — è quello
     /// che finisce nel registro — ma accanto va detto quanto fa per lato, o si sbaglia il conto.
     public var stepperLabel: String {
         kind.isTimed
-            ? "\(reps) secondi" + (kind.isPerSide ? " (\(displayReps) per lato)" : "")
-            : "\(reps) ripetizioni" + (kind.isPerSide ? " (\(displayReps) per lato)" : "")
+            ? L.t("\(reps) secondi", "\(reps) seconds")
+                + (kind.isPerSide ? L.t(" (\(displayReps) per lato)", " (\(displayReps) per side)") : "")
+            : L.t("\(reps) ripetizioni", "\(reps) reps")
+                + (kind.isPerSide ? L.t(" (\(displayReps) per lato)", " (\(displayReps) per side)") : "")
     }
 
     /// Cosa scrivere **sotto il numero grande** nella schermata di blocco. Per una tenuta il
     /// numero è in secondi, e senza l'unità «45 plank» si legge come quarantacinque plank; per un
     /// esercizio a lati alterni senza «per lato» si leggerebbe come il doppio del lavoro.
     public var title: String {
-        if kind.isTimed && kind.isPerSide { return "secondi per lato di \(kind.italianName)" }
-        if kind.isTimed { return "secondi di \(kind.italianName)" }
-        if kind.isPerSide { return "\(kind.italianName) per lato" }
-        return kind.italianName
+        let nome = kind.localizedName
+        if kind.isTimed && kind.isPerSide {
+            return L.t("secondi per lato di \(nome)", "seconds per side of \(nome)")
+        }
+        if kind.isTimed { return L.t("secondi di \(nome)", "seconds of \(nome)") }
+        if kind.isPerSide { return L.t("\(nome) per lato", "\(nome) per side") }
+        return nome
     }
 }
 
@@ -399,8 +453,11 @@ public enum Ramp {
     /// archer push-up da sei darebbe 3, cioè un lato e mezzo, e «1,5 per lato» non è un'istruzione
     /// eseguibile. Si arrotonda una volta sola qui, dove il numero nasce, invece di rattoppare la
     /// divisione in ogni punto che lo mostra.
-    public static func reps(for kind: ExerciseKind, factor: Double) -> Int {
+    /// - Parameter sex: sposta il **punto di partenza** per gruppo muscolare (`SexCalibration`,
+    ///   fondato su Miller 1993). `nil` = nessuna calibrazione, cioè il numero pieno.
+    public static func reps(for kind: ExerciseKind, factor: Double, sex: Sex? = nil) -> Int {
         let scaled = Double(kind.baseReps) * factor
+            * SexCalibration.factor(for: kind.muscleGroup, sex: sex)
         guard kind.isPerSide else { return max(1, Int(scaled.rounded())) }
         return max(2, Int((scaled / 2).rounded()) * 2)
     }
@@ -454,11 +511,11 @@ public struct ExercisePlanner: Sendable {
 
     /// `breakIndex` è 1-based e cresce per tutta la vita dell'app: la rotazione non riparte
     /// ogni giorno, altrimenti farebbe sempre squat il lunedì mattina.
-    public func exercise(breakIndex: Int, kind: BreakKind, factor: Double) -> Exercise {
+    public func exercise(breakIndex: Int, kind: BreakKind, factor: Double, sex: Sex? = nil) -> Exercise {
         let table = (kind == .long) ? vigorousPool : pool
         let idx = max(0, breakIndex - 1) % table.count
         let chosen = table[idx]
-        return Exercise(kind: chosen, reps: Ramp.reps(for: chosen, factor: factor))
+        return Exercise(kind: chosen, reps: Ramp.reps(for: chosen, factor: factor, sex: sex))
     }
 
     /// Quanto vale una stazione dentro il circuito rispetto allo stesso esercizio da solo.
@@ -475,7 +532,7 @@ public struct ExercisePlanner: Sendable {
     /// questo pesca dagli stessi pool delle preferenze: se hai spento l'addome, il circuito non
     /// te lo rimette dentro dalla finestra. Ruota con `breakIndex` come tutto il resto, così due
     /// pause piene di fila non propongono lo stesso giro.
-    public func circuit(breakIndex: Int, factor: Double) -> [Exercise] {
+    public func circuit(breakIndex: Int, factor: Double, sex: Sex? = nil) -> [Exercise] {
         let order: [ExerciseCategory] = [.gambe, .spinta, .addome, .vigorosi]
         let scaled = factor * Self.circuitFactor
         return order.compactMap { category in
@@ -485,7 +542,7 @@ public struct ExercisePlanner: Sendable {
             // sempre lo stesso accoppiamento.
             let offset = order.firstIndex(of: category) ?? 0
             let chosen = table[(max(0, breakIndex - 1) + offset) % table.count]
-            return Exercise(kind: chosen, reps: Ramp.reps(for: chosen, factor: scaled))
+            return Exercise(kind: chosen, reps: Ramp.reps(for: chosen, factor: scaled, sex: sex))
         }
     }
 }

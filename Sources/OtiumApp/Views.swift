@@ -88,16 +88,17 @@ struct BreakView: View {
                 // sia, non dice come uscirne, e non si distingue da un Mac morto. Se un domani
                 // entrambe le reti a monte fallissero, qui c'è comunque una via d'uscita visibile.
                 VStack(spacing: 16) {
-                    Text("La pausa è finita.")
+                    Text(L.t("La pausa è finita.", "The break is over."))
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundStyle(Palette.paper)
-                    Text("Lo schermo si sta liberando. Se resta qui, premi il pulsante.")
+                    Text(L.t("Lo schermo si sta liberando. Se resta qui, premi il pulsante.",
+                             "The screen is clearing. If it stays here, press the button."))
                         .font(.system(size: 13))
                         .foregroundStyle(Palette.dim)
                     // Il pulsante grande, non quello discreto: questa è l'ultima uscita prima del
                     // tasto di accensione, e un'uscita d'emergenza si deve **vedere da lontano**.
-                    primary("Sblocca lo schermo", enabled: true) { model.emergencyExit() }
-                    Text("Puoi anche premere Esc due volte.")
+                    primary(L.t("Sblocca lo schermo", "Unlock the screen"), enabled: true) { model.emergencyExit() }
+                    Text(L.t("Puoi anche premere Esc due volte.", "You can also press Esc twice."))
                         .font(.system(size: 11))
                         .foregroundStyle(Palette.dim.opacity(0.8))
                 }
@@ -121,7 +122,7 @@ struct BreakView: View {
     private func header(_ plan: BreakPlan) -> some View {
         VStack(spacing: 10) {
             HStack {
-                Text(plan.kind == .long ? "PAUSA PIENA" : "MICRO-PAUSA")
+                Text(plan.kind == .long ? L.t("PAUSA PIENA", "FULL BREAK") : L.t("MICRO-PAUSA", "MICRO-BREAK"))
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .tracking(2)
                     .foregroundStyle(Palette.accent)
@@ -131,7 +132,8 @@ struct BreakView: View {
                 // esercizi, non a te — messo accanto alle ripetizioni **di oggi**: si leggeva
                 // «sessanta pause oggi», e non erano sessanta. Segnalato dal principale il
                 // 2026-07-28, quando il numero era 60 e le pause della giornata due.
-                Text("oggi: \(model.summary.completed + model.summary.natural + 1)ª pausa · \(model.summary.totalReps) ripetizioni")
+                Text(L.t("oggi: \(model.summary.completed + model.summary.natural + 1)ª pausa · \(model.summary.totalReps) ripetizioni",
+                     "today: break #\(model.summary.completed + model.summary.natural + 1) · \(model.summary.totalReps) reps"))
                     .font(.system(size: 13, design: .rounded))
                     .foregroundStyle(Palette.dim)
             }
@@ -143,8 +145,8 @@ struct BreakView: View {
                     Image(systemName: presence.kind == .media ? "play.rectangle" : "doc.text")
                         .foregroundStyle(Palette.dim)
                     Text(presence.kind == .media
-                         ? "fermo davanti a un video: \(presence.detail)"
-                         : "fermo su un documento: \(presence.detail)")
+                         ? L.t("fermo davanti a un video: \(presence.detail)", "still, watching a video: \(presence.detail)")
+                         : L.t("fermo su un documento: \(presence.detail)", "still, on a document: \(presence.detail)"))
                         .foregroundStyle(Palette.dim)
                     Spacer()
                 }
@@ -196,7 +198,7 @@ struct BreakView: View {
                 Button { model.startCircuit() } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "figure.strengthtraining.functional").font(.system(size: 13))
-                        Text("Fai il microcircuito — \(plan.circuit.count) esercizi")
+                        Text(L.t("Fai il microcircuito — \(plan.circuit.count) esercizi", "Do the circuit — \(plan.circuit.count) exercises"))
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                     }
                     .padding(.horizontal, 20)
@@ -222,7 +224,7 @@ struct BreakView: View {
     /// Dove sei dentro il circuito: quattro pallini con la stazione in corso accesa.
     private func circuitTrack(_ plan: BreakPlan) -> some View {
         VStack(spacing: 10) {
-            Text("CIRCUITO · STAZIONE \(plan.stationIndex + 1) DI \(plan.circuit.count)")
+            Text(L.t("CIRCUITO · STAZIONE \(plan.stationIndex + 1) DI \(plan.circuit.count)", "CIRCUIT · STATION \(plan.stationIndex + 1) OF \(plan.circuit.count)"))
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .tracking(1.8)
                 .foregroundStyle(Palette.accent)
@@ -231,7 +233,7 @@ struct BreakView: View {
                 ForEach(Array(plan.circuit.enumerated()), id: \.offset) { index, station in
                     let done = index < plan.stationIndex
                     let current = index == plan.stationIndex
-                    Text(station.kind.italianName)
+                    Text(station.kind.localizedName)
                         .font(.system(size: 12, weight: current ? .semibold : .regular, design: .rounded))
                         .padding(.horizontal, 11)
                         .padding(.vertical, 5)
@@ -285,7 +287,7 @@ struct BreakView: View {
         let options = model.variants
         if !options.isEmpty {
             VStack(spacing: 8) {
-                Text("oppure")
+                Text(L.t("oppure", "or"))
                     .font(.system(size: 11, weight: .medium, design: .rounded))
                     .tracking(1.5)
                     .foregroundStyle(Palette.dim.opacity(0.65))
@@ -293,10 +295,10 @@ struct BreakView: View {
                     ForEach(options, id: \.kind) { option in
                         Button { model.swapExercise(to: option.kind) } label: {
                             VStack(spacing: 2) {
-                                Text(option.kind.italianName)
+                                Text(option.kind.localizedName)
                                     .font(.system(size: 12, weight: .medium, design: .rounded))
                                 Text(option.kind.isPerSide
-                                     ? "\(option.displayReps) per lato"
+                                     ? L.t("\(option.displayReps) per lato", "\(option.displayReps) per side")
                                      : "\(option.displayReps)")
                                     .font(.system(size: 11, design: .rounded))
                                     .foregroundStyle(Palette.accent.opacity(0.85))
@@ -332,29 +334,30 @@ struct BreakView: View {
             progressBar(plan)
 
             if model.canReturnToWork {
-                primary("Torna al lavoro", enabled: true) { model.returnToWork() }
+                primary(L.t("Torna al lavoro", "Back to work"), enabled: true) { model.returnToWork() }
             } else if model.exerciseDone {
-                primary("ancora \(clock(model.secondsLeftOfBreak))", enabled: false) {}
+                primary(L.t("ancora \(clock(model.secondsLeftOfBreak))", "\(clock(model.secondsLeftOfBreak)) left"), enabled: false) {}
             } else if model.canFinishNow {
-                primary(model.moreStationsAhead ? "Fatto — avanti" : "Fatto", enabled: true) {
+                primary(model.moreStationsAhead ? L.t("Fatto — avanti", "Done — next") : "Fatto", enabled: true) {
                     model.markExerciseDone()
                 }
             } else {
-                primary("\(plan.exercise.label) — ancora \(Int(model.secondsUntilCanFinish.rounded(.up))) s",
+                primary(L.t("\(plan.exercise.label) — ancora \(Int(model.secondsUntilCanFinish.rounded(.up))) s", "\(plan.exercise.label) — \(Int(model.secondsUntilCanFinish.rounded(.up))) s to go"),
                         enabled: false) {}
             }
 
             // Uscire dal circuito resta possibile a metà: le stazioni già confermate restano
             // fatte, e la pausa si chiude con l'esercizio singolo che le toccava.
             if plan.circuitActive && !model.canReturnToWork {
-                Button("Basta così, torno all'esercizio singolo") { model.leaveCircuit() }
+                Button(L.t("Basta così, torno all'esercizio singolo", "That's enough, back to the single exercise")) { model.leaveCircuit() }
                     .buttonStyle(.plain)
                     .font(.system(size: 12))
                     .foregroundStyle(Palette.dim)
             }
 
             if model.exerciseDone && !model.canReturnToWork {
-                Text("Esercizio fatto. Resta il tempo della pausa: alzati, guarda lontano.")
+                Text(L.t("Esercizio fatto. Resta il tempo della pausa: alzati, guarda lontano.",
+                     "Exercise done. The rest of the break is yours: stand up, look far away."))
                     .font(.system(size: 13, design: .rounded))
                     .foregroundStyle(Palette.accent)
             }
@@ -418,22 +421,22 @@ struct BreakView: View {
             // browser, cioè annullerebbe la pausa nel momento in cui la stai facendo — e per
             // farlo dovrebbe pure smontare il blocco. Gli studi si leggono da fermi, dopo, e
             // sono già cliccabili nella finestra delle fonti.
-            Text("Gli articoli per esteso, con il link, sono in Otium ▸ Le fonti.")
+            Text(L.t("Gli articoli per esteso, con il link, sono in Otium ▸ Le fonti.", "Full articles, with links, are in Otium ▸ The sources."))
                 .font(.system(size: 11))
                 .foregroundStyle(Palette.dim.opacity(0.7))
                 .multilineTextAlignment(.center)
 
             HStack(spacing: 14) {
                 if model.canPostpone {
-                    SecondaryButton(title: "Rinvia 2 minuti", systemImage: "clock.arrow.circlepath") {
+                    SecondaryButton(title: L.t("Rinvia 2 minuti", "Postpone 2 minutes"), systemImage: "clock.arrow.circlepath") {
                         model.postpone()
                     }
                 }
-                SecondaryButton(title: "Emergenza", systemImage: "exclamationmark.triangle") {
+                SecondaryButton(title: L.t("Emergenza", "Emergency"), systemImage: "exclamationmark.triangle") {
                     model.emergencyExit()
                 }
                 SecondaryButton(
-                    title: showEscape ? "Annulla" : "Non posso adesso",
+                    title: showEscape ? L.t("Annulla", "Cancel") : L.t("Non posso adesso", "I can't right now"),
                     systemImage: showEscape ? "xmark" : "arrow.uturn.right"
                 ) {
                     showEscape.toggle()
@@ -443,10 +446,10 @@ struct BreakView: View {
 
             if escArmed {
                 VStack(spacing: 6) {
-                    Text("Premi Esc di nuovo per uscire subito.")
+                    Text(L.t("Premi Esc di nuovo per uscire subito.", "Press Esc again to exit now."))
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(Palette.paper)
-                    Text("L'uscita d'emergenza viene contata e compare nelle statistiche.")
+                    Text(L.t("L'uscita d'emergenza viene contata e compare nelle statistiche.", "The emergency exit is counted and shows up in your statistics."))
                         .font(.system(size: 11)).foregroundStyle(Palette.dim)
                 }
                 .padding(.top, 4)
@@ -454,7 +457,7 @@ struct BreakView: View {
 
             if showEscape {
                 VStack(spacing: 8) {
-                    Text("Per saltare questa pausa scrivi per intero: «\(model.settings.escapePhrase)»")
+                    Text(L.t("Per saltare questa pausa scrivi per intero: «\(model.settings.escapePhrase)»", "To skip this break, type in full: «\(model.settings.escapePhrase)»"))
                         .font(.system(size: 12))
                         .foregroundStyle(Palette.dim)
                     TextField("", text: $model.escapeText)
@@ -732,6 +735,33 @@ struct PrefsView: View {
 
     var body: some View {
         Form {
+            // Le due risposte del primo avvio, dove si possono cambiare. Una scelta fatta una
+            // volta sola e mai più modificabile è una trappola, non una configurazione.
+            Section(L.t("Profilo", "Profile")) {
+                Picker(L.t("Lingua", "Language"), selection: Binding(
+                    get: { draft.language ?? AppLanguage.systemDefault },
+                    set: { draft.language = $0 }
+                )) {
+                    ForEach(AppLanguage.allCases, id: \.self) { Text($0.nativeName).tag($0) }
+                }
+                .pickerStyle(.segmented)
+
+                Picker(L.t("Sesso biologico", "Biological sex"), selection: Binding(
+                    get: { draft.sex ?? .male },
+                    set: { draft.sex = $0 }
+                )) {
+                    Text(L.t("Uomo", "Male")).tag(Sex.male)
+                    Text(L.t("Donna", "Female")).tag(Sex.female)
+                }
+                .pickerStyle(.segmented)
+
+                Text(L.t("Il sesso cambia **solo** da quante ripetizioni parti, per gruppo muscolare (Miller 1993). Non cambia gli esercizi, la cadenza, né nient'altro.",
+                         "Sex changes **only** how many reps you start from, per muscle group (Miller 1993). It changes nothing else — not the exercises, not the cadence."))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             Section("Cadenza") {
                 Picker("Preset", selection: Binding(
                     get: { presetName(draft.cadence) },
@@ -768,7 +798,7 @@ struct PrefsView: View {
                     ForEach(ExerciseKind.allCases.filter { $0.category == category }, id: \.self) { kind in
                         Toggle(isOn: binding(for: kind)) {
                             HStack {
-                                Text(kind.italianName)
+                                Text(kind.localizedName)
                                 Text(kind.isTimed
                                      ? "\(kind.baseReps) s · tenuta"
                                      : "\(kind.baseReps) rip. · \(kind.muscleGroup)")
@@ -779,7 +809,7 @@ struct PrefsView: View {
                 } header: {
                     HStack {
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(category.italianName)
+                            Text(category.localizedName)
                             Text(category.subtitle).font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
@@ -1172,7 +1202,7 @@ struct StatsView: View {
                             VStack(spacing: 5) {
                                 ForEach(g.exercises, id: \.0) { kind, reps in
                                     HStack(spacing: 8) {
-                                        Text(kind.italianName)
+                                        Text(kind.localizedName)
                                             .font(.system(size: 12))
                                             .foregroundStyle(.secondary)
                                         if let nota = detail(kind, reps) {

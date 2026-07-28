@@ -100,6 +100,11 @@ public struct Settings: Codable, Equatable, Sendable {
     public var vigorousDailyTarget: Int
     /// La frase da digitare per esteso per saltare un break. Attrito, non impossibilità.
     public var escapePhrase: String
+    /// Il sesso biologico, **solo** per il punto di partenza delle ripetizioni (vedi
+    /// `SexCalibration`). `nil` finché non l'hai scelto: è uno dei due inneschi dell'onboarding.
+    public var sex: Sex?
+    /// La lingua dell'interfaccia. `nil` finché non l'hai scelta: l'altro innesco dell'onboarding.
+    public var language: AppLanguage?
     /// Se un microfono è in uso (call), il break si rimanda invece di piombare addosso.
     public var deferWhenMicrophoneActive: Bool
     /// Offri le varianti dentro la pausa (diamond, archer, dip su sedia…). Restano opzionali:
@@ -143,6 +148,8 @@ public struct Settings: Codable, Equatable, Sendable {
         vigorousPool: [ExerciseKind] = [.burpee, .jumpingJack, .mountainClimber, .highKnees],
         vigorousDailyTarget: Int = 3,
         escapePhrase: String = "salto la pausa",
+        sex: Sex? = nil,
+        language: AppLanguage? = nil,
         deferWhenMicrophoneActive: Bool = true,
         detectQuietPresence: Bool = true,
         offerVariants: Bool = true,
@@ -164,6 +171,8 @@ public struct Settings: Codable, Equatable, Sendable {
         self.vigorousPool = vigorousPool.isEmpty ? [.jumpingJack] : vigorousPool
         self.vigorousDailyTarget = max(0, vigorousDailyTarget)
         self.escapePhrase = escapePhrase
+        self.sex = sex
+        self.language = language
         self.deferWhenMicrophoneActive = deferWhenMicrophoneActive
         self.detectQuietPresence = detectQuietPresence
         self.offerVariants = offerVariants
@@ -203,6 +212,9 @@ public struct Settings: Codable, Equatable, Sendable {
         vigorousPool = (try? c.decode([ExerciseKind].self, forKey: .vigorousPool)) ?? d.vigorousPool
         vigorousDailyTarget = (try? c.decode(Int.self, forKey: .vigorousDailyTarget)) ?? d.vigorousDailyTarget
         escapePhrase = (try? c.decode(String.self, forKey: .escapePhrase)) ?? d.escapePhrase
+        // Assenti nei file scritti prima dell'onboarding: restano nil, e l'app chiede.
+        sex = try? c.decode(Sex.self, forKey: .sex)
+        language = try? c.decode(AppLanguage.self, forKey: .language)
         deferWhenMicrophoneActive = (try? c.decode(Bool.self, forKey: .deferWhenMicrophoneActive)) ?? d.deferWhenMicrophoneActive
         detectQuietPresence = (try? c.decode(Bool.self, forKey: .detectQuietPresence)) ?? d.detectQuietPresence
         offerVariants = (try? c.decode(Bool.self, forKey: .offerVariants)) ?? d.offerVariants
