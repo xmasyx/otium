@@ -478,19 +478,34 @@ public struct Exercise: Equatable, Codable, Sendable {
 /// La rampa progressiva. Partire subito al volume pieno è il modo più rapido per farsi male
 /// e disinstallare l'app: si sale in `weeks` settimane.
 public enum Ramp {
-    /// 0 → `startFactor`; `weeks-1` e oltre → 1.0; in mezzo, lineare.
-    public static func factor(weeksElapsed: Int, weeks: Int, startFactor: Double) -> Double {
-        guard weeks > 1 else { return 1.0 }
-        let w = max(0, weeksElapsed)
-        if w >= weeks - 1 { return 1.0 }
-        let step = (1.0 - startFactor) / Double(weeks - 1)
-        return min(1.0, startFactor + step * Double(w))
+    /// Il moltiplicatore di oggi: `startFactor` il primo giorno, 1.0 alla fine della salita, e in
+    /// mezzo una linea **continua, giorno per giorno**.
+    ///
+    /// Prima saliva a scatti settimanali, e lo scatto era grosso: dal 55% al 70% da un giorno
+    /// all'altro è un +27% di ripetizioni comparso durante la notte, senza che niente lo
+    /// annunciasse. Giorno per giorno la stessa salita è invisibile mentre la vivi, ed è il modo
+    /// in cui il principale credeva già che funzionasse — cioè quello che una persona si aspetta
+    /// leggendo «partenza graduale».
+    ///
+    /// I valori ai confini non cambiano: giorno 0 → 55%, giorno 7 → 70%, giorno 14 → 85%,
+    /// giorno 21 → 100%. Cambia solo che adesso esiste anche il mercoledì.
+    /// - Parameter weeks: **quante settimane dura la salita**, non quanti gradini ha. Prima il 4
+    ///   significava «quattro livelli» e la salita finiva in ventuno giorni: l'etichetta diceva
+    ///   quattro settimane e il numero pieno arrivava alla terza. Adesso 3 vuol dire 3.
+    public static func factor(daysElapsed: Int, weeks: Int, startFactor: Double) -> Double {
+        let span = max(1, weeks * 7)                // giorni fino al numero pieno
+        let d = min(max(0, daysElapsed), span)
+        return min(1.0, startFactor + (1.0 - startFactor) * Double(d) / Double(span))
+    }
+
+    public static func daysElapsed(since start: Date, now: Date) -> Int {
+        let seconds = now.timeIntervalSince(start)
+        guard seconds > 0 else { return 0 }
+        return Int(seconds / (24 * 3600))
     }
 
     public static func weeksElapsed(since start: Date, now: Date) -> Int {
-        let seconds = now.timeIntervalSince(start)
-        guard seconds > 0 else { return 0 }
-        return Int(seconds / (7 * 24 * 3600))
+        daysElapsed(since: start, now: now) / 7
     }
 
     /// Le ripetizioni di oggi, rampa applicata.

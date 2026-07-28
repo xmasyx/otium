@@ -94,8 +94,8 @@ struct OnboardingView: View {
                         .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Palette.accentOnWindow)
                     Text(gradual
-                         ? L.t("Si sale un po' ogni settimana fino ai numeri interi, in quattro settimane. Serve a non smettere dopo tre giorni.",
-                               "It goes up a little each week to the whole numbers, over four weeks. It is there so you don't quit after three days.")
+                         ? L.t("Si sale un pochino ogni giorno fino ai numeri interi, in tre settimane. Serve a non smettere dopo tre giorni.",
+                               "It goes up a little every day until the whole numbers, over three weeks. It is there so you don't quit after three days.")
                          : L.t("Nessuna partenza morbida: da domani i numeri sono quelli. Se sei già allenato è la scelta giusta.",
                                "No soft start: from tomorrow those are the numbers. If you already train, this is the right choice."))
                         .font(.system(size: 11))

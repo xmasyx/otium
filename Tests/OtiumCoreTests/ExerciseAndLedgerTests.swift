@@ -6,17 +6,33 @@ final class RampTests: XCTestCase {
     /// ISC-10 — si parte bassi e si sale. Il volume pieno al primo giorno è il modo più rapido
     /// per farsi male e disinstallare l'app.
     func testRampClimbsFromStartFactorToOne() {
-        XCTAssertEqual(Ramp.factor(weeksElapsed: 0, weeks: 4, startFactor: 0.55), 0.55, accuracy: 0.001)
-        XCTAssertEqual(Ramp.factor(weeksElapsed: 1, weeks: 4, startFactor: 0.55), 0.70, accuracy: 0.001)
-        XCTAssertEqual(Ramp.factor(weeksElapsed: 2, weeks: 4, startFactor: 0.55), 0.85, accuracy: 0.001)
-        XCTAssertEqual(Ramp.factor(weeksElapsed: 3, weeks: 4, startFactor: 0.55), 1.0, accuracy: 0.001)
-        XCTAssertEqual(Ramp.factor(weeksElapsed: 99, weeks: 4, startFactor: 0.55), 1.0, accuracy: 0.001)
+        // I confini restano quelli di sempre: quello che cambia è che in mezzo c'è una linea.
+        XCTAssertEqual(Ramp.factor(daysElapsed: 0, weeks: 3, startFactor: 0.55), 0.55, accuracy: 0.001)
+        XCTAssertEqual(Ramp.factor(daysElapsed: 7, weeks: 3, startFactor: 0.55), 0.70, accuracy: 0.001)
+        XCTAssertEqual(Ramp.factor(daysElapsed: 14, weeks: 3, startFactor: 0.55), 0.85, accuracy: 0.001)
+        XCTAssertEqual(Ramp.factor(daysElapsed: 21, weeks: 3, startFactor: 0.55), 1.0, accuracy: 0.001)
+        XCTAssertEqual(Ramp.factor(daysElapsed: 999, weeks: 3, startFactor: 0.55), 1.0, accuracy: 0.001)
+
+        // **Nessuno scalino.** Il difetto della salita a settimane era il +27% comparso durante
+        // la notte: qui si pretende che da un giorno all'altro non si salga mai più di un
+        // ventunesimo del percorso, e che non si scenda mai.
+        var ieri = Ramp.factor(daysElapsed: 0, weeks: 3, startFactor: 0.55)
+        for giorno in 1...40 {
+            let oggi = Ramp.factor(daysElapsed: giorno, weeks: 3, startFactor: 0.55)
+            XCTAssertGreaterThanOrEqual(oggi, ieri, "la salita non torna indietro al giorno \(giorno)")
+            XCTAssertLessThanOrEqual(oggi - ieri, 0.45 / 21 + 0.0001,
+                                     "scalino troppo grosso al giorno \(giorno)")
+            ieri = oggi
+        }
+
+        // Chi parte già al pieno non ha nessuna salita da fare, nemmeno il primo giorno.
+        XCTAssertEqual(Ramp.factor(daysElapsed: 0, weeks: 3, startFactor: 1.0), 1.0, accuracy: 0.001)
     }
 
     func testRampIsMonotone() {
         var previous = 0.0
-        for w in 0...10 {
-            let f = Ramp.factor(weeksElapsed: w, weeks: 6, startFactor: 0.4)
+        for d in 0...80 {
+            let f = Ramp.factor(daysElapsed: d, weeks: 6, startFactor: 0.4)
             XCTAssertGreaterThanOrEqual(f, previous)
             XCTAssertLessThanOrEqual(f, 1.0)
             previous = f
@@ -303,7 +319,10 @@ final class VariantTests: XCTestCase {
     private func engineInBreak() -> SessionEngine {
         var s = Settings()
         s.startDate = Date()
-        s.rampWeeks = 1                      // volume pieno, così i numeri sono quelli veri
+        // Volume pieno, così i numeri sono quelli veri. **Si dice con la percentuale, non con le
+        // settimane**: da quando la salita è giornaliera, «1 settimana» vuol dire una settimana di
+        // salita vera, mentre prima era il modo obliquo di dire «nessuna salita».
+        s.rampStartFactor = 1.0
         var engine = SessionEngine(settings: s, maxCredibleElapsed: 120)
         engine.forceBreakNow(now: Date(), kind: .micro)
         return engine

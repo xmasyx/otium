@@ -19,13 +19,21 @@ struct PaceCheckInView: View {
 
     private var percentualeOggi: Int { Int(model.settings.rampFactor(now: Date()) * 100) }
     private var settimane: Int {
-        Ramp.weeksElapsed(since: model.settings.startDate, now: Date())
+        max(1, Ramp.weeksElapsed(since: model.settings.startDate, now: Date()))
+    }
+
+    private var titolo: String {
+        settimane == 1
+            ? L.t("Una settimana.", "One week in.")
+            : L.t("\(settimane) settimane.", "\(settimane) weeks in.")
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(L.t("Due settimane.", "Two weeks in."))
+                // Il titolo dice quante settimane sono passate davvero: «Due settimane» a una
+                // settimana dall'installazione sarebbe la prima bugia che l'app racconta.
+                Text(titolo)
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundStyle(Palette.accentOnWindow)
                 Text(L.t("Sei partito piano, come si deve: oggi fai \(ItalianNumber.il(percentualeOggi))% delle ripetizioni piene. Se ti stanno venendo facili, puoi passare al numero pieno da adesso.",

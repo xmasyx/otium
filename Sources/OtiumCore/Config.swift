@@ -105,7 +105,9 @@ public struct Settings: Codable, Equatable, Sendable {
     /// La partenza graduale esiste perché iniziare a quindici squat quando sei fermo da mesi è il
     /// modo di smettere in tre giorni. Ma quattro settimane sono lunghe per chi è già allenato, e
     /// un'app che decide da sola quanto sei in forma sbaglia in una delle due direzioni. Dopo due
-    /// settimane lo chiede una volta sola: **una domanda, non una tacca in più sul cursore**.
+    /// settimana lo chiede una volta sola: **una domanda, non una tacca in più sul cursore**.
+/// Una e non due: a due settimane si è già all'85% e il salto offerto sarebbe del 15%,
+/// troppo poco per meritarsi una finestra. A una si è al 70%, e la domanda ha un senso.
     public var fullPaceOfferWeeks: Int
     /// La domanda è già stata fatta. Una volta sola: un'app che ripropone la stessa scelta ogni
     /// settimana non sta chiedendo, sta insistendo.
@@ -151,14 +153,14 @@ public struct Settings: Codable, Equatable, Sendable {
     public init(
         cadence: Cadence = .optionA,
         startDate: Date = Date(),
-        rampWeeks: Int = 4,
+        rampWeeks: Int = 3,
         rampStartFactor: Double = 0.55,
         exercisePool: [ExerciseKind] = [.squat, .pushUp, .crunch, .lunge, .benchDip, .plank,
                                         .calfRaise, .gluteBridge, .legRaise],   // split squat non c'è: è una variante dell'affondo, non un esercizio a sé in rotazione
         vigorousPool: [ExerciseKind] = [.burpee, .jumpingJack, .mountainClimber, .highKnees],
         vigorousDailyTarget: Int = 3,
         escapePhrase: String = "salto la pausa",
-        fullPaceOfferWeeks: Int = 2,
+        fullPaceOfferWeeks: Int = 1,
         fullPaceAnswered: Bool = false,
         sex: Sex? = nil,
         language: AppLanguage? = nil,
@@ -218,7 +220,7 @@ public struct Settings: Codable, Equatable, Sendable {
 
     public func rampFactor(now: Date) -> Double {
         Ramp.factor(
-            weeksElapsed: Ramp.weeksElapsed(since: startDate, now: now),
+            daysElapsed: Ramp.daysElapsed(since: startDate, now: now),
             weeks: rampWeeks,
             startFactor: rampStartFactor
         )
