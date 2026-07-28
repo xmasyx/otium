@@ -133,7 +133,9 @@ final class CircuitTests: XCTestCase {
         guard let entry = chiusura.first else { return XCTFail("nessuna riga di chiusura") }
         XCTAssertEqual(entry.type, .completed)
         XCTAssertNil(entry.reps, "le ripetizioni hanno già la loro riga: qui sarebbero doppie")
-        XCTAssertEqual(entry.reason, "circuito")
+        // «circuito+richiesta» e non «circuito»: questa pausa la fa partire `forceBreakNow`,
+        // e dal 2026-07-28 il registro dice anche **chi l'ha chiesta**.
+        XCTAssertEqual(entry.reason, "circuito+richiesta")
 
         let summary = Ledger.summarize(righe + [entry])
         XCTAssertEqual(summary.completed, 1, "una pausa, non quattro")

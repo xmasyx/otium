@@ -14,6 +14,12 @@ public struct BreakPlan: Equatable, Sendable {
     public var circuitActive: Bool = false
     /// Quale stazione, 0-based.
     public var stationIndex: Int = 0
+    /// L'hai chiesta tu dal menu, invece di riceverla dal contatore.
+    ///
+    /// Serve al registro, non alla logica: senza, una riga dice *che* una pausa è avvenuta ma non
+    /// *perché*, e la domanda «perché me ne ha proposta un'altra?» resta senza risposta anche
+    /// avendo tutti i dati davanti. Difetto di osservabilità visto il 2026-07-28.
+    public var requested: Bool = false
 
     public init(index: Int, kind: BreakKind, duration: Double, exercise: Exercise,
                 circuit: [Exercise] = []) {
@@ -573,7 +579,8 @@ public struct SessionEngine {
     @discardableResult
     public mutating func forceBreakNow(now: Date, kind: BreakKind? = nil) -> [EngineEvent] {
         guard phase == .working else { return [] }
-        let newPlan = planNextBreak(now: now, forcedKind: kind)
+        var newPlan = planNextBreak(now: now, forcedKind: kind)
+        newPlan.requested = true
         plan = newPlan
         postponesUsed = 0
         autoDefersUsed = 0

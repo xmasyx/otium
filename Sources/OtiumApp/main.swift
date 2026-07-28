@@ -344,7 +344,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Sospendi", action: #selector(togglePause), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Fai una pausa adesso", action: #selector(breakNow), keyEquivalent: ""))
+        // **Quale pausa la scegli tu.** Prima la voce era una sola e il tipo lo decideva il
+        // contatore «ogni terza è piena»: chiedendo una pausa se ne poteva prendere in faccia una
+        // da cinque minuti con esercizio vigoroso senza averlo chiesto. Segnalato dal principale
+        // il 2026-07-28. Stesso schema del sottomenu di «Togli l'ultima pausa segnata».
+        let now = NSMenuItem(title: "Fai una pausa adesso", action: nil, keyEquivalent: "")
+        let nowMenu = NSMenu()
+        let nm = NSMenuItem(title: "micro-pausa", action: #selector(breakNowMicro), keyEquivalent: "")
+        let nl = NSMenuItem(title: "pausa piena", action: #selector(breakNowLong), keyEquivalent: "")
+        for item in [nm, nl] { item.target = self; nowMenu.addItem(item) }
+        now.submenu = nowMenu
+        menu.addItem(now)
 
         // Due pannelli invece di due sottomenu: servono due informazioni per volta (quale
         // esercizio, quante ripetizioni), e un menu sa fare una domanda sola.
@@ -387,8 +397,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     /// Utile la prima volta, per vedere com'è fatta la schermata senza aspettare mezz'ora.
+    /// Senza tipo esplicito resta la regola del contatore: la usa il secondo avvio dell'app.
     @objc private func breakNow() {
         model.forceBreakNow()
+        updateStatusTitle()
+    }
+
+    @objc private func breakNowMicro() {
+        model.forceBreakNow(kind: .micro)
+        updateStatusTitle()
+    }
+
+    @objc private func breakNowLong() {
+        model.forceBreakNow(long: true)
         updateStatusTitle()
     }
 
