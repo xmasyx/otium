@@ -17,7 +17,7 @@ enum ProbeMode {
     private static let flags = [
         "--orphan-probe", "--sleep-probe", "--radar-probe", "--menu-probe", "--confirm-probe",
         "--flush-probe", "--window-probe", "--snapshot", "--demo-break", "--demo-hud", "--presence",
-        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo", "--demo-ritmo",
+        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo", "--demo-ritmo", "--mostra-crescita",
     ]
 
     static var active: Bool {
@@ -104,6 +104,7 @@ final class AppModel: ObservableObject {
         // stesso primo esercizio, e sembra che l'app ne conosca uno solo. Va dopo che tutte le
         // proprietà sono inizializzate: Swift non lascia chiamare metodi su `self` prima.
         if let snapshot = RotationStore.load() { resumeOutcome = engine.restore(snapshot) }
+        engine.progress = ProgressStore.load()
         // Un avvio in più, subito messo al sicuro: la citazione deve cambiare anche se la
         // sessione finisce senza mai arrivare a una pausa.
         Palette.apply(s.theme)
@@ -415,7 +416,36 @@ final class AppModel: ObservableObject {
     func markExerciseDone() {
         let events = engine.markExerciseDone()
         for event in events { handle(event, now: Date()) }
+        if !events.isEmpty { ProgressStore.save(engine.progress) }
         reconcileBlocker()
+        objectWillChange.send()
+    }
+
+    /// «Non tutte, ne ho fatte N.» Il lavoro si conta lo stesso, e la progressione lo sa.
+    func markExercisePartial(reps: Int) {
+        let events = engine.markExercisePartial(actualReps: reps)
+        for event in events { handle(event, now: Date()) }
+        if !events.isEmpty { ProgressStore.save(engine.progress) }
+        reconcileBlocker()
+        objectWillChange.send()
+    }
+
+    /// Il movimento più duro da proporre adesso, se ce n'è uno. Vale solo con la crescita accesa:
+    /// a chi ha scelto di restare al 100% l'app non propone scale da salire.
+    var harderSuggestion: (kind: ExerciseKind, reason: Progression.HarderReason)? {
+        guard settings.progressBeyondFull, let plan = engine.plan else { return nil }
+        return Progression.suggestHarder(
+            kind: plan.exercise.kind,
+            reps: plan.exercise.reps,
+            progress: engine.progress.progress(for: plan.exercise.kind),
+            breakSeconds: plan.duration
+        )
+    }
+
+    /// Passa al movimento più duro **adesso**, dentro questa pausa. Le ripetizioni ripartono dal
+    /// numero di base di quel gesto: è un esercizio nuovo, non lo stesso con un nome diverso.
+    func stepUp(to kind: ExerciseKind) {
+        engine.swapExercise(to: kind, now: Date(), force: true)
         objectWillChange.send()
     }
 

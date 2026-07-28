@@ -62,6 +62,9 @@ struct BreakView: View {
     @ObservedObject var model: AppModel
     @State private var showEscape = false
     @State private var escArmed = false
+    /// Il pannellino «quante ne hai fatte», che compare solo quando dici «non tutte».
+    @State private var partialSheet = false
+    @State private var partialReps = 0
     @FocusState private var escapeFocused: Bool
 
     private var plan: BreakPlan? { model.plan }
@@ -106,6 +109,7 @@ struct BreakView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay { if partialSheet, let plan { partialPanel(plan) } }
         .onReceive(NotificationCenter.default.publisher(for: .otiumEscapePressed)) { _ in
             if escArmed {
                 model.emergencyExit()
@@ -117,6 +121,59 @@ struct BreakView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 6) { escArmed = false }
             }
         }
+    }
+
+    /// «Quante ne hai fatte?» — parte dal numero chiesto meno uno, perché chi dice «non tutte»
+    /// quasi sempre ne ha fatte quasi tutte, e il caso più probabile deve costare zero clic.
+    private func partialPanel(_ plan: BreakPlan) -> some View {
+        ZStack {
+            Palette.ink.opacity(0.92).ignoresSafeArea()
+            VStack(spacing: 18) {
+                Text(L.t("Quante ne hai fatte?", "How many did you do?"))
+                    .font(.system(size: 22, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Palette.paper)
+                Text(L.t("Contano lo stesso. Serve a non chiederti la prossima volta più di quanto riesci.",
+                         "They count all the same. It's so we don't ask you for more than you can do next time."))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Palette.dim)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 380)
+
+                HStack(spacing: 22) {
+                    stepperButton("minus") { partialReps = max(0, partialReps - 1) }
+                    Text("\(partialReps)")
+                        .font(.system(size: 56, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(Palette.accent)
+                        .frame(minWidth: 110)
+                    stepperButton("plus") { partialReps = min(plan.exercise.reps, partialReps + 1) }
+                }
+
+                HStack(spacing: 14) {
+                    SecondaryButton(title: L.t("Annulla", "Cancel"), systemImage: "xmark") {
+                        partialSheet = false
+                    }
+                    primary(L.t("Conferma", "Confirm"), enabled: true) {
+                        model.markExercisePartial(reps: partialReps)
+                        partialSheet = false
+                    }
+                }
+            }
+            .padding(40)
+        }
+        .onAppear { partialReps = max(0, plan.exercise.reps - 1) }
+    }
+
+    private func stepperButton(_ symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 20, weight: .semibold))
+                .frame(width: 48, height: 48)
+                .foregroundStyle(Palette.paper)
+                .background(Circle().fill(Color.white.opacity(0.10)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func header(_ plan: BreakPlan) -> some View {
@@ -338,8 +395,19 @@ struct BreakView: View {
             } else if model.exerciseDone {
                 primary(L.t("ancora \(clock(model.secondsLeftOfBreak))", "\(clock(model.secondsLeftOfBreak)) left"), enabled: false) {}
             } else if model.canFinishNow {
-                primary(model.moreStationsAhead ? L.t("Fatto — avanti", "Done — next") : "Fatto", enabled: true) {
+                // **Due risposte, non una.** Il registro sa quante ripetizioni ti sono state
+                // chieste, non quante ne hai fatte: senza questa seconda via la progressione
+                // misurerebbe solo le giornate andate bene, e su quelle qualunque progressione
+                // sembra funzionare. Un tap nel caso normale, il numero solo nell'eccezione.
+                primary(model.moreStationsAhead ? L.t("Fatte tutte — avanti", "All done — next")
+                                                : L.t("Fatte tutte", "All done"), enabled: true) {
                     model.markExerciseDone()
+                }
+                if model.settings.progressBeyondFull {
+                    Button(L.t("Non tutte…", "Almost done…")) { partialSheet = true }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Palette.dim)
                 }
             } else {
                 primary(L.t("\(plan.exercise.label) — ancora \(Int(model.secondsUntilCanFinish.rounded(.up))) s", "\(plan.exercise.label) — \(Int(model.secondsUntilCanFinish.rounded(.up))) s to go"),
@@ -353,6 +421,25 @@ struct BreakView: View {
                     .buttonStyle(.plain)
                     .font(.system(size: 12))
                     .foregroundStyle(Palette.dim)
+            }
+
+            // La scala, proposta e mai imposta: cambiare movimento è una decisione, e trovarsi
+            // i diamond push-up senza averli chiesti è il modo di far spegnere l'app.
+            if let su = model.harderSuggestion, !model.exerciseDone {
+                VStack(spacing: 6) {
+                    Text(su.reason == .ceiling
+                         ? L.t("Più ripetizioni non ci stanno in questa pausa. Da qui si sale di movimento.",
+                               "More reps don't fit in this break. From here you step up the movement.")
+                         : L.t("Questo ormai lo fai. Vuoi provare la versione più dura?",
+                               "You've got this one. Want to try the harder version?"))
+                        .font(.system(size: 12))
+                        .foregroundStyle(Palette.dim)
+                    SecondaryButton(title: L.t("Passa a \(su.kind.localizedName)",
+                                               "Step up to \(su.kind.localizedName)"),
+                                    systemImage: "arrow.up.right") {
+                        model.stepUp(to: su.kind)
+                    }
+                }
             }
 
             if model.exerciseDone && !model.canReturnToWork {
@@ -763,6 +850,13 @@ struct PrefsView: View {
                          "Sex decides where you start: the reps per muscle group (Miller 1993) and the version of the push — on your knees instead of full. It changes nothing else, and every exercise stays swappable inside the break."))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Toggle(L.t("Fai crescere le ripetizioni oltre il 100%",
+                           "Let the reps grow beyond 100%"), isOn: $draft.progressBeyondFull)
+                Text(L.t("Si sale del 5% dopo due conferme piene di fila (regola 2-for-2 dell'ACSM) e si scende dopo due mancate, mai sotto il 100%. A fine esercizio l'app ti chiede se le hai fatte tutte.",
+                         "It goes up 5% after two full confirmations in a row (ACSM's 2-for-2 rule) and steps back after two shortfalls, never below 100%. At the end of each exercise the app asks whether you did them all."))
+                    .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 // Una scelta fatta al primo avvio e mai più modificabile è una trappola: la terza

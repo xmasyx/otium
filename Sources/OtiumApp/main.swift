@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var declareWindow: NSWindow?
     private var onboardingWindow: NSWindow?
     private var paceWindow: NSWindow?
+    private var growthWindow: NSWindow?
     private var refreshTimer: Timer?
     private var statsHotKey: GlobalHotKey?
 
@@ -59,6 +60,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         if (model.needsOnboarding || CommandLine.arguments.contains("--mostra-onboarding")),
            !ProbeMode.active {
             showOnboarding()
+        } else if model.settings.shouldOfferGrowth(now: Date()) || CommandLine.arguments.contains("--mostra-crescita"),
+                  !ProbeMode.active {
+            showGrowthCheckIn()
         } else if model.settings.shouldOfferFullPace(now: Date()) || CommandLine.arguments.contains("--mostra-ritmo"),
                   !ProbeMode.active {
             // **Mai insieme all'onboarding.** Chi ha appena installato l'app non ha due settimane
@@ -190,6 +194,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                                                             preselectedSex: scelto))
             size = NSSize(width: 540, height: ob.fittingSize.height)
             host = ob
+        case "crescita":
+            let g = NSHostingView(rootView: GrowthCheckInView(model: model, onDone: {}))
+            size = NSSize(width: 520, height: g.fittingSize.height)
+            host = g
         case "ritmo":
             // `--giorni=N` simula un'installazione di N giorni fa: la finestra ha senso solo
             // dentro la partenza graduale, e a giorno zero mostrerebbe una percentuale che nella
@@ -927,6 +935,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         hosting.frame = NSRect(x: 0, y: 0, width: 480, height: hosting.fittingSize.height)
         paceWindow = makeWindow(title: L.t("Otium", "Otium"), content: hosting)
         present(paceWindow)
+    }
+
+    private func showGrowthCheckIn() {
+        let hosting = NSHostingView(rootView: GrowthCheckInView(model: model) { [weak self] in
+            self?.growthWindow?.close()
+            self?.growthWindow = nil
+            self?.updateStatusTitle()
+        })
+        hosting.frame = NSRect(x: 0, y: 0, width: 520, height: hosting.fittingSize.height)
+        growthWindow = makeWindow(title: L.t("Otium", "Otium"), content: hosting)
+        present(growthWindow)
     }
 
     @objc private func showSeated() {

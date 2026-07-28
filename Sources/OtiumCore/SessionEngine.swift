@@ -128,6 +128,9 @@ public struct SessionEngine {
         didSet { clock.idleThreshold = settings.cadence.idleThresholdSeconds }
     }
 
+    /// Quanto sei avanti su ogni esercizio. Vuoto finché la crescita oltre il 100% è spenta:
+    /// senza il suo interruttore acceso, il motore non deve nemmeno sapere che esiste.
+    public var progress: ProgressBook = ProgressBook()
     public private(set) var clock: ActivityClock
     public private(set) var phase: Phase = .working
     public private(set) var plan: BreakPlan?
@@ -383,7 +386,8 @@ public struct SessionEngine {
         let factor = settings.rampFactor(now: now)
         let exercise = settings.planner.exercise(breakIndex: breakIndex, kind: kind,
                                                  factor: factor, sex: settings.sex,
-                                                 pushVariant: settings.pushVariant)
+                                                 pushVariant: settings.pushVariant,
+                                                 progress: settings.progressBeyondFull ? progress : nil)
         // Il circuito si prepara solo dove ha senso — la pausa piena — e resta una proposta.
         let circuit = (kind == .long && settings.offerCircuit)
             ? settings.planner.circuit(breakIndex: breakIndex, factor: factor, sex: settings.sex,
@@ -425,6 +429,31 @@ public struct SessionEngine {
         // Le ripetizioni si contano **qui**, dove sono state fatte. Che poi la pausa duri altri
         // quattro minuti, o che tu esca d'emergenza, non toglie nulla al lavoro già svolto.
         let done = current.exercise
+        // Il segnale della progressione: quando confermi senza dire altro, le hai fatte tutte.
+        if settings.progressBeyondFull { progress.record(.complete, for: done.kind) }
+
+        if current.circuitActive, current.stationIndex + 1 < current.circuit.count {
+            current.stationIndex += 1
+            current.exercise = current.circuit[current.stationIndex]
+            plan = current
+            exerciseBaseline = timer
+            exerciseDone = false
+            return [.exerciseConfirmed(done)]
+        }
+        exerciseDone = true
+        return [.exerciseConfirmed(done)]
+    }
+
+    /// «Non tutte»: hai fatto meno di quante te ne aveva chieste, e lo dici.
+    ///
+    /// Vale come conferma dell'esercizio — il lavoro l'hai fatto e va contato — ma per la
+    /// progressione è il segnale opposto. Un'app che accetta solo il successo misura solo le
+    /// giornate buone, e su quelle qualunque progressione sembra funzionare.
+    @discardableResult
+    public mutating func markExercisePartial(actualReps: Int) -> [EngineEvent] {
+        guard phase == .breaking, var current = plan else { return [] }
+        let done = Exercise(kind: current.exercise.kind, reps: max(0, actualReps))
+        if settings.progressBeyondFull { progress.record(.partial, for: done.kind) }
 
         if current.circuitActive, current.stationIndex + 1 < current.circuit.count {
             current.stationIndex += 1
@@ -518,9 +547,12 @@ public struct SessionEngine {
     /// Cambia esercizio restando nella stessa pausa. Ammesso solo verso una variante di quello
     /// proposto: è una scelta sul *come*, non un modo di scegliersi il più corto.
     @discardableResult
-    public mutating func swapExercise(to kind: ExerciseKind, now: Date) -> Bool {
+    /// - Parameter force: salta il controllo sulle varianti. Serve al passaggio al movimento più
+    ///   duro proposto dalla progressione, che è una **scala** e non una variante laterale: da
+    ///   crunch si sale a sit-up, che nell'elenco delle alternative del crunch non c'è.
+    public mutating func swapExercise(to kind: ExerciseKind, now: Date, force: Bool = false) -> Bool {
         guard phase == .breaking, var current = plan else { return false }
-        guard current.exercise.kind.variants.contains(kind) else { return false }
+        guard force || current.exercise.kind.variants.contains(kind) else { return false }
         let factor = current.circuitActive
             ? settings.rampFactor(now: now) * ExercisePlanner.circuitFactor
             : settings.rampFactor(now: now)

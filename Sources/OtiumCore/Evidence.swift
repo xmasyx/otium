@@ -222,10 +222,56 @@ public enum Evidence {
         governsEN: "A promise the app refuses to make."
     )
 
+    /// Perché le ripetizioni possono crescere, in un'app dove il carico non si può aggiungere.
+    public static let repsInsteadOfLoad = Study(
+        id: "plotkin-2022",
+        claim: "Otto settimane, 43 persone già allenate, due gruppi: uno aumentava il carico "
+             + "tenendo fisse le ripetizioni, l'altro aumentava le ripetizioni tenendo fisso il "
+             + "carico. Gli adattamenti sono risultati equivalenti su ipertrofia e resistenza, "
+             + "con un vantaggio minimo del carico sulla forza massimale. È il permesso per far "
+             + "crescere un allenamento a corpo libero, dove il carico non si può aggiungere.",
+        citation: "Plotkin, Coleman, Van Every et al., «Progressive overload without progressing "
+                + "load? The effects of load or repetition progression on muscular adaptations», PeerJ 10:e14142",
+        year: 2022,
+        url: "https://pubmed.ncbi.nlm.nih.gov/36199287/",
+        governs: "La crescita delle ripetizioni oltre il 100%.",
+        claimEN: "Eight weeks, 43 trained people, two groups: one increased load while holding "
+               + "reps fixed, the other increased reps while holding load fixed. Adaptations came "
+               + "out equivalent for hypertrophy and endurance, with a minimal edge for load on "
+               + "maximal strength. It is the licence to progress a bodyweight programme, where "
+               + "load cannot be added.",
+        governsEN: "Growing the reps beyond 100%."
+    )
+
+    /// Ogni quanto si sale, e di quanto.
+    public static let progressionRule = Study(
+        id: "acsm-progression",
+        claim: "Il position stand sulla progressione fissa la regola nota come 2-for-2: si "
+             + "avanza quando si riescono a fare una o due ripetizioni oltre il bersaglio per due "
+             + "sessioni consecutive, con incrementi nell'ordine del 2-10%. L'aggiornamento 2026 "
+             + "aggiunge che allenare a cedimento non migliora gli esiti nell'adulto medio, e che "
+             + "la costanza conta più del piano perfetto: per questo Otium chiede sempre un "
+             + "numero che devi riuscire a finire.",
+        citation: "American College of Sports Medicine, «Progression Models in Resistance Training "
+                + "for Healthy Adults», Med Sci Sports Exerc; aggiornamento delle linee guida 2026",
+        year: 2009,
+        // Il position stand del 2009 è su PubMed; l'aggiornamento 2026 è citato nel testo,
+        // perché la guardia pretende una fonte tracciabile e un comunicato non lo è.
+        url: "https://pubmed.ncbi.nlm.nih.gov/19204579/",
+        governs: "Il 5% ogni due conferme, e il gradino indietro dopo due mancate.",
+        claimEN: "The position stand on progression sets out the 2-for-2 rule: you advance when "
+               + "you can do one or two reps beyond the target for two consecutive sessions, with "
+               + "increments in the 2-10% range. The 2026 update adds that training to failure "
+               + "does not improve outcomes for the average adult, and that consistency matters "
+               + "more than the perfect plan — which is why Otium always asks for a number you "
+               + "should be able to finish.",
+        governsEN: "The 5% after two confirmations, and the step back after two shortfalls."
+    )
+
     /// Tutte le fonti, nell'ordine in cui hanno senso da leggere.
     public static let all: [Study] = [
         sittingInterval, squatsBeatWalking, hourlyBreaks, microBreaks, vilpa,
-        systematicBreaks, goalHabituation,
+        systematicBreaks, goalHabituation, repsInsteadOfLoad, progressionRule,
         twentyTwentyTwenty, exerciseAndCognition,
     ]
 

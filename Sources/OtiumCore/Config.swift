@@ -108,6 +108,15 @@ public struct Settings: Codable, Equatable, Sendable {
     /// dopo un infortunio ha lo stesso diritto di partire dal muro. La scelta è dichiarata al
     /// primo avvio e si cambia dalle preferenze.
     public var pushVariant: ExerciseKind?
+    /// Le ripetizioni continuano a crescere **oltre** il 100%. Spento di serie: il 100% è il
+    /// programma, la crescita è allenamento in più, e si accende rispondendo alla domanda che
+    /// l'app fa dopo una settimana passata al 100%.
+    public var progressBeyondFull: Bool
+    /// Quando sei arrivato al 100%. `nil` quando non ci sei ancora, o quando ci sei arrivato con
+    /// la salita e allora si ricava dalla data d'inizio.
+    public var fullReachedAt: Date?
+    /// La domanda sulla crescita è già stata fatta. Una volta sola, come tutte le altre.
+    public var growthAnswered: Bool
     /// Dopo quante settimane di uso l'app **chiede** se vuoi già passare al numero pieno.
     ///
     /// La partenza graduale esiste perché iniziare a quindici squat quando sei fermo da mesi è il
@@ -169,6 +178,9 @@ public struct Settings: Codable, Equatable, Sendable {
         vigorousDailyTarget: Int = 3,
         escapePhrase: String = "salto la pausa",
         pushVariant: ExerciseKind? = nil,
+        progressBeyondFull: Bool = false,
+        fullReachedAt: Date? = nil,
+        growthAnswered: Bool = false,
         fullPaceOfferWeeks: Int = 1,
         fullPaceAnswered: Bool = false,
         sex: Sex? = nil,
@@ -195,6 +207,9 @@ public struct Settings: Codable, Equatable, Sendable {
         self.vigorousDailyTarget = max(0, vigorousDailyTarget)
         self.escapePhrase = escapePhrase
         self.pushVariant = pushVariant
+        self.progressBeyondFull = progressBeyondFull
+        self.fullReachedAt = fullReachedAt
+        self.growthAnswered = growthAnswered
         self.fullPaceOfferWeeks = max(1, fullPaceOfferWeeks)
         self.fullPaceAnswered = fullPaceAnswered
         self.sex = sex
@@ -215,6 +230,28 @@ public struct Settings: Codable, Equatable, Sendable {
 
     public var planner: ExercisePlanner {
         ExercisePlanner(pool: exercisePool, vigorousPool: vigorousPool)
+    }
+
+    /// Da quando sei al 100%. `nil` se non ci sei ancora.
+    ///
+    /// Due strade, e la seconda è calcolata invece che memorizzata: o ci sei arrivato **scegliendo**
+    /// — al primo avvio o rispondendo alla domanda della settimana — e allora la data è scritta; o
+    /// ci sei arrivato **salendo**, e allora è la fine della partenza graduale, che si ricava.
+    public func fullPaceSince(now: Date) -> Date? {
+        if let fullReachedAt { return fullReachedAt }
+        guard rampFactor(now: now) >= 1.0 else { return nil }
+        if rampStartFactor >= 1.0 { return startDate }
+        return startDate.addingTimeInterval(Double(rampWeeks) * 7 * 24 * 3600)
+    }
+
+    /// È il momento di chiedere se vuoi far crescere le ripetizioni oltre il 100%?
+    ///
+    /// Una settimana **passata al 100%**, non una settimana dall'installazione: la domanda ha
+    /// senso solo per chi il programma pieno l'ha già vissuto, e sa cosa vuol dire.
+    public func shouldOfferGrowth(now: Date) -> Bool {
+        guard !growthAnswered, !progressBeyondFull else { return false }
+        guard let since = fullPaceSince(now: now) else { return false }
+        return now.timeIntervalSince(since) >= 7 * 24 * 3600
     }
 
     /// È il momento di chiedere se vuoi già il numero pieno?
@@ -251,6 +288,9 @@ public struct Settings: Codable, Equatable, Sendable {
         escapePhrase = (try? c.decode(String.self, forKey: .escapePhrase)) ?? d.escapePhrase
         // Assenti nei file scritti prima dell'onboarding: restano nil, e l'app chiede.
         pushVariant = try? c.decode(ExerciseKind.self, forKey: .pushVariant)
+        progressBeyondFull = (try? c.decode(Bool.self, forKey: .progressBeyondFull)) ?? d.progressBeyondFull
+        fullReachedAt = try? c.decode(Date.self, forKey: .fullReachedAt)
+        growthAnswered = (try? c.decode(Bool.self, forKey: .growthAnswered)) ?? d.growthAnswered
         fullPaceOfferWeeks = (try? c.decode(Int.self, forKey: .fullPaceOfferWeeks)) ?? d.fullPaceOfferWeeks
         fullPaceAnswered = (try? c.decode(Bool.self, forKey: .fullPaceAnswered)) ?? d.fullPaceAnswered
         sex = try? c.decode(Sex.self, forKey: .sex)
@@ -297,6 +337,9 @@ public enum Paths {
     public static var rotationFile: URL { supportDirectory.appendingPathComponent("rotation.json") }
     /// I mazzi delle frasi: quali sono già uscite e quali restano.
     public static var decksFile: URL { supportDirectory.appendingPathComponent("decks.json") }
+    /// Quanto sei avanti su ogni esercizio. Separato dalle impostazioni perché è **stato**,
+    /// non configurazione: cresce da solo e non si tocca a mano.
+    public static var progressFile: URL { supportDirectory.appendingPathComponent("progress.json") }
     /// Le frasi aggiunte a mano. L'app le legge e non le scrive mai.
     public static var userPhrasesFile: URL { supportDirectory.appendingPathComponent("frasi-mie.json") }
 

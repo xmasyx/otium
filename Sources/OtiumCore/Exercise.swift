@@ -544,8 +544,12 @@ public enum Ramp {
     /// divisione in ogni punto che lo mostra.
     /// - Parameter sex: sposta il **punto di partenza** per gruppo muscolare (`SexCalibration`,
     ///   fondato su Miller 1993). `nil` = nessuna calibrazione, cioè il numero pieno.
-    public static func reps(for kind: ExerciseKind, factor: Double, sex: Sex? = nil) -> Int {
-        let scaled = Double(kind.baseReps) * factor
+    /// - Parameter level: la crescita **oltre** il 100% (`Progression`). 1.0 = nessuna crescita.
+    ///   Non tocca la partenza graduale: quella è `factor`, e i due si moltiplicano solo quando
+    ///   la salita è finita, perché prima il livello resta a 1.0 per costruzione.
+    public static func reps(for kind: ExerciseKind, factor: Double, sex: Sex? = nil,
+                            level: Double = 1.0) -> Int {
+        let scaled = Double(kind.baseReps) * factor * max(1.0, level)
             * SexCalibration.factor(for: kind, sex: sex)
         guard kind.isPerSide else { return max(1, Int(scaled.rounded())) }
         return max(2, Int((scaled / 2).rounded()) * 2)
@@ -601,11 +605,13 @@ public struct ExercisePlanner: Sendable {
     /// `breakIndex` è 1-based e cresce per tutta la vita dell'app: la rotazione non riparte
     /// ogni giorno, altrimenti farebbe sempre squat il lunedì mattina.
     public func exercise(breakIndex: Int, kind: BreakKind, factor: Double, sex: Sex? = nil,
-                         pushVariant: ExerciseKind? = nil) -> Exercise {
+                         pushVariant: ExerciseKind? = nil, progress: ProgressBook? = nil) -> Exercise {
         let table = (kind == .long) ? vigorousPool : pool
         let idx = max(0, breakIndex - 1) % table.count
         let chosen = SexCalibration.regression(for: table[idx], sex: sex, chosen: pushVariant)
-        return Exercise(kind: chosen, reps: Ramp.reps(for: chosen, factor: factor, sex: sex))
+        let level = progress?.progress(for: chosen).level ?? 1.0
+        return Exercise(kind: chosen,
+                        reps: Ramp.reps(for: chosen, factor: factor, sex: sex, level: level))
     }
 
     /// Quanto vale una stazione dentro il circuito rispetto allo stesso esercizio da solo.
