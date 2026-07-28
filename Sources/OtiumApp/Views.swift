@@ -528,14 +528,25 @@ struct HUDView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                // **Il pannello si allarga in altezza, il testo non si taglia.**
+                // Con un'altezza fissa a 84 punti «prossima pausa fra 30 min di lavoro attivo»
+                // finiva in «…di lavoro att…», e la parola tagliata era proprio quella che
+                // distingue il tempo di lavoro vero dall'orologio a muro. Segnalato dal principale
+                // il 2026-07-28, guardando la notifica. Accorciare la frase avrebbe curato questa
+                // e lasciato in piedi la prossima: qui cede il pannello, non il significato.
                 Text(subtitle)
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer()
+            Spacer(minLength: 0)
         }
         .padding(16)
-        .frame(width: 320, height: 84, alignment: .leading)
+        .frame(width: 320, alignment: .leading)
+        .frame(minHeight: 84)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }

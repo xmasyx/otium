@@ -721,6 +721,43 @@ la stessa cosa due volte, con i secondi esatti della soglia d'assenza.
   `.breakStarted`. *Provato:* in tutte e quattro le sonde lo scudo si apre e resta finché la fase è
   `.breaking`, e al blocco schermo la pausa sopravvive alla sospensione.
 
+### Iterazione 12 — il battito, il menu che prometteva, e la sonda che cambiava la macchina (2026-07-28)
+
+- [x] **ISC-62** Il radar si guarda intorno ogni 3 secondi, e ogni secondo solo dove serve. — la
+      parte cara del battito è l'app in primo piano, l'audio e il documento aperto; il resto è
+      aritmetica. Tre secondi non tolgono niente, perché i tetti della presenza si misurano in
+      minuti (45 e 15). Nel **preavviso** si torna a ogni secondo: lì il valore non è contabilità,
+      decide se la pausa parte o si rimanda perché sei al telefono. *Falsificatore:* `--radar-probe`
+      conta le interrogazioni vere, e il preavviso fa da polo di controllo dentro la sonda stessa —
+      se il rallentamento non funzionasse le due fasi darebbero lo stesso ritmo. Misurato: **0,33/s
+      lavorando contro 0,80/s nel preavviso, il 67% di interrogazioni in meno.**
+- [x] **ISC-63** Il menu non promette scorciatoie che l'app non ha. — accanto a «Statistiche…» c'era
+      **⌘S**, che è il tasto di Salva ovunque, e il principale se l'è trovato addosso in un'altra
+      app. Ma quella combinazione non poteva funzionare fuori dal menu aperto: questo non è il menu
+      principale (`NSApp.mainMenu` è **nessuno**, misurato) e l'app non registra nessun tasto
+      globale (nessun `RegisterEventHotKey`, nessun monitor, verificato sul sorgente). Restano
+      lettere nude, che a menu aperto funzionano davvero. ⌘Q su «Esci» resta, perché lì il simbolo
+      non si legge come una promessa ma come «questa è la voce che chiude».
+      *Falsificatore:* `--menu-probe`, che boccia qualunque voce con ⌘ diversa dall'uscita.
+- [x] **ISC-64** La notifica non taglia le parole. — «prossima pausa fra 30 min di lavoro att…», e
+      la parola tagliata era proprio quella che distingue il tempo di lavoro vero dall'orologio a
+      muro. Segnalato dal principale guardandola. Accorciare la frase avrebbe curato questa e
+      lasciato in piedi la prossima: ora è il pannello a cedere, l'altezza la detta il contenuto e
+      il testo va a capo fino a tre righe. *Falsificatore:* `--snapshot --surface=hud [--testo=…]`,
+      resa e **guardata** a due lunghezze — la frase vera sta in una riga (84 punti), una più lunga
+      va a capo e il pannello cresce a 87. Nessuna delle due ha puntini.
+- [x] **ISC-65** Una sonda non tocca la macchina che sta misurando. — trovato **causandolo**:
+      `applyAutoStartPreference()` reinstalla l'avvio automatico quando punta a un'altra copia
+      dell'app, e le mie sonde su `.build/debug/OtiumApp` hanno riscritto l'avvio automatico del
+      principale dal bundle al binario di sviluppo, che ogni `swift build` sovrascrive. Al login
+      sarebbe partita una copia di lavoro, in silenzio. Due cure: `ProbeMode` (l'avvio automatico
+      non si tocca mai da una sonda) e `Paths.overrideDirectory`, che manda registro, rotazione,
+      mazzi, preferenze **e il lock dell'istanza unica** in una cartella usa e getta.
+      *Falsificatore:* `rotation.json` invariato al bit dopo una sonda, con l'app vera in esecuzione.
+      Effetto collaterale utile: le sonde ora girano **mentre l'app lavora**, non serve più fermarla.
+- **Anti-claim** — il rallentamento non deve rendere l'app cieca nel momento in cui decide. Il
+  preavviso resta a ritmo pieno, e la sonda lo misura invece di dichiararlo.
+
 **Aperto, non fatto:** la livrea tocca solo il recap. Preferenze, dichiarazione e i loro interruttori
 usano ancora l'accento di sistema, quindi blu. E in cima alle Preferenze c'è una fascia vuota di
 circa 120 punti da sondare.
@@ -757,6 +794,21 @@ uno che non copre la barra dei menu sono indistinguibili nei test.
 | F4 | Impacchettamento — `build-app.sh`, icona, LaunchAgent, README con le fonti | da fare |
 
 ## Decisions
+
+- **2026-07-28 — una sonda si isola per costruzione, non per disciplina.** Le prime sonde di questa
+  giornata scrivevano nei dati veri, e ci si compensava con un backup prima e un ripristino dopo,
+  cioè con l'attenzione di chi lancia il comando. Ha ceduto: le sonde hanno riscritto l'avvio
+  automatico del principale, puntandolo al binario di sviluppo. La cura non è ricordarsene meglio,
+  è `Paths.overrideDirectory` più `ProbeMode` — la sonda non *deve* stare attenta, non *può* fare
+  danni. Guadagno inatteso: ora girano mentre l'app vera lavora, perché anche il lock dell'istanza
+  unica finisce nella cartella usa e getta.
+
+- **2026-07-28 — il pannello cede, il significato no.** La notifica tagliava «di lavoro attivo». Le
+  due strade erano accorciare la frase o far crescere il pannello. Accorciare curava quel caso e
+  lasciava in piedi il prossimo, e per giunta la parola da sacrificare era «attivo», cioè quella
+  che rende onesta l'app (30 minuti di lavoro vero, non di orologio a muro). Ora l'altezza la detta
+  il contenuto, e una costante scritta a mano nel codice non scommette più sulla lunghezza di ogni
+  frase futura.
 
 - **2026-07-28 — lo schermo coperto è una funzione della fase, non l'effetto di un evento.** La
   correzione ovvia dello schermo nero era aggiungere `blocker.hide()` al caso `.naturalBreak`, cioè
@@ -905,6 +957,12 @@ uno che non copre la barra dei menu sono indistinguibili nei test.
 
 ## Changelog
 
+- **2026-07-28 (iterazione 12)** — Il radar di presenza passa da ogni secondo a ogni 3, tranne nel
+  preavviso dove il valore decide qualcosa (−67% di interrogazioni, misurate). Il menu smette di
+  promettere ⌘S, che era il tasto di Salva e non poteva funzionare fuori dal menu aperto. La
+  notifica non taglia più le parole: l'altezza la detta il contenuto. E le sonde diventano
+  ermetiche, dopo che le mie avevano dirottato l'avvio automatico del principale sul binario di
+  sviluppo — ora girano anche mentre l'app lavora.
 - **2026-07-28 (iterazione 11)** — Lo schermo nero senza uscita, il guasto peggiore dell'app: due
   Mac inchiodati (27 e 28 luglio) risolti col tasto di accensione. Causa unica e provata, una pausa
   chiusa dal motore che non scopriva lo schermo. Tre reti in tre strati più un'uscita d'emergenza
@@ -935,6 +993,27 @@ eseguito e non asserito. Girate due volte: sul binario di sviluppo e su
 | `--orphan-probe --senza-rete-modello` | — | `PASS` — il battito della finestra basta da solo |
 | `--orphan-probe --senza-reti` | — | guasto **riprodotto** (1 finestra, chiosco 490), poi `PASS`: l'uscita d'emergenza smonta lo scudo a motore già chiuso |
 | `--sleep-probe` | — | `PASS` — bloccato: 0 finestre, chiosco 0, fase ancora `breaking`; sbloccato: 1 finestra, chiosco 490 |
+
+**Il ritmo del radar (2026-07-28)** — `--radar-probe` conta le interrogazioni vere: **0,33/s
+lavorando** contro **0,80/s nel preavviso**, cioè il **67% in meno** nello stato in cui l'app passa
+il 99% del tempo. Il preavviso fa da polo di controllo dentro la sonda: se il rallentamento non
+funzionasse, le due fasi darebbero lo stesso ritmo.
+
+**Dichiarato, perché la misura non regge la conclusione facile:** il consumo di CPU **non** mostra
+il risparmio. 0,094% medio su 180 s prima, 0,133% dopo — cioè il numero è salito, il che è
+impossibile per una modifica che toglie lavoro e basta. A 0,1% di CPU la misura è dominata da tutto
+il resto della macchina (build in corso, redraw, altre app) e non ha la risoluzione per vedere due
+interrogazioni al secondo in meno. La prova che regge è il **conteggio**, non il cronometro; il
+risparmio di batteria dichiarabile è «non peggiora, e fa un terzo del lavoro di prima».
+
+**Il menu e la notifica** — `--menu-probe`: `NSApp.mainMenu` è **nessuno**, quindi le combinazioni
+di questo menu valgono solo a menu aperto; nessuna voce mostra più ⌘ tranne l'uscita.
+`--snapshot --surface=hud` guardato a due lunghezze: la frase vera sta in una riga (84 punti), una
+più lunga va a capo e il pannello cresce a 87. Nessuna delle due ha puntini di sospensione.
+
+**Sonde ermetiche** — dopo `--snapshot` con l'app viva, `rotation.json` è identico al bit. Prima di
+`ProbeMode` le sonde avevano riscritto l'avvio automatico dal bundle a `.build/debug/OtiumApp`:
+rimesso a posto e verificato nel plist.
 
 **Prove sul registro, non sul sospetto.** Gli stessi secondi due giorni di fila, e sono esattamente
 le soglie d'assenza del codice: 28/07 `natural` long **420,07 s** (soglia `max(180, 300+120)` = 420)

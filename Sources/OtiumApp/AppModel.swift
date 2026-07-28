@@ -2,6 +2,28 @@ import AppKit
 import Combine
 import OtiumCore
 
+/// L'app è stata avviata per **una sonda o una resa**, non per lavorare.
+///
+/// Serve a una cosa sola, e l'ho pagata sondando: `applyAutoStartPreference()` gira dentro
+/// `AppModel.init` e reinstalla l'avvio automatico quando questo punta a **un'altra copia**
+/// dell'app. Il caso per cui esiste è giusto (ricostruisci l'app altrove e l'avvio automatico
+/// resta appeso al nulla), ma vale anche per una sonda lanciata dal terminale: il 2026-07-28 le
+/// mie sonde su `.build/debug/OtiumApp` hanno riscritto l'avvio automatico del principale dal
+/// bundle al binario di sviluppo, che ogni `swift build` sovrascrive. Al login sarebbe partita
+/// una copia di lavoro, in silenzio, e nessuno l'avrebbe saputo.
+///
+/// Una sonda non deve poter cambiare com'è configurata la macchina che sta misurando.
+enum ProbeMode {
+    private static let flags = [
+        "--orphan-probe", "--sleep-probe", "--radar-probe", "--menu-probe", "--confirm-probe",
+        "--flush-probe", "--window-probe", "--snapshot", "--demo-break", "--demo-hud", "--presence",
+    ]
+
+    static var active: Bool {
+        CommandLine.arguments.dropFirst().contains { arg in flags.contains { arg.hasPrefix($0) } }
+    }
+}
+
 /// Interruttori **solo per le sonde**: spengono una rete per volta, per provare che quella sotto
 /// regge da sola.
 ///
@@ -52,6 +74,13 @@ final class AppModel: ObservableObject {
     private var pendingActiveSeconds: Double = 0
     private var lastSnapshotSave = Date.distantPast
     private static let activeFlushInterval: Double = 300
+    /// Ogni quanto si guarda cosa c'è intorno. Vedi `environmentSample(now:)`.
+    private static let environmentSampleInterval: Double = 3
+    private var lastEnvironmentSample = Date.distantPast
+    private var cachedEnvironment = EngineEnvironment.quiet
+    /// Quante volte il radar è stato davvero interrogato. Un contatore, non una stima: senza,
+    /// «guardo intorno ogni tre secondi» resta un'affermazione nei commenti.
+    private(set) var environmentSamples = 0
 
     private lazy var blocker = BlockerController(model: self)
     private lazy var hud = WarningHUD()
@@ -106,6 +135,7 @@ final class AppModel: ObservableObject {
     /// quel gesto spegne anche la preferenza, e un'app che si rimette da sola ciò che hai appena
     /// rimosso è un'app che non ti ascolta.
     private func applyAutoStartPreference() {
+        guard !ProbeMode.active else { return }
         guard engine.settings.autoStartAtLogin else { return }
         switch launchAgentState {
         case .healthy:
@@ -153,14 +183,36 @@ final class AppModel: ObservableObject {
             RotationStore.save(engine.snapshot)
         }
 
-        let environment = EngineEnvironment(
-            microphoneActive: engine.settings.deferWhenMicrophoneActive ? MicRadar.isInputActive() : false,
-            presence: engine.settings.detectQuietPresence ? PresenceRadar.current() : nil
-        )
-        let events = engine.tick(elapsed: elapsed, idle: idle, now: now, environment: environment)
+        let events = engine.tick(elapsed: elapsed, idle: idle, now: now,
+                                 environment: environmentSample(now: now))
         for event in events { handle(event, now: now) }
         reconcileBlocker()
         objectWillChange.send()
+    }
+
+    /// Cosa c'è intorno: microfono in uso, video in riproduzione, documento aperto davanti.
+    ///
+    /// **Si campiona ogni 3 secondi, non ogni secondo.** È la parte cara del battito — l'app in
+    /// primo piano, l'audio, il documento aperto, lo stato degli ingressi audio — mentre il resto
+    /// del tick è aritmetica. Tre secondi non tolgono niente a nessuna decisione che ne dipende: i
+    /// tetti della presenza si misurano in **minuti** (45 per il video, 15 per la lettura), e la
+    /// soglia di inattività dell'orologio in decine di secondi. Un ritardo di tre secondi lì è
+    /// invisibile; moltiplicato per un giorno di lavoro sono due letture su tre risparmiate.
+    ///
+    /// **Tranne durante il preavviso**, dove si torna a ogni secondo. Sono i 60 secondi in cui il
+    /// valore non è contabilità ma una decisione presa nell'istante in cui la si legge: se stai
+    /// parlando al telefono la pausa si rimanda, e rimandarla su una lettura vecchia di tre
+    /// secondi significa deciderlo su com'era il mondo prima.
+    private func environmentSample(now: Date) -> EngineEnvironment {
+        let stantia = now.timeIntervalSince(lastEnvironmentSample) >= Self.environmentSampleInterval
+        guard engine.phase == .warning || stantia else { return cachedEnvironment }
+        lastEnvironmentSample = now
+        environmentSamples += 1
+        cachedEnvironment = EngineEnvironment(
+            microphoneActive: engine.settings.deferWhenMicrophoneActive ? MicRadar.isInputActive() : false,
+            presence: engine.settings.detectQuietPresence ? PresenceRadar.current() : nil
+        )
+        return cachedEnvironment
     }
 
     /// **Lo schermo coperto è una funzione della fase, non l'effetto di un evento.**

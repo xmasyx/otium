@@ -221,7 +221,20 @@ public struct Settings: Codable, Equatable, Sendable {
 /// Dove vivono configurazione e registro. Niente `~/.pausa`: la convenzione macOS è
 /// Application Support, e ci sta anche il backup di Time Machine.
 public enum Paths {
+    /// Dove vivono i dati quando **non** sono i dati veri: una cartella usa e getta, impostata
+    /// all'avvio se l'app parte per una sonda o per una resa.
+    ///
+    /// Esiste perché una sonda che scrive nel registro, nella rotazione e nei mazzi del principale
+    /// non sta misurando l'app, la sta modificando. Prima ci si compensava a mano, con un backup
+    /// prima e un ripristino dopo, cioè con la disciplina di chi lancia il comando — la garanzia
+    /// più fragile che ci sia, e il 2026-07-28 ha ceduto: le sonde hanno riscritto l'avvio
+    /// automatico del principale. Con la deviazione qui la sonda è ermetica per costruzione, e per
+    /// giunta può girare mentre l'app vera lavora, perché anche il lock dell'istanza unica finisce
+    /// nella cartella usa e getta.
+    public static var overrideDirectory: URL?
+
     public static var supportDirectory: URL {
+        if let overrideDirectory { return overrideDirectory }
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
         return base.appendingPathComponent("Otium", isDirectory: true)

@@ -367,9 +367,16 @@ final class WarningHUD {
         }
     }
 
-    private func present(_ content: NSView, size: NSSize, sound: String?, seconds: Double) {
+    private func present(_ content: NSView, size richiesta: NSSize, sound: String?, seconds: Double) {
         hide()
         guard let screen = NSScreen.main else { return }
+        // **La misura la detta il contenuto, non una costante.** L'altezza passata è un minimo:
+        // se il testo va a capo il pannello si alza, invece di tagliarlo. Una costante scritta a
+        // mano qui è una scommessa sulla lunghezza di ogni frase futura, e si perde in silenzio.
+        let size = NSSize(
+            width: richiesta.width,
+            height: max(richiesta.height, ceil(content.fittingSize.height))
+        )
         // In alto a destra, dove macOS mette le sue notifiche: è lì che l'occhio le cerca.
         // `visibleFrame` esclude già la barra dei menu, quindi il suo bordo alto è il posto giusto.
         let origin = NSPoint(

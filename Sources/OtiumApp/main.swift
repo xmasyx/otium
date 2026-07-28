@@ -44,6 +44,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         runFlushProbeIfRequested()
         runOrphanProbeIfRequested()
         runSleepProbeIfRequested()
+        runMenuProbeIfRequested()
+        runRadarProbeIfRequested()
 
         // Il secondo avvio non apre niente di nuovo: chiede a questa istanza di farsi vedere.
         // Su un'app della barra dei menu "farsi vedere" significa dire come sta, altrimenti
@@ -112,6 +114,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         case "evidence":
             size = NSSize(width: 640, height: 3200)   // alta: si vuole vedere tutta, non scorrerla
             host = NSHostingView(rootView: EvidenceView().frame(width: size.width, height: size.height))
+        case "hud":
+            // La frase più lunga che l'app sappia dire, quella che si tagliava. La misura è
+            // quella **naturale** del contenuto: se torna a essere 84 punti, il testo sta su una
+            // riga; se cresce, è andato a capo. Il numero è già una risposta, l'immagine è la prova.
+            let testo = CommandLine.arguments.first { $0.hasPrefix("--testo=") }?
+                .split(separator: "=", maxSplits: 1).last.map(String.init)
+                ?? "prossima pausa fra 30 min di lavoro attivo"
+            let hud = NSHostingView(rootView: HUDView(
+                title: "Otium è già attiva",
+                subtitle: testo
+            ))
+            size = hud.fittingSize
+            host = hud
         case "menu":
             size = NSSize(width: 280, height: 260)
             host = NSHostingView(rootView: MenuPanel(model: model).frame(width: size.width))
@@ -368,6 +383,89 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
+    /// `--radar-probe` — il radar viene davvero interrogato ogni 3 secondi, e ogni secondo durante
+    /// il preavviso?
+    ///
+    /// Conta le interrogazioni vere, non le stima. Il polo di controllo è dentro la sonda stessa e
+    /// non serve un secondo binario: il preavviso **è** il percorso non rallentato, quindi se il
+    /// rallentamento non funzionasse le due fasi darebbero lo stesso ritmo, ed è esattamente la
+    /// condizione che fa fallire la sonda.
+    private func runRadarProbeIfRequested() {
+        guard CommandLine.arguments.contains("--radar-probe") else { return }
+        Thread.detachNewThread {
+            Thread.sleep(forTimeInterval: 40)
+            FileHandle.standardError.write("sonda: guardiano scattato\n".data(using: .utf8)!)
+            exit(3)
+        }
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("otium-radar-\(UUID().uuidString).jsonl")
+        let probe = AppModel(settings: Settings(), ledger: Ledger(url: url))
+        probe.headless = true
+        probe.idleOverride = 0
+        probe.start()
+        let lavoro = 12.0, preavviso = 5.0
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + lavoro) {
+            let aCampioni = probe.environmentSamples
+            let aRitmo = Double(aCampioni) / lavoro
+            print(String(format: "fase working: %d interrogazioni in %.0f s → %.2f/s",
+                         aCampioni, lavoro, aRitmo))
+
+            // Spinta oltre l'intervallo: il prossimo battito entra nel preavviso, dove si torna
+            // a guardare a ogni secondo perché lì il valore decide se la pausa parte o si rimanda.
+            probe.declareTimeAlreadySeated(minutes: Int(probe.settings.cadence.intervalSeconds / 60) + 1)
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + preavviso) {
+                let bCampioni = probe.environmentSamples - aCampioni
+                let bRitmo = Double(bCampioni) / preavviso
+                print("fase: \(probe.phase.rawValue)")
+                print(String(format: "fase warning: %d interrogazioni in %.0f s → %.2f/s",
+                             bCampioni, preavviso, bRitmo))
+                let ok = probe.phase == .warning
+                    && aRitmo < 0.45 && aRitmo > 0.2          // ~1 ogni 3 s, non 1 al secondo
+                    && bRitmo >= aRitmo * 2                    // il preavviso torna al ritmo pieno
+                print(String(format: "risparmio in lavoro normale: %.0f%% delle interrogazioni",
+                             100 * (1 - aRitmo)))
+                print(ok
+                      ? "RISULTATO: PASS — 1 interrogazione ogni 3 s lavorando, ogni secondo nel preavviso"
+                      : "RISULTATO: FAIL — il ritmo non è quello dichiarato")
+                try? FileManager.default.removeItem(at: url)
+                exit(ok ? 0 : 1)
+            }
+        }
+    }
+
+    /// `--menu-probe` — quali scorciatoie **promette** il menu, e quali ne ha davvero?
+    ///
+    /// Nasce dal ⌘S su «Statistiche…»: una combinazione mostrata accanto a una voce si legge come
+    /// una scorciatoia di sistema, e qui non poteva esserlo — il menu di uno status item non è il
+    /// menu principale, e l'app non registra nessun tasto globale. La sonda stampa quello che il
+    /// menu dichiara e lo confronta con quello che l'app può mantenere.
+    private func runMenuProbeIfRequested() {
+        guard CommandLine.arguments.contains("--menu-probe") else { return }
+        let menu = statusItem.menu
+        print("menu principale dell'app: \(NSApp.mainMenu == nil ? "nessuno" : "presente")")
+        var promesse: [String] = []
+        for item in menu?.items ?? [] where !item.keyEquivalent.isEmpty {
+            let mods = item.keyEquivalentModifierMask
+            let simboli = (mods.contains(.command) ? "⌘" : "")
+                + (mods.contains(.control) ? "⌃" : "")
+                + (mods.contains(.option) ? "⌥" : "")
+                + (mods.contains(.shift) ? "⇧" : "")
+            print("  «\(item.title)» → \(simboli.isEmpty ? "(nuda) " : simboli)\(item.keyEquivalent.uppercased())")
+            if mods.contains(.command), item.action != #selector(NSApplication.terminate(_:)) {
+                promesse.append(item.title)
+            }
+        }
+        let ok = promesse.isEmpty
+        print(ok
+              ? "RISULTATO: PASS — nessuna voce promette una scorciatoia globale che l'app non ha"
+              : "RISULTATO: FAIL — promettono ⌘ senza poterlo mantenere: \(promesse.joined(separator: ", "))")
+        NSApp.terminate(nil)
+        exit(ok ? 0 : 1)
+    }
+
     /// `--sleep-probe` — mentre il Mac dorme o lo schermo è bloccato, lo scudo si toglie di mezzo
     /// e poi torna?
     ///
@@ -531,10 +629,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         undo.submenu = undoMenu
         menu.addItem(undo)
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Statistiche…", action: #selector(showStats), keyEquivalent: "s"))
+        // **Niente ⌘ in questo menu, ed è una questione di onestà, non di gusto.**
+        //
+        // Questo non è il menu principale di un'app in primo piano: è il menu di uno status item,
+        // e Otium non registra nessuna scorciatoia di sistema (nessun `RegisterEventHotKey`,
+        // nessun monitor globale — verificato sul sorgente il 2026-07-28). Le sue combinazioni
+        // valgono **solo mentre il menu è aperto**. Scriverci accanto ⌘S significava promettere
+        // una scorciatoia globale che non esiste, e prendersi per giunta il tasto di Salva:
+        // segnalato dal principale, che se l'è trovato addosso in un'altra app.
+        //
+        // Restano lettere nude, che a menu aperto funzionano davvero e non promettono niente
+        // altrove. ⌘Q su «Esci» sopravvive perché lì il simbolo non si legge come una promessa:
+        // si legge come «questa è la voce che chiude», ed è la convenzione di ogni menu su macOS.
+        let stats = NSMenuItem(title: "Statistiche…", action: #selector(showStats), keyEquivalent: "s")
+        stats.keyEquivalentModifierMask = []
+        menu.addItem(stats)
         menu.addItem(NSMenuItem(title: "Da dove vengono questi numeri…", action: #selector(showEvidence), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Apri il registro", action: #selector(revealLedger), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Preferenze…", action: #selector(showPrefs), keyEquivalent: ","))
+        let prefs = NSMenuItem(title: "Preferenze…", action: #selector(showPrefs), keyEquivalent: ",")
+        prefs.keyEquivalentModifierMask = []
+        menu.addItem(prefs)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Esci da Otium", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
@@ -669,6 +783,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 // percorso reale dell'avvio automatico, invece di provare `launchctl` e sperare che il codice
 // dell'app faccia la stessa cosa.
 let arguments = CommandLine.arguments
+
+// **Prima di qualunque altra cosa**, perché il lock dell'istanza unica e il primo `AppModel`
+// vengono dopo: se questa esecuzione è una sonda o una resa, i dati veri non si toccano.
+if ProbeMode.active {
+    Paths.overrideDirectory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("otium-sonda-\(UUID().uuidString)", isDirectory: true)
+    Paths.ensureDirectory()
+}
+
 if arguments.contains("--presence"), let watchArg = arguments.first(where: { $0.hasPrefix("--watch") }) {
     // La sonda a colpo singolo aveva un difetto di **protocollo**, non di codice: per lanciarla
     // devi mettere a fuoco il terminale, quindi l'app da leggere non può mai essere in primo
