@@ -98,6 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         runPolicyProbeIfRequested()
         runCircuitProbeIfRequested()
         runPaceDemoIfRequested()
+        runGrowthDemoIfRequested()
         runRadarProbeIfRequested()
 
         // Il secondo avvio non apre niente di nuovo: chiede a questa istanza di farsi vedere.
@@ -554,6 +555,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         present(w)
         paceWindow = w
         // Una demo che resta aperta per sempre diventa una finestra dimenticata.
+        let killswitch = Timer(timeInterval: 600, repeats: false) { _ in NSApp.terminate(nil) }
+        RunLoop.main.add(killswitch, forMode: .common)
+    }
+
+    /// `--demo-crescita` — la domanda della settimana al 100%, come la vede chi ci è dentro.
+    /// Ermetica come `--demo-ritmo`: premere un pulsante non tocca i dati veri.
+    private func runGrowthDemoIfRequested() {
+        guard CommandLine.arguments.contains("--demo-crescita") else { return }
+        var s = Settings()
+        s.startDate = Date().addingTimeInterval(-40 * 24 * 3600)
+        s.rampStartFactor = 1.0
+        s.fullReachedAt = Date().addingTimeInterval(-8 * 24 * 3600)
+        s.sex = model.settings.sex
+        s.language = model.settings.language ?? .italian
+        L.language = s.language ?? .italian
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("otium-crescita-\(UUID().uuidString).jsonl")
+        let finto = AppModel(settings: s, ledger: Ledger(url: url))
+        print("al 100% da 8 giorni · la domanda comparirebbe: \(s.shouldOfferGrowth(now: Date()) ? "sì" : "no")")
+
+        let hosting = NSHostingView(rootView: GrowthCheckInView(model: finto) { NSApp.terminate(nil) })
+        hosting.frame = NSRect(x: 0, y: 0, width: 520, height: hosting.fittingSize.height)
+        let w = makeWindow(title: L.t("Otium", "Otium"), content: hosting)
+        present(w)
+        growthWindow = w
         let killswitch = Timer(timeInterval: 600, repeats: false) { _ in NSApp.terminate(nil) }
         RunLoop.main.add(killswitch, forMode: .common)
     }

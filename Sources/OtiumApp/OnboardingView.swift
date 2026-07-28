@@ -108,8 +108,11 @@ struct OnboardingView: View {
                                        narrow: true) { pushVariant = kind }
                             }
                         }
-                        Text(L.t("Dal muro alle ginocchia al rialzo fino a terra, è la stessa progressione per chiunque parta da zero. Se già li fai a terra, dillo qui.",
-                                 "From the wall to the knees to an elevated surface to the floor: it is the same progression for anyone starting from scratch. If you already do them on the floor, say so here."))
+                        // «Su rialzo» è l'unico dei quattro che non si capisce dal bottone. Gli
+                        // altri tre li vedi mentre li leggi, questo ti chiede di immaginare cosa:
+                        // la riga qui sotto nomina gli oggetti invece di allungare il bottone.
+                        Text(L.t("Dal muro alle ginocchia al rialzo, cioè scrivania, divano o letto, fino a terra. È la stessa progressione per chiunque parta da zero, e se già li fai a terra dillo qui.",
+                                 "From the wall to the knees to an elevated surface (a desk, a sofa, a bed) and finally the floor. It is the same progression for anyone starting from scratch, and if you already do them on the floor, say so here."))
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
