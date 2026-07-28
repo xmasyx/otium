@@ -291,7 +291,7 @@ public enum Quotes {
         q("Andai nei boschi perché volevo vivere deliberatamente, affrontare solo i fatti essenziali della vita.", "I went to the woods because I wished to live deliberately, to front only the essential facts of life.", "Thoreau", "Walden, II"),
         q("Semplifica, semplifica.", "Simplify, simplify.", "Thoreau", "Walden, II"),
         q("Non basta essere occupati, anche le formiche lo sono. La domanda è: di che cosa siamo occupati?", "Thoreau", "Lettere a H. Blake"),
-        q("Il costo di una cosa è la quantità di vita che devi scambiare per averla.", "Thoreau", "Walden, I"),
+        q("Il costo di una cosa è la quantità di vita che devi scambiare per averla.", "The cost of a thing is the amount of life which is required to be exchanged for it.", "Thoreau", "Walden, I"),
 
         q("Fa' la cosa e avrai il potere.", "Emerson", "Saggi, Compensazione"),
 
@@ -454,7 +454,7 @@ public enum Quotes {
         q("Il grande quadrato non ha angoli; il grande talento matura tardi.", "Laozi", "Tao Te Ching, 41"),
         q("Ritirarsi a opera compiuta è la via del cielo.", "When the work is done, to withdraw into obscurity is the way of Heaven.", "Laozi", "Tao Te Ching, 9"),
         q("Chi si mette in punta di piedi non sta ritto a lungo.", "He who stands on his tiptoes does not stand firm.", "Laozi", "Tao Te Ching, 24"),
-        q("Chi sa accontentarsi non si disonora; chi sa fermarsi non corre pericolo.", "Laozi", "Tao Te Ching, 44"),
+        q("Chi sa accontentarsi non si disonora; chi sa fermarsi non corre pericolo.", "Who is content needs fear no shame. Who knows to stop incurs no blame. From danger free, long live shall he.", "Laozi", "Tao Te Ching, 44"),
 
         q("Il pesce dimentica la rete quando è nel fiume; l'uomo dimentica le parole quando ha il senso.", "Zhuangzi", "Zhuangzi, XXVI"),
         q("La calma perfetta dell'uomo saggio è specchio del cielo e della terra.", "Zhuangzi", "Zhuangzi, XIII"),
@@ -462,7 +462,7 @@ public enum Quotes {
 
         q("Chi impara senza pensare è perduto; chi pensa senza imparare è in pericolo.", "Learning without thought is labour lost; thought without learning is perilous.", "Confucio", "Dialoghi, II, 15"),
         q("Quando vedi una persona di valore, cerca di eguagliarla; quando ne vedi una senza, guarda dentro di te.", "When we see men of worth, we should think of equalling them; when we see men of a contrary character, we should examine ourselves.", "Confucio", "Dialoghi, IV, 17"),
-        q("L'uomo superiore chiede a sé stesso; l'uomo comune chiede agli altri.", "Confucio", "Dialoghi, XV, 20"),
+        q("L'uomo superiore chiede a sé stesso; l'uomo comune chiede agli altri.", "What the superior man seeks, is in himself. What the mean man seeks, is in others.", "Confucio", "Dialoghi, XV, 20"),
         q("A quindici anni volsi la mente allo studio; a trenta stavo ritto.", "At fifteen, I had my mind bent on learning. At thirty, I stood firm.", "Confucio", "Dialoghi, II, 4"),
         q("Errare e non correggersi, questo è errare davvero.", "To have faults and not to reform them — this, indeed, should be pronounced having faults.", "Confucio", "Dialoghi, XV, 30"),
 
