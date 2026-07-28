@@ -51,7 +51,7 @@ struct OnboardingView: View {
 
             question(
                 number: 2,
-                title: L.t("Sesso biologico", "Biological sex"),
+                title: L.t("Sesso", "Sex"),
                 detail: L.t("Serve solo a decidere da quante ripetizioni partire.",
                             "Used only to decide how many reps to start from.")
             ) {
@@ -108,15 +108,32 @@ struct OnboardingView: View {
         }
     }
 
+    /// **Bianco in tutti e due gli stati, e tutti e due sembrano premibili.**
+    ///
+    /// Prima il selezionato era testo scuro su verde pieno e il non selezionato un rettangolo
+    /// appena accennato: il primo si leggeva come un'etichetta e il secondo come un fondale, e
+    /// nessuno dei due diceva «premimi». Ora la differenza la fa il **riempimento**, non il colore
+    /// del testo: stessa tinta per entrambi, densa su quello scelto e trasparente sull'altro, con
+    /// il bordo a chiudere la forma del bottone anche quando è quasi vuoto.
+    ///
+    /// Il verde non arriva mai a pieno sotto il bianco per una ragione misurabile: la salvia della
+    /// livrea (#8FC2A4) è chiara, e il bianco sopra darebbe un contrasto vicino a 1,5:1, cioè
+    /// illeggibile. Steso al 55% sul verde notte del fondo diventa scuro quanto basta perché il
+    /// bianco stia largo sopra, restando inequivocabilmente verde.
     private func choice(title: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 14, weight: selected ? .semibold : .regular, design: .rounded))
+                .font(.system(size: 14, weight: selected ? .semibold : .medium, design: .rounded))
                 .frame(width: 130, height: 38)
-                .foregroundStyle(selected ? Palette.ink : Palette.paper)
+                .foregroundStyle(.white)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(selected ? Palette.accent : Color.white.opacity(0.08))
+                        .fill(Palette.accent.opacity(selected ? 0.55 : 0.12))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(Palette.accent.opacity(selected ? 1.0 : 0.45),
+                                      lineWidth: selected ? 2 : 1)
                 )
                 .contentShape(Rectangle())
         }

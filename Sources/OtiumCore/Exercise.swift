@@ -35,10 +35,13 @@ public enum ExerciseCategory: String, Codable, CaseIterable, Sendable {
 
     public var subtitle: String {
         switch self {
-        case .gambe: return "le masse grosse: sono loro ad abbassare la glicemia"
-        case .spinta: return "petto, spalle, tricipiti"
-        case .addome: return "il core, che stando seduti non lavora mai"
-        case .vigorosi: return "il fiatone: contano verso le 3 sessioni intense del giorno"
+        case .gambe: return L.t("le masse grosse: sono loro ad abbassare la glicemia",
+                                "the big muscles: these are the ones that lower blood sugar")
+        case .spinta: return L.t("petto, spalle, tricipiti", "chest, shoulders, triceps")
+        case .addome: return L.t("il core, che stando seduti non lavora mai",
+                                 "the core, which never works while you sit")
+        case .vigorosi: return L.t("il fiatone: contano verso le 3 sessioni intense del giorno",
+                                   "the breathless ones: they count towards the 3 vigorous bouts a day")
         }
     }
 }
@@ -181,6 +184,24 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         }
     }
 
+    /// Il gruppo muscolare **da mostrare**. `muscleGroup` resta in italiano perché è una chiave:
+    /// la usa `spreadByMuscleGroup` per non far lavorare due volte di fila la stessa zona, e la
+    /// usa `SexCalibration` per scegliere il coefficiente. Tradurre la chiave significherebbe far
+    /// dipendere la rotazione degli esercizi dalla lingua dell'interfaccia.
+    public var localizedMuscleGroup: String {
+        guard L.language == .english else { return muscleGroup }
+        switch muscleGroup {
+        case "gambe": return "legs"
+        case "glutei": return "glutes"
+        case "polpacci": return "calves"
+        case "petto": return "chest"
+        case "spalle": return "shoulders"
+        case "tricipiti": return "triceps"
+        case "addome": return "core"
+        default: return "total body"
+        }
+    }
+
     /// Il movimento alterna i due lati, e il numero sensato è **per lato**.
     ///
     /// Un archer push-up da sei si fa tre di qua e tre di là: scrivere «6 archer push-up» fa
@@ -280,55 +301,80 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     public var cue: String {
         switch self {
         case .squat:
-            return "Piedi alla larghezza delle spalle, scendi finché le cosce sono parallele, petto alto."
+            return L.t("Piedi alla larghezza delle spalle, scendi finché le cosce sono parallele, petto alto.",
+                       "Feet shoulder-width apart, go down until your thighs are parallel, chest up.")
         case .lunge:
-            return "Parti in piedi, fai un passo lungo, scendi, torna su. Ogni ripetizione un passo nuovo, alternando."
+            return L.t("Parti in piedi, fai un passo lungo, scendi, torna su. Ogni ripetizione un passo nuovo, alternando.",
+                       "Start standing, take a long step, go down, come back up. A new step each rep, alternating sides.")
         case .splitSquat:
-            return "Come l'affondo, ma i piedi non si muovono mai: resti nella posizione e sali e scendi. Metà per gamba."
+            return L.t("Come l'affondo, ma i piedi non si muovono mai: resti nella posizione e sali e scendi. Metà per gamba.",
+                       "Like a lunge, but your feet never move: hold the stance and go up and down. Half per leg.")
         case .gluteBridge:
-            return "A terra, ginocchia piegate: spingi coi talloni e stringi i glutei in alto."
+            return L.t("A terra, ginocchia piegate: spingi coi talloni e stringi i glutei in alto.",
+                       "On the floor, knees bent: push through your heels and squeeze your glutes at the top.")
         case .calfRaise:
-            return "In piedi, sali sulle punte lentamente e scendi ancora più lentamente."
+            return L.t("In piedi, sali sulle punte lentamente e scendi ancora più lentamente.",
+                       "Standing, rise onto your toes slowly and come down even more slowly.")
         case .pushUp:
-            return "Corpo in linea dalla testa ai talloni, gomiti a 45°. In ginocchio va benissimo."
+            return L.t("Corpo in linea dalla testa ai talloni, gomiti a 45°. In ginocchio va benissimo.",
+                       "Body in a straight line from head to heels, elbows at 45°. On your knees is perfectly fine.")
         case .diamondPushUp:
-            return "Mani vicine sotto il petto, indici e pollici a formare un rombo. Tutto sui tricipiti."
+            return L.t("Mani vicine sotto il petto, indici e pollici a formare un rombo. Tutto sui tricipiti.",
+                       "Hands close together under your chest, index fingers and thumbs forming a diamond. All triceps.")
         case .archerPushUp:
-            return "Mani larghe: scendi da un lato tenendo l'altro braccio teso. Alterna i lati."
+            return L.t("Mani larghe: scendi da un lato tenendo l'altro braccio teso. Alterna i lati.",
+                       "Hands wide: lower to one side keeping the other arm straight. Alternate sides.")
         case .inclinePushUp:
-            return "Mani sulla scrivania o sulla sedia: più alto è l'appoggio, più è facile."
+            return L.t("Mani sulla scrivania o sulla sedia: più alto è l'appoggio, più è facile.",
+                       "Hands on the desk or the chair: the higher the surface, the easier it gets.")
         case .pikePushUp:
-            return "A V rovesciata, bacino alto, scendi con la testa fra le mani. Lavorano le spalle."
+            return L.t("A V rovesciata, bacino alto, scendi con la testa fra le mani. Lavorano le spalle.",
+                       "Inverted V, hips high, lower your head between your hands. This one is shoulders.")
         case .benchDip:
-            return "Mani sul bordo della sedia dietro di te, gomiti indietro, scendi e risali. Sedia stabile, contro il muro."
+            return L.t("Mani sul bordo della sedia dietro di te, gomiti indietro, scendi e risali. Sedia stabile, contro il muro.",
+                       "Hands on the edge of the chair behind you, elbows back, down and up. Stable chair, against the wall.")
         case .crunch:
-            return "A terra, ginocchia piegate: stacca solo le scapole, mento lontano dal petto. Non tirarti il collo."
+            return L.t("A terra, ginocchia piegate: stacca solo le scapole, mento lontano dal petto. Non tirarti il collo.",
+                       "On the floor, knees bent: lift only your shoulder blades, chin away from your chest. Don't pull on your neck.")
         case .sitUp:
-            return "Salita completa fino a sederti, discesa lenta. Se i piedi si alzano, mettili sotto la scrivania."
+            return L.t("Salita completa fino a sederti, discesa lenta. Se i piedi si alzano, mettili sotto la scrivania.",
+                       "All the way up to sitting, slow on the way down. If your feet lift, tuck them under the desk.")
         case .legRaise:
-            return "Schiena a terra, mani sotto i glutei: gambe tese salgono e scendono senza toccare terra."
+            return L.t("Schiena a terra, mani sotto i glutei: gambe tese salgono e scendono senza toccare terra.",
+                       "Back on the floor, hands under your glutes: straight legs go up and down without touching the ground.")
         case .bicycleCrunch:
-            return "Gomito verso il ginocchio opposto, alternando. Conta una ripetizione per lato."
+            return L.t("Gomito verso il ginocchio opposto, alternando. Conta una ripetizione per lato.",
+                       "Elbow towards the opposite knee, alternating. Count one rep per side.")
         case .deadBug:
-            return "Schiena piatta a terra: allunga braccio e gamba opposti, torna, cambia lato. Lentissimo."
+            return L.t("Schiena piatta a terra: allunga braccio e gamba opposti, torna, cambia lato. Lentissimo.",
+                       "Back flat on the floor: extend opposite arm and leg, return, switch sides. Very slowly.")
         case .russianTwist:
-            return "Seduto, busto inclinato indietro, ruota le spalle da un lato all'altro. Un lato, una ripetizione."
+            return L.t("Seduto, busto inclinato indietro, ruota le spalle da un lato all'altro. Un lato, una ripetizione.",
+                       "Seated, torso leaning back, rotate your shoulders from side to side. One side, one rep.")
         case .plank:
-            return "Gomiti sotto le spalle, corpo in linea, glutei stretti. Se la schiena si inarca, fermati."
+            return L.t("Gomiti sotto le spalle, corpo in linea, glutei stretti. Se la schiena si inarca, fermati.",
+                       "Elbows under your shoulders, body in line, glutes tight. If your back arches, stop.")
         case .sidePlank:
-            return "Su un gomito, corpo in linea vista di lato. Metà del tempo per lato, cambia a metà."
+            return L.t("Su un gomito, corpo in linea vista di lato. Metà del tempo per lato, cambia a metà.",
+                       "On one elbow, body in line seen from the side. Half the time per side, switch halfway.")
         case .hollowHold:
-            return "Schiena a terra e ben aderente, braccia e gambe sollevate. Se la lombare si stacca, alza le gambe."
+            return L.t("Schiena a terra e ben aderente, braccia e gambe sollevate. Se la lombare si stacca, alza le gambe.",
+                       "Back flat and pressed to the floor, arms and legs lifted. If your lower back lifts, raise your legs.")
         case .burpee:
-            return "Squat, gambe indietro, torna su, salto. Il pezzo duro della giornata: 60-90 secondi."
+            return L.t("Squat, gambe indietro, torna su, salto. Il pezzo duro della giornata: 60-90 secondi.",
+                       "Squat, legs back, come up, jump. The hard part of the day: 60-90 seconds.")
         case .jumpingJack:
-            return "Ritmo continuo, atterra morbido sull'avampiede."
+            return L.t("Ritmo continuo, atterra morbido sull'avampiede.",
+                       "Steady rhythm, land softly on the balls of your feet.")
         case .jumpSquat:
-            return "Squat e salta. Atterra piegando le ginocchia, silenzioso."
+            return L.t("Squat e salta. Atterra piegando le ginocchia, silenzioso.",
+                       "Squat and jump. Land bending your knees, quietly.")
         case .mountainClimber:
-            return "In appoggio sulle mani, ginocchia al petto alternate, veloce. Bacino basso."
+            return L.t("In appoggio sulle mani, ginocchia al petto alternate, veloce. Bacino basso.",
+                       "In a plank on your hands, knees to your chest alternating, fast. Hips low.")
         case .highKnees:
-            return "Sul posto, ginocchia all'altezza del bacino, ritmo alto."
+            return L.t("Sul posto, ginocchia all'altezza del bacino, ritmo alto.",
+                       "On the spot, knees up to hip height, high tempo.")
         }
     }
 

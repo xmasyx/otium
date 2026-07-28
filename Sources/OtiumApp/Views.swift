@@ -470,7 +470,8 @@ struct BreakView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .focused($escapeFocused)
                         .onSubmit { model.attemptEscape() }
-                    Text("Ogni salto finisce nel registro. Non è un giudizio: è un dato.")
+                    Text(L.t("Ogni salto finisce nel registro. Non è un giudizio: è un dato.",
+                     "Every skip goes into the log. It is not a judgement: it is data."))
                         .font(.system(size: 11))
                         .foregroundStyle(Palette.dim.opacity(0.7))
                 }
@@ -634,19 +635,19 @@ struct MenuPanel: View {
 
             Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 6) {
                 GridRow {
-                    Text("davanti al Mac").foregroundStyle(.secondary)
+                    Text(L.t("davanti al Mac", "at the Mac")).foregroundStyle(.secondary)
                     Text(model.summary.activeHoursLabel).monospacedDigit()
                 }
                 GridRow {
-                    Text("pause fatte").foregroundStyle(.secondary)
+                    Text(L.t("pause fatte", "breaks taken")).foregroundStyle(.secondary)
                     Text("\(model.summary.completed)").monospacedDigit()
                 }
                 GridRow {
-                    Text("saltate").foregroundStyle(.secondary)
+                    Text(L.t("saltate", "skipped")).foregroundStyle(.secondary)
                     Text("\(model.summary.skipped)").monospacedDigit()
                 }
                 GridRow {
-                    Text("sessioni intense").foregroundStyle(.secondary)
+                    Text(L.t("sessioni intense", "vigorous bouts")).foregroundStyle(.secondary)
                     Text("\(model.summary.vigorousBouts) / \(model.settings.vigorousDailyTarget)")
                         .monospacedDigit()
                         .foregroundStyle(model.summary.vigorousBouts >= model.settings.vigorousDailyTarget
@@ -674,13 +675,16 @@ struct EvidenceView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Da dove vengono questi numeri")
+                    Text(L.t("Da dove vengono questi numeri", "Where these numbers come from"))
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
                     // Niente asterischi: `Text` interpreta il markdown solo su una stringa
                     // letterale, e su una concatenazione li stampa come sono — visto a schermo.
-                    Text("Ogni parametro di Otium risponde a uno studio: metabolismo, fatica e "
+                    Text(L.t("Ogni parametro di Otium risponde a uno studio: metabolismo, fatica e "
                        + "concentrazione. Le ultime due voci sono le cose che l'app NON fa e NON "
-                       + "promette, con il motivo.")
+                       + "promette, con il motivo.",
+                    "Every parameter in Otium answers to a study: metabolism, fatigue and "
+                        + "concentration. The last two entries are the things the app does NOT do and "
+                        + "does NOT promise: they are here so you can hold it to account."))
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }
@@ -746,7 +750,7 @@ struct PrefsView: View {
                 }
                 .pickerStyle(.segmented)
 
-                Picker(L.t("Sesso biologico", "Biological sex"), selection: Binding(
+                Picker(L.t("Sesso", "Sex"), selection: Binding(
                     get: { draft.sex ?? .male },
                     set: { draft.sex = $0 }
                 )) {
@@ -755,37 +759,37 @@ struct PrefsView: View {
                 }
                 .pickerStyle(.segmented)
 
-                Text(L.t("Il sesso cambia **solo** da quante ripetizioni parti, per gruppo muscolare (Miller 1993). Non cambia gli esercizi, la cadenza, né nient'altro.",
-                         "Sex changes **only** how many reps you start from, per muscle group (Miller 1993). It changes nothing else — not the exercises, not the cadence."))
+                Text(L.t("Il sesso cambia solo da quante ripetizioni parti, per gruppo muscolare (Miller 1993). Non cambia gli esercizi, la cadenza, né nient'altro.",
+                         "Sex changes only how many reps you start from, per muscle group (Miller 1993). It changes nothing else — not the exercises, not the cadence."))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Section("Cadenza") {
-                Picker("Preset", selection: Binding(
+            Section(L.t("Cadenza", "Cadence")) {
+                Picker(L.t("Preset", "Preset"), selection: Binding(
                     get: { presetName(draft.cadence) },
                     set: { applyPreset($0) }
                 )) {
-                    Text("A — 30 min + pausa piena ogni 90 (consigliata)").tag("A")
-                    Text("B — 5 min ogni 50 (deep work)").tag("B")
-                    Text("C — 5 min ogni 30 (protocollo Duran)").tag("C")
-                    Text("personalizzata").tag("X")
+                    Text(L.t("A — 30 min + pausa piena ogni 90 (consigliata)", "A — 30 min + full break every 90 (recommended)")).tag("A")
+                    Text(L.t("B — 5 min ogni 50 (deep work)", "B — 5 min every 50 (deep work)")).tag("B")
+                    Text(L.t("C — 5 min ogni 30 (protocollo Duran)", "C — 5 min every 30 (Duran protocol)")).tag("C")
+                    Text(L.t("personalizzata", "custom")).tag("X")
                 }
                 .pickerStyle(.menu)
 
-                LabeledContent("Intervallo") {
+                LabeledContent(L.t("Intervallo", "Interval")) {
                     minuteField($draft.cadence.intervalSeconds)
                 }
-                LabeledContent("Durata micro-pausa") {
+                LabeledContent(L.t("Durata micro-pausa", "Micro-break length")) {
                     secondField($draft.cadence.microDurationSeconds)
                 }
-                LabeledContent("Durata pausa piena") {
+                LabeledContent(L.t("Durata pausa piena", "Full break length")) {
                     minuteField($draft.cadence.longDurationSeconds)
                 }
-                Stepper("Pausa piena ogni \(draft.cadence.longEveryNBreaks) micro-pause",
+                Stepper(L.t("Pausa piena ogni \(draft.cadence.longEveryNBreaks) micro-pause", "Full break every \(draft.cadence.longEveryNBreaks) micro-breaks"),
                         value: $draft.cadence.longEveryNBreaks, in: 1...8)
-                LabeledContent("Preavviso") {
+                LabeledContent(L.t("Preavviso", "Warning")) {
                     secondField($draft.cadence.warningSeconds)
                 }
             }
@@ -800,8 +804,8 @@ struct PrefsView: View {
                             HStack {
                                 Text(kind.localizedName)
                                 Text(kind.isTimed
-                                     ? "\(kind.baseReps) s · tenuta"
-                                     : "\(kind.baseReps) rip. · \(kind.muscleGroup)")
+                                     ? L.t("\(kind.baseReps) s · tenuta", "\(kind.baseReps) s · hold")
+                                     : L.t("\(kind.baseReps) rip. · \(kind.localizedMuscleGroup)", "\(kind.baseReps) reps · \(kind.localizedMuscleGroup)"))
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -816,34 +820,39 @@ struct PrefsView: View {
                         // `.buttonStyle(.link)` si dipinge da sé con l'accento **di sistema** e
                         // non ascolta il `tint` dell'ambiente: qui il colore va detto a mano, o
                         // restano gli unici due blu di una finestra verde.
-                        Button("tutti") { setAll(category, on: true) }
+                        Button(L.t("tutti", "all")) { setAll(category, on: true) }
                             .buttonStyle(.link).font(.caption)
                             .foregroundStyle(Palette.accentOnWindow)
-                        Button("nessuno") { setAll(category, on: false) }
+                        Button(L.t("nessuno", "none")) { setAll(category, on: false) }
                             .buttonStyle(.link).font(.caption)
                             .foregroundStyle(Palette.accentOnWindow)
                     }
                 }
             }
 
-            Section("Come vengono proposti") {
-                Toggle("Offri le varianti dentro la pausa", isOn: $draft.offerVariants)
-                Text("Durante una pausa push-up puoi passare a diamond, archer, dip su sedia, "
-                   + "pike o inclinati con un clic. Le ripetizioni si adeguano alla difficoltà.")
+            Section(L.t("Come vengono proposti", "How they are offered")) {
+                Toggle(L.t("Offri le varianti dentro la pausa", "Offer variants during the break"), isOn: $draft.offerVariants)
+                Text(L.t("Durante una pausa push-up puoi passare a diamond, archer, dip su sedia, "
+                   + "pike o inclinati con un clic. Le ripetizioni si adeguano alla difficoltà.",
+                    "During a push-up break you can switch to diamond, archer, chair dips, pike or "
+                    + "incline with one click. The reps adjust to the difficulty."))
                     .font(.caption).foregroundStyle(.secondary)
-                Toggle("Proponi il microcircuito nelle pause piene", isOn: $draft.offerCircuit)
-                Text("Nella pausa piena puoi scegliere il giro completo — una stazione per "
+                Toggle(L.t("Proponi il microcircuito nelle pause piene", "Offer the circuit in full breaks"), isOn: $draft.offerCircuit)
+                Text(L.t("Nella pausa piena puoi scegliere il giro completo — una stazione per "
                    + "famiglia, esplosivo compreso — invece del solo esercizio del turno. Resta "
                    + "una proposta: si decide dentro la pausa, e le stazioni valgono i tre quarti "
-                   + "delle ripetizioni, o quattro esercizi non stanno in cinque minuti.")
+                   + "delle ripetizioni, o quattro esercizi non stanno in cinque minuti.",
+                    "In a full break you can choose the whole circuit — one station per family, "
+                    + "explosive included — instead of just the exercise of the turn. It stays a "
+                    + "proposal: you decide, inside the break."))
                     .font(.caption).foregroundStyle(.secondary)
                 Stepper("Rampa in \(draft.rampWeeks) settimane", value: $draft.rampWeeks, in: 1...12)
                 Text("Oggi sei al \(Int(draft.rampFactor(now: Date()) * 100))% del volume pieno.")
                     .font(.caption).foregroundStyle(.secondary)
             }
 
-            Section("Comportamento") {
-                Picker("Livrea", selection: $draft.theme) {
+            Section(L.t("Comportamento", "Behaviour")) {
+                Picker(L.t("Livrea", "Theme"), selection: $draft.theme) {
                     ForEach(ThemeName.allCases, id: \.self) { Text($0.palette.name).tag($0) }
                 }
                 Text(draft.theme.palette.description)
@@ -857,15 +866,18 @@ struct PrefsView: View {
                         .labelsHidden()
                         .frame(width: 150)
                         // Sceglierlo senza sentirlo è come scegliere un colore al buio.
-                        Button("ascolta") { model.previewSound(draft.notificationSound) }
+                        Button(L.t("ascolta", "play")) { model.previewSound(draft.notificationSound) }
                             .disabled(draft.notificationSound.isEmpty)
                     }
                 }
-                Toggle("Rimanda se un microfono è in uso (call)", isOn: $draft.deferWhenMicrophoneActive)
-                Toggle("Conta anche video e lettura come tempo fermo", isOn: $draft.detectQuietPresence)
-                Text("Un film o un PDF sono immobilità perfetta: senza questo, guardare Netflix "
+                Toggle(L.t("Rimanda se un microfono è in uso (call)", "Defer while a microphone is in use (a call)"), isOn: $draft.deferWhenMicrophoneActive)
+                Toggle(L.t("Conta anche video e lettura come tempo fermo", "Count video and reading as sitting time too"), isOn: $draft.detectQuietPresence)
+                Text(L.t("Un film o un PDF sono immobilità perfetta: senza questo, guardare Netflix "
                    + "vale come una pausa ben fatta. Tetti senza un solo input: 45 min per un "
-                   + "video, 15 per un documento.")
+                   + "video, 15 per un documento.",
+                    "A film or a PDF is perfect stillness: without this, watching Netflix counts as "
+                    + "a well-taken break. Caps without a single input: 45 min for a video, 15 for "
+                    + "reading."))
                     .font(.caption).foregroundStyle(.secondary)
                 Stepper("Consenti \(draft.cadence.postponesAllowed) rinvio/i a mano",
                         value: $draft.cadence.postponesAllowed, in: 0...3)
@@ -881,33 +893,33 @@ struct PrefsView: View {
                 }
             }
 
-            Section("Avvio automatico") {
+            Section(L.t("Avvio automatico", "Start at login")) {
                 switch model.launchAgentState {
                 case .notInstalled:
                     HStack {
-                        Text("Otium non riparte da sola.").foregroundStyle(.secondary)
-                        Button("Installa") { model.installLaunchAgent() }
+                        Text(L.t("Otium non riparte da sola.", "Otium does not restart on its own.")).foregroundStyle(.secondary)
+                        Button(L.t("Installa", "Install")) { model.installLaunchAgent() }
                     }
                 case .healthy:
                     HStack {
-                        Label("Attivo e puntato a questa copia", systemImage: "checkmark.seal")
+                        Label(L.t("Attivo e puntato a questa copia", "Active and pointing at this copy"), systemImage: "checkmark.seal")
                             .foregroundStyle(.green)
                         Spacer()
-                        Button("Rimuovi") { model.removeLaunchAgent() }
+                        Button(L.t("Rimuovi", "Remove")) { model.removeLaunchAgent() }
                     }
                 case .danglingTarget(let path):
                     VStack(alignment: .leading) {
-                        Label("L'avvio automatico punta a un file che non esiste più",
+                        Label(L.t("L'avvio automatico punta a un file che non esiste più", "Start at login points at a file that no longer exists"),
                               systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                         Text(path).font(.caption).foregroundStyle(.secondary)
-                        Button("Ripara") { model.installLaunchAgent() }
+                        Button(L.t("Ripara", "Repair")) { model.installLaunchAgent() }
                     }
                 case .pointsElsewhere(let path):
                     VStack(alignment: .leading) {
-                        Label("L'avvio automatico punta a un'altra copia di Otium",
+                        Label(L.t("L'avvio automatico punta a un'altra copia di Otium", "Start at login points at another copy of Otium"),
                               systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                         Text(path).font(.caption).foregroundStyle(.secondary)
-                        Button("Punta a questa") { model.installLaunchAgent() }
+                        Button(L.t("Punta a questa", "Point at this one")) { model.installLaunchAgent() }
                     }
                 }
             }
@@ -918,13 +930,13 @@ struct PrefsView: View {
                     // "Applica" salvava in silenzio, e l'unico modo di sapere se aveva funzionato
                     // era riaprire la finestra.
                     if applied {
-                        Label("Preferenze aggiornate", systemImage: "checkmark.circle.fill")
+                        Label(L.t("Preferenze aggiornate", "Preferences updated"), systemImage: "checkmark.circle.fill")
                             .foregroundStyle(Palette.accentOnWindow)
                             .font(.system(size: 13, weight: .medium))
                             .transition(.opacity)
                     }
                     Spacer()
-                    Button("Applica") {
+                    Button(L.t("Applica", "Apply")) {
                         model.update(settings: draft)
                         withAnimation { applied = true }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
@@ -975,7 +987,7 @@ struct PrefsView: View {
                 set: { value.wrappedValue = Double(max(1, $0)) * 60 }
             ), format: .number)
             .frame(width: 60)
-            Text("min").foregroundStyle(.secondary)
+            Text(L.t("min", "min")).foregroundStyle(.secondary)
         }
     }
 
@@ -1158,7 +1170,7 @@ struct StatsView: View {
                             Text("\(Int(s.complianceRate * 100))%")
                                 .font(.system(size: 20, weight: .semibold, design: .rounded))
                                 .foregroundStyle(Palette.accentOnWindow).monospacedDigit()
-                            Text("delle pause proposte").font(.system(size: 13, weight: .medium))
+                            Text(L.t("delle pause proposte", "of the breaks offered")).font(.system(size: 13, weight: .medium))
                         }
                         ProgressView(value: s.complianceRate).tint(Palette.accentOnWindow)
                             .frame(width: 260)
@@ -1172,7 +1184,7 @@ struct StatsView: View {
                         VStack(spacing: 2) {
                             Text("\(s.streakDays)").font(.system(size: 22, weight: .semibold, design: .rounded))
                                 .foregroundStyle(Palette.accentOnWindow)
-                            Text("giorni\ndi fila").font(.system(size: 10))
+                            Text(L.t("giorni\ndi fila", "days\nin a row")).font(.system(size: 10))
                                 .multilineTextAlignment(.center).foregroundStyle(.secondary)
                         }
                     }
