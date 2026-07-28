@@ -35,6 +35,28 @@ final class RampTests: XCTestCase {
         XCTAssertEqual(Ramp.reps(for: .burpee, factor: 0.01), 1)
         XCTAssertEqual(Ramp.reps(for: .squat, factor: 1.0), 15)
     }
+
+    /// Dichiarando una pausa già fatta il numero lo scrivi tu, e su un esercizio a lati alterni
+    /// un dispari non esiste: 7 affondi diventavano «3 per lato», con un lato scoperto.
+    func testOddRepsAreImpossibleOnAlternatingExercises() {
+        for kind in ExerciseKind.allCases where kind.isPerSide {
+            for r in 1...41 {
+                let fixed = Ramp.evenIfPerSide(r, for: kind)
+                XCTAssertEqual(fixed % 2, 0, "\(kind) ha accettato \(fixed), che è dispari")
+                XCTAssertGreaterThanOrEqual(fixed, r, "si arrotonda per eccesso, non si toglie lavoro")
+                XCTAssertLessThanOrEqual(fixed - r, 1, "non si aggiunge più di una ripetizione")
+                // E il per lato torna sempre: metà esatta, senza resto.
+                XCTAssertEqual(Exercise(kind: kind, reps: fixed).displayReps * 2, fixed)
+            }
+        }
+    }
+
+    /// Il polo opposto: sugli esercizi normali un dispari è legittimo e non va toccato.
+    func testNormalExercisesKeepOddNumbers() {
+        for kind in ExerciseKind.allCases where !kind.isPerSide {
+            XCTAssertEqual(Ramp.evenIfPerSide(7, for: kind), 7)
+        }
+    }
 }
 
 final class ExercisePlannerTests: XCTestCase {

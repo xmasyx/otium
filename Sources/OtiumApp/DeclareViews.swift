@@ -41,8 +41,13 @@ struct DeclareBreakView: View {
                 if let exercise {
                     // Il numero che digiti è il **totale**, come nel registro; accanto si legge
                     // quanto fa per lato, così non devi fare il conto tu.
+                    //
+                    // Su un esercizio a lati alterni si sale di **due**: di uno si arrivava a 7,
+                    // che a schermo diventava «3 per lato» e lasciava un lato scoperto.
                     Stepper(Exercise(kind: exercise, reps: reps).stepperLabel,
-                            value: $reps, in: 1...200)
+                            value: $reps,
+                            in: exercise.isPerSide ? 2...200 : 1...200,
+                            step: exercise.isPerSide ? 2 : 1)
                 } else {
                     Text("Senza esercizio la pausa viene contata, le ripetizioni no.")
                         .font(.caption).foregroundStyle(.secondary)

@@ -404,6 +404,18 @@ public enum Ramp {
         guard kind.isPerSide else { return max(1, Int(scaled.rounded())) }
         return max(2, Int((scaled / 2).rounded()) * 2)
     }
+
+    /// Il pari più vicino, per gli esercizi che alternano i lati.
+    ///
+    /// Serve dove il numero **non** nasce qui ma lo scrivi tu: dichiarando una pausa già fatta si
+    /// poteva salire di uno alla volta e fermarsi su 7 affondi, che a schermo diventavano «3 per
+    /// lato» — un lato scoperto e un totale che non torna. Segnalato dal principale il 28 luglio
+    /// 2026. Si arrotonda per eccesso: chi ha fatto sette affondi ne ha fatti quattro di qua e
+    /// tre di là, e il lato lungo è quello che comanda.
+    public static func evenIfPerSide(_ reps: Int, for kind: ExerciseKind) -> Int {
+        guard kind.isPerSide else { return max(1, reps) }
+        return max(2, reps % 2 == 0 ? reps : reps + 1)
+    }
 }
 
 /// Sceglie che esercizio tocca. Deterministico: dato l'indice del break e il pool, la scelta è

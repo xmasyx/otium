@@ -386,6 +386,9 @@ final class AppModel: ObservableObject {
     func recordCompletedBreak(kind: BreakKind, exercise: ExerciseKind? = nil, reps: Int? = nil,
                               minutesAgo: Int = 0) {
         engine.recordCompletedBreak(kind: kind)
+        // Cintura sul numero dispari: lo stepper ormai sale di due sugli esercizi a lati alterni,
+        // ma il registro è per sempre e una riga sbagliata non si riscrive. Qui non passa.
+        let reps = reps.map { r in exercise.map { Ramp.evenIfPerSide(r, for: $0) } ?? r }
         // Registrata all'ora in cui è successa davvero, non a quella del clic: nella cronologia
         // una pausa delle 10:30 deve stare alle 10:30.
         let when = Date().addingTimeInterval(-Double(max(0, minutesAgo)) * 60)
