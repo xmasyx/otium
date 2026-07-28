@@ -40,6 +40,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         runHudDemoIfRequested()
         renderSnapshotIfRequested()
         runWindowProbeIfRequested()
+        runVerdictIfRequested()
         runConfirmProbeIfRequested()
         runFlushProbeIfRequested()
 
@@ -177,6 +178,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         let killswitch = Timer(timeInterval: seconds + 2, repeats: false) { _ in NSApp.terminate(nil) }
         RunLoop.main.add(killswitch, forMode: .common)
+    }
+
+    /// `--verdict[=giorni]` — il verdetto sulla cadenza, letto dal registro.
+    ///
+    /// Esiste perché ISC-28 non si chiude con un test ma con l'uso, e «come è andata la
+    /// settimana?» non deve diventare un'impressione. Il falsificatore è scritto da prima: **se
+    /// le pause saltate superano quelle fatte, è la cadenza a essere sbagliata, non tu.**
+    ///
+    /// Usa `Stats.compute`, cioè **lo stesso codice del recap**: una seconda implementazione
+    /// darebbe due numeri diversi per la stessa domanda, e a quel punto non ci si crede più.
+    private func runVerdictIfRequested() {
+        guard let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--verdict") })
+        else { return }
+        let days = arg.split(separator: "=").last.flatMap { Int($0) } ?? 7
+        let now = Date()
+        let from = Calendar.current.date(byAdding: .day, value: -days, to: now) ?? now
+        // `--ledger=` esiste per una ragione sola: provare che questo verdetto sa anche dire di
+        // no. Un giudizio che non si è mai visto ribaltare è un'asserzione travestita da misura.
+        let ledgerURL = CommandLine.arguments.first { $0.hasPrefix("--ledger=") }?
+            .split(separator: "=", maxSplits: 1).last.map { URL(fileURLWithPath: String($0)) }
+        let entries = (ledgerURL.map { Ledger(url: $0) } ?? Ledger()).entries()
+        let s = Stats.compute(entries: entries, period: .week, now: now, from: from)
+
+        let cadenza = model.settings.cadence
+        print("ultimi \(days) giorni · cadenza: \(Int(cadenza.intervalSeconds / 60)) min, "
+            + "micro \(Int(cadenza.microDurationSeconds)) s, "
+            + "piena \(Int(cadenza.longDurationSeconds / 60)) min ogni \(cadenza.longEveryNBreaks)")
+        print("fatte: \(s.completed) · saltate: \(s.skipped) · d'emergenza: \(s.emergency) "
+            + "· spontanee: \(s.natural)")
+        print("tasso di rispetto: \(Int(s.complianceRate * 100))%")
+        print("interruzioni: \(s.interruptions) · ripetizioni: \(s.totalReps) "
+            + "· sessioni intense: \(s.vigorousBouts)")
+
+        let proposte = s.completed + s.skipped + s.emergency
+        if proposte < 10 {
+            print("VERDETTO: dati insufficienti — \(proposte) pause proposte, ne servono almeno 10")
+            NSApp.terminate(nil); return
+        }
+        if s.skipped + s.emergency > s.completed {
+            print("VERDETTO: CADENZA SBAGLIATA — ne salti più di quante ne fai. Allungala nelle "
+                + "preferenze, non è colpa tua.")
+        } else {
+            print("VERDETTO: CADENZA BUONA — tenila.")
+        }
+        NSApp.terminate(nil)
     }
 
     /// `--confirm-probe` — le ripetizioni finiscono nel registro **alla conferma**?
