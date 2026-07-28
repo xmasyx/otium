@@ -713,6 +713,26 @@ uno che non copre la barra dei menu sono indistinguibili nei test.
 
 ## Decisions
 
+- **2026-07-28 — il corpus si riempie con un cancello, non con la buona fede.** Dopo la scrematura
+  il pool era sceso a 275 frasi contro le 480 che la promessa richiede. Invece di aggiungere
+  citazioni «lette da qualche parte», i testi primari sono stati scaricati sul disco e ogni
+  candidata porta con sé il frammento in **lingua originale**: `Scripts/citazioni/verifica-citazioni.ts`
+  lo cerca dentro il file e restituisce la riga, e se non lo trova la frase non si scrive. Su 152
+  candidate ne ha bocciate **19**, sempre per lo stesso motivo, cioè che il testo con quelle parole
+  esatte non esisteva. **Il cancello è stato provato ai due poli** prima di fidarsene
+  (`prova-negativa.json`): boccia l'inventata, il doppione, l'opera tentennante e la frase troppo
+  lunga, e lascia passare le vere. Risultato: 275 → **408**, il pool d'avvio torna verde a 327,
+  la guardia del mese senza ripetizioni resta rossa e **il ramo non si fonde**.
+  *Dead end pagato:* alla prima corsa il cancello bocciava sei citazioni **vere**. Non era rigore,
+  era un difetto suo, perché appiattendo il testo riga per riga una riga con spazio in coda
+  produceva due spazi, e il frammento con spazi singoli non ci si trovava più. Una guardia che
+  sbaglia verso il rosso è più insidiosa di una che sbaglia verso il verde, perché sembra che stia
+  funzionando.
+  *Corretto dal principale, non dal cancello:* due rese italiane erano lecite nel dizionario e
+  sbagliate a schermo, `circumscribe` reso «restringi» invece di «traccia un confine intorno», e
+  `Der Leib ist eine grosse Vernunft` accorciato a «il corpo è una grande ragione», che da solo in
+  italiano si legge «motivo». Nessun controllo automatico vede questa classe di errore.
+
 - **2026-07-26 — cadenza A** (micro 90 s ogni 30 min + piena 5 min ogni 90 min), scelta dal
   principale fra tre opzioni presentate con pro/contro/rischi. Alternative scartate: B (5 min ogni
   50, protegge il focus ma manca il bersaglio glicemico), C (protocollo Duran puro, il più
