@@ -2,6 +2,20 @@ import AppKit
 import Combine
 import OtiumCore
 
+/// Interruttori **solo per le sonde**: spengono una rete per volta, per provare che quella sotto
+/// regge da sola.
+///
+/// Esistono per una regola pagata a caro prezzo: una rete mai provata da sola è un'asserzione
+/// travestita da verifica. Le tre reti contro lo schermo nero orfano stanno in tre strati diversi
+/// — modello, finestra, vista — e provarle tutte insieme dimostrerebbe solo che *almeno una*
+/// funziona, cioè la cosa che già sapevamo. Restano `true` sempre, tranne dentro `--orphan-probe`.
+enum SafetyNets {
+    /// `AppModel.reconcileBlocker()` — lo schermo coperto come funzione della fase.
+    static var modelReconcile = true
+    /// Il battito di `BlockerController` che si chiede se la sua pausa esiste ancora.
+    static var blockerWatchdog = true
+}
+
 /// Il collante: fa girare l'orologio, gira gli eventi del motore all'interfaccia e al registro.
 /// Tutta la logica vera sta in `OtiumCore` — qui non si decide niente, si collega soltanto.
 final class AppModel: ObservableObject {
@@ -145,7 +159,30 @@ final class AppModel: ObservableObject {
         )
         let events = engine.tick(elapsed: elapsed, idle: idle, now: now, environment: environment)
         for event in events { handle(event, now: now) }
+        reconcileBlocker()
         objectWillChange.send()
+    }
+
+    /// **Lo schermo coperto è una funzione della fase, non l'effetto di un evento.**
+    ///
+    /// Questa riga esiste per un guasto vero, successo due volte (27 e 28 luglio 2026). Il motore
+    /// chiude da solo una pausa quando ti allontani troppo a lungo, ed emette `.naturalBreak`;
+    /// il gestore di quell'evento era l'unico dei sei a non chiamare `blocker.hide()`. Risultato:
+    /// il motore tornava a `working` con `plan` a nil, la vista senza piano non disegnava più
+    /// niente, e restava a schermo intero un rettangolo **nero** a livello di schermatura, con
+    /// ⌘-Tab, uscita forzata e chiusura di sessione ancora disabilitate. Nessuna via d'uscita
+    /// dalla tastiera: entrambe le volte è finita col tasto di accensione.
+    ///
+    /// La cura non è aggiungere il caso mancante — sarebbe la stessa architettura, con un buco in
+    /// meno. È togliere alla lista degli eventi il potere di lasciare uno scudo orfano: dopo ogni
+    /// giro, se non stiamo bloccando, lo schermo si libera. Un percorso futuro del motore che
+    /// nessuno ha ancora scritto non può più costare un riavvio forzato.
+    ///
+    /// Vale in una direzione sola. «Non sto bloccando → libera» è una rete; «sto bloccando →
+    /// copri» resterebbe la stessa fragilità al contrario, ed è compito di `.breakStarted`.
+    private func reconcileBlocker() {
+        guard !headless, SafetyNets.modelReconcile else { return }
+        if engine.phase != .breaking { blocker.hide() }
     }
 
     private func handle(_ event: EngineEvent, now: Date) {
@@ -198,7 +235,13 @@ final class AppModel: ObservableObject {
             blocker.hide()
             hud.show(title: "Pausa rimandata — \(reason)", subtitle: plan.exercise.label)
         case .naturalBreak:
-            break
+            // Arriva da due posti diversi. Mentre lavori è solo contabilità — ti sei alzato da
+            // solo, e va bene così. Ma arriva **anche** dalla pausa in corso, quando l'assenza
+            // supera la soglia, e lì lo schermo è coperto. A scoprirlo non è questo caso:
+            // è `reconcileBlocker()`, che gira dopo ogni giro di eventi. Aggiungere qui un
+            // `blocker.hide()` sarebbe la stessa architettura con un buco in meno, e il prossimo
+            // evento nuovo ricomincerebbe da capo.
+            hud.hide()
         }
     }
 
@@ -281,12 +324,14 @@ final class AppModel: ObservableObject {
     func returnToWork() {
         let events = engine.returnToWork()
         for event in events { handle(event, now: Date()) }
+        reconcileBlocker()
         objectWillChange.send()
     }
 
     func markExerciseDone() {
         let events = engine.markExerciseDone()
         for event in events { handle(event, now: Date()) }
+        reconcileBlocker()
         objectWillChange.send()
     }
 
@@ -332,6 +377,7 @@ final class AppModel: ObservableObject {
     func postpone() {
         let events = engine.postpone()
         for event in events { handle(event, now: Date()) }
+        reconcileBlocker()
         objectWillChange.send()
     }
 
@@ -339,6 +385,7 @@ final class AppModel: ObservableObject {
         let events = engine.escape(phrase: escapeText)
         for event in events { handle(event, now: Date()) }
         if !events.isEmpty { escapeText = "" }
+        reconcileBlocker()
         objectWillChange.send()
     }
 
@@ -420,9 +467,21 @@ final class AppModel: ObservableObject {
     }
 
     /// L'uscita d'emergenza: immediata, contata, visibile nelle statistiche.
+    ///
+    /// **Non può dipendere dal motore, o non c'è proprio quando serve.** `engine.emergencyExit()`
+    /// è guardata da `phase == .breaking || .warning`: se lo schermo è coperto ma il motore non
+    /// ha nessuna pausa aperta da chiudere, restituisce una lista vuota e i due Esc non fanno
+    /// niente. È esattamente lo stato in cui ci si trovava inchiodati il 27 e 28 luglio. Da qui in
+    /// avanti, quando non c'è niente da chiudere lo scudo si smonta comunque: un'uscita
+    /// d'emergenza che funziona solo a motore coerente non è un'uscita d'emergenza.
     func emergencyExit() {
         let events = engine.emergencyExit()
         for event in events { handle(event, now: Date()) }
+        if events.isEmpty {
+            hud.hide()
+            blocker.hide()
+        }
+        reconcileBlocker()
         objectWillChange.send()
     }
 

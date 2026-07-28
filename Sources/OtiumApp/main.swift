@@ -42,6 +42,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         runWindowProbeIfRequested()
         runConfirmProbeIfRequested()
         runFlushProbeIfRequested()
+        runOrphanProbeIfRequested()
+        runSleepProbeIfRequested()
 
         // Il secondo avvio non apre niente di nuovo: chiede a questa istanza di farsi vedere.
         // Su un'app della barra dei menu "farsi vedere" significa dire come sta, altrimenti
@@ -93,7 +95,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // sta toccando e chiuderebbe il break come pausa naturale, lasciando una schermata vuota.
         model.stop()
         model.headless = true
-        model.forceBreakNow(long: long)
+        // `--orfana` rende di proposito la schermata **senza piano**: è lo stato che il 27 e il 28
+        // luglio 2026 era un rettangolo nero muto, e l'unico modo di sapere com'è adesso è
+        // guardarlo. Un `if let` senza `else` non si vede leggendo il codice: si vede nei pixel.
+        if !CommandLine.arguments.contains("--orfana") {
+            model.forceBreakNow(long: long)
+        }
 
         // Quale schermata rendere: la pausa di default, ma anche le due superfici che finora
         // non aveva mai guardato nessuno.
@@ -254,6 +261,172 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                      : "RISULTATO: l'apertura NON scrive niente")
             try? FileManager.default.removeItem(at: url)
             NSApp.terminate(nil)
+        }
+    }
+
+    /// `--orphan-probe` — quando la pausa la chiude il **motore**, lo schermo si libera davvero?
+    ///
+    /// È la sonda dell'incidente del 27 e 28 luglio 2026. Ti allontani mentre la schermata di
+    /// blocco è aperta, il motore supera la soglia d'assenza e chiude la pausa da solo come
+    /// «naturale» — e la finestra restava lì. Nera, perché senza `plan` la vista non disegna
+    /// niente; senza uscita, perché l'uscita d'emergenza è guardata dalla fase del motore, che nel
+    /// frattempo è tornata a `working`; e inchiodata, perché le opzioni chiosco erano ancora
+    /// attive. Due volte è finita col tasto di accensione.
+    ///
+    /// `swift test` non può vederlo: il difetto non sta nel motore — che fa la cosa giusta — ma
+    /// nel collante fra motore e finestre. La prova è lo stato reale di AppKit dopo il tick.
+    ///
+    /// Copre lo schermo per davvero, per ~5 secondi. Deve: una sonda che non lo copre proverebbe
+    /// un'altra cosa. Due reti, e sono indipendenti: il guardiano gira su un **thread staccato**,
+    /// quindi scatta anche se il run loop principale si inchioda, ed `exit()` porta via con sé
+    /// finestre e chiosco; poi lo smontaggio esplicito prima di ogni uscita ordinata.
+    private func runOrphanProbeIfRequested() {
+        guard CommandLine.arguments.contains("--orphan-probe") else { return }
+
+        Thread.detachNewThread {
+            Thread.sleep(forTimeInterval: 20)
+            FileHandle.standardError.write("sonda: guardiano scattato\n".data(using: .utf8)!)
+            exit(3)
+        }
+
+        // Quale rete si spegne. Provate tutte insieme, le tre reti dimostrerebbero soltanto che
+        // *almeno una* funziona: per sapere se reggono da sole vanno tolte una per volta.
+        SafetyNets.modelReconcile = !CommandLine.arguments.contains("--senza-rete-modello")
+            && !CommandLine.arguments.contains("--senza-reti")
+        SafetyNets.blockerWatchdog = !CommandLine.arguments.contains("--senza-reti")
+        let attesa = !SafetyNets.modelReconcile && !SafetyNets.blockerWatchdog
+        print("rete del modello: \(SafetyNets.modelReconcile ? "accesa" : "SPENTA")")
+        print("battito della finestra: \(SafetyNets.blockerWatchdog ? "acceso" : "SPENTO")")
+        print(attesa
+              ? "atteso: schermo ANCORA coperto (controllo negativo), poi liberato dall'uscita d'emergenza"
+              : "atteso: schermo liberato")
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("otium-orfana-\(UUID().uuidString).jsonl")
+        var s = Settings(exercisePool: [.calfRaise], vigorousPool: [.jumpingJack])
+        s.startDate = Date()
+        // Micro-pausa: soglia d'assenza 210 s invece di 420, e la sonda resta corta.
+        s.cadence.longEveryNBreaks = 99
+
+        let probe = AppModel(settings: s, ledger: Ledger(url: url))
+        probe.idleOverride = 0
+        probe.start()
+        probe.forceBreakNow()
+
+        func scudi() -> Int { NSApp.windows.filter { $0 is BlockerWindow && $0.isVisible }.count }
+        func smonta() {
+            NSApp.presentationOptions = []
+            for w in NSApp.windows where w is BlockerWindow { w.orderOut(nil) }
+            try? FileManager.default.removeItem(at: url)
+        }
+
+        print("fase all'apertura: \(probe.phase.rawValue) — finestre di blocco visibili: \(scudi())")
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            let soglia = probe.plan.map { SessionEngine.absentThreshold(for: $0) } ?? 210
+            probe.idleOverride = soglia + 10
+            print(String(format: "inattività finta: %.0f s (soglia d'assenza %.0f)", soglia + 10, soglia))
+        }
+
+        // A 7 secondi il motore ha chiuso da un pezzo e il battito da 2 s ha avuto tre giri.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
+            let fase = probe.phase
+            let rimaste = scudi()
+            let chiosco = NSApp.presentationOptions
+            print("fase dopo l'assenza: \(fase.rawValue)")
+            print("finestre di blocco ancora visibili: \(rimaste)")
+            print("opzioni chiosco ancora attive: \(chiosco.rawValue)")
+
+            guard attesa else {
+                let ok = fase != .breaking && rimaste == 0 && chiosco.isEmpty
+                print(ok
+                      ? "RISULTATO: PASS — la pausa chiusa dal motore libera lo schermo"
+                      : "RISULTATO: FAIL — schermo ancora coperto a pausa chiusa (il nero senza uscita)")
+                smonta()
+                exit(ok ? 0 : 1)
+            }
+
+            // Controllo negativo: senza reti il guasto deve ricomparire, o le reti non stavano
+            // reggendo niente. E poi l'ultima via d'uscita, quella che deve funzionare **proprio
+            // qui**: due Esc, cioè `emergencyExit()`, con il motore che non ha niente da chiudere.
+            let guastoRiprodotto = rimaste > 0
+            print(guastoRiprodotto
+                  ? "controllo negativo: guasto riprodotto, le reti erano davvero portanti"
+                  : "controllo negativo FALLITO: senza reti lo schermo si libera lo stesso — le reti non provano niente")
+            probe.emergencyExit()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                let dopo = scudi()
+                let chioscoDopo = NSApp.presentationOptions
+                print("dopo l'uscita d'emergenza — finestre: \(dopo), chiosco: \(chioscoDopo.rawValue)")
+                let ok = guastoRiprodotto && dopo == 0 && chioscoDopo.isEmpty
+                print(ok
+                      ? "RISULTATO: PASS — l'uscita d'emergenza smonta lo scudo anche a motore già chiuso"
+                      : "RISULTATO: FAIL — nemmeno l'uscita d'emergenza libera lo schermo")
+                smonta()
+                exit(ok ? 0 : 1)
+            }
+        }
+    }
+
+    /// `--sleep-probe` — mentre il Mac dorme o lo schermo è bloccato, lo scudo si toglie di mezzo
+    /// e poi torna?
+    ///
+    /// Cosa prova e cosa **non** prova, detto subito: prova la mia logica di sospensione e
+    /// ripresa, sollecitata con le stesse notifiche che manda il sistema (`com.apple.screenIsLocked`
+    /// e la sua gemella), postate qui a mano. Non prova che macOS le mandi davvero — quello è
+    /// comportamento documentato del sistema, non codice mio, e una sonda che addormenta il Mac
+    /// per verificarlo costerebbe più di quanto vale.
+    private func runSleepProbeIfRequested() {
+        guard CommandLine.arguments.contains("--sleep-probe") else { return }
+
+        Thread.detachNewThread {
+            Thread.sleep(forTimeInterval: 20)
+            FileHandle.standardError.write("sonda: guardiano scattato\n".data(using: .utf8)!)
+            exit(3)
+        }
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("otium-sonno-\(UUID().uuidString).jsonl")
+        var s = Settings(exercisePool: [.calfRaise], vigorousPool: [.jumpingJack])
+        s.startDate = Date()
+        s.cadence.longEveryNBreaks = 99
+        let probe = AppModel(settings: s, ledger: Ledger(url: url))
+        probe.idleOverride = 0
+        probe.start()
+        probe.forceBreakNow()
+
+        func scudi() -> Int { NSApp.windows.filter { $0 is BlockerWindow && $0.isVisible }.count }
+        func manda(_ nome: String) {
+            DistributedNotificationCenter.default().postNotificationName(
+                Notification.Name(nome), object: nil, userInfo: nil, deliverImmediately: true
+            )
+        }
+
+        let apertura = (scudi(), NSApp.presentationOptions.rawValue)
+        print("a pausa aperta — finestre: \(apertura.0), chiosco: \(apertura.1)")
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { manda("com.apple.screenIsLocked") }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            let bloccato = (scudi(), NSApp.presentationOptions.rawValue, probe.phase)
+            print("a schermo bloccato — finestre: \(bloccato.0), chiosco: \(bloccato.1), fase: \(bloccato.2.rawValue)")
+            manda("com.apple.screenIsUnlocked")
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                let ripreso = (scudi(), NSApp.presentationOptions.rawValue)
+                print("a schermo sbloccato — finestre: \(ripreso.0), chiosco: \(ripreso.1)")
+                let ok = apertura.0 == 1
+                    && bloccato.0 == 0 && bloccato.1 == 0     // tolto di mezzo, chiosco smontato
+                    && bloccato.2 == .breaking                 // ma la pausa NON è stata condonata
+                    && ripreso.0 == 1 && ripreso.1 == apertura.1
+                print(ok
+                      ? "RISULTATO: PASS — lo scudo si ritira al blocco schermo e torna allo sblocco, pausa intatta"
+                      : "RISULTATO: FAIL — la sospensione non si comporta come dichiarato")
+                NSApp.presentationOptions = []
+                for w in NSApp.windows where w is BlockerWindow { w.orderOut(nil) }
+                try? FileManager.default.removeItem(at: url)
+                exit(ok ? 0 : 1)
+            }
         }
     }
 

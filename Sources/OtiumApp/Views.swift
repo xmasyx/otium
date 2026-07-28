@@ -79,6 +79,29 @@ struct BreakView: View {
                     footer
                 }
                 .padding(48)
+            } else {
+                // **Terza rete, e la più semplice: una schermata senza pausa non è nera muta.**
+                //
+                // Con le due reti a monte questo stato dura al massimo due secondi. Ma è lo stato
+                // che il 27 e il 28 luglio 2026 è costato due riavvii forzati, e allora l'`if let`
+                // senza `else` disegnava esattamente niente: uno schermo nero che non dice cosa
+                // sia, non dice come uscirne, e non si distingue da un Mac morto. Se un domani
+                // entrambe le reti a monte fallissero, qui c'è comunque una via d'uscita visibile.
+                VStack(spacing: 16) {
+                    Text("La pausa è finita.")
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Palette.paper)
+                    Text("Lo schermo si sta liberando. Se resta qui, premi il pulsante.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Palette.dim)
+                    // Il pulsante grande, non quello discreto: questa è l'ultima uscita prima del
+                    // tasto di accensione, e un'uscita d'emergenza si deve **vedere da lontano**.
+                    primary("Sblocca lo schermo", enabled: true) { model.emergencyExit() }
+                    Text("Puoi anche premere Esc due volte.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Palette.dim.opacity(0.8))
+                }
+                .padding(48)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

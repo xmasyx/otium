@@ -71,6 +71,9 @@ final class BlockerController {
     private var savedPolicy: NSApplication.ActivationPolicy = .accessory
     private var reassertTimer: Timer?
     private var isShowing = false
+    /// Il blocco è **in corso ma tolto di mezzo**, perché il Mac dorme o lo schermo è bloccato.
+    /// Diverso da `!isShowing`: quella pausa esiste ancora e va rimessa su al risveglio.
+    private var suspended = false
 
     /// La combinazione chiosco documentata in TN2062: Dock e barra dei menu spariscono,
     /// ⌘-Tab ed Exposé non commutano, uscita forzata e chiusura di sessione sono disabilitate.
@@ -90,14 +93,67 @@ final class BlockerController {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            guard let self, self.isShowing else { return }
+            guard let self, self.isShowing, !self.suspended else { return }
             self.rebuildWindows()
         }
+        observeSystemState()
+    }
+
+    /// **Mentre il Mac dorme o lo schermo è bloccato, lo scudo si toglie di mezzo.**
+    ///
+    /// Non è la causa dell'incidente del 27-28 luglio — quella era una pausa chiusa che lasciava
+    /// la finestra orfana — ma è la stessa ferita, un passo più in là. Una finestra a livello di
+    /// schermatura, che ogni due secondi si rimette davanti e riattiva l'app, mentre la schermata
+    /// di accesso possiede lo schermo, è la ricetta classica del risveglio nero: due padroni per
+    /// la stessa superficie, con l'uscita forzata disabilitata da uno dei due.
+    ///
+    /// Al risveglio la pausa torna, se è ancora la sua ora. Sospendere non è condonare: chiudere
+    /// il coperchio non deve diventare il modo di saltare l'esercizio.
+    private func observeSystemState() {
+        let workspace = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.willSleepNotification, NSWorkspace.screensDidSleepNotification] {
+            workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.suspendForSystem()
+            }
+        }
+        for name in [NSWorkspace.didWakeNotification, NSWorkspace.screensDidWakeNotification] {
+            workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.resumeAfterSystem()
+            }
+        }
+        // Il blocco schermo non passa da NSWorkspace: è una notifica distribuita di sistema, e
+        // senza questa il caso più comune — ⌃⌘Q, o il coperchio chiuso e riaperto — resterebbe
+        // scoperto.
+        let distributed = DistributedNotificationCenter.default()
+        distributed.addObserver(
+            forName: Notification.Name("com.apple.screenIsLocked"), object: nil, queue: .main
+        ) { [weak self] _ in self?.suspendForSystem() }
+        distributed.addObserver(
+            forName: Notification.Name("com.apple.screenIsUnlocked"), object: nil, queue: .main
+        ) { [weak self] _ in self?.resumeAfterSystem() }
+    }
+
+    private func suspendForSystem() {
+        guard isShowing, !suspended else { return }
+        suspended = true
+        NSApp.presentationOptions = []
+        for window in windows { window.orderOut(nil) }
+    }
+
+    private func resumeAfterSystem() {
+        guard isShowing, suspended else { return }
+        suspended = false
+        // Nel frattempo la pausa può essere finita: allora non si rimette su niente.
+        guard model.phase == .breaking else { hide(); return }
+        NSApp.activate(ignoringOtherApps: true)
+        rebuildWindows()
+        NSApp.presentationOptions = Self.kioskOptions
     }
 
     func show(plan: BreakPlan) {
         guard !isShowing else { return }
         isShowing = true
+        suspended = false
         savedPolicy = NSApp.activationPolicy()
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
@@ -106,8 +162,17 @@ final class BlockerController {
 
         // Se qualcosa riesce comunque a passare davanti, si torna davanti. Ogni due secondi,
         // che è abbastanza per essere ostinati e poco per pesare.
+        //
+        // Lo stesso battito è anche la **rete indipendente** sullo scudo orfano: prima di
+        // rimettersi davanti, il blocco si chiede se la pausa che lo giustifica esiste ancora. È
+        // deliberatamente ridondante con `AppModel.reconcileBlocker()` — vive in un altro strato,
+        // e nell'incidente del 27-28 luglio è proprio lo strato di sopra ad aver dimenticato di
+        // chiamare `hide()`. Se dimenticasse di nuovo, il nero durerebbe due secondi invece che
+        // fino al tasto di accensione.
         let t = Timer(timeInterval: 2.0, repeats: true) { [weak self] _ in
             guard let self, self.isShowing else { return }
+            if SafetyNets.blockerWatchdog, self.model.phase != .breaking { self.hide(); return }
+            guard !self.suspended else { return }
             if !NSApp.isActive { NSApp.activate(ignoringOtherApps: true) }
             self.windows.first?.makeKeyAndOrderFront(nil)
         }
@@ -118,6 +183,7 @@ final class BlockerController {
     func hide() {
         guard isShowing else { return }
         isShowing = false
+        suspended = false
         reassertTimer?.invalidate()
         reassertTimer = nil
         NSApp.presentationOptions = []

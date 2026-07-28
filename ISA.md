@@ -676,6 +676,51 @@ guardando l'app funzionare, non leggendo il codice: è la ragione per cui ISC-28
 - [x] **ISC-56** Con poche ore attive la striscia resta una striscia. — con una sola ora la barra
       si allargava per tutta la scheda e si leggeva come un blocco pieno, cioè come un errore.
 
+### Iterazione 11 — lo schermo nero senza uscita (2026-07-28)
+
+Il guasto più grave che l'app abbia prodotto: due volte, il 27 e il 28 luglio, ha lasciato il Mac
+inchiodato su un rettangolo nero da cui si esce solo col tasto di accensione. Entrambe le volte
+attribuito ad altro — la sera del 27 alle AI locali in esecuzione — finché il registro non ha detto
+la stessa cosa due volte, con i secondi esatti della soglia d'assenza.
+
+- [x] **ISC-57** Una pausa chiusa **dal motore** libera sempre lo schermo. — dei sei modi di finire
+      una pausa, `.naturalBreak` era l'unico il cui gestore non chiamava `blocker.hide()`. Il motore
+      tornava a `working` con `plan` a nil, la vista senza piano non disegnava niente, e restava a
+      schermo intero un nero a livello di schermatura con ⌘-Tab, uscita forzata e chiusura di
+      sessione ancora disabilitate. La cura non è aggiungere il caso mancante — sarebbe la stessa
+      architettura con un buco in meno — ma `AppModel.reconcileBlocker()`, che dopo ogni giro di
+      eventi libera lo schermo se la fase non è `.breaking`. *Falsificatore:* `--orphan-probe`, che
+      apre un blocco vero, alza l'inattività oltre la soglia d'assenza e misura finestre e opzioni
+      chiosco. **Rosso sul codice di prima** (1 finestra, chiosco 490), verde su questo.
+- [x] **ISC-58** Ogni rete regge **da sola**. — tre reti in tre strati (modello, finestra, vista)
+      provate tutte insieme dimostrerebbero solo che almeno una funziona, cioè quello che già
+      sapevamo. `--senza-rete-modello` spegne la riconciliazione: il battito da 2 s di
+      `BlockerController`, che prima di rimettersi davanti si chiede se la sua pausa esiste ancora,
+      libera lo schermo lo stesso. *Falsificatore e controllo negativo:* `--senza-reti` deve
+      **riprodurre il guasto**, o le reti non stanno reggendo niente. Riprodotto: 1 finestra,
+      chiosco 490.
+- [x] **ISC-59** L'uscita d'emergenza non dipende dal motore. — `engine.emergencyExit()` è guardata
+      da `phase == .breaking || .warning`: a scudo orfano restituiva una lista vuota e i due Esc
+      non facevano niente, proprio nello stato in cui sono l'unica cosa che resta. Ora, quando non
+      c'è niente da chiudere, lo scudo si smonta comunque. *Falsificatore:* dentro `--senza-reti`,
+      subito dopo il controllo negativo, `emergencyExit()` deve portare finestre e chiosco a zero.
+- [x] **ISC-60** Mentre il Mac dorme o lo schermo è bloccato, lo scudo si ritira — e torna. — non è
+      la causa di questi due episodi, è la stessa ferita un passo più in là: una finestra a livello
+      di schermatura che ogni due secondi riattiva l'app mentre la schermata di accesso possiede lo
+      schermo. *Falsificatore:* `--sleep-probe` — a schermo bloccato finestre 0 e chiosco 0, **ma
+      fase ancora `breaking`**, perché sospendere non è condonare; allo sblocco finestre 1 e chiosco
+      490. Sollecitato con le notifiche vere di sistema postate a mano: prova la mia logica di
+      sospensione, non che macOS le mandi (quello è comportamento documentato del sistema).
+- [x] **ISC-61** La schermata senza piano non è un nero muto. — terza rete, e la più semplice:
+      l'`if let plan` senza `else` disegnava esattamente niente, e un nero che non dice cosa sia
+      non si distingue da un Mac morto. Ora dice cosa sta succedendo e porta il pulsante grande,
+      non quello discreto: questa è l'ultima uscita prima del tasto di accensione.
+      *Falsificatore:* `--snapshot --orfana`, resa e **guardata**.
+- **Anti-claim** — la cura non deve poter sciogliere una pausa vera. La riconciliazione vale in una
+  direzione sola («non sto bloccando → libera»); «sto bloccando → copri» resta compito di
+  `.breakStarted`. *Provato:* in tutte e quattro le sonde lo scudo si apre e resta finché la fase è
+  `.breaking`, e al blocco schermo la pausa sopravvive alla sospensione.
+
 **Aperto, non fatto:** la livrea tocca solo il recap. Preferenze, dichiarazione e i loro interruttori
 usano ancora l'accento di sistema, quindi blu. E in cima alle Preferenze c'è una fascia vuota di
 circa 120 punti da sondare.
@@ -712,6 +757,23 @@ uno che non copre la barra dei menu sono indistinguibili nei test.
 | F4 | Impacchettamento — `build-app.sh`, icona, LaunchAgent, README con le fonti | da fare |
 
 ## Decisions
+
+- **2026-07-28 — lo schermo coperto è una funzione della fase, non l'effetto di un evento.** La
+  correzione ovvia dello schermo nero era aggiungere `blocker.hide()` al caso `.naturalBreak`, cioè
+  l'unico dei sei a non averlo. Scartata: sarebbe la stessa architettura con un buco in meno, e il
+  prossimo evento che qualcuno aggiungerà al motore ricomincerebbe da capo — con lo stesso prezzo,
+  che qui è un riavvio forzato. Al suo posto la lista degli eventi perde il potere di lasciare uno
+  scudo orfano: dopo ogni giro, se la fase non è `.breaking`, lo schermo si libera. Il caso
+  `.naturalBreak` è rimasto **deliberatamente senza** `hide()`, così la responsabilità ha un solo
+  proprietario e non due che si coprono a vicenda.
+  *Corollario pagato subito:* tre reti in tre strati sono utili solo se ognuna regge da sola, e per
+  saperlo vanno spente una per volta. Da qui `SafetyNets`, due interruttori usati solo dalle sonde.
+  Scaffolding di prova dentro il codice di produzione, accettato consapevolmente: l'alternativa era
+  scrivere «ridondante» nei commenti e non poterlo dimostrare.
+  *Dead end:* la prima ipotesi puntava allo sleep del Mac, perché è lì che il guasto si è **visto**
+  entrambe le volte. Il registro dice altro — lo schermo era già morto da cinque minuti quando il
+  display si è spento da solo — e la coincidenza aveva già portato fuori strada una volta, la sera
+  del 27, quando la colpa era finita sulle AI locali.
 
 - **2026-07-28 — il corpus si riempie con un cancello, non con la buona fede.** Dopo la scrematura
   il pool era sceso a 275 frasi contro le 480 che la promessa richiede. Invece di aggiungere
@@ -843,6 +905,13 @@ uno che non copre la barra dei menu sono indistinguibili nei test.
 
 ## Changelog
 
+- **2026-07-28 (iterazione 11)** — Lo schermo nero senza uscita, il guasto peggiore dell'app: due
+  Mac inchiodati (27 e 28 luglio) risolti col tasto di accensione. Causa unica e provata, una pausa
+  chiusa dal motore che non scopriva lo schermo. Tre reti in tre strati più un'uscita d'emergenza
+  che non dipende più dal motore, e la sospensione dello scudo quando il Mac dorme. **Quattro sonde
+  nuove**, ognuna con il suo polo rosso: `--orphan-probe` in tre configurazioni (tutte le reti,
+  senza quella del modello, senza nessuna) e `--sleep-probe`. Girate anche sul binario di rilascio,
+  non solo su quello di sviluppo.
 - **2026-07-27 (iterazione 3)** — Primo giorno d'uso vero, e l'uso ha trovato quello che il
   codice non diceva: il conto perso dopo la sospensione, il pulsante cliccabile solo sul testo,
   la finestra delle fonti più alta dello schermo. Aggiunti addome, esercizi a tempo, preferenze
@@ -855,6 +924,31 @@ uno che non copre la barra dei menu sono indistinguibili nei test.
   52 test verdi, blocco provato a due poli, LaunchAgent installato-verificato-rimosso.
 
 ## Verification
+
+**Lo schermo nero senza uscita (2026-07-28)** — quattro sonde nuove, tutte con il polo rosso
+eseguito e non asserito. Girate due volte: sul binario di sviluppo e su
+`dist/Otium.app/Contents/MacOS/Otium`, cioè quello che parte davvero al login.
+
+| Sonda | Prima della cura | Dopo |
+|---|---|---|
+| `--orphan-probe` | `FAIL` — fase `working`, **1 finestra**, chiosco **490** | `PASS` — 0 finestre, chiosco 0 |
+| `--orphan-probe --senza-rete-modello` | — | `PASS` — il battito della finestra basta da solo |
+| `--orphan-probe --senza-reti` | — | guasto **riprodotto** (1 finestra, chiosco 490), poi `PASS`: l'uscita d'emergenza smonta lo scudo a motore già chiuso |
+| `--sleep-probe` | — | `PASS` — bloccato: 0 finestre, chiosco 0, fase ancora `breaking`; sbloccato: 1 finestra, chiosco 490 |
+
+**Prove sul registro, non sul sospetto.** Gli stessi secondi due giorni di fila, e sono esattamente
+le soglie d'assenza del codice: 28/07 `natural` long **420,07 s** (soglia `max(180, 300+120)` = 420)
+alle 14:56:17, riavvio alle 15:02; 27/07 `natural` micro **210,19 s** (soglia `max(180, 90+120)` =
+210) alle 22:18:55, riavvio alle 22:26. Il display si è spento **dopo**, alle 14:59:28 — lo sleep
+non era la causa, era il momento in cui il guasto si vedeva.
+
+**Schermata orfana resa e guardata** — `--snapshot --orfana`: 2880×1800, titolo «La pausa è finita»,
+sottotitolo, pulsante Alloro pieno e riga su Esc. Prima di questa iterazione la stessa resa era un
+rettangolo di un colore solo.
+
+**Dichiarato:** `--sleep-probe` posta a mano `com.apple.screenIsLocked` e la sua gemella. Prova la
+logica di sospensione e ripresa, **non** che macOS mandi quelle notifiche — quello è comportamento
+documentato del sistema, e addormentare il Mac per verificarlo costerebbe più di quanto vale.
 
 **Test automatici** — `swift test`: **52 test, 0 fallimenti**. Coprono orologio del tempo attivo,
 motore delle pause, rampa, rotazione, uscita d'emergenza, registro, fonti, preferenze.
