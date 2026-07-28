@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var seatedWindow: NSWindow?
     private var declareWindow: NSWindow?
     private var onboardingWindow: NSWindow?
+    private var paceWindow: NSWindow?
     private var refreshTimer: Timer?
     private var statsHotKey: GlobalHotKey?
 
@@ -58,6 +59,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         if (model.needsOnboarding || CommandLine.arguments.contains("--mostra-onboarding")),
            !ProbeMode.active {
             showOnboarding()
+        } else if model.settings.shouldOfferFullPace(now: Date()) || CommandLine.arguments.contains("--mostra-ritmo"),
+                  !ProbeMode.active {
+            // **Mai insieme all'onboarding.** Chi ha appena installato l'app non ha due settimane
+            // di uso alle spalle, e due finestre al primo avvio sono una in più di quelle che
+            // qualcuno legge.
+            showPaceCheckIn()
         }
 
 
@@ -182,6 +189,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                                                             preselectedSex: scelto))
             size = NSSize(width: 540, height: ob.fittingSize.height)
             host = ob
+        case "ritmo":
+            let pace = NSHostingView(rootView: PaceCheckInView(model: model, onDone: {}))
+            size = NSSize(width: 480, height: pace.fittingSize.height)
+            host = pace
         case "menu":
             size = NSSize(width: 280, height: 260)
             host = NSHostingView(rootView: MenuPanel(model: model).frame(width: size.width))
@@ -855,6 +866,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         onboardingWindow = makeWindow(title: L.t("Benvenuto in Otium", "Welcome to Otium"),
                                       content: hosting)
         present(onboardingWindow)
+    }
+
+    /// La domanda delle due settimane. Vive come l'onboarding: una finestra vera, non una
+    /// notifica — a una notifica non si risponde, e questa è una domanda.
+    private func showPaceCheckIn() {
+        let hosting = NSHostingView(rootView: PaceCheckInView(model: model) { [weak self] in
+            self?.paceWindow?.close()
+            self?.paceWindow = nil
+            self?.updateStatusTitle()
+        })
+        hosting.frame = NSRect(x: 0, y: 0, width: 480, height: hosting.fittingSize.height)
+        paceWindow = makeWindow(title: L.t("Otium", "Otium"), content: hosting)
+        present(paceWindow)
     }
 
     @objc private func showSeated() {

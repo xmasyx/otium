@@ -17,7 +17,7 @@ enum ProbeMode {
     private static let flags = [
         "--orphan-probe", "--sleep-probe", "--radar-probe", "--menu-probe", "--confirm-probe",
         "--flush-probe", "--window-probe", "--snapshot", "--demo-break", "--demo-hud", "--presence",
-        "--hotkey-probe", "--policy-probe", "--circuit-probe",
+        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo",
     ]
 
     static var active: Bool {

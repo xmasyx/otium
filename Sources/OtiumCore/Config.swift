@@ -100,6 +100,16 @@ public struct Settings: Codable, Equatable, Sendable {
     public var vigorousDailyTarget: Int
     /// La frase da digitare per esteso per saltare un break. Attrito, non impossibilità.
     public var escapePhrase: String
+    /// Dopo quante settimane di uso l'app **chiede** se vuoi già passare al numero pieno.
+    ///
+    /// La partenza graduale esiste perché iniziare a quindici squat quando sei fermo da mesi è il
+    /// modo di smettere in tre giorni. Ma quattro settimane sono lunghe per chi è già allenato, e
+    /// un'app che decide da sola quanto sei in forma sbaglia in una delle due direzioni. Dopo due
+    /// settimane lo chiede una volta sola: **una domanda, non una tacca in più sul cursore**.
+    public var fullPaceOfferWeeks: Int
+    /// La domanda è già stata fatta. Una volta sola: un'app che ripropone la stessa scelta ogni
+    /// settimana non sta chiedendo, sta insistendo.
+    public var fullPaceAnswered: Bool
     /// Il sesso biologico, **solo** per il punto di partenza delle ripetizioni (vedi
     /// `SexCalibration`). `nil` finché non l'hai scelto: è uno dei due inneschi dell'onboarding.
     public var sex: Sex?
@@ -148,6 +158,8 @@ public struct Settings: Codable, Equatable, Sendable {
         vigorousPool: [ExerciseKind] = [.burpee, .jumpingJack, .mountainClimber, .highKnees],
         vigorousDailyTarget: Int = 3,
         escapePhrase: String = "salto la pausa",
+        fullPaceOfferWeeks: Int = 2,
+        fullPaceAnswered: Bool = false,
         sex: Sex? = nil,
         language: AppLanguage? = nil,
         deferWhenMicrophoneActive: Bool = true,
@@ -171,6 +183,8 @@ public struct Settings: Codable, Equatable, Sendable {
         self.vigorousPool = vigorousPool.isEmpty ? [.jumpingJack] : vigorousPool
         self.vigorousDailyTarget = max(0, vigorousDailyTarget)
         self.escapePhrase = escapePhrase
+        self.fullPaceOfferWeeks = max(1, fullPaceOfferWeeks)
+        self.fullPaceAnswered = fullPaceAnswered
         self.sex = sex
         self.language = language
         self.deferWhenMicrophoneActive = deferWhenMicrophoneActive
@@ -189,6 +203,17 @@ public struct Settings: Codable, Equatable, Sendable {
 
     public var planner: ExercisePlanner {
         ExercisePlanner(pool: exercisePool, vigorousPool: vigorousPool)
+    }
+
+    /// È il momento di chiedere se vuoi già il numero pieno?
+    ///
+    /// Tre condizioni, e servono tutte. Sono passate abbastanza settimane; non l'hai già
+    /// risposto; e **non sei già al numero pieno**, perché chiedere «vuoi passare al pieno» a chi
+    /// ci è già arrivato è una domanda senza risposta possibile.
+    public func shouldOfferFullPace(now: Date) -> Bool {
+        guard !fullPaceAnswered else { return false }
+        guard rampFactor(now: now) < 1.0 else { return false }
+        return Ramp.weeksElapsed(since: startDate, now: now) >= fullPaceOfferWeeks
     }
 
     public func rampFactor(now: Date) -> Double {
@@ -213,6 +238,8 @@ public struct Settings: Codable, Equatable, Sendable {
         vigorousDailyTarget = (try? c.decode(Int.self, forKey: .vigorousDailyTarget)) ?? d.vigorousDailyTarget
         escapePhrase = (try? c.decode(String.self, forKey: .escapePhrase)) ?? d.escapePhrase
         // Assenti nei file scritti prima dell'onboarding: restano nil, e l'app chiede.
+        fullPaceOfferWeeks = (try? c.decode(Int.self, forKey: .fullPaceOfferWeeks)) ?? d.fullPaceOfferWeeks
+        fullPaceAnswered = (try? c.decode(Bool.self, forKey: .fullPaceAnswered)) ?? d.fullPaceAnswered
         sex = try? c.decode(Sex.self, forKey: .sex)
         language = try? c.decode(AppLanguage.self, forKey: .language)
         deferWhenMicrophoneActive = (try? c.decode(Bool.self, forKey: .deferWhenMicrophoneActive)) ?? d.deferWhenMicrophoneActive

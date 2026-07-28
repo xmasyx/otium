@@ -116,6 +116,39 @@ final class ProfileTests: XCTestCase {
                           "in inglese il testo mostrato deve cambiare")
     }
 
+    /// **La domanda delle due settimane si fa quando ha senso farla, e una volta sola.**
+    func testFullPaceIsOfferedOnlyWhenItMakesSense() {
+        let inizio = Date(timeIntervalSince1970: 1_700_000_000)
+        var s = Settings(startDate: inizio, rampWeeks: 6, rampStartFactor: 0.55)
+        s.fullPaceOfferWeeks = 2
+
+        // Troppo presto: la settimana dopo l'installazione non si chiede niente.
+        XCTAssertFalse(s.shouldOfferFullPace(now: inizio.addingTimeInterval(6 * 24 * 3600)))
+        // A due settimane, sì.
+        XCTAssertTrue(s.shouldOfferFullPace(now: inizio.addingTimeInterval(15 * 24 * 3600)))
+        // Risposto: non si richiede più, mai.
+        var risposto = s
+        risposto.fullPaceAnswered = true
+        XCTAssertFalse(risposto.shouldOfferFullPace(now: inizio.addingTimeInterval(40 * 24 * 3600)))
+        // Chi è già al numero pieno non ha niente a cui rispondere.
+        var pieno = s
+        pieno.rampStartFactor = 1.0
+        XCTAssertFalse(pieno.shouldOfferFullPace(now: inizio.addingTimeInterval(15 * 24 * 3600)))
+        // E nemmeno chi la salita l'ha già finita da sé.
+        XCTAssertFalse(s.shouldOfferFullPace(now: inizio.addingTimeInterval(60 * 24 * 3600)),
+                       "a salita finita il fattore è 1.0, non c'è niente da offrire")
+    }
+
+    /// «Sì» significa **adesso**: il numero pieno è quello di base, non un passo in più.
+    func testFullPaceMeansTheBaseNumber() {
+        var s = Settings(startDate: Date(), rampWeeks: 6, rampStartFactor: 0.55)
+        XCTAssertLessThan(Ramp.reps(for: .squat, factor: s.rampFactor(now: Date()), sex: .male),
+                          ExerciseKind.squat.baseReps)
+        s.rampStartFactor = 1.0
+        XCTAssertEqual(Ramp.reps(for: .squat, factor: s.rampFactor(now: Date()), sex: .male),
+                       ExerciseKind.squat.baseReps)
+    }
+
     /// Le impostazioni scritte prima che l'onboarding esistesse non devono morire, e devono
     /// **chiedere**: lingua e sesso restano nil, che è l'innesco della prima schermata.
     func testOldSettingsFileTriggersOnboarding() throws {

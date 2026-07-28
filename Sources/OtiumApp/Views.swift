@@ -846,9 +846,15 @@ struct PrefsView: View {
                     + "explosive included — instead of just the exercise of the turn. It stays a "
                     + "proposal: you decide, inside the break."))
                     .font(.caption).foregroundStyle(.secondary)
-                Stepper("Rampa in \(draft.rampWeeks) settimane", value: $draft.rampWeeks, in: 1...12)
-                Text("Oggi sei al \(Int(draft.rampFactor(now: Date()) * 100))% del volume pieno.")
+                // «Rampa» era il calco di *ramp*: in italiano è la salita di un garage, non un
+                // modo di allenarsi. Segnalato dal principale il 2026-07-28.
+                Stepper(L.t("Partenza graduale: \(draft.rampWeeks) settimane",
+                            "Gradual start: \(draft.rampWeeks) weeks"),
+                        value: $draft.rampWeeks, in: 1...12)
+                Text(L.t("Le prime settimane le ripetizioni sono ridotte, poi si arriva al numero pieno. Oggi sei al \(Int(draft.rampFactor(now: Date()) * 100))%.",
+                         "For the first weeks the reps are reduced, then you reach the full number. Today you are at \(Int(draft.rampFactor(now: Date()) * 100))%."))
                     .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Section(L.t("Comportamento", "Behaviour")) {
