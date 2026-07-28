@@ -30,7 +30,7 @@ final class InvariantTests: XCTestCase {
 
     /// Le azioni che un umano può fare, nell'ordine che vuole lui.
     private enum Move: CaseIterable {
-        case tick, markDone, postpone, escapeRight, escapeWrong, emergency, returnToWork
+        case tick, waitOutExercise, markDone, markPartial, postpone, escapeRight, escapeWrong, emergency, returnToWork
         case forceMicro, forceLong, pause, resume, startCircuit, leaveCircuit, declareSeated
     }
 
@@ -75,6 +75,25 @@ final class InvariantTests: XCTestCase {
         XCTAssertFalse(engine.clock.activeSeconds.isNaN, "tempo attivo NaN — \(dove)")
         XCTAssertGreaterThanOrEqual(engine.clock.activeSeconds, 0, "tempo attivo negativo — \(dove)")
 
+        // **La progressione non scende mai sotto il 100% e non esplode.** Il pavimento e il
+        // soffitto della crescita sono i due modi in cui un moltiplicatore che si aggiorna da
+        // solo può rovinare un allenamento: uno lo rende finto, l'altro impossibile.
+        for (_, p) in engine.progress.byExercise {
+            XCTAssertGreaterThanOrEqual(p.level, 1.0, "livello sotto il 100% — \(dove)")
+            XCTAssertLessThan(p.level, 100.0, "livello esploso — \(dove)")
+            XCTAssertFalse(p.level.isNaN, "livello NaN — \(dove)")
+            XCTAssertLessThan(abs(p.streak), 10, "serie fuori controllo — \(dove)")
+        }
+
+        // **Nessun esercizio proposto con zero ripetizioni.** Un numero a zero non è un esercizio
+        // più facile, è un esercizio che non c'è, e il cancello anti-bluff lo sbloccherebbe subito.
+        if let plan = engine.plan {
+            XCTAssertGreaterThanOrEqual(plan.exercise.reps, 1, "esercizio da zero ripetizioni — \(dove)")
+            for stazione in plan.circuit {
+                XCTAssertGreaterThanOrEqual(stazione.reps, 1, "stazione da zero ripetizioni — \(dove)")
+            }
+        }
+
         // Dentro il circuito la stazione in corso deve esistere davvero.
         if let plan = engine.plan, plan.circuitActive {
             XCTAssertTrue(plan.circuit.indices.contains(plan.stationIndex),
@@ -97,6 +116,7 @@ final class InvariantTests: XCTestCase {
             // invece di passare mille passi in `working` senza mai arrivare a niente.
             settings.cadence.intervalSeconds = 30
             settings.cadence.warningSeconds = 3
+            settings.progressBeyondFull = true   // o la progressione non verrebbe mai esercitata
             var engine = SessionEngine(settings: settings, maxCredibleElapsed: 60)
             var now = Date(timeIntervalSince1970: 1_700_000_000)
             var trail: [String] = []
@@ -110,7 +130,18 @@ final class InvariantTests: XCTestCase {
                     let idle = Double.random(in: 0...900, using: &rng)
                     now = now.addingTimeInterval(elapsed)
                     engine.tick(elapsed: elapsed, idle: idle, now: now)
+                // **Aspettare è una mossa umana, e senza di lei il fuzz non arriva dove serve.**
+                // Il cancello anti-bluff pretende il tempo minimo dell'esercizio: con battiti da
+                // pochi secondi una sequenza casuale non lo apre quasi mai, e infatti gli
+                // invarianti sulla progressione non venivano mai messi alla prova. Scoperto
+                // sabotando il pavimento del livello e vedendo il fuzz restare verde.
+                case .waitOutExercise:
+                    for _ in 0..<20 {
+                        now = now.addingTimeInterval(3)
+                        engine.tick(elapsed: 3, idle: 0, now: now)
+                    }
                 case .markDone: engine.markExerciseDone()
+                case .markPartial: engine.markExercisePartial(actualReps: Int.random(in: 0...30, using: &rng))
                 case .postpone: engine.postpone()
                 case .escapeRight: engine.escape(phrase: "salto")
                 case .escapeWrong: engine.escape(phrase: "qualcos'altro")

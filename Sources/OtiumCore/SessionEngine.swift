@@ -452,7 +452,14 @@ public struct SessionEngine {
     @discardableResult
     public mutating func markExercisePartial(actualReps: Int) -> [EngineEvent] {
         guard phase == .breaking, var current = plan else { return [] }
-        let done = Exercise(kind: current.exercise.kind, reps: max(0, actualReps))
+        let reps = max(0, min(actualReps, current.exercise.reps))
+        // **Il cancello anti-bluff vale anche qui, in proporzione.** Dire «ne ho fatte nove su
+        // dieci» un istante dopo l'inizio è un bluff esattamente come dirle tutte: il tempo
+        // richiesto scende con le ripetizioni dichiarate, non sparisce. Il buco l'ha aperto il
+        // bottone nuovo e l'ha trovato il fuzz, non l'uso.
+        let richiesto = Double(reps) * current.exercise.kind.secondsPerRep
+        guard timer - exerciseBaseline >= richiesto else { return [] }
+        let done = Exercise(kind: current.exercise.kind, reps: reps)
         if settings.progressBeyondFull { progress.record(.partial, for: done.kind) }
 
         if current.circuitActive, current.stationIndex + 1 < current.circuit.count {
@@ -578,6 +585,12 @@ public struct SessionEngine {
         postponesUsed += 1
         phase = .postponed
         timer = settings.cadence.postponeSeconds
+        // Stessa incoerenza di `setPaused`, stesso rimedio: rinviare lascia il piano in piedi ma
+        // non può lasciare in piedi «esercizio fatto», o per due minuti lo stato dice che hai
+        // finito una pausa che deve ancora ricominciare. Le ripetizioni già confermate sono al
+        // sicuro, perché il registro le ha scritte alla conferma e non alla chiusura.
+        exerciseDone = false
+        exerciseBaseline = 0
         return [.postponed(current)]
     }
 
@@ -727,6 +740,15 @@ public struct SessionEngine {
             phase = .paused
             plan = nil
             timer = 0
+            // **Lo stato dell'esercizio va azzerato come lo azzera `finish`.** Restava «fatto»
+            // con il piano già a nil, cioè un esercizio confermato dentro una pausa che non
+            // esiste: incoerenza trovata dal fuzz il 2026-07-28, dopo `forceLong → non tutte →
+            // sospendi`. Non si vedeva prima perché l'unica via per confermare passava dal
+            // cancello del tempo minimo, che in una sequenza casuale non si apre quasi mai.
+            exerciseDone = false
+            idleDuringBreak = 0
+            exerciseBaseline = 0
+            singleExercise = nil
         } else if phase == .paused {
             phase = .working
             clock.reset()
