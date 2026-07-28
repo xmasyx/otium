@@ -101,6 +101,92 @@ public enum Quotes {
         q("Il giardino e la biblioteca: se hai questi, hai tutto quello che serve.", "Cicerone", "Lettere a Varrone (Ad familiares, IX)"),
         q("Nessuno è così vecchio da non credere di poter vivere ancora un anno.", "Cicerone", "De senectute, 24"),
         q("Il tempo distrugge le finzioni dell'opinione, e conferma i giudizi della natura.", "Cicerone", "De natura deorum, II"),
+
+        // MARK: Aggiunte del 2026-07-28 — 73 citazioni ritrovate sul testo primario.
+        //
+        // Nessuna viene da un aggregatore. Per ognuna il frammento in lingua originale è stato
+        // cercato dentro il testo scaricato (Wikisource latino e italiano, Project Gutenberg,
+        // Zarathustra in tedesco) e ritrovato alla riga indicata dal cancello di verifica; la
+        // resa italiana è nostra, fatta sull'originale dove la lingua lo permetteva — latino,
+        // tedesco, francese, inglese — e sulla traduzione di pubblico dominio altrove.
+        //
+        // Diciannove candidate su centocinquantadue sono state bocciate dal cancello perché il
+        // frammento non esisteva nel testo con quelle parole: quelle NON sono qui, ed è
+        // esattamente il motivo per cui il cancello esiste.
+
+        q("Fa' il tuo lavoro, qualunque sia, fino in fondo e senza lamentarti.", "Marco Aurelio", "Pensieri, I, 12"),
+        q("Curava il corpo con misura, non come chi vuole vivere a lungo.", "Marco Aurelio", "Pensieri, I, 13"),
+        q("Tutto quello che appartiene al corpo è come un fiume.", "Marco Aurelio", "Pensieri, II, 15"),
+        q("Non fare niente a caso, né senza uno scopo.", "Marco Aurelio", "Pensieri, II, 15"),
+        q("Guarda quanto in fretta ogni cosa si scioglie e si disfa.", "Marco Aurelio", "Pensieri, II, 9"),
+        q("Non fare niente controvoglia, né senza averlo esaminato, né a malincuore.", "Marco Aurelio", "Pensieri, III, 5"),
+        q("Scegli liberamente ciò che è meglio, e restaci attaccato.", "Marco Aurelio", "Pensieri, III, 7"),
+        q("Quello che sto per fare, non sarà per caso una delle cose che non servono?", "Marco Aurelio", "Pensieri, IV, 20"),
+        q("Non c'è niente di meglio, per un uomo, che limitarsi alle azioni necessarie.", "Marco Aurelio", "Pensieri, IV, 20"),
+        q("Gran parte di quello che diciamo e facciamo non serve.", "Marco Aurelio", "Pensieri, IV, 20"),
+        q("La vita è breve: guadagniamoci il tempo presente con giudizio e giustizia.", "Marco Aurelio", "Pensieri, IV, 21"),
+        q("Prendi lo svago con sobrietà.", "Marco Aurelio", "Pensieri, IV, 21"),
+        q("Smetti di tormentarti, e riducíti a una semplicità perfetta.", "Marco Aurelio", "Pensieri, IV, 21"),
+        q("Qualunque mestiere tu abbia imparato, amalo, e trova conforto in quello.", "Marco Aurelio", "Pensieri, IV, 26"),
+        q("Non c'è ritiro migliore, per un uomo, della propria anima.", "Marco Aurelio", "Pensieri, IV, 3"),
+        q("In qualunque momento vuoi, puoi ritirarti in te stesso e stare in pace, libero da ogni faccenda.", "Marco Aurelio", "Pensieri, IV, 3"),
+        q("Non ferito da ciò che è presente, né in paura di ciò che verrà.", "Marco Aurelio", "Pensieri, IV, 41"),
+        q("Non corri a fare quello che la tua natura ti chiede?", "Marco Aurelio", "Pensieri, V, 1"),
+        q("Onori la tua natura meno di quanto un artigiano onori il suo mestiere?", "Marco Aurelio", "Pensieri, V, 1"),
+        q("Anche la natura ti ha dato una misura, per quello come per il mangiare e il bere.", "Marco Aurelio", "Pensieri, V, 1"),
+        q("Se una cosa è giusta da dire o da fare, non svalutarti al punto di rinunciarci.", "Marco Aurelio", "Pensieri, V, 3"),
+        q("La vita, se sai usarla, è lunga.", "Seneca", "La brevità della vita, 2"),
+        q("Rivendica te stesso a te stesso, e raccogli il tempo che finora ti veniva portato via.", "Seneca", "Lettere a Lucilio, 1"),
+        q("Certi tempi ci vengono strappati, altri sottratti, altri semplicemente scorrono via.", "Seneca", "Lettere a Lucilio, 1"),
+        q("Gran parte della vita se ne va a chi agisce male, la maggior parte a chi non fa niente, tutta quanta a chi fa altro.", "Seneca", "Lettere a Lucilio, 1"),
+        q("Dipenderai meno dal domani, se metti le mani sull'oggi.", "Seneca", "Lettere a Lucilio, 1"),
+        q("Chiedi una mente sana, poi la salute dell'animo, e solo dopo quella del corpo.", "Seneca", "Lettere a Lucilio, 10"),
+        q("Vivi con gli uomini come se ti vedesse un dio, parla con dio come se ti ascoltassero gli uomini.", "Seneca", "Lettere a Lucilio, 10"),
+        q("L'animo abbia qualcuno che rispetta: basta la sua autorità a rendere più pulito anche ciò che fai da solo.", "Seneca", "Lettere a Lucilio, 11"),
+        q("Ordina ogni giornata come se chiudesse la fila, e completasse la vita.", "Seneca", "Lettere a Lucilio, 12"),
+        q("Un giorno solo vale quanto tutti gli altri.", "Seneca", "Lettere a Lucilio, 12"),
+        q("Il giro del giorno è strettissimo, eppure anche lui va da un inizio a una fine, dall'alba al tramonto.", "Seneca", "Lettere a Lucilio, 12"),
+        q("Ci sono esercizi facili e brevi, che stancano il corpo subito e risparmiano il tempo.", "Seneca", "Lettere a Lucilio, 15"),
+        q("Il moto scuote il corpo e non toglie niente allo studio.", "Seneca", "Lettere a Lucilio, 15"),
+        q("Dà al corpo meno spazio che puoi, e fa' largo all'animo.", "Seneca", "Lettere a Lucilio, 15"),
+        q("Se vuoi avere l'animo libero, devi essere povero o vivere come uno che lo è.", "Seneca", "Lettere a Lucilio, 17"),
+        q("Ciò per cui non vuoi tremare al momento buono, allenalo prima.", "Seneca", "Lettere a Lucilio, 18"),
+        q("Alleniamoci al palo, perché la sorte non ci trovi impreparati.", "Seneca", "Lettere a Lucilio, 18"),
+        q("Prendi una regola sola per vivere, e adegua a quella tutta la vita.", "Seneca", "Lettere a Lucilio, 20"),
+        q("Il giudizio cambia ogni giorno e si rovescia, e per i più la vita passa come un gioco.", "Seneca", "Lettere a Lucilio, 20"),
+        q("Va svegliato dal sonno l'animo, e scosso.", "Seneca", "Lettere a Lucilio, 20"),
+        q("Non c'è da aggiungere anni: c'è da togliere desideri.", "Seneca", "Lettere a Lucilio, 21"),
+        q("Non starà dentro gli affari per amore degli affari.", "Seneca", "Lettere a Lucilio, 22"),
+        q("L'animo dev'essere sveglio, fiducioso e dritto sopra ogni cosa.", "Seneca", "Lettere a Lucilio, 23"),
+        q("Vive male chi comincia sempre a vivere.", "Seneca", "Lettere a Lucilio, 23"),
+        q("Certi hanno smesso di vivere prima ancora di cominciare.", "Seneca", "Lettere a Lucilio, 23"),
+        q("Il corpo è una cosa più necessaria che grande.", "Seneca", "Lettere a Lucilio, 23"),
+        q("Ogni giorno ci viene tolta una parte di vita, e anche mentre cresciamo la vita cala.", "Seneca", "Lettere a Lucilio, 24"),
+        q("Non amare troppo la vita, e non odiarla troppo.", "Seneca", "Lettere a Lucilio, 24"),
+        q("La notte incalza il giorno e il giorno la notte, l'estate finisce nell'autunno.", "Seneca", "Lettere a Lucilio, 24"),
+        q("Chi riposa deve agire, e chi agisce deve riposare.", "Seneca", "Lettere a Lucilio, 3"),
+        q("Sbagliano tutti e due: chi non sta mai fermo, e chi sta fermo sempre.", "Seneca", "Lettere a Lucilio, 3"),
+        q("Come chiamarlo, se non un dio ospitato dentro un corpo umano?", "Seneca", "Lettere a Lucilio, 31"),
+        q("Per sapere se hai fatto progressi, guarda se vuoi oggi le stesse cose di ieri.", "Seneca", "Lettere a Lucilio, 35"),
+        q("Il posto va scelto sano non solo per il corpo, ma anche per il carattere.", "Seneca", "Lettere a Lucilio, 51"),
+        q("Anche le mani che passano dall'aratro alle armi non rifiutano nessuna fatica.", "Seneca", "Lettere a Lucilio, 51"),
+        q("Solo la filosofia ci sveglia, solo lei scuote via il sonno pesante.", "Seneca", "Lettere a Lucilio, 53"),
+        q("Confessare i propri difetti è già un segno di salute.", "Seneca", "Lettere a Lucilio, 53"),
+        q("Torno adesso da un giro, stanco come se avessi camminato quanto sono stato seduto.", "Seneca", "Lettere a Lucilio, 55"),
+        q("C'è una gran differenza fra una vita di ozio e una vita inerte.", "Seneca", "Lettere a Lucilio, 55"),
+        q("Studia con me, cena con me, cammina con me.", "Seneca", "Lettere a Lucilio, 55"),
+        q("Non c'è quiete davvero tranquilla se non quella che la ragione ha messo in ordine.", "Seneca", "Lettere a Lucilio, 56"),
+        q("Lunga è la strada dei precetti, breve ed efficace quella degli esempi.", "Seneca", "Lettere a Lucilio, 6"),
+        q("Ritirati in te stesso, quanto più puoi.", "Seneca", "Lettere a Lucilio, 7"),
+        q("Cibo, sonno, desiderio: si corre sempre dentro questo cerchio.", "Seneca", "Lettere a Lucilio, 77"),
+        q("Tutto quello che solleva l'animo fa bene anche al corpo.", "Seneca", "Lettere a Lucilio, 78"),
+        q("Il medico ti dirà quanto camminare e quanto esercitarti.", "Seneca", "Lettere a Lucilio, 78"),
+        q("Non cedere all'ozio, che è dove scivola la salute pigra.", "Seneca", "Lettere a Lucilio, 78"),
+        q("Chi sembra non fare nulla, sta facendo le cose più grandi.", "Seneca", "Lettere a Lucilio, 8"),
+        q("Concedi al corpo solo quanto basta a stare in salute.", "Seneca", "Lettere a Lucilio, 8"),
+        q("Quanti allenano il corpo, e quanto pochi l'ingegno.", "Seneca", "Lettere a Lucilio, 80"),
+        q("L'animo cresce da sé, si nutre da sé, si allena da sé.", "Seneca", "Lettere a Lucilio, 80"),
+        q("Al saggio basta sé stesso per vivere bene, non per vivere.", "Seneca", "Lettere a Lucilio, 9"),
     ]
 
     // MARK: - Filosofia occidentale
@@ -148,6 +234,75 @@ public enum Quotes {
 
         q("L'abitudine è il volano della società, il suo agente conservatore più prezioso.", "William James", "Principi di psicologia, IV"),
         q("L'arte di essere saggi è l'arte di sapere cosa trascurare.", "William James", "Principi di psicologia, XXII"),
+
+        // MARK: Aggiunte del 2026-07-28 — 56 citazioni ritrovate sul testo primario.
+        //
+        // Nessuna viene da un aggregatore. Per ognuna il frammento in lingua originale è stato
+        // cercato dentro il testo scaricato (Wikisource latino e italiano, Project Gutenberg,
+        // Zarathustra in tedesco) e ritrovato alla riga indicata dal cancello di verifica; la
+        // resa italiana è nostra, fatta sull'originale dove la lingua lo permetteva — latino,
+        // tedesco, francese, inglese — e sulla traduzione di pubblico dominio altrove.
+        //
+        // Diciannove candidate su centocinquantadue sono state bocciate dal cancello perché il
+        // frammento non esisteva nel testo con quelle parole: quelle NON sono qui, ed è
+        // esattamente il motivo per cui il cancello esiste.
+
+        q("Il tempo perduto non si ritrova più.", "Benjamin Franklin", "La via della ricchezza, 1758"),
+        q("Guida tu i tuoi affari, non farti guidare da loro.", "Benjamin Franklin", "La via della ricchezza, 1758"),
+        q("La pigrizia consuma più della fatica: la chiave che si usa resta lucida.", "Benjamin Franklin", "La via della ricchezza, 1758"),
+        q("Presto a letto e presto in piedi rende un uomo sano, ricco e saggio.", "Benjamin Franklin", "La via della ricchezza, 1758"),
+        q("Un oggi vale due domani.", "Benjamin Franklin", "La via della ricchezza, 1758"),
+        q("Hai qualcosa da fare domani? Fallo oggi.", "Benjamin Franklin", "La via della ricchezza, 1758"),
+        q("La diligenza è la madre della buona sorte.", "Benjamin Franklin", "La via della ricchezza, 1758"),
+        q("Niente di grande è mai stato fatto senza entusiasmo.", "Emerson", "Saggi, Cerchi"),
+        q("La vita dell'uomo è un cerchio che si allarga da sé.", "Emerson", "Saggi, Cerchi"),
+        q("Ogni eccesso produce un difetto, e ogni difetto un eccesso.", "Emerson", "Saggi, Compensazione"),
+        q("La fiducia in sé è l'essenza dell'eroismo.", "Emerson", "Saggi, Eroismo"),
+        q("La prudenza è la virtù dei sensi.", "Emerson", "Saggi, Prudenza"),
+        q("La lettura fa l'uomo completo, il parlare l'uomo pronto, lo scrivere l'uomo esatto.", "Francis Bacon", "Saggi, Degli studi"),
+        q("Gli studi servono al diletto, all'ornamento e alla capacità.", "Francis Bacon", "Saggi, Degli studi"),
+        q("Certi libri vanno assaggiati, altri inghiottiti, e pochi masticati e digeriti.", "Francis Bacon", "Saggi, Degli studi"),
+        q("Le storie rendono saggi, i poeti arguti, la matematica sottili, la filosofia naturale profondi.", "Francis Bacon", "Saggi, Degli studi"),
+        q("La tua osservazione di ciò che ti fa bene e di ciò che ti fa male è la miglior medicina per restare sano.", "Francis Bacon", "Saggi, Del regime della salute"),
+        q("L'abitudine è il magistrato principale della vita di un uomo.", "Francis Bacon", "Saggi, Dell'abitudine e dell'educazione"),
+        q("La natura spesso si nasconde, a volte si vince, di rado si spegne.", "Francis Bacon", "Saggi, Della natura negli uomini"),
+        q("Il tempo è la misura del lavoro, come il denaro è la misura delle merci.", "Francis Bacon", "Saggi, Della speditezza"),
+        q("Chi non vuole applicare rimedi nuovi deve aspettarsi guai nuovi: il tempo è il più grande innovatore.", "Francis Bacon", "Saggi, Delle innovazioni"),
+        q("La vita non si potrebbe conservare, se non fosse interrotta di frequente.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
+        q("Il primo tempo del giorno è di solito il più sopportabile.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
+        q("Molti affanni, al mattino, paiono assai minori di quanto parvero la sera prima.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
+        q("Su, mortali, destatevi. Il dì rinasce.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
+        q("Sorgete, ripigliatevi la soma della vita, riducetevi dal mondo falso nel vero.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
+        q("C'è differenza fra la fatica e il disagio, e fra il vivere quieto e il vivere ozioso.", "Leopardi", "Operette morali, Dialogo della Natura e di un Islandese"),
+        q("Il valore della vita non sta nella lunghezza dei giorni, ma nell'uso che ne facciamo.", "Montaigne", "Saggi, I, 20"),
+        q("Il segno più evidente della saggezza è un'allegria continua.", "Montaigne", "Saggi, I, 25"),
+        q("Ci insegnano a vivere quando la vita è quasi finita.", "Montaigne", "Saggi, I, 26"),
+        q("Il modo in cui conduciamo la vita è lo specchio vero di ciò che pensiamo.", "Montaigne", "Saggi, I, 51"),
+        q("Il corpo è una grande ragione, una molteplicità con un senso solo, una guerra e una pace, un gregge e un pastore.", "Nietzsche", "Così parlò Zarathustra, I, Dei disprezzatori del corpo"),
+        q("Sono corpo, tutto intero, e nient'altro.", "Nietzsche", "Così parlò Zarathustra, I, Dei disprezzatori del corpo"),
+        q("Anche la tua piccola ragione, quella che chiami spirito, è uno strumento del tuo corpo.", "Nietzsche", "Così parlò Zarathustra, I, Dei disprezzatori del corpo"),
+        q("In montagna la via più breve va da cima a cima, ma ci vogliono gambe lunghe.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
+        q("Voi guardate in alto quando volete sollevarvi. Io guardo in basso, perché sono sollevato.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
+        q("Chi scrive col sangue non vuole essere letto, vuole essere imparato a memoria.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
+        q("Le massime devono essere cime.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
+        q("Aria sottile e pulita, il pericolo vicino, e lo spirito pieno di una cattiveria allegra: stanno bene insieme.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
+        q("Il coraggio vuole ridere.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
+        q("Chi di voi sa insieme ridere ed essere sollevato?", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
+        q("Restate fedeli alla terra.", "Nietzsche", "Così parlò Zarathustra, Prologo, 3"),
+        q("È mattina quando sono sveglio, e dentro di me c'è un'alba.", "Thoreau", "Walden, II"),
+        q("La riforma morale è lo sforzo di scrollarsi di dosso il sonno.", "Thoreau", "Walden, II"),
+        q("Ogni mattina era un invito a rendere la mia vita semplice, e direi innocente, quanto la natura stessa.", "Thoreau", "Walden, II"),
+        q("Il mattino, la stagione più memorabile del giorno, è l'ora del risveglio.", "Thoreau", "Walden, II"),
+        q("Per chi tiene il passo del sole col pensiero, il giorno è un mattino perpetuo.", "Thoreau", "Walden, II"),
+        q("Passiamo un giorno con la stessa calma deliberata della natura.", "Thoreau", "Walden, II"),
+        q("I libri vanno letti con la stessa lentezza voluta con cui sono stati scritti.", "Thoreau", "Walden, III"),
+        q("C'erano momenti in cui non potevo sacrificare il fiore dell'istante presente a nessun lavoro, né di testa né di mani.", "Thoreau", "Walden, IV"),
+        q("Era mattina, ed ecco è già sera, e non è stato fatto niente di memorabile.", "Thoreau", "Walden, IV"),
+        q("Sono più grande e migliore di quanto pensassi: non sapevo di contenere tanto bene.", "Walt Whitman", "Foglie d'erba, Canto della strada aperta"),
+        q("Da adesso non chiedo più la buona sorte: la buona sorte sono io.", "Walt Whitman", "Foglie d'erba, Canto della strada aperta"),
+        q("Me ne sto in ozio e invito la mia anima.", "Walt Whitman", "Foglie d'erba, Canto di me stesso, 1"),
+        q("Mi appoggio e me ne sto in ozio, guardando un filo d'erba d'estate.", "Walt Whitman", "Foglie d'erba, Canto di me stesso, 1"),
+        q("Esisto come sono, e questo basta.", "Walt Whitman", "Foglie d'erba, Canto di me stesso, 20"),
     ]
 
     // MARK: - Oriente
@@ -213,6 +368,23 @@ public enum Quotes {
 
         q("Alzati, svegliati, e non fermarti finché la meta non è raggiunta.", "Katha Upanishad", "Katha Upanishad, I, 3, 14"),
         q("Come un uomo si spoglia di vesti logore e ne indossa di nuove, così l'anima lascia il corpo.", "Bhagavad Gita", "Bhagavad Gita, II, 22"),
+
+        // MARK: Aggiunte del 2026-07-28 — 4 citazioni ritrovate sul testo primario.
+        //
+        // Nessuna viene da un aggregatore. Per ognuna il frammento in lingua originale è stato
+        // cercato dentro il testo scaricato (Wikisource latino e italiano, Project Gutenberg,
+        // Zarathustra in tedesco) e ritrovato alla riga indicata dal cancello di verifica; la
+        // resa italiana è nostra, fatta sull'originale dove la lingua lo permetteva — latino,
+        // tedesco, francese, inglese — e sulla traduzione di pubblico dominio altrove.
+        //
+        // Diciannove candidate su centocinquantadue sono state bocciate dal cancello perché il
+        // frammento non esisteva nel testo con quelle parole: quelle NON sono qui, ed è
+        // esattamente il motivo per cui il cancello esiste.
+
+        q("Chi ripassa il vecchio e ne ricava il nuovo può essere maestro.", "Confucio", "Dialoghi, II, 11"),
+        q("Imparare senza pensare è fatica sprecata.", "Confucio", "Dialoghi, II, 15"),
+        q("Chi sta in punta di piedi non sta saldo; chi allarga il passo non cammina.", "Laozi", "Tao Te Ching, 24"),
+        q("Il morbido e il debole vincono il duro e il forte.", "Laozi", "Tao Te Ching, 36"),
     ]
 
     /// Tutte le citazioni verificate. `Mindful` tiene quelle senza fonte tracciabile.

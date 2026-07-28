@@ -1,0 +1,35 @@
+[
+  { "it": "Ci sono esercizi facili e brevi, che stancano il corpo subito e risparmiano il tempo.", "originale": "Sunt exercitationes et faciles et breves, quae corpus et sine mora lassent et tempori parcant", "autore": "Seneca", "opera": "Lettere a Lucilio, 15", "fonte": "seneca-epistulae-la.txt" },
+  { "it": "Chi sembra non fare nulla, sta facendo le cose più grandi.", "originale": "qui nihil agere videntur maiora agunt", "autore": "Seneca", "opera": "Lettere a Lucilio, 8", "fonte": "seneca-epistulae-la.txt" },
+  { "it": "Il moto scuote il corpo e non toglie niente allo studio.", "originale": "Gestatio et corpus concutit et studio non officit", "autore": "Seneca", "opera": "Lettere a Lucilio, 15", "fonte": "seneca-epistulae-la.txt" },
+  { "it": "Lunga è la strada dei precetti, breve ed efficace quella degli esempi.", "originale": "longum iter est per praecepta, breve et efficax per exempla", "autore": "Seneca", "opera": "Lettere a Lucilio, 6", "fonte": "seneca-epistulae-la.txt" },
+  { "it": "Ritirati in te stesso, quanto più puoi.", "originale": "Recede in te ipse quantum potes", "autore": "Seneca", "opera": "Lettere a Lucilio, 7", "fonte": "seneca-epistulae-la.txt" },
+  { "it": "Dà al corpo meno spazio che puoi, e fa' largo all'animo.", "originale": "quantum potes circumscribe corpus tuum et animo locum laxa", "autore": "Seneca", "opera": "Lettere a Lucilio, 15", "fonte": "seneca-epistulae-la.txt" },
+  { "it": "La vita, se sai usarla, è lunga.", "originale": "vita, si uti scias, longa est", "autore": "Seneca", "opera": "La brevità della vita, 2", "fonte": "seneca-brevitate-la.txt" },
+
+  { "it": "Non c'è ritiro migliore, per un uomo, della propria anima.", "originale": "A man cannot any whither retire better than to his own soul", "autore": "Marco Aurelio", "opera": "Pensieri, IV, 3", "fonte": "marcus-en.txt" },
+  { "it": "La vita è breve: guadagniamoci il tempo presente con giudizio e giustizia.", "originale": "our life is short; we must endeavour to gain the present time with best discretion and justice", "autore": "Marco Aurelio", "opera": "Pensieri, IV, 21", "fonte": "marcus-en.txt" },
+  { "it": "Prendi lo svago con sobrietà.", "originale": "Use recreation with sobriety", "autore": "Marco Aurelio", "opera": "Pensieri, IV, 21", "fonte": "marcus-en.txt" },
+  { "it": "Guarda quanto in fretta ogni cosa si scioglie e si disfa.", "originale": "Consider how quickly all things are dissolved and resolved", "autore": "Marco Aurelio", "opera": "Pensieri, II, 9", "fonte": "marcus-en.txt" },
+
+  { "it": "È mattina quando sono sveglio, e dentro di me c'è un'alba.", "originale": "Morning is when I am awake and there is a dawn in me", "autore": "Thoreau", "opera": "Walden, II", "fonte": "walden-en.txt" },
+  { "it": "La riforma morale è lo sforzo di scrollarsi di dosso il sonno.", "originale": "Moral reform is the effort to throw off sleep", "autore": "Thoreau", "opera": "Walden, II", "fonte": "walden-en.txt" },
+
+  { "it": "Il tempo perduto non si ritrova più.", "originale": "Lost Time is never found again", "autore": "Benjamin Franklin", "opera": "La via della ricchezza, 1758", "fonte": "franklin-en.txt" },
+  { "it": "Guida tu i tuoi affari, non farti guidare da loro.", "originale": "Drive thy Business, let not that drive thee", "autore": "Benjamin Franklin", "opera": "La via della ricchezza, 1758", "fonte": "franklin-en.txt" },
+  { "it": "La pigrizia consuma più della fatica: la chiave che si usa resta lucida.", "originale": "Sloth, like Rust, consumes faster than Labor wears; while the used key is always bright", "autore": "Benjamin Franklin", "opera": "La via della ricchezza, 1758", "fonte": "franklin-en.txt" },
+
+  { "it": "La lettura fa l'uomo completo, il parlare l'uomo pronto, lo scrivere l'uomo esatto.", "originale": "Reading maketh a full man; conference a ready man; and writing an exact man", "autore": "Francis Bacon", "opera": "Saggi, Degli studi", "fonte": "bacon-en.txt" },
+  { "it": "La natura spesso si nasconde, a volte si vince, di rado si spegne.", "originale": "NATURE is often hidden; sometimes overcome; seldom extinguished", "autore": "Francis Bacon", "opera": "Saggi, Della natura negli uomini", "fonte": "bacon-en.txt" },
+
+  { "it": "Niente di grande è mai stato fatto senza entusiasmo.", "originale": "Nothing great was ever achieved without enthusiasm", "autore": "Emerson", "opera": "Saggi, Cerchi", "fonte": "emerson-en.txt" },
+
+  { "it": "Me ne sto in ozio e invito la mia anima.", "originale": "I loafe and invite my soul", "autore": "Walt Whitman", "opera": "Foglie d'erba, Canto di me stesso, 1", "fonte": "whitman-en.txt" },
+  { "it": "Esisto come sono, e questo basta.", "originale": "I exist as I am, that is enough", "autore": "Walt Whitman", "opera": "Foglie d'erba, Canto di me stesso, 20", "fonte": "whitman-en.txt" },
+
+  { "it": "Il corpo è una grande ragione, una molteplicità con un senso solo, una guerra e una pace, un gregge e un pastore.", "originale": "Der Leib ist eine grosse Vernunft, eine Vielheit mit Einem Sinne, ein Krieg und ein Frieden, eine Heerde und ein Hirt", "autore": "Nietzsche", "opera": "Così parlò Zarathustra, I, Dei disprezzatori del corpo", "fonte": "nietzsche-zarathustra-de.txt" },
+  { "it": "In montagna la via più breve va da cima a cima, ma ci vogliono gambe lunghe.", "originale": "Im Gebirge ist der nächste Weg von Gipfel zu Gipfel: aber dazu musst du lange Beine haben", "autore": "Nietzsche", "opera": "Così parlò Zarathustra, I, Del leggere e dello scrivere", "fonte": "nietzsche-zarathustra-de.txt" },
+  { "it": "Voi guardate in alto quando volete sollevarvi. Io guardo in basso, perché sono sollevato.", "originale": "Ihr seht nach Oben, wenn ihr nach Erhebung verlangt. Und ich sehe hinab, weil ich erhoben bin", "autore": "Nietzsche", "opera": "Così parlò Zarathustra, I, Del leggere e dello scrivere", "fonte": "nietzsche-zarathustra-de.txt" },
+
+  { "it": "C'è differenza fra la fatica e il disagio, e fra il vivere quieto e il vivere ozioso.", "originale": "ben sai che differenza e dalla fatica al disagio, e dal viver quieto al vivere ozioso", "autore": "Leopardi", "opera": "Operette morali, Dialogo della Natura e di un Islandese", "fonte": "leopardi-operette-it.txt" }
+]

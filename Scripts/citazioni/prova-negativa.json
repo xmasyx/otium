@@ -1,0 +1,13 @@
+[
+  { "it": "Una citazione vera, per provare che il cancello sa dire di sì.", "originale": "Lost Time is never found again", "autore": "Benjamin Franklin", "opera": "La via della ricchezza, 1758", "fonte": "franklin-en.txt" },
+
+  { "it": "La calma è la forma più alta del movimento.", "originale": "Calmness is the highest form of movement", "autore": "Seneca", "opera": "Lettere a Lucilio, 44", "fonte": "seneca-epistulae-la.txt" },
+
+  { "it": "Chi sembra non fare nulla, sta facendo le cose più grandi.", "originale": "qui nihil agere videntur maiora agunt", "autore": "Seneca", "opera": "Lettere a Lucilio, 8", "fonte": "seneca-epistulae-la.txt" },
+
+  { "it": "Tutto è d'altri, Lucilio: solo il tempo è nostro.", "originale": "Omnia, Lucili, aliena sunt, tempus tantum nostrum est", "autore": "Seneca", "opera": "Lettere a Lucilio, 1", "fonte": "seneca-epistulae-la.txt" },
+
+  { "it": "Il riposo è un dono che ci si fa da soli.", "originale": "Recede in te ipse quantum potes", "autore": "Seneca", "opera": "Lettere a Lucilio, tradizione stoica", "fonte": "seneca-epistulae-la.txt" },
+
+  { "it": "Questa frase è lunghissima di proposito, perché deve superare il limite di caratteri che rende una riga illeggibile sullo schermo di una pausa, e quindi non deve passare il cancello in nessun caso.", "originale": "Recede in te ipse quantum potes", "autore": "Seneca", "opera": "Lettere a Lucilio, 7", "fonte": "seneca-epistulae-la.txt" }
+]

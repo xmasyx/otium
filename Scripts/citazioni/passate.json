@@ -1,0 +1,933 @@
+[
+  {
+    "it": "Ci sono esercizi facili e brevi, che stancano il corpo subito e risparmiano il tempo.",
+    "originale": "Sunt exercitationes et faciles et breves, quae corpus et sine mora lassent et tempori parcant",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 15",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Chi sembra non fare nulla, sta facendo le cose più grandi.",
+    "originale": "qui nihil agere videntur maiora agunt",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 8",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Il moto scuote il corpo e non toglie niente allo studio.",
+    "originale": "Gestatio et corpus concutit et studio non officit",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 15",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Lunga è la strada dei precetti, breve ed efficace quella degli esempi.",
+    "originale": "longum iter est per praecepta, breve et efficax per exempla",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 6",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Ritirati in te stesso, quanto più puoi.",
+    "originale": "Recede in te ipse quantum potes",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 7",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Dà al corpo meno spazio che puoi, e fa' largo all'animo.",
+    "originale": "quantum potes circumscribe corpus tuum et animo locum laxa",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 15",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "La vita, se sai usarla, è lunga.",
+    "originale": "vita, si uti scias, longa est",
+    "autore": "Seneca",
+    "opera": "La brevità della vita, 2",
+    "fonte": "seneca-brevitate-la.txt"
+  },
+  {
+    "it": "Non c'è ritiro migliore, per un uomo, della propria anima.",
+    "originale": "A man cannot any whither retire better than to his own soul",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, IV, 3",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "La vita è breve: guadagniamoci il tempo presente con giudizio e giustizia.",
+    "originale": "our life is short; we must endeavour to gain the present time with best discretion and justice",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, IV, 21",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Prendi lo svago con sobrietà.",
+    "originale": "Use recreation with sobriety",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, IV, 21",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Guarda quanto in fretta ogni cosa si scioglie e si disfa.",
+    "originale": "Consider how quickly all things are dissolved and resolved",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, II, 9",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "È mattina quando sono sveglio, e dentro di me c'è un'alba.",
+    "originale": "Morning is when I am awake and there is a dawn in me",
+    "autore": "Thoreau",
+    "opera": "Walden, II",
+    "fonte": "walden-en.txt"
+  },
+  {
+    "it": "La riforma morale è lo sforzo di scrollarsi di dosso il sonno.",
+    "originale": "Moral reform is the effort to throw off sleep",
+    "autore": "Thoreau",
+    "opera": "Walden, II",
+    "fonte": "walden-en.txt"
+  },
+  {
+    "it": "Il tempo perduto non si ritrova più.",
+    "originale": "Lost Time is never found again",
+    "autore": "Benjamin Franklin",
+    "opera": "La via della ricchezza, 1758",
+    "fonte": "franklin-en.txt"
+  },
+  {
+    "it": "Guida tu i tuoi affari, non farti guidare da loro.",
+    "originale": "Drive thy Business, let not that drive thee",
+    "autore": "Benjamin Franklin",
+    "opera": "La via della ricchezza, 1758",
+    "fonte": "franklin-en.txt"
+  },
+  {
+    "it": "La pigrizia consuma più della fatica: la chiave che si usa resta lucida.",
+    "originale": "Sloth, like Rust, consumes faster than Labor wears; while the used key is always bright",
+    "autore": "Benjamin Franklin",
+    "opera": "La via della ricchezza, 1758",
+    "fonte": "franklin-en.txt"
+  },
+  {
+    "it": "La lettura fa l'uomo completo, il parlare l'uomo pronto, lo scrivere l'uomo esatto.",
+    "originale": "Reading maketh a full man; conference a ready man; and writing an exact man",
+    "autore": "Francis Bacon",
+    "opera": "Saggi, Degli studi",
+    "fonte": "bacon-en.txt"
+  },
+  {
+    "it": "La natura spesso si nasconde, a volte si vince, di rado si spegne.",
+    "originale": "NATURE is often hidden; sometimes overcome; seldom extinguished",
+    "autore": "Francis Bacon",
+    "opera": "Saggi, Della natura negli uomini",
+    "fonte": "bacon-en.txt"
+  },
+  {
+    "it": "Niente di grande è mai stato fatto senza entusiasmo.",
+    "originale": "Nothing great was ever achieved without enthusiasm",
+    "autore": "Emerson",
+    "opera": "Saggi, Cerchi",
+    "fonte": "emerson-en.txt"
+  },
+  {
+    "it": "Me ne sto in ozio e invito la mia anima.",
+    "originale": "I loafe and invite my soul",
+    "autore": "Walt Whitman",
+    "opera": "Foglie d'erba, Canto di me stesso, 1",
+    "fonte": "whitman-en.txt"
+  },
+  {
+    "it": "Esisto come sono, e questo basta.",
+    "originale": "I exist as I am, that is enough",
+    "autore": "Walt Whitman",
+    "opera": "Foglie d'erba, Canto di me stesso, 20",
+    "fonte": "whitman-en.txt"
+  },
+  {
+    "it": "Il corpo è una grande ragione, una molteplicità con un senso solo, una guerra e una pace, un gregge e un pastore.",
+    "originale": "Der Leib ist eine grosse Vernunft, eine Vielheit mit Einem Sinne, ein Krieg und ein Frieden, eine Heerde und ein Hirt",
+    "autore": "Nietzsche",
+    "opera": "Così parlò Zarathustra, I, Dei disprezzatori del corpo",
+    "fonte": "nietzsche-zarathustra-de.txt"
+  },
+  {
+    "it": "In montagna la via più breve va da cima a cima, ma ci vogliono gambe lunghe.",
+    "originale": "Im Gebirge ist der nächste Weg von Gipfel zu Gipfel: aber dazu musst du lange Beine haben",
+    "autore": "Nietzsche",
+    "opera": "Così parlò Zarathustra, I, Del leggere e dello scrivere",
+    "fonte": "nietzsche-zarathustra-de.txt"
+  },
+  {
+    "it": "Voi guardate in alto quando volete sollevarvi. Io guardo in basso, perché sono sollevato.",
+    "originale": "Ihr seht nach Oben, wenn ihr nach Erhebung verlangt. Und ich sehe hinab, weil ich erhoben bin",
+    "autore": "Nietzsche",
+    "opera": "Così parlò Zarathustra, I, Del leggere e dello scrivere",
+    "fonte": "nietzsche-zarathustra-de.txt"
+  },
+  {
+    "it": "C'è differenza fra la fatica e il disagio, e fra il vivere quieto e il vivere ozioso.",
+    "originale": "ben sai che differenza e dalla fatica al disagio, e dal viver quieto al vivere ozioso",
+    "autore": "Leopardi",
+    "opera": "Operette morali, Dialogo della Natura e di un Islandese",
+    "fonte": "leopardi-operette-it.txt"
+  },
+  {
+    "it": "Rivendica te stesso a te stesso, e raccogli il tempo che finora ti veniva portato via.",
+    "originale": "vindica te tibi, et tempus quod adhuc aut auferebatur aut subripiebatur aut excidebat collige et serva",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 1",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Certi tempi ci vengono strappati, altri sottratti, altri semplicemente scorrono via.",
+    "originale": "quaedam tempora eripiuntur nobis, quaedam subducuntur, quaedam effluunt",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 1",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Gran parte della vita se ne va a chi agisce male, la maggior parte a chi non fa niente, tutta quanta a chi fa altro.",
+    "originale": "magna pars vitae elabitur male agentibus, maxima nihil agentibus, tota vita aliud agentibus",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 1",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Dipenderai meno dal domani, se metti le mani sull'oggi.",
+    "originale": "sic fiet ut minus ex crastino pendeas, si hodierno manum inieceris",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 1",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Chi riposa deve agire, e chi agisce deve riposare.",
+    "originale": "et quiescenti agendum et agenti quiescendum est",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 3",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Sbagliano tutti e due: chi non sta mai fermo, e chi sta fermo sempre.",
+    "originale": "Sic utrosque reprehendas, et eos qui semper inquieti sunt, et eos qui semper quiescunt",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 3",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Concedi al corpo solo quanto basta a stare in salute.",
+    "originale": "corpori tantum indulgeatis quantum bonae valetudini satis est",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 8",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Chiedi una mente sana, poi la salute dell'animo, e solo dopo quella del corpo.",
+    "originale": "roga bonam mentem, bonam valetudinem animi, deinde tunc corporis",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 10",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Ordina ogni giornata come se chiudesse la fila, e completasse la vita.",
+    "originale": "Itaque sic ordinandus est dies omnis tamquam cogat agmen et consummet atque expleat vitam",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 12",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Un giorno solo vale quanto tutti gli altri.",
+    "originale": "unus' inquit 'dies par omni est",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 12",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Il giro del giorno è strettissimo, eppure anche lui va da un inizio a una fine, dall'alba al tramonto.",
+    "originale": "angustissimum habet dies gyrum, sed et hic ab initio ad exitum venit, ab ortu ad occasum",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 12",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Al saggio basta sé stesso per vivere bene, non per vivere.",
+    "originale": "se contentus est sapiens ad beate vivendum, non ad vivendum",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 9",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "L'animo abbia qualcuno che rispetta: basta la sua autorità a rendere più pulito anche ciò che fai da solo.",
+    "originale": "Aliquem habeat animus quem vereatur, cuius auctoritate etiam secretum suum sanctius faciat",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 11",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Vivi con gli uomini come se ti vedesse un dio, parla con dio come se ti ascoltassero gli uomini.",
+    "originale": "sic vive cum hominibus tamquam deus videat, sic loquere cum deo tamquam homines audiant",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 10",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "In qualunque momento vuoi, puoi ritirarti in te stesso e stare in pace, libero da ogni faccenda.",
+    "originale": "it is in thy power to retire into thyself, and to be at rest, and free from all businesses",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, IV, 3",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Quello che sto per fare, non sarà per caso una delle cose che non servono?",
+    "originale": "may not this that now I go about, be of the number of unnecessary actions",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, IV, 20",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Curava il corpo con misura, non come chi vuole vivere a lungo.",
+    "originale": "his care of his body within bounds and measure, not as one that desired to live long",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, I, 13",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Fa' il tuo lavoro, qualunque sia, fino in fondo e senza lamentarti.",
+    "originale": "to do my business, whatsoever it be, thoroughly, and without querulousness",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, I, 12",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Tutto quello che appartiene al corpo è come un fiume.",
+    "originale": "as a stream so are all things belonging to the body",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, II, 15",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Non fare niente controvoglia, né senza averlo esaminato, né a malincuore.",
+    "originale": "Do nothing against thy will, nor contrary to the community, nor without due examination, nor with reluctancy",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, III, 5",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Scegli liberamente ciò che è meglio, e restaci attaccato.",
+    "originale": "make choice of that which is best, and stick unto it",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, III, 7",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Ogni mattina era un invito a rendere la mia vita semplice, e direi innocente, quanto la natura stessa.",
+    "originale": "Every morning was a cheerful invitation to make my life of equal simplicity, and I may say innocence, with Nature herself",
+    "autore": "Thoreau",
+    "opera": "Walden, II",
+    "fonte": "walden-en.txt"
+  },
+  {
+    "it": "Il mattino, la stagione più memorabile del giorno, è l'ora del risveglio.",
+    "originale": "The morning, which is the most memorable season of the day, is the awakening hour",
+    "autore": "Thoreau",
+    "opera": "Walden, II",
+    "fonte": "walden-en.txt"
+  },
+  {
+    "it": "Per chi tiene il passo del sole col pensiero, il giorno è un mattino perpetuo.",
+    "originale": "To him whose elastic and vigorous thought keeps pace with the sun, the day is a perpetual morning",
+    "autore": "Thoreau",
+    "opera": "Walden, II",
+    "fonte": "walden-en.txt"
+  },
+  {
+    "it": "I libri vanno letti con la stessa lentezza voluta con cui sono stati scritti.",
+    "originale": "Books must be read as deliberately and reservedly as they were written",
+    "autore": "Thoreau",
+    "opera": "Walden, III",
+    "fonte": "walden-en.txt"
+  },
+  {
+    "it": "C'erano momenti in cui non potevo sacrificare il fiore dell'istante presente a nessun lavoro, né di testa né di mani.",
+    "originale": "I could not afford to sacrifice the bloom of the present moment to any work, whether of the head or hands",
+    "autore": "Thoreau",
+    "opera": "Walden, IV",
+    "fonte": "walden-en.txt"
+  },
+  {
+    "it": "Era mattina, ed ecco è già sera, e non è stato fatto niente di memorabile.",
+    "originale": "it was morning, and lo, now it is evening, and nothing memorable is accomplished",
+    "autore": "Thoreau",
+    "opera": "Walden, IV",
+    "fonte": "walden-en.txt"
+  },
+  {
+    "it": "Passiamo un giorno con la stessa calma deliberata della natura.",
+    "originale": "Let us spend one day as deliberately as Nature",
+    "autore": "Thoreau",
+    "opera": "Walden, II",
+    "fonte": "walden-en.txt"
+  },
+  {
+    "it": "Gli studi servono al diletto, all'ornamento e alla capacità.",
+    "originale": "Studies serve for delight, for ornament, and for ability",
+    "autore": "Francis Bacon",
+    "opera": "Saggi, Degli studi",
+    "fonte": "bacon-en.txt"
+  },
+  {
+    "it": "Certi libri vanno assaggiati, altri inghiottiti, e pochi masticati e digeriti.",
+    "originale": "Some books are to be tasted, others to be swallowed, and some few to be chewed and digested",
+    "autore": "Francis Bacon",
+    "opera": "Saggi, Degli studi",
+    "fonte": "bacon-en.txt"
+  },
+  {
+    "it": "Le storie rendono saggi, i poeti arguti, la matematica sottili, la filosofia naturale profondi.",
+    "originale": "Histories make men wise; poets witty; the mathematics subtile; natural philosophy deep",
+    "autore": "Francis Bacon",
+    "opera": "Saggi, Degli studi",
+    "fonte": "bacon-en.txt"
+  },
+  {
+    "it": "La tua osservazione di ciò che ti fa bene e di ciò che ti fa male è la miglior medicina per restare sano.",
+    "originale": "a man's own observation, what he finds good of, and what he finds hurt of, is the best physic to preserve health",
+    "autore": "Francis Bacon",
+    "opera": "Saggi, Del regime della salute",
+    "fonte": "bacon-en.txt"
+  },
+  {
+    "it": "L'abitudine è il magistrato principale della vita di un uomo.",
+    "originale": "Custom is the principal magistrate of man's life",
+    "autore": "Francis Bacon",
+    "opera": "Saggi, Dell'abitudine e dell'educazione",
+    "fonte": "bacon-en.txt"
+  },
+  {
+    "it": "Il tempo è la misura del lavoro, come il denaro è la misura delle merci.",
+    "originale": "Time is the measure of business, as money is of wares",
+    "autore": "Francis Bacon",
+    "opera": "Saggi, Della speditezza",
+    "fonte": "bacon-en.txt"
+  },
+  {
+    "it": "Chi non vuole applicare rimedi nuovi deve aspettarsi guai nuovi: il tempo è il più grande innovatore.",
+    "originale": "He that will not apply new remedies, must expect new evils; for time is the greatest innovator",
+    "autore": "Francis Bacon",
+    "opera": "Saggi, Delle innovazioni",
+    "fonte": "bacon-en.txt"
+  },
+  {
+    "it": "Ogni eccesso produce un difetto, e ogni difetto un eccesso.",
+    "originale": "Every excess causes a defect; every defect an excess",
+    "autore": "Emerson",
+    "opera": "Saggi, Compensazione",
+    "fonte": "emerson-en.txt"
+  },
+  {
+    "it": "La fiducia in sé è l'essenza dell'eroismo.",
+    "originale": "Self-trust is the essence of heroism",
+    "autore": "Emerson",
+    "opera": "Saggi, Eroismo",
+    "fonte": "emerson-en.txt"
+  },
+  {
+    "it": "La vita dell'uomo è un cerchio che si allarga da sé.",
+    "originale": "The life of man is a self-evolving circle",
+    "autore": "Emerson",
+    "opera": "Saggi, Cerchi",
+    "fonte": "emerson-en.txt"
+  },
+  {
+    "it": "La prudenza è la virtù dei sensi.",
+    "originale": "Prudence is the virtue of the senses",
+    "autore": "Emerson",
+    "opera": "Saggi, Prudenza",
+    "fonte": "emerson-en.txt"
+  },
+  {
+    "it": "Presto a letto e presto in piedi rende un uomo sano, ricco e saggio.",
+    "originale": "Early to Bed, and early to rise, makes a Man healthy, wealthy, and wise",
+    "autore": "Benjamin Franklin",
+    "opera": "La via della ricchezza, 1758",
+    "fonte": "franklin-en.txt"
+  },
+  {
+    "it": "Un oggi vale due domani.",
+    "originale": "One To-day is worth two To-morrows",
+    "autore": "Benjamin Franklin",
+    "opera": "La via della ricchezza, 1758",
+    "fonte": "franklin-en.txt"
+  },
+  {
+    "it": "Hai qualcosa da fare domani? Fallo oggi.",
+    "originale": "Have you somewhat to do to-morrow, do it to-day",
+    "autore": "Benjamin Franklin",
+    "opera": "La via della ricchezza, 1758",
+    "fonte": "franklin-en.txt"
+  },
+  {
+    "it": "La diligenza è la madre della buona sorte.",
+    "originale": "Diligence is the Mother of Good-luck",
+    "autore": "Benjamin Franklin",
+    "opera": "La via della ricchezza, 1758",
+    "fonte": "franklin-en.txt"
+  },
+  {
+    "it": "Sono più grande e migliore di quanto pensassi: non sapevo di contenere tanto bene.",
+    "originale": "I am larger, better than I thought, I did not know I held so much goodness",
+    "autore": "Walt Whitman",
+    "opera": "Foglie d'erba, Canto della strada aperta",
+    "fonte": "whitman-en.txt"
+  },
+  {
+    "it": "Da adesso non chiedo più la buona sorte: la buona sorte sono io.",
+    "originale": "Henceforth I ask not good-fortune, I myself am good-fortune",
+    "autore": "Walt Whitman",
+    "opera": "Foglie d'erba, Canto della strada aperta",
+    "fonte": "whitman-en.txt"
+  },
+  {
+    "it": "Mi appoggio e me ne sto in ozio, guardando un filo d'erba d'estate.",
+    "originale": "I lean and loafe at my ease observing a spear of summer grass",
+    "autore": "Walt Whitman",
+    "opera": "Foglie d'erba, Canto di me stesso, 1",
+    "fonte": "whitman-en.txt"
+  },
+  {
+    "it": "Il segno più evidente della saggezza è un'allegria continua.",
+    "originale": "The most manifest sign of wisdom is a continual cheerfulness",
+    "autore": "Montaigne",
+    "opera": "Saggi, I, 25",
+    "fonte": "montaigne-en.txt"
+  },
+  {
+    "it": "Ci insegnano a vivere quando la vita è quasi finita.",
+    "originale": "They begin to teach us to live when we have almost done living",
+    "autore": "Montaigne",
+    "opera": "Saggi, I, 26",
+    "fonte": "montaigne-en.txt"
+  },
+  {
+    "it": "Il modo in cui conduciamo la vita è lo specchio vero di ciò che pensiamo.",
+    "originale": "The conduct of our lives is the true mirror of our doctrine",
+    "autore": "Montaigne",
+    "opera": "Saggi, I, 51",
+    "fonte": "montaigne-en.txt"
+  },
+  {
+    "it": "Ciò per cui non vuoi tremare al momento buono, allenalo prima.",
+    "originale": "quem in ipsa re trepidare nolueris, ante rem exerceas",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 18",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Se vuoi avere l'animo libero, devi essere povero o vivere come uno che lo è.",
+    "originale": "Si vis vacare animo, aut pauper sis oportet aut pauperi similis",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 17",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Prendi una regola sola per vivere, e adegua a quella tutta la vita.",
+    "originale": "unam semel ad quam vivas regulam prende et ad hanc omnem vitam tuam exaequa",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 20",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Il giudizio cambia ogni giorno e si rovescia, e per i più la vita passa come un gioco.",
+    "originale": "variatur cotidie iudicium et in contrarium vertitur ac plerisque agitur vita per lusum",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 20",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Non c'è da aggiungere anni: c'è da togliere desideri.",
+    "originale": "non annis adiciendum est sed cupiditatibus detrahendum",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 21",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "L'animo dev'essere sveglio, fiducioso e dritto sopra ogni cosa.",
+    "originale": "animus esse debet alacer et fidens et supra omnia erectus",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 23",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Vive male chi comincia sempre a vivere.",
+    "originale": "male vivunt qui semper vivere incipiunt",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 23",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Certi hanno smesso di vivere prima ancora di cominciare.",
+    "originale": "quidam ante vivere desierunt quam inciperent",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 23",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Ogni giorno ci viene tolta una parte di vita, e anche mentre cresciamo la vita cala.",
+    "originale": "cotidie enim demitur aliqua pars vitae, et tunc quoque cum crescimus vita decrescit",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 24",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Non amare troppo la vita, e non odiarla troppo.",
+    "originale": "et ne nimis amemus vitam et ne nimis oderimus",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 24",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "La notte incalza il giorno e il giorno la notte, l'estate finisce nell'autunno.",
+    "originale": "diem nox premit, dies noctem, aestas in autumnum desinit",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 24",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Non starà dentro gli affari per amore degli affari.",
+    "originale": "nec in negotiis erit negotii causa",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 22",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Il corpo è una cosa più necessaria che grande.",
+    "originale": "Corpusculum quoque etiam si nihil fieri sine illo potest, magis necessariam rem crede quam magnam",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 23",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Va svegliato dal sonno l'animo, e scosso.",
+    "originale": "Potius excitandus e somno et vellicandus est animus",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 20",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Alleniamoci al palo, perché la sorte non ci trovi impreparati.",
+    "originale": "Exerceamur ad palum, et ne imparatos fortuna deprehendat",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 18",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "La vita non si potrebbe conservare, se non fosse interrotta di frequente.",
+    "originale": "Perocché la vita non si potrebbe conservare se ella non fosse interrotta frequentemente",
+    "autore": "Leopardi",
+    "opera": "Operette morali, Cantico del gallo silvestre",
+    "fonte": "leopardi-operette-it.txt"
+  },
+  {
+    "it": "Il primo tempo del giorno è di solito il più sopportabile.",
+    "originale": "il primo tempo del giorno suol essere ai viventi il più comportabile",
+    "autore": "Leopardi",
+    "opera": "Operette morali, Cantico del gallo silvestre",
+    "fonte": "leopardi-operette-it.txt"
+  },
+  {
+    "it": "Molti affanni, al mattino, paiono assai minori di quanto parvero la sera prima.",
+    "originale": "molte cause di timore e di affanno, paiono in quel tempo minori assai, che non parvero la sera innanzi",
+    "autore": "Leopardi",
+    "opera": "Operette morali, Cantico del gallo silvestre",
+    "fonte": "leopardi-operette-it.txt"
+  },
+  {
+    "it": "Su, mortali, destatevi. Il dì rinasce.",
+    "originale": "Su, mortali, destatevi. Il dì rinasce",
+    "autore": "Leopardi",
+    "opera": "Operette morali, Cantico del gallo silvestre",
+    "fonte": "leopardi-operette-it.txt"
+  },
+  {
+    "it": "Sorgete, ripigliatevi la soma della vita, riducetevi dal mondo falso nel vero.",
+    "originale": "ripigliatevi la soma della vita; riducetevi dal mondo falso nel vero",
+    "autore": "Leopardi",
+    "opera": "Operette morali, Cantico del gallo silvestre",
+    "fonte": "leopardi-operette-it.txt"
+  },
+  {
+    "it": "Chi sta in punta di piedi non sta saldo; chi allarga il passo non cammina.",
+    "originale": "He who stands on his tiptoes does not stand firm",
+    "autore": "Laozi",
+    "opera": "Tao Te Ching, 24",
+    "fonte": "taoteching-en.txt"
+  },
+  {
+    "it": "Il morbido e il debole vincono il duro e il forte.",
+    "originale": "The soft overcomes the hard; and the weak the strong",
+    "autore": "Laozi",
+    "opera": "Tao Te Ching, 36",
+    "fonte": "taoteching-en.txt"
+  },
+  {
+    "it": "Imparare senza pensare è fatica sprecata.",
+    "originale": "Learning without thought is labour lost",
+    "autore": "Confucio",
+    "opera": "Dialoghi, II, 15",
+    "fonte": "analects-en.txt"
+  },
+  {
+    "it": "Chi ripassa il vecchio e ne ricava il nuovo può essere maestro.",
+    "originale": "If a man keeps cherishing his old knowledge, so as continually to be acquiring new",
+    "autore": "Confucio",
+    "opera": "Dialoghi, II, 11",
+    "fonte": "analects-en.txt"
+  },
+  {
+    "it": "Tutto quello che solleva l'animo fa bene anche al corpo.",
+    "originale": "quidquid animum erexit etiam corpori prodest",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 78",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Il medico ti dirà quanto camminare e quanto esercitarti.",
+    "originale": "Medicus tibi quantum ambules, quantum exercearis monstrabit",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 78",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Non cedere all'ozio, che è dove scivola la salute pigra.",
+    "originale": "ne indulgeas otio, ad quod vergit iners valetudo",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 78",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Quanti allenano il corpo, e quanto pochi l'ingegno.",
+    "originale": "Cogito mecum quam multi corpora exerceant, ingenia quam pauci",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 80",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "L'animo cresce da sé, si nutre da sé, si allena da sé.",
+    "originale": "animus ex se crescit, se ipse alit, se exercet",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 80",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Il posto va scelto sano non solo per il corpo, ma anche per il carattere.",
+    "originale": "Non tantum corpori sed etiam moribus salubrem locum eligere debemus",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 51",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Torno adesso da un giro, stanco come se avessi camminato quanto sono stato seduto.",
+    "originale": "A gestatione cum maxime venio, non minus fatigatus quam si tantum ambulassem quantum sedi",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 55",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "C'è una gran differenza fra una vita di ozio e una vita inerte.",
+    "originale": "multum autem interest utrum vita tua otiosa sit an ignava",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 55",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Studia con me, cena con me, cammina con me.",
+    "originale": "Itaque mecum stude, mecum cena, mecum ambula",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 55",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Non c'è quiete davvero tranquilla se non quella che la ragione ha messo in ordine.",
+    "originale": "nulla placida est quies nisi quam ratio composuit",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 56",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Solo la filosofia ci sveglia, solo lei scuote via il sonno pesante.",
+    "originale": "Sola autem nos philosophia excitabit, sola somnum excutiet gravem",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 53",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Per sapere se hai fatto progressi, guarda se vuoi oggi le stesse cose di ieri.",
+    "originale": "Quotiens experiri voles an aliquid actum sit, observa an eadem hodie velis quae heri",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 35",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Cibo, sonno, desiderio: si corre sempre dentro questo cerchio.",
+    "originale": "cibus, somnus, libido -- per hunc circulum curritur",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 77",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Come chiamarlo, se non un dio ospitato dentro un corpo umano?",
+    "originale": "Quid aliud voces hunc quam deum in corpore humano hospitantem",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 31",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Anche le mani che passano dall'aratro alle armi non rifiutano nessuna fatica.",
+    "originale": "Nullum laborem recusant manus quae ad arma ab aratro transferuntur",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 51",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Confessare i propri difetti è già un segno di salute.",
+    "originale": "vitia sua confiteri sanitatis indicium est",
+    "autore": "Seneca",
+    "opera": "Lettere a Lucilio, 53",
+    "fonte": "seneca-epistulae-la.txt"
+  },
+  {
+    "it": "Sono corpo, tutto intero, e nient'altro.",
+    "originale": "Leib bin ich ganz und gar, und Nichts ausserdem",
+    "autore": "Nietzsche",
+    "opera": "Così parlò Zarathustra, I, Dei disprezzatori del corpo",
+    "fonte": "nietzsche-zarathustra-de.txt"
+  },
+  {
+    "it": "Anche la tua piccola ragione, quella che chiami spirito, è uno strumento del tuo corpo.",
+    "originale": "Werkzeug deines Leibes ist auch deine kleine Vernunft",
+    "autore": "Nietzsche",
+    "opera": "Così parlò Zarathustra, I, Dei disprezzatori del corpo",
+    "fonte": "nietzsche-zarathustra-de.txt"
+  },
+  {
+    "it": "Restate fedeli alla terra.",
+    "originale": "bleibt der Erde treu",
+    "autore": "Nietzsche",
+    "opera": "Così parlò Zarathustra, Prologo, 3",
+    "fonte": "nietzsche-zarathustra-de.txt"
+  },
+  {
+    "it": "Chi scrive col sangue non vuole essere letto, vuole essere imparato a memoria.",
+    "originale": "Wer in Blut und Sprüchen schreibt, der will nicht gelesen, sondern auswendig gelernt werden",
+    "autore": "Nietzsche",
+    "opera": "Così parlò Zarathustra, I, Del leggere e dello scrivere",
+    "fonte": "nietzsche-zarathustra-de.txt"
+  },
+  {
+    "it": "Le massime devono essere cime.",
+    "originale": "Sprüche sollen Gipfel sein",
+    "autore": "Nietzsche",
+    "opera": "Così parlò Zarathustra, I, Del leggere e dello scrivere",
+    "fonte": "nietzsche-zarathustra-de.txt"
+  },
+  {
+    "it": "Aria sottile e pulita, il pericolo vicino, e lo spirito pieno di una cattiveria allegra: stanno bene insieme.",
+    "originale": "Die Luft dünn und rein, die Gefahr nahe und der Geist voll einer fröhlichen Bosheit",
+    "autore": "Nietzsche",
+    "opera": "Così parlò Zarathustra, I, Del leggere e dello scrivere",
+    "fonte": "nietzsche-zarathustra-de.txt"
+  },
+  {
+    "it": "Il coraggio vuole ridere.",
+    "originale": "der Muth will lachen",
+    "autore": "Nietzsche",
+    "opera": "Così parlò Zarathustra, I, Del leggere e dello scrivere",
+    "fonte": "nietzsche-zarathustra-de.txt"
+  },
+  {
+    "it": "Chi di voi sa insieme ridere ed essere sollevato?",
+    "originale": "Wer von euch kann zugleich lachen und erhoben sein",
+    "autore": "Nietzsche",
+    "opera": "Così parlò Zarathustra, I, Del leggere e dello scrivere",
+    "fonte": "nietzsche-zarathustra-de.txt"
+  },
+  {
+    "it": "Il valore della vita non sta nella lunghezza dei giorni, ma nell'uso che ne facciamo.",
+    "originale": "The utility of living consists not in the length of days, but in the use of time",
+    "autore": "Montaigne",
+    "opera": "Saggi, I, 20",
+    "fonte": "montaigne-en.txt"
+  },
+  {
+    "it": "Non c'è niente di meglio, per un uomo, che limitarsi alle azioni necessarie.",
+    "originale": "there is nothing better, than for a man to confine himself to necessary actions",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, IV, 20",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Gran parte di quello che diciamo e facciamo non serve.",
+    "originale": "most of those things, which we either speak or do, are unnecessary",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, IV, 20",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Smetti di tormentarti, e riducíti a una semplicità perfetta.",
+    "originale": "Trouble not thyself any more henceforth, reduce thyself unto perfect simplicity",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, IV, 21",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Qualunque mestiere tu abbia imparato, amalo, e trova conforto in quello.",
+    "originale": "What art and profession soever thou hast learned, endeavour to affect it, and comfort thyself in it",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, IV, 26",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Non ferito da ciò che è presente, né in paura di ciò che verrà.",
+    "originale": "neither wounded by that which is present, nor in fear of that which is to come",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, IV, 41",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Non corri a fare quello che la tua natura ti chiede?",
+    "originale": "Wilt not thou run to do that, which thy nature doth require",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, V, 1",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Onori la tua natura meno di quanto un artigiano onori il suo mestiere?",
+    "originale": "doest thou less honour thy nature, than an ordinary mechanic his trade",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, V, 1",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Se una cosa è giusta da dire o da fare, non svalutarti al punto di rinunciarci.",
+    "originale": "If it be right and honest to be spoken or done, undervalue not thyself so much, as to be discouraged from it",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, V, 3",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Anche la natura ti ha dato una misura, per quello come per il mangiare e il bere.",
+    "originale": "Nature hath of that also, as well as of eating and drinking, allowed thee a certain stint",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, V, 1",
+    "fonte": "marcus-en.txt"
+  },
+  {
+    "it": "Non fare niente a caso, né senza uno scopo.",
+    "originale": "never to do anything either rashly, or feignedly, or hypocritically",
+    "autore": "Marco Aurelio",
+    "opera": "Pensieri, II, 15",
+    "fonte": "marcus-en.txt"
+  }
+]
