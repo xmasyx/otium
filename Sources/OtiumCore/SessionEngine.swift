@@ -382,10 +382,12 @@ public struct SessionEngine {
         breakIndex += 1
         let factor = settings.rampFactor(now: now)
         let exercise = settings.planner.exercise(breakIndex: breakIndex, kind: kind,
-                                                 factor: factor, sex: settings.sex)
+                                                 factor: factor, sex: settings.sex,
+                                                 pushVariant: settings.pushVariant)
         // Il circuito si prepara solo dove ha senso — la pausa piena — e resta una proposta.
         let circuit = (kind == .long && settings.offerCircuit)
-            ? settings.planner.circuit(breakIndex: breakIndex, factor: factor, sex: settings.sex)
+            ? settings.planner.circuit(breakIndex: breakIndex, factor: factor, sex: settings.sex,
+                                       pushVariant: settings.pushVariant)
             : []
         return BreakPlan(
             index: breakIndex,

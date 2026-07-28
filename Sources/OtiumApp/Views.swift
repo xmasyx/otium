@@ -765,6 +765,20 @@ struct PrefsView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
+                // Una scelta fatta al primo avvio e mai più modificabile è una trappola: la terza
+                // volta che la incontro in questo file, e la terza volta che la chiudo.
+                Picker(L.t("Versione della spinta", "Push version"), selection: Binding(
+                    get: { draft.pushVariant },
+                    set: { draft.pushVariant = $0 }
+                )) {
+                    Text(L.t("automatica", "automatic")).tag(ExerciseKind?.none)
+                    Text(L.t("al muro", "wall")).tag(ExerciseKind?.some(.wallPushUp))
+                    Text(L.t("sulle ginocchia", "knees")).tag(ExerciseKind?.some(.kneePushUp))
+                    Text(L.t("su rialzo", "elevated")).tag(ExerciseKind?.some(.inclinePushUp))
+                    Text(L.t("a terra", "floor")).tag(ExerciseKind?.some(.pushUp))
+                }
+                .pickerStyle(.menu)
+
                 // «Rampa» era il calco di *ramp*: in italiano è la salita di un garage, non un
                 // modo di allenarsi. Segnalato dal principale il 2026-07-28.
                 Stepper(L.t("Partenza graduale: \(draft.rampWeeks) settimane",

@@ -19,9 +19,22 @@ struct OnboardingView: View {
     @State private var sex: Sex?
     /// Terza domanda: si comincia a metà e si sale, o si parte dai numeri interi.
     @State private var gradual = true
+    /// La versione della spinta da cui si parte. `nil` = quella che propone l'app.
+    @State private var pushVariant: ExerciseKind?
     /// Solo per le rese: permette di guardare com'è fatta la schermata **a scelta già fatta**,
     /// che è l'unico modo di giudicare il bottone selezionato senza cliccarlo a mano.
-    var preselectedSex: Sex?
+    ///
+    /// Entra nello stato dall'`init` e non da `onAppear`, perché la misura della finestra viene
+    /// presa **prima** che la vista compaia: applicandola dopo, la resa della schermata femminile
+    /// aveva la stessa altezza di quella maschile e la domanda in più restava tagliata fuori.
+    let preselectedSex: Sex?
+
+    init(model: AppModel, onDone: @escaping () -> Void, preselectedSex: Sex? = nil) {
+        self.model = model
+        self.onDone = onDone
+        self.preselectedSex = preselectedSex
+        _sex = State(initialValue: preselectedSex)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 26) {
@@ -75,8 +88,37 @@ struct OnboardingView: View {
                 }
             }
 
+            // Compare **solo a chi riceverebbe la sostituzione**: a un uomo l'app non cambia il
+            // push-up, quindi chiedergli quale preferisce sarebbe una domanda senza oggetto. Chi
+            // ha dichiarato «donna» invece la sostituzione ce l'ha già, e questa è l'unica
+            // occasione di dire «io a terra ci arrivo» prima che l'app decida per lei.
+            if sex == .female {
+                question(
+                    number: 3,
+                    title: L.t("Da quale push-up parti", "Which push-up you start from"),
+                    detail: L.t("Si cambia dalle preferenze, e dentro ogni pausa.",
+                                "You can change it in preferences, and inside any break.")
+                ) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 10) {
+                            ForEach([ExerciseKind.wallPushUp, .kneePushUp, .inclinePushUp, .pushUp],
+                                    id: \.self) { kind in
+                                choice(title: nomeBreve(kind),
+                                       selected: (pushVariant ?? .kneePushUp) == kind,
+                                       narrow: true) { pushVariant = kind }
+                            }
+                        }
+                        Text(L.t("Dal muro alle ginocchia al rialzo fino a terra: è la stessa progressione per chiunque parta da zero. Se già li fai a terra, dillo qui.",
+                                 "From the wall to the knees to an elevated surface to the floor: it is the same progression for anyone starting from scratch. If you already do them on the floor, say so here."))
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+
             question(
-                number: 3,
+                number: sex == .female ? 4 : 3,
                 title: L.t("Da che numeri parti", "Where you start from"),
                 detail: L.t("Si cambia dalle preferenze.", "You can change it in preferences.")
             ) {
@@ -123,7 +165,6 @@ struct OnboardingView: View {
         }
         .padding(34)
         .frame(width: 540)
-        .onAppear { if let preselectedSex { sex = preselectedSex } }
     }
 
     /// Due esercizi che tutti conoscono, coi numeri che vedrebbe davvero questa persona: il
@@ -136,10 +177,20 @@ struct OnboardingView: View {
         // **L'esercizio che riceverà davvero**, non quello che c'è in tabella: a chi ha dichiarato
         // «donna» tocca il push-up sulle ginocchia, e l'esempio deve dire quello o mentirebbe
         // proprio nella riga che serve a farsi un'idea concreta.
-        let spinta = SexCalibration.regression(for: .pushUp, sex: chi)
+        let spinta = SexCalibration.regression(for: .pushUp, sex: chi, chosen: pushVariant)
         let push = Ramp.reps(for: spinta, factor: fattore, sex: chi)
         return L.t("Il primo giorno: \(squat) squat, \(push) \(spinta.localizedName).",
                    "Day one: \(squat) squats, \(push) \(spinta.localizedName).")
+    }
+
+    /// Il nome che sta in un bottone da 100 punti: «push-up sulle ginocchia» non ci sta.
+    private func nomeBreve(_ kind: ExerciseKind) -> String {
+        switch kind {
+        case .wallPushUp: return L.t("Al muro", "Wall")
+        case .kneePushUp: return L.t("Ginocchia", "Knees")
+        case .inclinePushUp: return L.t("Su rialzo", "Elevated")
+        default: return L.t("A terra", "Floor")
+        }
     }
 
     private func question<Content: View>(
@@ -171,12 +222,12 @@ struct OnboardingView: View {
     /// livrea (#8FC2A4) è chiara, e il bianco sopra darebbe un contrasto vicino a 1,5:1, cioè
     /// illeggibile. Steso al 55% sul verde notte del fondo diventa scuro quanto basta perché il
     /// bianco stia largo sopra, restando inequivocabilmente verde.
-    private func choice(title: String, selected: Bool, wide: Bool = false,
+    private func choice(title: String, selected: Bool, wide: Bool = false, narrow: Bool = false,
                         action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 14, weight: selected ? .semibold : .medium, design: .rounded))
-                .frame(width: wide ? 175 : 130, height: 38)
+                .frame(width: narrow ? 108 : (wide ? 175 : 130), height: 38)
                 // Scelto: il testo sta **sopra** il riempimento pieno, quindi prende il colore
                 // che regge su quel verde — bianco su fondo chiaro, verde notte su fondo scuro.
                 // Non scelto: il testo sta sulla finestra, quindi è il colore normale del testo,
@@ -202,6 +253,7 @@ struct OnboardingView: View {
         var s = model.settings
         s.language = language
         s.sex = sex
+        s.pushVariant = pushVariant
         // **La rampa parte da oggi.** Chi installa l'app oggi non deve ereditare la data di
         // creazione del file delle impostazioni, che l'app scrive al primo avvio prima ancora di
         // sapere chi sei: significherebbe cominciare a settimane già passate.

@@ -80,7 +80,10 @@ public enum SexCalibration {
     /// zero, uomo o donna: qui le riceve chi statisticamente ne ha bisogno più spesso, e restano
     /// **tutte scambiabili dentro la pausa** — in su e in giù — perché la statistica non sa nulla
     /// della persona che ha davanti.
-    public static func regression(for kind: ExerciseKind, sex: Sex?) -> ExerciseKind {
+    public static func regression(for kind: ExerciseKind, sex: Sex?,
+                                  chosen: ExerciseKind? = nil) -> ExerciseKind {
+        // Una scelta esplicita batte qualunque statistica, in tutte e due le direzioni.
+        if let chosen, kind == .pushUp { return chosen }
         guard sex == .female else { return kind }
         switch kind {
         case .pushUp: return .kneePushUp

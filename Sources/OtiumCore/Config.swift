@@ -100,6 +100,14 @@ public struct Settings: Codable, Equatable, Sendable {
     public var vigorousDailyTarget: Int
     /// La frase da digitare per esteso per saltare un break. Attrito, non impossibilità.
     public var escapePhrase: String
+    /// Da quale versione della spinta si parte. `nil` = **automatica**, cioè quella che l'app
+    /// propone in base al sesso dichiarato (`SexCalibration.regression`).
+    ///
+    /// Esiste perché la statistica sceglie un punto di partenza, non una persona: una donna che
+    /// fa già i push-up a terra non deve ricominciare dalle ginocchia, e un uomo che riprende
+    /// dopo un infortunio ha lo stesso diritto di partire dal muro. La scelta è dichiarata al
+    /// primo avvio e si cambia dalle preferenze.
+    public var pushVariant: ExerciseKind?
     /// Dopo quante settimane di uso l'app **chiede** se vuoi già passare al numero pieno.
     ///
     /// La partenza graduale esiste perché iniziare a quindici squat quando sei fermo da mesi è il
@@ -160,6 +168,7 @@ public struct Settings: Codable, Equatable, Sendable {
         vigorousPool: [ExerciseKind] = [.burpee, .jumpingJack, .mountainClimber, .highKnees],
         vigorousDailyTarget: Int = 3,
         escapePhrase: String = "salto la pausa",
+        pushVariant: ExerciseKind? = nil,
         fullPaceOfferWeeks: Int = 1,
         fullPaceAnswered: Bool = false,
         sex: Sex? = nil,
@@ -185,6 +194,7 @@ public struct Settings: Codable, Equatable, Sendable {
         self.vigorousPool = vigorousPool.isEmpty ? [.jumpingJack] : vigorousPool
         self.vigorousDailyTarget = max(0, vigorousDailyTarget)
         self.escapePhrase = escapePhrase
+        self.pushVariant = pushVariant
         self.fullPaceOfferWeeks = max(1, fullPaceOfferWeeks)
         self.fullPaceAnswered = fullPaceAnswered
         self.sex = sex
@@ -240,6 +250,7 @@ public struct Settings: Codable, Equatable, Sendable {
         vigorousDailyTarget = (try? c.decode(Int.self, forKey: .vigorousDailyTarget)) ?? d.vigorousDailyTarget
         escapePhrase = (try? c.decode(String.self, forKey: .escapePhrase)) ?? d.escapePhrase
         // Assenti nei file scritti prima dell'onboarding: restano nil, e l'app chiede.
+        pushVariant = try? c.decode(ExerciseKind.self, forKey: .pushVariant)
         fullPaceOfferWeeks = (try? c.decode(Int.self, forKey: .fullPaceOfferWeeks)) ?? d.fullPaceOfferWeeks
         fullPaceAnswered = (try? c.decode(Bool.self, forKey: .fullPaceAnswered)) ?? d.fullPaceAnswered
         sex = try? c.decode(Sex.self, forKey: .sex)

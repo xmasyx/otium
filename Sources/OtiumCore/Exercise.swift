@@ -351,8 +351,8 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
             return L.t("A V rovesciata, bacino alto, scendi con la testa fra le mani. Lavorano le spalle.",
                        "Inverted V, hips high, lower your head between your hands. This one is shoulders.")
         case .benchDip:
-            return L.t("Mani sul bordo della sedia dietro di te, gomiti indietro, scendi e risali. Sedia stabile, contro il muro.",
-                       "Hands on the edge of the chair behind you, elbows back, down and up. Stable chair, against the wall.")
+            return L.t("Mani sul bordo della sedia dietro di te, gomiti indietro, scendi e risali. Gambe dritte; se è troppo dura, piegale. Sedia stabile, contro il muro.",
+                       "Hands on the edge of the chair behind you, elbows back, down and up. Legs straight; if it's too hard, bend them. Stable chair, against the wall.")
         case .crunch:
             return L.t("A terra, ginocchia piegate: stacca solo le scapole, mento lontano dal petto. Non tirarti il collo.",
                        "On the floor, knees bent: lift only your shoulder blades, chin away from your chest. Don't pull on your neck.")
@@ -600,10 +600,11 @@ public struct ExercisePlanner: Sendable {
 
     /// `breakIndex` è 1-based e cresce per tutta la vita dell'app: la rotazione non riparte
     /// ogni giorno, altrimenti farebbe sempre squat il lunedì mattina.
-    public func exercise(breakIndex: Int, kind: BreakKind, factor: Double, sex: Sex? = nil) -> Exercise {
+    public func exercise(breakIndex: Int, kind: BreakKind, factor: Double, sex: Sex? = nil,
+                         pushVariant: ExerciseKind? = nil) -> Exercise {
         let table = (kind == .long) ? vigorousPool : pool
         let idx = max(0, breakIndex - 1) % table.count
-        let chosen = SexCalibration.regression(for: table[idx], sex: sex)
+        let chosen = SexCalibration.regression(for: table[idx], sex: sex, chosen: pushVariant)
         return Exercise(kind: chosen, reps: Ramp.reps(for: chosen, factor: factor, sex: sex))
     }
 
@@ -621,7 +622,8 @@ public struct ExercisePlanner: Sendable {
     /// questo pesca dagli stessi pool delle preferenze: se hai spento l'addome, il circuito non
     /// te lo rimette dentro dalla finestra. Ruota con `breakIndex` come tutto il resto, così due
     /// pause piene di fila non propongono lo stesso giro.
-    public func circuit(breakIndex: Int, factor: Double, sex: Sex? = nil) -> [Exercise] {
+    public func circuit(breakIndex: Int, factor: Double, sex: Sex? = nil,
+                        pushVariant: ExerciseKind? = nil) -> [Exercise] {
         let order: [ExerciseCategory] = [.gambe, .spinta, .addome, .vigorosi]
         let scaled = factor * Self.circuitFactor
         return order.compactMap { category in
@@ -631,9 +633,8 @@ public struct ExercisePlanner: Sendable {
             // sempre lo stesso accoppiamento.
             let offset = order.firstIndex(of: category) ?? 0
             let chosen = table[(max(0, breakIndex - 1) + offset) % table.count]
-            return Exercise(kind: SexCalibration.regression(for: chosen, sex: sex),
-                            reps: Ramp.reps(for: SexCalibration.regression(for: chosen, sex: sex),
-                                            factor: scaled, sex: sex))
+            let vero = SexCalibration.regression(for: chosen, sex: sex, chosen: pushVariant)
+            return Exercise(kind: vero, reps: Ramp.reps(for: vero, factor: scaled, sex: sex))
         }
     }
 }

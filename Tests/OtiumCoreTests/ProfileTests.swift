@@ -197,6 +197,30 @@ final class ProfileTests: XCTestCase {
         XCTAssertTrue(ExerciseKind.wallPushUp.variants.contains(.kneePushUp))
     }
 
+    /// **Una scelta esplicita batte la statistica, in tutte e due le direzioni.**
+    func testAnExplicitChoiceWinsOverTheDefault() {
+        // La donna che i push-up a terra li fa già.
+        XCTAssertEqual(SexCalibration.regression(for: .pushUp, sex: .female, chosen: .pushUp), .pushUp)
+        // L'uomo che riprende dopo un infortunio e parte dal muro.
+        XCTAssertEqual(SexCalibration.regression(for: .pushUp, sex: .male, chosen: .wallPushUp), .wallPushUp)
+        // Senza scelta si torna al comportamento di serie.
+        XCTAssertEqual(SexCalibration.regression(for: .pushUp, sex: .female, chosen: nil), .kneePushUp)
+        // La scelta vale sulla spinta, non su tutto: uno squat resta uno squat.
+        XCTAssertEqual(SexCalibration.regression(for: .squat, sex: .female, chosen: .wallPushUp), .squat)
+    }
+
+    /// La scelta arriva fino all'esercizio proposto, non si ferma nelle impostazioni.
+    func testThePushChoiceReachesTheProposedExercise() {
+        var s = Settings(exercisePool: [.pushUp], vigorousPool: [.jumpingJack])
+        s.sex = .female
+        s.rampStartFactor = 1.0
+        s.pushVariant = .pushUp
+        var engine = SessionEngine(settings: s)
+        engine.forceBreakNow(now: Date())
+        XCTAssertEqual(engine.plan?.exercise.kind, .pushUp,
+                       "ha detto che li fa a terra: l'app non deve rimetterla sulle ginocchia")
+    }
+
     /// Gli uomini non vengono toccati: la sostituzione è mirata, non un cambio di app.
     func testMenAreUnaffectedByTheRegressionTable() {
         for kind in ExerciseKind.allCases {
