@@ -53,21 +53,25 @@ final class PresenceTests: XCTestCase {
         XCTAssertEqual(engine.phase, .warning)
     }
 
-    /// Il polo negativo dello stesso minuto: **senza** il segnale, gli stessi 30 minuti di
-    /// immobilità non fanno scattare niente e regalano pause mai fatte. È il comportamento
-    /// vecchio, ed è qui per mostrare cosa si è corretto.
-    func testWithoutTheSignalTheSameStillnessCreditsFakeBreaks() {
+    /// Il polo negativo dello stesso minuto: **senza** il segnale, quei 30 minuti spariscono.
+    /// Non fanno scattare niente, e da oggi non regalano nemmeno una pausa mai fatta.
+    ///
+    /// Fino al 27 luglio l'ultima riga di questo test asseriva l'opposto — al rientro arrivava una
+    /// pausa piena accreditata — e serviva a mostrare la bugia che il segnale di presenza è venuto
+    /// a correggere. La regola del 28 luglio, per cui un'assenza vale solo dopo della sedentarietà
+    /// vera, toglie di mezzo anche quella: senza segnale il tempo non è mai stato contato come
+    /// seduto, quindi non c'è niente da interrompere. Restano due errori possibili, e questo è il
+    /// meno grave dei due: il numero tace invece di mentire.
+    func testWithoutTheSignalTheHalfHourSimplyDisappears() {
         var engine = makeEngine()
         var events = sitStill(&engine, seconds: 30 * 60, presence: nil)
         XCTAssertFalse(events.contains { if case .warningStarted = $0 { return true }; return false },
                        "senza segnale, mezz'ora di immobilità non fa scattare niente")
-        // Il credito si materializza al **rientro**: è lì che l'orologio dichiara quanto sei
+        // Il credito si materializzerebbe al **rientro**: è lì che l'orologio dichiara quanto sei
         // stato via. Senza un tocco finale non c'è nessun evento da osservare.
         events += engine.tick(elapsed: 10, idle: 0.5, now: Self.workingHour)
-        XCTAssertTrue(events.contains {
-            if case .naturalBreak(_, let creditedLong) = $0 { return creditedLong }
-            return false
-        }, "senza segnale, mezz'ora di film viene accreditata come pausa piena")
+        XCTAssertFalse(events.contains { if case .naturalBreak = $0 { return true }; return false },
+                       "senza sedentarietà riconosciuta non si accredita nessuna pausa")
     }
 
     /// Leggere un PDF non è essersene andati.
@@ -138,6 +142,10 @@ final class PresenceTests: XCTestCase {
     /// E l'assenza vera continua a funzionare come prima: nessun segnale, nessuna presenza.
     func testARealAbsenceStillCreditsANaturalBreak() {
         var engine = makeEngine()
+        // Venti minuti di lavoro vero prima di alzarsi: senza sedentarietà non c'è niente da
+        // interrompere, ed è la regola aggiunta il 28 luglio. Qui la cosa in prova è un'altra —
+        // che un'assenza senza segnale di presenza resti un'assenza — quindi la premessa va data.
+        for _ in 0..<120 { engine.tick(elapsed: 10, idle: 0, now: Self.workingHour) }
         var idle = 0.0
         var events: [EngineEvent] = []
         for _ in 0..<40 {

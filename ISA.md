@@ -110,7 +110,7 @@ Rampa: settimana 1 al 55% delle ripetizioni, +15% a settimana fino al 100% in se
 
 ## Criteria
 
-> **Stato al 2026-07-27, iterazione 8: 49 chiusi su 50.** L'unico aperto resta ISC-28.
+> **Stato al 2026-07-28, iterazione 9: 52 chiusi su 53.** L'unico aperto resta ISC-28.
 >
 > Chiusi 28 su 29 il 2026-07-26. L'unico aperto è ISC-28, che è esperienziale: si chiude usando
 > l'app per qualche giorno, non con un probe.
@@ -639,6 +639,28 @@ guardando l'app funzionare, non leggendo il codice: è la ragione per cui ISC-28
       bianco, in scuro è salvia chiara e vuole il verde notte del fondo.
 - **Livrea scelta dal principale: Alloro**, le sfumature verdi. Era già la predefinita, ora è
   anche una decisione presa guardando le tre in entrambi gli aspetti.
+
+### Iterazione 9 — la notte che contava senza nessuno (2026-07-28)
+
+- [x] **ISC-51** Un risveglio del Mac non è un'interruzione della sedentarietà. — con il coperchio
+      chiuso macOS si sveglia da solo ogni quarto d'ora, e l'orologio restituiva quel salto come
+      pausa spontanea: fra le 23:33 del 27 e le 10:27 del 28 il registro ha scritto **47
+      interruzioni** con nessuno davanti allo schermo. La sospensione ora è un evento suo
+      (`ClockEvent.suspended`) e il motore decide invece di ereditare. Il tempo attivo era rimasto
+      onesto per tutta la notte, ed è la prova che il difetto stava solo in quel ramo.
+- [x] **ISC-52** Una pausa spontanea vale solo dopo della sedentarietà vera. — cinque minuti di
+      tempo attivo accumulato, sotto i quali un'assenza non viene scritta. Serve a due cose: tiene
+      in piedi il caso legittimo (lavori, chiudi il Mac, vai a camminare, e quella pausa resta
+      tua) e chiude lo stesso buco sul ramo di tutti i giorni, dove un'assenza veniva accreditata
+      senza guardare se prima ci fosse stato del lavoro. È anche ciò che il numero *dice*: Duran
+      misura l'interruzione di una seduta prolungata.
+- [x] **ISC-53** Lo scarto della notifica segue l'inerzia del gesto. — la decisione stava su
+      `.ended`, l'istante in cui alzi le dita, e gli eventi di spinta che il sistema manda **dopo**
+      finivano in un ramo che li scartava. Un colpetto veloce muoveva la notifica e la vedeva
+      tornare indietro. Provato con `Scripts/probe-swipe.swift` su tre poli: controllo di
+      consegna, codice nuovo, codice di HEAD.
+- **Dati corretti, non riscritti.** Le 47 righe fantasma sono state tolte dal registro dopo averlo
+  archiviato in `ledger.jsonl.pre-fix-20260728`. Il recap di oggi torna a 0 interruzioni.
 
 ## Test Strategy
 

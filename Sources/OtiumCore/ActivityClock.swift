@@ -11,6 +11,15 @@ public enum ClockEvent: Equatable, Sendable {
     case idling
     /// Appena rientrato da un'assenza di questa durata.
     case naturalBreak(seconds: Double)
+    /// Fra due battiti è passato più tempo di quanto un processo vivo possa spiegare: il Mac era
+    /// sospeso, o chiuso in borsa.
+    ///
+    /// **Non è la stessa cosa di una pausa spontanea, ed è il difetto del 28 luglio 2026.** Prima
+    /// questo ramo restituiva `naturalBreak`, e il motore lo registrava come interruzione della
+    /// sedentarietà: con il coperchio chiuso macOS si sveglia da solo ogni quarto d'ora per la
+    /// posta, e ogni risveglio scriveva un'interruzione. Una notte ne ha prodotte 47, con nessuno
+    /// davanti allo schermo. Chi riceve questo evento deve decidere, non ereditare.
+    case suspended(gap: Double)
 }
 
 /// L'orologio del **tempo attivo**. Non l'orologio a muro.
@@ -59,7 +68,8 @@ public struct ActivityClock: Equatable, Sendable {
             isIdle = false
             currentIdleSeconds = 0
             idleCreditBase = 0
-            return .naturalBreak(seconds: gap)
+            quietPresenceSeconds = 0
+            return .suspended(gap: gap)
         }
 
         if idle >= idleThreshold {

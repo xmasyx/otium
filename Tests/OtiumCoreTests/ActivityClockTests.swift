@@ -65,14 +65,17 @@ final class ActivityClockTests: XCTestCase {
     }
 
     /// ISC-5 — il Mac chiuso in borsa non è tempo di lavoro.
+    ///
+    /// E non è nemmeno una pausa spontanea: è un evento suo, che chi lo riceve deve giudicare.
+    /// Prima usciva di qui come `naturalBreak` ed era il difetto del 28 luglio.
     func testSleepGapIsNeverCreditedAsActiveTime() {
         var clock = ActivityClock(idleThreshold: 60, maxCredibleElapsed: 5)
         for _ in 0..<100 { clock.tick(elapsed: 1, idle: 0) }
         let event = clock.tick(elapsed: 3600, idle: 3600)   // coperchio chiuso per un'ora
-        guard case .naturalBreak(let seconds) = event else {
-            return XCTFail("atteso naturalBreak, ricevuto \(event)")
+        guard case .suspended(let gap) = event else {
+            return XCTFail("attesa sospensione, ricevuto \(event)")
         }
-        XCTAssertEqual(seconds, 3600, accuracy: 0.001)
+        XCTAssertEqual(gap, 3600, accuracy: 0.001)
         XCTAssertEqual(clock.activeSeconds, 100, accuracy: 0.001)
     }
 

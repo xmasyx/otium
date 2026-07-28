@@ -165,6 +165,16 @@ public struct SessionEngine {
     /// è la garanzia che un motore incoerente non lasci uno schermo nero per sempre.
     public static let failsafeCeiling: Double = 30 * 60
 
+    /// Quanto lavoro deve esserci **prima**, perché un'assenza valga come interruzione.
+    ///
+    /// Il numero che l'app mostra si chiama «interruzioni della sedentarietà», e negli studi che
+    /// cita (Duran 2023) la cosa misurata è l'interruzione di una **seduta prolungata**. Se non
+    /// ti sei seduto non c'è niente da interrompere: contarla lo stesso gonfia il numero senza
+    /// che tu abbia fatto nulla, ed è esattamente così che la notte del 28 luglio 2026 ne sono
+    /// comparse 47 con il Mac chiuso. Cinque minuti è la sedentarietà più corta che abbia senso
+    /// chiamare tale.
+    public static let minimumSedentaryBeforeCredit: Double = 300
+
     /// `maxCredibleElapsed` è iniettabile perché i test fanno passare il tempo a grandi passi:
     /// con il valore di produzione (5 s) ogni tick da un minuto sembrerebbe una sospensione.
     public init(settings: Settings = Settings(), maxCredibleElapsed: Double = 5) {
@@ -219,15 +229,18 @@ public struct SessionEngine {
             presenceHolds: presenceHolds(environment.presence, idle: idle)
         )
 
-        if case .naturalBreak(let seconds) = clockEvent {
+        switch clockEvent {
+        case .naturalBreak(let seconds):
             // Time Out fa una cosa giusta che nessun altro fa: la pausa spontanea vale.
             // Alzarsi da soli È il comportamento desiderato, non un modo di imbrogliare.
-            if seconds >= settings.cadence.microDurationSeconds {
-                let creditedLong = seconds >= settings.cadence.longDurationSeconds
-                clock.reset()
-                if creditedLong { microsSinceLong = 0 } else { microsSinceLong += 1 }
-                events.append(.naturalBreak(seconds: seconds, creditedLong: creditedLong))
-            }
+            events.append(contentsOf: creditNatural(seconds: seconds, alwaysReset: false))
+        case .suspended(let gap):
+            // Il Mac si è sospeso. Il contatore verso la prossima pausa riparte comunque, perché
+            // il tempo passato lontano dallo schermo è tempo lontano dallo schermo; ma
+            // l'interruzione si scrive solo se prima c'era del lavoro da interrompere.
+            events.append(contentsOf: creditNatural(seconds: gap, alwaysReset: true))
+        case .accumulating, .quietPresence, .idling:
+            break
         }
 
         guard clock.activeSeconds >= settings.cadence.intervalSeconds else { return events }
@@ -246,6 +259,25 @@ public struct SessionEngine {
         } else {
             events.append(contentsOf: startBreak(newPlan, now: now, environment: .quiet))
         }
+        return events
+    }
+
+    /// Scrive — o non scrive — l'interruzione per un'assenza appena conclusa.
+    ///
+    /// Due condizioni, e servono tutte e due. L'assenza dev'essere lunga almeno quanto una
+    /// micro-pausa, o ogni volta che ti giri a parlare con qualcuno diventerebbe una pausa. E
+    /// prima dell'assenza dev'esserci stata della sedentarietà vera, o il numero conta assenze
+    /// di nessuno da nessun posto.
+    private mutating func creditNatural(seconds: Double, alwaysReset: Bool) -> [EngineEvent] {
+        let longEnough = seconds >= settings.cadence.microDurationSeconds
+        let earned = clock.activeSeconds >= Self.minimumSedentaryBeforeCredit
+        var events: [EngineEvent] = []
+        if longEnough && earned {
+            let creditedLong = seconds >= settings.cadence.longDurationSeconds
+            if creditedLong { microsSinceLong = 0 } else { microsSinceLong += 1 }
+            events.append(.naturalBreak(seconds: seconds, creditedLong: creditedLong))
+        }
+        if alwaysReset || longEnough { clock.reset() }
         return events
     }
 

@@ -145,6 +145,52 @@ final class SessionEngineTests: XCTestCase {
         XCTAssertEqual(engine.microsSinceLong, 0)
     }
 
+    // MARK: - La notte del 28 luglio 2026
+
+    /// **Il caso vero, riprodotto.** Coperchio chiuso, nessuno davanti: macOS si sveglia da solo
+    /// ogni quarto d'ora, e prima ogni risveglio scriveva un'interruzione della sedentarietà.
+    /// Fra le 02:14 e le 10:27 ne ha scritte 47. Adesso deve scriverne zero.
+    func testNightOfWakeUpsWritesNoInterruptions() {
+        var engine = makeEngine()
+        var events: [EngineEvent] = []
+        for _ in 0..<37 {
+            // Un risveglio: un salto di un quarto d'ora fra due battiti, con l'inattività alta
+            // perché nessuno ha toccato niente.
+            events += engine.tick(elapsed: 927, idle: 927, now: Self.night)
+        }
+        let natural = events.filter { if case .naturalBreak = $0 { return true }; return false }
+        XCTAssertTrue(natural.isEmpty, "un Mac chiuso ha prodotto \(natural.count) interruzioni")
+        XCTAssertEqual(engine.clock.activeSeconds, 0, accuracy: 0.001)
+    }
+
+    /// Il polo positivo dello stesso confine: se hai lavorato davvero e poi chiudi il Mac e te ne
+    /// vai, quella pausa è tua e va scritta. Senza questo test la correzione qui sopra si
+    /// chiuderebbe anche non contando mai niente.
+    func testSuspensionAfterRealWorkStillCounts() {
+        var engine = makeEngine()
+        advance(&engine, seconds: 20 * 60)
+        let events = engine.tick(elapsed: 3600, idle: 3600, now: Self.workingHour)
+
+        guard case .naturalBreak(let seconds, let creditedLong)? = events.first else {
+            return XCTFail("atteso naturalBreak, ricevuto \(events)")
+        }
+        XCTAssertEqual(seconds, 3600, accuracy: 1)
+        XCTAssertTrue(creditedLong)
+        XCTAssertEqual(engine.clock.activeSeconds, 0, accuracy: 0.001)
+    }
+
+    /// Lo stesso confine sul ramo di tutti i giorni: due minuti di lavoro non sono una seduta
+    /// prolungata, quindi alzarsi non interrompe niente.
+    func testAbsenceWithoutSedentaryTimeIsNotAnInterruption() {
+        var engine = makeEngine()
+        advance(&engine, seconds: 2 * 60)
+        engine.tick(elapsed: 10, idle: 400, now: Self.workingHour)
+        let events = engine.tick(elapsed: 10, idle: 0.5, now: Self.workingHour)
+
+        let natural = events.filter { if case .naturalBreak = $0 { return true }; return false }
+        XCTAssertTrue(natural.isEmpty, "assenza senza sedentarietà contata come interruzione")
+    }
+
     /// Un'assenza troppo breve non compra niente.
     func testShortAbsenceDoesNotCreditABreak() {
         var engine = makeEngine()

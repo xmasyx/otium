@@ -208,39 +208,74 @@ final class WarningHUD {
         private let fadeOver: CGFloat = 220
         private var card: NSView? { subviews.first }
 
+        /// Vero da quando la notifica sta uscendo di scena: dopo, ogni evento è rumore.
+        private var dismissing = false
+        /// Il ritorno indietro programmato, che l'inerzia in arrivo annulla.
+        private var snapBack: DispatchWorkItem?
+
+        /// **L'inerzia arriva DOPO che hai alzato le dita, ed è la ragione per cui il gesto
+        /// sembrava incepparsi.**
+        ///
+        /// La prima versione decideva su `.ended`, cioè nell'istante esatto in cui le dita si
+        /// staccano dal trackpad. Un colpetto veloce e corto sposta poco mentre lo tocchi — è la
+        /// spinta che arriva dopo a portarlo lontano — quindi la notifica seguiva il dito, si
+        /// fermava di botto e tornava al suo posto mentre il sistema la stava ancora spingendo.
+        /// Gli eventi di inerzia c'erano, li scartava il ramo `default`.
+        ///
+        /// Ora le tre sorgenti dello stesso movimento — le dita, l'inerzia, la rotella classica
+        /// senza fase — muovono tutte la stessa cosa, e la decisione arriva quando si è fermato
+        /// davvero tutto.
         override func scrollWheel(with event: NSEvent) {
+            guard !dismissing else { return }
+            let phase = event.phase, momentum = event.momentumPhase
+
+            if phase == .began {
+                cancelSnapBack()
+                travelled = 0
+            }
+
             // Il verso è quello che il sistema chiama "destra" con le impostazioni dell'utente:
             // si somma il delta così com'è, senza correggerlo, o l'inversione dello scorrimento
             // naturale ribalterebbe il gesto senza dirlo.
-            switch event.phase {
-            case .began:
-                travelled = 0
-            case .changed:
-                travelled += event.scrollingDeltaX
+            if phase == .changed || momentum == .changed || (phase == [] && momentum == []) {
+                cancelSnapBack()
                 // Solo verso destra, come le notifiche di sistema: a sinistra non si muove.
-                travelled = max(0, travelled)
+                travelled = max(0, travelled + event.scrollingDeltaX)
                 apply(travelled, animated: false)
-            case .ended, .cancelled:
-                finish()
-            default:
-                // Rotella classica o eventi senza fase: si accumula e si decide subito.
-                if event.phase == [] && event.momentumPhase == [] {
-                    travelled = max(0, travelled + event.scrollingDeltaX)
-                    apply(travelled, animated: false)
-                    if travelled > threshold { finish() }
-                }
+                if travelled > threshold { flyOut() }
+                return
+            }
+
+            if phase == .ended || phase == .cancelled || momentum == .ended || momentum == .cancelled {
+                scheduleSnapBack()
             }
         }
 
-        private func finish() {
-            if travelled > threshold {
-                apply(bounds.width, animated: true)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { [weak self] in
-                    self?.onDismiss?()
-                }
-            } else {
-                travelled = 0
-                apply(0, animated: true)
+        /// Il ritorno non è immediato: fra l'ultimo evento delle dita e il primo dell'inerzia
+        /// passa un battito, e chiudere la partita in mezzo è proprio il difetto che c'era.
+        private func scheduleSnapBack() {
+            cancelSnapBack()
+            let work = DispatchWorkItem { [weak self] in
+                guard let self, !self.dismissing else { return }
+                self.travelled = 0
+                self.apply(0, animated: true)
+            }
+            snapBack = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: work)
+        }
+
+        private func cancelSnapBack() {
+            snapBack?.cancel()
+            snapBack = nil
+        }
+
+        private func flyOut() {
+            guard !dismissing else { return }
+            dismissing = true
+            cancelSnapBack()
+            apply(bounds.width, animated: true)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { [weak self] in
+                self?.onDismiss?()
             }
         }
 
@@ -250,12 +285,18 @@ final class WarningHUD {
             if animated {
                 NSAnimationContext.runAnimationGroup { context in
                     context.duration = 0.18
+                    context.timingFunction = CAMediaTimingFunction(name: .easeOut)
                     card.animator().setFrameOrigin(NSPoint(x: x, y: card.frame.origin.y))
                     card.animator().alphaValue = alpha
                 }
             } else {
+                // Durata zero esplicita: mentre insegui il dito ogni animazione implicita è un
+                // ritardo, e un ritardo su un gesto si legge come scatto.
+                NSAnimationContext.beginGrouping()
+                NSAnimationContext.current.duration = 0
                 card.setFrameOrigin(NSPoint(x: x, y: card.frame.origin.y))
                 card.alphaValue = alpha
+                NSAnimationContext.endGrouping()
             }
         }
     }
