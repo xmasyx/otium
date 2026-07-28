@@ -85,6 +85,37 @@ final class ProfileTests: XCTestCase {
         }
     }
 
+    /// **Ogni fatto e ogni studio hanno l'inglese, e il conto è un conto, non una stima.**
+    ///
+    /// Un ripiego silenzioso sull'italiano è comodo mentre traduci e diventa un difetto il giorno
+    /// dopo: in inglese comparirebbe una riga italiana e nessuno saprebbe che manca. Qui il test
+    /// dice **quante** ne mancano e **quali**.
+    func testEveryFactAndStudyIsTranslated() {
+        let senzaInglese = Facts.all.filter { $0.textEN.isEmpty }
+        XCTAssertTrue(senzaInglese.isEmpty,
+                      "\(senzaInglese.count) fatti su \(Facts.all.count) senza inglese: "
+                      + senzaInglese.prefix(3).map { String($0.text.prefix(40)) }.joined(separator: " | "))
+
+        for study in Evidence.all {
+            XCTAssertNotEqual(study.claimEN, study.claim, "\(study.id): il riassunto non è tradotto")
+            XCTAssertNotEqual(study.governsEN, study.governs, "\(study.id): «cosa governa» non è tradotto")
+            XCTAssertFalse(study.claimEN.isEmpty)
+        }
+    }
+
+    /// La lingua cambia il testo mostrato ma **non l'identità della frase**: l'id resta ancorato
+    /// all'italiano, o cambiare lingua rimescolerebbe il mazzo e la promessa del mese senza
+    /// ripetizioni ripartirebbe da zero, in silenzio.
+    func testFactIdentityDoesNotFollowTheLanguage() {
+        L.language = .italian
+        let itIds = Facts.all.map(\.id)
+        L.language = .english
+        let enIds = Facts.all.map(\.id)
+        XCTAssertEqual(itIds, enIds, "gli id dei fatti cambiano con la lingua")
+        XCTAssertNotEqual(Facts.all.first?.localizedText, Facts.all.first?.text,
+                          "in inglese il testo mostrato deve cambiare")
+    }
+
     /// Le impostazioni scritte prima che l'onboarding esistesse non devono morire, e devono
     /// **chiedere**: lingua e sesso restano nil, che è l'innesco della prima schermata.
     func testOldSettingsFileTriggersOnboarding() throws {
