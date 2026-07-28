@@ -13,15 +13,26 @@ public struct Study: Identifiable, Equatable, Sendable {
     public let url: String
     /// Cosa governa, in una riga: il parametro che questo studio giustifica.
     public let governs: String
+    /// Le stesse due righe in inglese. **La citazione non si traduce**: è il titolo vero
+    /// dell'articolo, ed è già in inglese — tradurlo renderebbe la fonte non ritrovabile, che è
+    /// l'unica cosa che una citazione deve saper fare.
+    public let claimEN: String
+    public let governsEN: String
 
-    public init(id: String, claim: String, citation: String, year: Int, url: String, governs: String) {
+    public init(id: String, claim: String, citation: String, year: Int, url: String,
+                governs: String, claimEN: String = "", governsEN: String = "") {
         self.id = id
         self.claim = claim
         self.citation = citation
         self.year = year
         self.url = url
         self.governs = governs
+        self.claimEN = claimEN.isEmpty ? claim : claimEN
+        self.governsEN = governsEN.isEmpty ? governs : governsEN
     }
+
+    public var localizedClaim: String { L.t(claim, claimEN) }
+    public var localizedGoverns: String { L.t(governs, governsEN) }
 }
 
 public enum Evidence {
@@ -36,7 +47,11 @@ public enum Evidence {
                 + "Dose-Response Analysis of a Randomized Crossover Trial», Med Sci Sports Exerc",
         year: 2023,
         url: "https://pubmed.ncbi.nlm.nih.gov/36728338/",
-        governs: "Intervallo fra i break: 30 minuti di tempo attivo."
+        governs: "Intervallo fra i break: 30 minuti di tempo attivo.",
+        claimEN: "In a randomised crossover trial of four different doses, the only one that genuinely "
+             + "flattened glucose spikes (−58%) was 5 minutes of movement every 30 minutes. "
+             + "Smaller doses lowered blood pressure but not blood sugar.",
+        governsEN: "Interval between breaks: 30 minutes of active time."
     )
 
     /// Perché squat e non una camminata.
@@ -50,7 +65,12 @@ public enum Evidence {
                 + "improves glycemic control in overweight and obese men», Scand J Med Sci Sports",
         year: 2024,
         url: "https://pubmed.ncbi.nlm.nih.gov/38629807/",
-        governs: "La scelta degli esercizi di forza a corpo libero invece di «alzati e cammina»."
+        governs: "La scelta degli esercizi di forza a corpo libero invece di «alzati e cammina».",
+        claimEN: "18 overweight men, 8.5 hours seated. Breaking it up with 3 minutes of squats every "
+             + "45 minutes beat a single 30-minute walk, with roughly twice the glycaemic "
+             + "benefit (7.9 against 10.2 mmol/L/h for the control). The mechanism is quadriceps "
+             + "and glute activation, not the steps.",
+        governsEN: "Choosing bodyweight strength exercises instead of «get up and walk»."
     )
 
     /// I 5 minuti della pausa piena.
@@ -63,7 +83,11 @@ public enum Evidence {
                 + "operators», Ergonomics 43(5); follow-up in Am J Ind Med 50(7), 2007",
         year: 2000,
         url: "https://pubmed.ncbi.nlm.nih.gov/10877480/",
-        governs: "La pausa piena da 5 minuti."
+        governs: "La pausa piena da 5 minuti.",
+        claimEN: "In the field, adding 5 minutes of break every hour reduced musculoskeletal discomfort "
+             + "and eye strain with no measured loss of productivity. The 2007 follow-up with "
+             + "stretching exercises confirms it.",
+        governsEN: "The 5-minute full break."
     )
 
     /// Perché le micro-pause sono corte, e perché la pausa piena esiste comunque.
@@ -77,7 +101,12 @@ public enum Evidence {
                 + "the efficacy of micro-breaks for increasing well-being and performance», PLOS ONE 17(8)",
         year: 2022,
         url: "https://pubmed.ncbi.nlm.nih.gov/36044424/",
-        governs: "I 90 secondi del micro-snack, e l'esistenza della pausa piena ogni 90 minuti."
+        governs: "I 90 secondi del micro-snack, e l'esistenza della pausa piena ogni 90 minuti.",
+        claimEN: "Meta-analysis of 22 studies: micro-breaks (≤10 minutes) reduce fatigue and raise vigour. "
+             + "A caveat from the authors, taken seriously here: after very demanding cognitive "
+             + "work 10 minutes are not enough to recover performance — which is why every 90 "
+             + "minutes the break is full, and away from the screen.",
+        governsEN: "The 90 seconds of the micro-snack, and why a full break exists every 90 minutes."
     )
 
     /// La sessione intensa della pausa piena.
@@ -90,7 +119,11 @@ public enum Evidence {
                 + "intermittent lifestyle physical activity with mortality», Nature Medicine 28",
         year: 2022,
         url: "https://pubmed.ncbi.nlm.nih.gov/36482104/",
-        governs: "I 60-90 secondi vigorosi della pausa piena, e il bersaglio di 3 sessioni al giorno."
+        governs: "I 60-90 secondi vigorosi della pausa piena, e il bersaglio di 3 sessioni al giorno.",
+        claimEN: "25,241 non-exercising adults followed for 7 years with accelerometers: three daily "
+             + "1-2 minute bouts of vigorous activity in ordinary life are associated with about "
+             + "40% lower mortality. You do not need to train: you need three hard minutes.",
+        governsEN: "The 60-90 vigorous seconds of the full break, and the target of 3 bouts a day."
     )
 
     /// Ciò che Otium NON implementa, e perché. La stessa onestà, girata al contrario.
@@ -106,7 +139,14 @@ public enum Evidence {
                 + "(discusso in Optometry Advisor / Ophthalmic Physiol Opt)",
         year: 2023,
         url: "https://pubmed.ncbi.nlm.nih.gov/36473088/",
-        governs: "Una funzione deliberatamente assente."
+        governs: "Una funzione deliberatamente assente.",
+        claimEN: "NOT IMPLEMENTED. The 20-20-20 rule (every 20 minutes, 20 seconds, at 20 feet) is in "
+             + "almost every competing app. In a 2023 trial comparing 20-second breaks at 5, 10 "
+             + "and 20 minute intervals, no difference emerged in symptoms, reading speed or "
+             + "accuracy. The three «20»s were chosen because they are memorable, not because they "
+             + "were optimised. Otium does not build a timer for your eyes: the movement break "
+             + "rests them anyway.",
+        governsEN: "A feature deliberately absent."
     )
 
 
@@ -123,7 +163,14 @@ public enum Evidence {
                 + "Comparing 'Pomodoro' breaks and self-regulated breaks», Br J Educ Psychol",
         year: 2023,
         url: "https://pubmed.ncbi.nlm.nih.gov/36859717/",
-        governs: "Perché la pausa la decide l'app e non tu, al momento."
+        governs: "Perché la pausa la decide l'app e non tu, al momento.",
+        claimEN: "A direct comparison between breaks decided in advance and breaks taken whenever. Those "
+             + "who self-regulated worked in longer stretches and took longer breaks, and reported "
+             + "more tiredness and more distraction, less focus and less motivation. With "
+             + "systematic breaks the same work was completed with the same mental effort, in less "
+             + "time. It is the part of the Pomodoro method that survives testing: that breaks are "
+             + "imposed, not negotiated.",
+        governsEN: "Why the app decides the break and not you, in the moment."
     )
 
     /// Perché una pausa che ti fa fare qualcosa d'altro batte una pausa passiva.
@@ -138,7 +185,13 @@ public enum Evidence {
                 + "and reactivation of task goals preempt vigilance decrements», Cognition 118(3)",
         year: 2011,
         url: "https://pubmed.ncbi.nlm.nih.gov/21211793/",
-        governs: "Perché la pausa ti fa fare un esercizio invece di lasciarti guardare il muro."
+        governs: "Perché la pausa ti fa fare un esercizio invece di lasciarti guardare il muro.",
+        claimEN: "The drop in attention after an hour on the same task is not a battery running down: it "
+             + "is the brain no longer treating the goal as active. People who briefly interrupted "
+             + "the task with a different activity showed no decline at all; those who did not got "
+             + "steadily worse. The break works because it deactivates and reactivates the goal, "
+             + "not because it rests you.",
+        governsEN: "Why the break makes you do an exercise instead of letting you stare at the wall."
     )
 
     /// La seconda cosa che Otium NON promette.
@@ -158,7 +211,15 @@ public enum Evidence {
                 + "Communications Psychology 2, 2024",
         year: 2024,
         url: "https://pubmed.ncbi.nlm.nih.gov/39242965/",
-        governs: "Una promessa che l'app si rifiuta di fare."
+        governs: "Una promessa che l'app si rifiuta di fare.",
+        claimEN: "NOT PROMISED. That 90 seconds of squats improve the work right afterwards is not "
+             + "established. Meta-analyses of acute exercise find a small but positive effect on "
+             + "executive function for longer efforts, while for durations under 10 minutes at "
+             + "least one review reports a negative immediate effect, and the effect of movement "
+             + "micro-breaks on cognition is explicitly reported as inconclusive. Otium interrupts "
+             + "for metabolic and fatigue reasons, not because it makes you smarter in the next "
+             + "ten minutes.",
+        governsEN: "A promise the app refuses to make."
     )
 
     /// Tutte le fonti, nell'ordine in cui hanno senso da leggere.

@@ -26,7 +26,7 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Otium")
                     .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .foregroundStyle(Palette.accent)
+                    .foregroundStyle(Palette.accentOnWindow)
                 Text(L.t("Conta il tempo che passi davvero al computer e, ogni tanto, ti ferma per farti muovere.",
                          "It counts the time you actually spend at your computer and, every so often, stops you to make you move."))
                     .font(.system(size: 14))
@@ -68,7 +68,7 @@ struct OnboardingView: View {
                     Text(L.t("Uno studio su otto uomini e otto donne (Miller 1993) misura circa il 52% della forza maschile nella parte alta del corpo e il 66% in quella bassa. Proporre a tutti lo stesso numero di flessioni significa proporre a metà delle persone un compito che non riescono a fare. Non è un tetto: è il primo giorno, e da lì si sale.",
                              "A study of eight men and eight women (Miller 1993) measured roughly 52% of male strength in the upper body and 66% in the lower body. Offering everyone the same number of push-ups means offering half of them a task they cannot do. It is not a ceiling: it is day one, and it goes up from there."))
                         .font(.system(size: 11))
-                        .foregroundStyle(Palette.dim)
+                        .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -79,10 +79,10 @@ struct OnboardingView: View {
                     Text(L.t("Comincia", "Start"))
                         .font(.system(size: 16, weight: .semibold, design: .rounded))
                         .frame(width: 190, height: 44)
-                        .foregroundStyle(sex == nil ? Palette.dim : Palette.ink)
+                        .foregroundStyle(sex == nil ? Color.secondary : Palette.onAccentOnWindow)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(sex == nil ? Color.white.opacity(0.07) : Palette.accent)
+                                .fill(sex == nil ? Color.primary.opacity(0.08) : Palette.accentOnWindow)
                         )
                         .contentShape(Rectangle())
                 }
@@ -102,11 +102,11 @@ struct OnboardingView: View {
             HStack(spacing: 8) {
                 Text("\(number)")
                     .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(Palette.ink)
+                    .foregroundStyle(Palette.onAccentOnWindow)
                     .frame(width: 20, height: 20)
-                    .background(Circle().fill(Palette.accent))
+                    .background(Circle().fill(Palette.accentOnWindow))
                 Text(title).font(.system(size: 16, weight: .semibold, design: .rounded))
-                Text(detail).font(.system(size: 11)).foregroundStyle(Palette.dim)
+                Text(detail).font(.system(size: 11)).foregroundStyle(.secondary)
             }
             content()
         }
@@ -129,14 +129,19 @@ struct OnboardingView: View {
             Text(title)
                 .font(.system(size: 14, weight: selected ? .semibold : .medium, design: .rounded))
                 .frame(width: 130, height: 38)
-                .foregroundStyle(.white)
+                // Scelto: il testo sta **sopra** il riempimento pieno, quindi prende il colore
+                // che regge su quel verde — bianco su fondo chiaro, verde notte su fondo scuro.
+                // Non scelto: il testo sta sulla finestra, quindi è il colore normale del testo,
+                // nero di giorno e bianco di notte. Bianco fisso era il difetto: su una finestra
+                // chiara spariva, ed è esattamente quello che il principale ha visto.
+                .foregroundStyle(selected ? Palette.onAccentOnWindow : Color.primary)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(Palette.accent.opacity(selected ? 0.55 : 0.12))
+                        .fill(selected ? Palette.accentOnWindow : Palette.accentOnWindow.opacity(0.10))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(Palette.accent.opacity(selected ? 1.0 : 0.45),
+                        .strokeBorder(Palette.accentOnWindow.opacity(selected ? 1.0 : 0.55),
                                       lineWidth: selected ? 2 : 1)
                 )
                 .contentShape(Rectangle())

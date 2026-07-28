@@ -17,7 +17,7 @@ enum ProbeMode {
     private static let flags = [
         "--orphan-probe", "--sleep-probe", "--radar-probe", "--menu-probe", "--confirm-probe",
         "--flush-probe", "--window-probe", "--snapshot", "--demo-break", "--demo-hud", "--presence",
-        "--hotkey-probe", "--policy-probe",
+        "--hotkey-probe", "--policy-probe", "--circuit-probe",
     ]
 
     static var active: Bool {
@@ -282,9 +282,13 @@ final class AppModel: ObservableObject {
             // sotto il blocco, non l'hai dichiarata.
             // Il totale è già comprensivo di questo esercizio: la riga delle ripetizioni è stata
             // scritta alla conferma, non adesso. Sommarlo di nuovo lo mostrerebbe doppio.
-            announce(title: Praise.line(at: plan.index, hard: plan.exercise.kind.isVigorous),
-                     subtitle: L.t("\(plan.exercise.label) · oggi \(summary.totalReps) ripetizioni",
-                                   "\(plan.exercise.label) · \(summary.totalReps) reps today"),
+            // Il complimento guarda **tutto** il circuito, non l'ultima stazione: un giro che
+            // finisce con i crunch resta un giro col fiatone dentro.
+            let faticosa = plan.circuitActive
+                ? plan.circuit.contains { $0.kind.isVigorous }
+                : plan.exercise.kind.isVigorous
+            announce(title: Praise.line(at: plan.index, hard: faticosa),
+                     subtitle: completionSubtitle(plan),
                      silent: true)
         case .breakSkipped:
             hud.hide()
@@ -331,6 +335,25 @@ final class AppModel: ObservableObject {
 
     func refreshSummary() {
         summary = ledger.summary()
+    }
+
+    /// Cosa dire quando la pausa si chiude.
+    ///
+    /// **Sul circuito diceva solo l'ultima stazione.** Finivi quattro esercizi e la notifica
+    /// annunciava «10 jumping jack», perché il piano tiene *l'esercizio corrente* e alla fine
+    /// l'esercizio corrente è l'ultimo: la riga era vera e insieme falsa, nominava un quarto del
+    /// lavoro fatto. Segnalato dal principale il 2026-07-28, subito dopo un giro completo.
+    ///
+    /// Le stazioni si elencano tutte. Il pannello cresce in altezza da solo, quindi quattro nomi
+    /// non tagliano niente — e vedere le quattro righe che hai fatto è metà del premio.
+    func completionSubtitle(_ plan: BreakPlan) -> String {
+        guard plan.circuitActive, plan.circuit.count > 1 else {
+            return L.t("\(plan.exercise.label) · oggi \(summary.totalReps) ripetizioni",
+                       "\(plan.exercise.label) · \(summary.totalReps) reps today")
+        }
+        let stazioni = plan.circuit.map(\.label).joined(separator: " · ")
+        return L.t("Circuito completo: \(stazioni) · oggi \(summary.totalReps) ripetizioni",
+                   "Full circuit: \(stazioni) · \(summary.totalReps) reps today")
     }
 
     /// Da chiamare **nel momento in cui apri** il recap o il menu.

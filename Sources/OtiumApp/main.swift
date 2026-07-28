@@ -51,7 +51,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
         // Il primo avvio chiede due cose e poi sparisce. Non durante le sonde: una finestra
         // modale in mezzo a una misura misura la finestra.
-        if model.needsOnboarding, !ProbeMode.active { showOnboarding() }
+        // `--mostra-onboarding` la riapre anche a scelte già fatte. **Non è una funzione
+        // dell'app**: è lo strumento per guardarla mentre la si disegna, e non ha nessun
+        // corrispettivo nell'interfaccia — il primo avvio deve restare una cosa che succede una
+        // volta sola, non una voce di menu che nessuno userà mai due volte.
+        if (model.needsOnboarding || CommandLine.arguments.contains("--mostra-onboarding")),
+           !ProbeMode.active {
+            showOnboarding()
+        }
+
 
         let t = Timer(timeInterval: 5.0, repeats: true) { [weak self] _ in self?.updateStatusTitle() }
         RunLoop.main.add(t, forMode: .common)
@@ -77,6 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         runMenuProbeIfRequested()
         runHotKeyProbeIfRequested()
         runPolicyProbeIfRequested()
+        runCircuitProbeIfRequested()
         runRadarProbeIfRequested()
 
         // Il secondo avvio non apre niente di nuovo: chiede a questa istanza di farsi vedere.
@@ -480,6 +489,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                 exit(ok ? 0 : 1)
             }
         }
+    }
+
+    /// `--circuit-probe` — alla fine di un circuito la notifica dice **tutto** il giro?
+    ///
+    /// Il difetto era reale e visto dal principale: quattro stazioni fatte, e il banner ne
+    /// nominava una. La sonda costruisce una pausa piena col circuito attraverso il motore vero e
+    /// legge la riga che finirebbe nella notifica, invece di fidarsi del codice che la compone.
+    private func runCircuitProbeIfRequested() {
+        guard CommandLine.arguments.contains("--circuit-probe") else { return }
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("otium-circuito-\(UUID().uuidString).jsonl")
+        var s = Settings()
+        s.startDate = Date()
+        let probe = AppModel(settings: s, ledger: Ledger(url: url))
+        probe.headless = true
+        probe.idleOverride = 0
+        probe.start()
+        probe.forceBreakNow(long: true)
+        guard probe.canStartCircuit else { print("nessun circuito proponibile"); exit(2) }
+        probe.startCircuit()
+        guard let plan = probe.plan, plan.circuitActive else { print("circuito non attivo"); exit(2) }
+
+        let riga = probe.completionSubtitle(plan)
+        print("stazioni del circuito: \(plan.circuit.count)")
+        for e in plan.circuit { print("  · \(e.label)") }
+        print("riga della notifica: \(riga)")
+
+        // Ogni stazione dev'essere nominata: se ne manca anche una, la notifica sta raccontando
+        // meno di quello che hai fatto — che è esattamente il difetto.
+        let mancanti = plan.circuit.filter { !riga.contains($0.kind.localizedName) }
+        let ok = mancanti.isEmpty && plan.circuit.count > 1
+        for m in mancanti { print("  MANCA: \(m.label)") }
+        print(ok
+              ? "RISULTATO: PASS — la notifica nomina tutte le stazioni del circuito"
+              : "RISULTATO: FAIL — la notifica racconta meno del giro che hai fatto")
+        try? FileManager.default.removeItem(at: url)
+        exit(ok ? 0 : 1)
     }
 
     /// `--policy-probe` — dopo aver aperto e chiuso una finestra, Otium torna un'app della barra

@@ -262,13 +262,13 @@ struct BreakView: View {
     private var breakQuoteView: some View {
         if let phrase = model.currentPhrase {
             VStack(spacing: 6) {
-                Text("«\(phrase.text)»")
+                Text("«\(phrase.localizedText)»")
                     .font(.system(size: 18, design: .serif))
                     .foregroundStyle(Palette.paper.opacity(0.62))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: 620)
-                Text(phrase.credit)
+                Text(phrase.localizedCredit)
                     .font(.system(size: 11))
                     .foregroundStyle(Palette.dim.opacity(0.55))
             }
@@ -409,7 +409,7 @@ struct BreakView: View {
             // succedendo. Le due voci «non promesso» sono uscite dal giro della pausa — nel
             // mezzo di un esercizio spiegavano una funzione assente — e vivono nella finestra
             // delle fonti, dove le apri tu.
-            Text("Perché: \(model.currentStudy.governs) — "
+            Text("Perché: \(model.currentStudy.localizedGoverns) — "
                + "\(model.currentStudy.citation), \(String(model.currentStudy.year)).")
                 .font(.system(size: 12))
                 .foregroundStyle(Palette.dim)
@@ -599,10 +599,10 @@ struct QuoteHUDView: View {
         HStack(spacing: 14) {
             RoundedRectangle(cornerRadius: 2).fill(Palette.accent).frame(width: 4)
             VStack(alignment: .leading, spacing: 8) {
-                Text("«\(phrase.text)»")
+                Text("«\(phrase.localizedText)»")
                     .font(.system(size: 14, design: .serif))
                     .fixedSize(horizontal: false, vertical: true)
-                Text(phrase.credit)
+                Text(phrase.localizedCredit)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
@@ -692,10 +692,10 @@ struct EvidenceView: View {
                 ForEach(Evidence.all) { study in
                     VStack(alignment: .leading, spacing: 6) {
                         let isDisclaimer = Evidence.disclaimers.contains { $0.id == study.id }
-                        Text(study.governs)
+                        Text(study.localizedGoverns)
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(isDisclaimer ? Color.secondary : Palette.accentOnWindow)
-                        Text(study.claim)
+                        Text(study.localizedClaim)
                             .font(.system(size: 13))
                             .fixedSize(horizontal: false, vertical: true)
                         HStack(spacing: 6) {
