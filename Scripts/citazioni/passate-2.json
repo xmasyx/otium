@@ -42,7 +42,7 @@
     "fonte": "steiner-53493.txt"
   },
   {
-    "it": "Il sapere ha valore solo in quanto contribuisce al dispiegarsi completo di tutta la natura umana.",
+    "it": "Il sapere ha valore solo in quanto contribuisce al dispiegarsi in ogni direzione di tutta la natura umana.",
     "originale": "Das Wissen hat nur dadurch Wert, daß es einen Beitrag liefert zur allseitigen Entfaltung der ganzen Menschennatur.",
     "autore": "Rudolf Steiner",
     "opera": "La filosofia della libertà, I",
@@ -84,7 +84,7 @@
     "fonte": "steiner-53493.txt"
   },
   {
-    "it": "Perciò la vita ha solo lo scopo e la destinazione che l'uomo stesso le dà.",
+    "it": "La vita ha solo lo scopo e la destinazione che l'uomo stesso le dà.",
     "originale": "Deshalb hat das Leben nur den Zweck und die Bestimmung, die der Mensch ihm giebt.",
     "autore": "Rudolf Steiner",
     "opera": "La filosofia della libertà, XII",
@@ -140,7 +140,7 @@
     "fonte": "seneca-epistulae-la.txt"
   },
   {
-    "it": "Costringo l'animo a stare teso su di sé e a non farsi chiamare fuori dalle cose esterne.",
+    "it": "Costringo l'animo a stare intento a sé e a non lasciarsi distrarre dalle cose esterne.",
     "originale": "Animum enim cogo sibi intentum esse nec avocari ad externa",
     "autore": "Seneca",
     "opera": "Lettere a Lucilio, 56",
@@ -175,8 +175,8 @@
     "fonte": "seneca-epistulae-la.txt"
   },
   {
-    "it": "Tutto ciò che in me può patire offesa è questo: in questa dimora esposta abita un animo libero.",
-    "originale": "Quidquid in me potest iniuriam pati hoc est in hoc obnoxio domicilio animus liber habitat.",
+    "it": "In questa dimora esposta abita un animo libero.",
+    "originale": "in hoc obnoxio domicilio animus liber habitat",
     "autore": "Seneca",
     "opera": "Lettere a Lucilio, 65",
     "fonte": "seneca-epistulae-la.txt"
@@ -238,7 +238,7 @@
     "fonte": "seneca-epistulae-la.txt"
   },
   {
-    "it": "Il nostro animo è capiente: fin lassù arriva, se i vizi non lo schiacciano.",
+    "it": "Il nostro animo è capiente: arriva in alto, se i vizi non lo schiacciano.",
     "originale": "Capax est noster animus, perfertur illo si vitia non deprimant.",
     "autore": "Seneca",
     "opera": "Lettere a Lucilio, 92",
@@ -287,7 +287,7 @@
     "fonte": "bacon-en.txt"
   },
   {
-    "it": "Genera grande perfezione che l'esercizio sia più duro dell'uso.",
+    "it": "Se l'esercizio è più duro dell'uso, ne nasce grande perfezione.",
     "originale": "For it breeds great perfection, if the practice be harder than the use.",
     "autore": "Francis Bacon",
     "opera": "Saggi, Della natura negli uomini",
@@ -357,21 +357,21 @@
     "fonte": "dhammapada-en.txt"
   },
   {
-    "it": "Come il frecciaio raddrizza la sua freccia, il saggio raddrizza il proprio pensiero tremante e instabile.",
+    "it": "Come il fabbricante di frecce raddrizza la sua freccia, il saggio raddrizza il proprio pensiero tremante e instabile.",
     "originale": "As a fletcher makes straight his arrow, a wise man makes straight his trembling and unsteady thought",
     "autore": "Buddha",
     "opera": "Dhammapada, III, 33",
     "fonte": "dhammapada-en.txt"
   },
   {
-    "it": "Il saggio sorvegli i propri pensieri, difficili da cogliere e velocissimi: i pensieri ben sorvegliati portano felicità.",
+    "it": "Il saggio sorvegli i propri pensieri, difficili da cogliere, astuti, che corrono dove vogliono: ben sorvegliati portano felicità.",
     "originale": "Let the wise man guard his thoughts, for they are difficult to perceive, very artful, and they rush wherever they list: thoughts well guarded bring happiness.",
     "autore": "Buddha",
     "opera": "Dhammapada, III, 36",
     "fonte": "dhammapada-en.txt"
   },
   {
-    "it": "Gli irrigatori guidano l'acqua, i frecciai piegano la freccia, i falegnami piegano il legno: i saggi danno forma a se stessi.",
+    "it": "Gli irrigatori guidano l'acqua, i fabbricanti di frecce piegano la freccia, i falegnami piegano il legno: i saggi danno forma a se stessi.",
     "originale": "Well-makers lead the water (wherever they like); fletchers bend the arrow; carpenters bend a log of wood; wise people fashion themselves.",
     "autore": "Buddha",
     "opera": "Dhammapada, VI, 80",
@@ -469,7 +469,7 @@
     "fonte": "seneca-epistulae-la.txt"
   },
   {
-    "it": "Questa gioia non nasce che dalla coscienza delle proprie virtù.",
+    "it": "La gioia non nasce che dalla coscienza delle proprie virtù.",
     "originale": "Gaudium hoc non nascitur nisi ex virtutum conscientia",
     "autore": "Seneca",
     "opera": "Lettere a Lucilio, 59",
@@ -525,7 +525,7 @@
     "fonte": "seneca-epistulae-la.txt"
   },
   {
-    "it": "Pensa sempre a come sia la vita, non a quanta ne sia.",
+    "it": "Il saggio pensa sempre a come sia la vita, non a quanta ne sia.",
     "originale": "Cogitat semper qualia vita, non quanta sit.",
     "autore": "Seneca",
     "opera": "Lettere a Lucilio, 70",
@@ -567,14 +567,14 @@
     "fonte": "bacon-en.txt"
   },
   {
-    "it": "Le bocce fanno bene ai reni, il tiro ai polmoni e al petto, una camminata lenta allo stomaco, la cavalcata alla testa.",
+    "it": "Le bocce fanno bene ai calcoli e ai reni, il tiro ai polmoni e al petto, la camminata lenta allo stomaco, la cavalcata alla testa.",
     "originale": "Bowling is good for the stone and reins; shooting for the lungs and breast; gentle walking for the stomach; riding for the head",
     "autore": "Francis Bacon",
     "opera": "Saggi, Degli studi",
     "fonte": "bacon-en.txt"
   },
   {
-    "it": "Non leggere per contraddire e confutare, né per credere e dare per scontato, ma per pesare e considerare.",
+    "it": "Non leggere per contraddire, né per credere sulla parola, né per far conversazione, ma per pesare e considerare.",
     "originale": "Read not to contradict and confute; nor to believe and take for granted; nor to find talk and discourse; but to weigh and consider.",
     "autore": "Francis Bacon",
     "opera": "Saggi, Degli studi",

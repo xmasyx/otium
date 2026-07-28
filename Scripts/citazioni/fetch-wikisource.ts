@@ -134,9 +134,52 @@ function chiave(t: string): number {
   return n;
 }
 
-const pages = await subpages(prefix);
+/**
+ * Un rinvio non è un testo.
+ *
+ * `#REDIRECT [[X]]` (e il suo gemello italiano `#RINVIA`) occupa una pagina intera e pesa
+ * settanta byte: ventuno pagine di rinvii scaricano due kilobyte e sembrano un'opera. È la stessa
+ * famiglia di guasto degli stub di trasclusione — il file esiste, il conteggio delle pagine torna,
+ * dentro non c'è niente — e va risolta prima, non diagnosticata dopo.
+ */
+const RINVIO = /^\s*#\s*(?:REDIRECT|RINVIA|RINVIO)\s*\[\[\s*([^\]|#]+)/i;
+
+/**
+ * Risolve i rinvii A LOTTI, non uno per uno.
+ *
+ * Una chiamata per pagina prende «too many requests» dopo poche decine di titoli: il batch da 50
+ * di `contents()` è la ragione per cui questo scarico regge, e va conservata anche mentre si
+ * inseguono i rinvii. Si fanno round: ogni round chiede in blocco i bersagli scoperti nel round
+ * prima, al massimo tre volte (una catena di rinvii più lunga è un anello, non un'opera).
+ */
+async function risolviRinvii(map: Map<string, string>, titoli: string[]): Promise<Map<string, string>> {
+  const finale = new Map(map);
+  let daRisolvere = titoli.filter((t) => RINVIO.test(finale.get(t) ?? ""));
+  for (let round = 0; round < 3 && daRisolvere.length; round++) {
+    const bersaglio = new Map<string, string>();
+    for (const t of daRisolvere) bersaglio.set(t, finale.get(t)!.match(RINVIO)![1]!.trim());
+    process.stderr.write(`  ${daRisolvere.length} rinvii da seguire (round ${round + 1})\n`);
+    const presi = await contents([...new Set(bersaglio.values())]);
+    for (const [t, b] of bersaglio) finale.set(t, presi.get(b) ?? "");
+    daRisolvere = daRisolvere.filter((t) => RINVIO.test(finale.get(t) ?? ""));
+  }
+  return finale;
+}
+
+let pages = await subpages(prefix);
+// Il prefisso stesso può essere un rinvio: allora le sottopagine vere stanno sotto un altro nome.
+if (!pages.length) {
+  const radice = (await contents([prefix])).get(prefix) ?? "";
+  const r = radice.match(RINVIO);
+  if (r) {
+    const bersaglio = r[1]!.trim();
+    process.stderr.write(`  rinvio della radice: ${prefix} → ${bersaglio}\n`);
+    pages = await subpages(bersaglio);
+    if (!pages.length) pages = [bersaglio];
+  }
+}
 const list = (pages.length ? pages : [prefix]).sort((a, b) => chiave(a) - chiave(b));
-const map = await contents(list);
+const map = await risolviRinvii(await contents(list), list);
 
 let body = "";
 let mancanti = 0;
@@ -152,5 +195,17 @@ for (const t of list) {
   body += `\n@@@ ${t}\n\n${text}\n`;
 }
 if (resi) console.log(`  (${resi} pagine prese come testo reso)`);
+
+const prese = list.length - mancanti;
 await Bun.write(out, body);
-console.log(`${out}  ${list.length - mancanti}/${list.length} pagine  ${body.length} byte${mancanti ? `  (${mancanti} mancanti)` : ""}`);
+console.log(`${out}  ${prese}/${list.length} pagine  ${body.length} byte${mancanti ? `  (${mancanti} mancanti)` : ""}`);
+
+// Fail-loud: un'opera che pesa meno di 300 byte a pagina non è un'opera, è un indice o una
+// collezione di rinvii. Meglio uscire 1 adesso che scoprirlo dal cancello, dove il sintomo
+// («frammento non trovato») punta al posto sbagliato — la citazione, invece della fonte.
+const perPagina = prese ? body.length / prese : 0;
+if (prese && perPagina < 300) {
+  console.error(`\nSOSPETTO: ${Math.round(perPagina)} byte a pagina. Questo non è testo — controlla`);
+  console.error(`se «${prefix}» è una pagina indice o una raccolta di rinvii, e punta al titolo vero.`);
+  process.exit(1);
+}
