@@ -109,7 +109,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private func announcePresence() {
         model.refreshSummary()
         let subtitle = model.phase == .paused
-            ? L.t("sospesa — riprendila dal menu", "paused — resume it from the menu")
+            ? L.t("sospesa, riprendila dal menu", "paused, resume it from the menu")
             : L.t("prossima pausa fra \(model.minutesToNextBreak) min di lavoro attivo", "next break in \(model.minutesToNextBreak) min of active work")
         model.announce(title: L.t("Otium è già attiva", "Otium is already running"), subtitle: subtitle)
         updateStatusTitle()

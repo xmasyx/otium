@@ -35,12 +35,12 @@ public enum ExerciseCategory: String, Codable, CaseIterable, Sendable {
 
     public var subtitle: String {
         switch self {
-        case .gambe: return L.t("le masse grosse: sono loro ad abbassare la glicemia",
+        case .gambe: return L.t("le masse grosse, sono loro ad abbassare la glicemia",
                                 "the big muscles: these are the ones that lower blood sugar")
         case .spinta: return L.t("petto, spalle, tricipiti", "chest, shoulders, triceps")
         case .addome: return L.t("il core, che stando seduti non lavora mai",
                                  "the core, which never works while you sit")
-        case .vigorosi: return L.t("il fiatone: contano verso le 3 sessioni intense del giorno",
+        case .vigorosi: return L.t("il fiatone, contano verso le 3 sessioni intense del giorno",
                                    "the breathless ones: they count towards the 3 vigorous bouts a day")
         }
     }
@@ -321,10 +321,10 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
             return L.t("Parti in piedi, fai un passo lungo, scendi, torna su. Ogni ripetizione un passo nuovo, alternando.",
                        "Start standing, take a long step, go down, come back up. A new step each rep, alternating sides.")
         case .splitSquat:
-            return L.t("Come l'affondo, ma i piedi non si muovono mai: resti nella posizione e sali e scendi. Metà per gamba.",
+            return L.t("Come l'affondo, ma i piedi non si muovono mai, resti nella posizione e sali e scendi. Metà per gamba.",
                        "Like a lunge, but your feet never move: hold the stance and go up and down. Half per leg.")
         case .gluteBridge:
-            return L.t("A terra, ginocchia piegate: spingi coi talloni e stringi i glutei in alto.",
+            return L.t("A terra, ginocchia piegate, spingi coi talloni e stringi i glutei in alto.",
                        "On the floor, knees bent: push through your heels and squeeze your glutes at the top.")
         case .calfRaise:
             return L.t("In piedi, sali sulle punte lentamente e scendi ancora più lentamente.",
@@ -336,13 +336,13 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
             return L.t("Mani vicine sotto il petto, indici e pollici a formare un rombo. Tutto sui tricipiti.",
                        "Hands close together under your chest, index fingers and thumbs forming a diamond. All triceps.")
         case .archerPushUp:
-            return L.t("Mani larghe: scendi da un lato tenendo l'altro braccio teso. Alterna i lati.",
+            return L.t("Mani larghe, scendi da un lato tenendo l'altro braccio teso. Alterna i lati.",
                        "Hands wide: lower to one side keeping the other arm straight. Alternate sides.")
         case .inclinePushUp:
-            return L.t("Mani sulla scrivania o sulla sedia: più alto è l'appoggio, più è facile.",
+            return L.t("Mani sulla scrivania o sulla sedia, più alto è l'appoggio e più è facile.",
                        "Hands on the desk or the chair: the higher the surface, the easier it gets.")
         case .kneePushUp:
-            return L.t("Ginocchia a terra, corpo in linea dalle ginocchia alla testa. Non è un push-up a metà: è un push-up con meno peso.",
+            return L.t("Ginocchia a terra, corpo in linea dalle ginocchia alla testa. Non è un push-up a metà, è un push-up con meno peso.",
                        "Knees on the floor, body in line from knees to head. It is not half a push-up: it is a push-up with less weight.")
         case .wallPushUp:
             return L.t("Mani al muro all'altezza delle spalle, piedi un passo indietro. Più ti allontani dal muro, più è duro.",
@@ -354,19 +354,19 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
             return L.t("Mani sul bordo della sedia dietro di te, gomiti indietro, scendi e risali. Gambe dritte; se è troppo dura, piegale. Sedia stabile, contro il muro.",
                        "Hands on the edge of the chair behind you, elbows back, down and up. Legs straight; if it's too hard, bend them. Stable chair, against the wall.")
         case .crunch:
-            return L.t("A terra, ginocchia piegate: stacca solo le scapole, mento lontano dal petto. Non tirarti il collo.",
+            return L.t("A terra, ginocchia piegate, stacca solo le scapole e tieni il mento lontano dal petto. Non tirarti il collo.",
                        "On the floor, knees bent: lift only your shoulder blades, chin away from your chest. Don't pull on your neck.")
         case .sitUp:
             return L.t("Salita completa fino a sederti, discesa lenta. Se i piedi si alzano, mettili sotto la scrivania.",
                        "All the way up to sitting, slow on the way down. If your feet lift, tuck them under the desk.")
         case .legRaise:
-            return L.t("Schiena a terra, mani sotto i glutei: gambe tese salgono e scendono senza toccare terra.",
+            return L.t("Schiena a terra, mani sotto i glutei, gambe tese che salgono e scendono senza toccare terra.",
                        "Back on the floor, hands under your glutes: straight legs go up and down without touching the ground.")
         case .bicycleCrunch:
             return L.t("Gomito verso il ginocchio opposto, alternando. Conta una ripetizione per lato.",
                        "Elbow towards the opposite knee, alternating. Count one rep per side.")
         case .deadBug:
-            return L.t("Schiena piatta a terra: allunga braccio e gamba opposti, torna, cambia lato. Lentissimo.",
+            return L.t("Schiena piatta a terra, allunga braccio e gamba opposti, torna, cambia lato. Lentissimo.",
                        "Back flat on the floor: extend opposite arm and leg, return, switch sides. Very slowly.")
         case .russianTwist:
             return L.t("Seduto, busto inclinato indietro, ruota le spalle da un lato all'altro. Un lato, una ripetizione.",
@@ -381,7 +381,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
             return L.t("Schiena a terra e ben aderente, braccia e gambe sollevate. Se la lombare si stacca, alza le gambe.",
                        "Back flat and pressed to the floor, arms and legs lifted. If your lower back lifts, raise your legs.")
         case .burpee:
-            return L.t("Squat, gambe indietro, torna su, salto. Il pezzo duro della giornata: 60-90 secondi.",
+            return L.t("Squat, gambe indietro, torna su, salto. Il pezzo duro della giornata, 60-90 secondi.",
                        "Squat, legs back, come up, jump. The hard part of the day: 60-90 seconds.")
         case .jumpingJack:
             return L.t("Ritmo continuo, atterra morbido sull'avampiede.",

@@ -36,7 +36,7 @@ struct PaceCheckInView: View {
                 Text(titolo)
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundStyle(Palette.accentOnWindow)
-                Text(L.t("Sei partito piano, come si deve: oggi fai \(ItalianNumber.il(percentualeOggi))% delle ripetizioni. Se ti stanno venendo facili, puoi passare alle full reps da adesso.",
+                Text(L.t("Sei partito piano, come si deve, e oggi fai \(ItalianNumber.il(percentualeOggi))% delle ripetizioni. Se ti stanno venendo facili, puoi passare al 100% da adesso.",
                          "You started gently, as you should: today you do \(percentualeOggi)% of the reps. If they are coming easy, you can move to the full ones right now."))
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
@@ -45,8 +45,8 @@ struct PaceCheckInView: View {
 
             // Prima diceva «è quello a cui la salita arriva da sola», che è contorto e non
             // significa niente a prima lettura. Segnalato dal principale il 2026-07-28.
-            Text(L.t("Non c'è una risposta giusta: se rispondi «non ancora», alle full reps ci arrivi comunque fra qualche settimana.",
-                     "There is no right answer: if you say «not yet», you get to the full reps anyway in a few weeks."))
+            Text(L.t("Non c'è una risposta giusta. Se rispondi «non ancora», al 100% ci arrivi comunque fra qualche settimana.",
+                     "There is no right answer: if you say «not yet», you get to 100% anyway in a few weeks."))
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -54,7 +54,7 @@ struct PaceCheckInView: View {
             HStack(spacing: 12) {
                 Spacer()
                 button(L.t("Non ancora", "Not yet"), filled: false) { answer(fullPace: false) }
-                button(L.t("Sì, full reps", "Yes, full reps"), filled: true) { answer(fullPace: true) }
+                button(L.t("Sì, al 100%", "Yes, 100%"), filled: true) { answer(fullPace: true) }
             }
         }
         .padding(30)
@@ -89,9 +89,9 @@ struct PaceCheckInView: View {
         if fullPace { s.rampStartFactor = 1.0 }
         model.update(settings: s)
         if fullPace {
-            model.announce(title: L.t("Full reps", "Full reps"),
-                           subtitle: L.t("Da adesso si fanno le full reps.",
-                                         "From now on the reps are the full ones."))
+            model.announce(title: L.t("Sei al 100%", "You are at 100%"),
+                           subtitle: L.t("Da adesso i set sono completi.",
+                                         "From now on the sets are complete."))
         }
         onDone()
     }

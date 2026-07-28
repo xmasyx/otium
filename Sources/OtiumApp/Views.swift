@@ -356,7 +356,7 @@ struct BreakView: View {
             }
 
             if model.exerciseDone && !model.canReturnToWork {
-                Text(L.t("Esercizio fatto. Resta il tempo della pausa: alzati, guarda lontano.",
+                Text(L.t("Esercizio fatto. Resta il tempo della pausa, alzati e guarda lontano.",
                      "Exercise done. The rest of the break is yours: stand up, look far away."))
                     .font(.system(size: 13, design: .rounded))
                     .foregroundStyle(Palette.accent)
@@ -470,7 +470,7 @@ struct BreakView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .focused($escapeFocused)
                         .onSubmit { model.attemptEscape() }
-                    Text(L.t("Ogni salto finisce nel registro. Non è un giudizio: è un dato.",
+                    Text(L.t("Ogni salto finisce nel registro. Non è un giudizio, è un dato.",
                      "Every skip goes into the log. It is not a judgement: it is data."))
                         .font(.system(size: 11))
                         .foregroundStyle(Palette.dim.opacity(0.7))
@@ -759,7 +759,7 @@ struct PrefsView: View {
                 }
                 .pickerStyle(.segmented)
 
-                Text(L.t("Il sesso decide da dove parti: le ripetizioni per gruppo muscolare (Miller 1993) e la versione della spinta — sulle ginocchia invece che a terra. Non cambia la cadenza né nient'altro, e ogni esercizio resta scambiabile dentro la pausa.",
+                Text(L.t("Il sesso decide da dove parti, cioè le ripetizioni per gruppo muscolare (Miller 1993) e la versione della spinta, sulle ginocchia invece che a terra. Non cambia la cadenza né nient'altro, e ogni esercizio resta scambiabile dentro la pausa.",
                          "Sex decides where you start: the reps per muscle group (Miller 1993) and the version of the push — on your knees instead of full. It changes nothing else, and every exercise stays swappable inside the break."))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
@@ -793,8 +793,8 @@ struct PrefsView: View {
                             get: { Int((draft.rampStartFactor * 100).rounded()) },
                             set: { draft.rampStartFactor = Double($0) / 100 }
                         ), in: 20...100, step: 5)
-                Text(L.t("Le ripetizioni partono ridotte e salgono un pochino ogni giorno, fino alle full reps. Oggi sei \(ItalianNumber.al(Int(draft.rampFactor(now: Date()) * 100)))%.",
-                         "The reps start reduced and go up a little every day, until the full ones. Today you are at \(Int(draft.rampFactor(now: Date()) * 100))%."))
+                Text(L.t("Le ripetizioni partono ridotte e salgono un pochino ogni giorno, fino al 100%. Oggi sei \(ItalianNumber.al(Int(draft.rampFactor(now: Date()) * 100)))%.",
+                         "The reps start reduced and go up a little every day, until 100%. Today you are at \(Int(draft.rampFactor(now: Date()) * 100))%."))
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -871,8 +871,8 @@ struct PrefsView: View {
                     + "incline with one click. The reps adjust to the difficulty."))
                     .font(.caption).foregroundStyle(.secondary)
                 Toggle(L.t("Proponi il microcircuito nelle pause piene", "Offer the circuit in full breaks"), isOn: $draft.offerCircuit)
-                Text(L.t("Nella pausa piena puoi scegliere il giro completo — una stazione per "
-                   + "famiglia, esplosivo compreso — invece del solo esercizio del turno. Resta "
+                Text(L.t("Nella pausa piena puoi scegliere il giro completo, una stazione per "
+                   + "famiglia esplosivo compreso, invece del solo esercizio del turno. Resta "
                    + "una proposta: si decide dentro la pausa, e le stazioni valgono i tre quarti "
                    + "delle ripetizioni, o quattro esercizi non stanno in cinque minuti.",
                     "In a full break you can choose the whole circuit — one station per family, "
@@ -902,7 +902,7 @@ struct PrefsView: View {
                 }
                 Toggle(L.t("Rimanda se un microfono è in uso (call)", "Defer while a microphone is in use (a call)"), isOn: $draft.deferWhenMicrophoneActive)
                 Toggle(L.t("Conta anche video e lettura come tempo fermo", "Count video and reading as sitting time too"), isOn: $draft.detectQuietPresence)
-                Text(L.t("Un film o un PDF sono immobilità perfetta: senza questo, guardare Netflix "
+                Text(L.t("Un film o un PDF sono immobilità perfetta, e senza questo guardare Netflix "
                    + "vale come una pausa ben fatta. Tetti senza un solo input: 45 min per un "
                    + "video, 15 per un documento.",
                     "A film or a PDF is perfect stillness: without this, watching Netflix counts as "

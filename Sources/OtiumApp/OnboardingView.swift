@@ -70,7 +70,7 @@ struct OnboardingView: View {
             question(
                 number: 2,
                 title: L.t("Sesso", "Sex"),
-                detail: L.t("Decide da dove parti: ripetizioni e livello dell'esercizio.",
+                detail: L.t("Decide da dove parti, ripetizioni e livello dell'esercizio.",
                             "Sets where you start: reps and exercise level.")
             ) {
                 VStack(alignment: .leading, spacing: 12) {
@@ -80,7 +80,7 @@ struct OnboardingView: View {
                     }
                     // L'app dice **perché** chiede, mentre lo chiede. Una domanda sul corpo senza
                     // una ragione visibile è una domanda a cui è ragionevole non voler rispondere.
-                    Text(L.t("Uno studio su otto uomini e otto donne (Miller 1993) misura circa il 52% della forza maschile nella parte alta del corpo e il 66% in quella bassa. Per questo l'app non taglia il numero fino a farlo diventare finto: cambia il movimento — push-up sulle ginocchia invece che a terra — e le ripetizioni restano quelle di un allenamento vero. Dentro la pausa puoi sempre passare alla versione più dura, o a quella più facile.",
+                    Text(L.t("Uno studio su otto uomini e otto donne (Miller 1993) misura circa il 52% della forza maschile nella parte alta del corpo e il 66% in quella bassa. Per questo l'app non taglia il numero fino a farlo diventare finto, ma cambia il movimento (push-up sulle ginocchia invece che a terra) e le ripetizioni restano quelle di un allenamento vero. Dentro la pausa puoi sempre passare alla versione più dura, o a quella più facile.",
                              "A study of eight men and eight women (Miller 1993) measured roughly 52% of male strength in the upper body and 66% in the lower body. That is why the app does not cut the number until it becomes token: it changes the movement — knee push-ups instead of full ones — and the reps stay those of a real workout. Inside the break you can always switch to the harder version, or the easier one."))
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
@@ -108,7 +108,7 @@ struct OnboardingView: View {
                                        narrow: true) { pushVariant = kind }
                             }
                         }
-                        Text(L.t("Dal muro alle ginocchia al rialzo fino a terra: è la stessa progressione per chiunque parta da zero. Se già li fai a terra, dillo qui.",
+                        Text(L.t("Dal muro alle ginocchia al rialzo fino a terra, è la stessa progressione per chiunque parta da zero. Se già li fai a terra, dillo qui.",
                                  "From the wall to the knees to an elevated surface to the floor: it is the same progression for anyone starting from scratch. If you already do them on the floor, say so here."))
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
@@ -127,7 +127,7 @@ struct OnboardingView: View {
                     HStack(spacing: 12) {
                         choice(title: L.t("Partenza graduale", "Gradual start"),
                                selected: gradual, wide: true) { gradual = true }
-                        choice(title: L.t("Full reps", "Full reps"),
+                        choice(title: L.t("100%", "100%"),
                                selected: !gradual, wide: true) { gradual = false }
                     }
                     // **I numeri veri, non una percentuale.** «Parti al 55%» non dice niente a
@@ -137,10 +137,10 @@ struct OnboardingView: View {
                         .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Palette.accentOnWindow)
                     Text(gradual
-                         ? L.t("Si sale un pochino ogni giorno fino alle full reps, in tre settimane. Serve a non smettere dopo tre giorni.",
-                               "It goes up a little every day until the full reps, over three weeks. It is there so you don't quit after three days.")
-                         : L.t("Nessuna partenza morbida: da subito si fanno le full reps. Se sei già allenato è la scelta giusta.",
-                               "No soft start: the reps are the full ones from the start. If you already train, this is the right choice."))
+                         ? L.t("Si sale un pochino ogni giorno fino al 100%, in tre settimane. Serve a non smettere dopo tre giorni.",
+                               "It goes up a little every day until 100%, over three weeks. It is there so you don't quit after three days.")
+                         : L.t("Nessuna partenza morbida, da subito si fa il 100% delle ripetizioni. Se sei già allenato è la scelta giusta.",
+                               "No soft start, it's 100% of the reps from day one. If you already train, this is the right choice."))
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -180,7 +180,7 @@ struct OnboardingView: View {
         // proprio nella riga che serve a farsi un'idea concreta.
         let spinta = SexCalibration.regression(for: .pushUp, sex: chi, chosen: pushVariant)
         let push = Ramp.reps(for: spinta, factor: fattore, sex: chi)
-        return L.t("Il primo giorno: \(squat) squat, \(push) \(spinta.localizedName).",
+        return L.t("Il primo giorno \(squat) squat, \(push) \(spinta.localizedName).",
                    "Day one: \(squat) squats, \(push) \(spinta.localizedName).")
     }
 
