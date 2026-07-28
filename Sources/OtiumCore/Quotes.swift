@@ -430,9 +430,9 @@ public enum Quotes {
         q("Il sapere ha valore solo in quanto contribuisce al dispiegarsi in ogni direzione di tutta la natura umana.", "Rudolf Steiner", "La filosofia della libertà, I"),
         q("Davanti all'idea bisogna porsi da padroni, altrimenti si finisce in sua schiavitù.", "Rudolf Steiner", "La filosofia della libertà, I"),
         q("È libero solo l'uomo che in ogni istante della vita è in grado di seguire se stesso.", "Rudolf Steiner", "La filosofia della libertà, X"),
-        q("Vivere e lasciar vivere è la massima fondamentale degli uomini liberi.", "Rudolf Steiner", "La filosofia della libertà, X"),
-        q("La nostra vita si compone di azioni libere e di azioni non libere.", "Rudolf Steiner", "La filosofia della libertà, X"),
-        q("L'individuo umano è la sorgente di ogni moralità e il centro di ogni vita.", "Rudolf Steiner", "La filosofia della libertà, X"),
+        q("Vivere e lasciar vivere è la massima fondamentale degli uomini liberi.", "To live in love towards our actions, and to let live in the understanding of the other person's will, is the fundamental maxim of free men.", "Rudolf Steiner", "La filosofia della libertà, X"),
+        q("La nostra vita si compone di azioni libere e di azioni non libere.", "Our life is made up of free and unfree actions.", "Rudolf Steiner", "La filosofia della libertà, X"),
+        q("L'individuo umano è la sorgente di ogni moralità e il centro di ogni vita.", "The human individual is the source of all morality and the centre of earthly life.", "Rudolf Steiner", "La filosofia della libertà, X"),
         q("La vita ha solo lo scopo e la destinazione che l'uomo stesso le dà.", "Rudolf Steiner", "La filosofia della libertà, XII"),
         q("Non m'incammino nella vita con un itinerario già stabilito.", "Rudolf Steiner", "La filosofia della libertà, XII"),
     ]
