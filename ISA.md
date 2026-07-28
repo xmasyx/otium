@@ -793,6 +793,48 @@ la stessa cosa due volte, con i secondi esatti della soglia d'assenza.
 usano ancora l'accento di sistema, quindi blu. E in cima alle Preferenze c'è una fascia vuota di
 circa 120 punti da sondare.
 
+### Iterazione 14 — l'audit, prima metà (2026-07-28/29)
+
+Quattro assi su cinque, tenuti fuori dai file dell'altra sessione. **Otto difetti**, e nessuno
+sarebbe emerso dall'uso: sette fallivano in silenzio e uno solo in modo visibile.
+
+- [x] **ISC-70** Le promesse di privacy reggono dopo tutto quello che è stato aggiunto. — nessuna
+      chiamata di rete, nessuna API che chieda permessi, nessun entitlement, e il nome del
+      documento che stai leggendo non finisce mai nel registro. *Falsificatore:* grep sulle
+      famiglie di API più `codesign -d --entitlements`.
+- [x] **ISC-71** Lavorando, l'app non lancia processi esterni. — `lsof` costava 31 ms e 0,03 s di
+      CPU ogni 8 secondi con un'app da lettura davanti, cioè circa lo 0,4% di un core contro lo
+      0,13% dell'app intera, e serviva solo alla riga mostrata nella schermata di blocco. Ora si
+      chiede nel preavviso. *Falsificatore:* `--lsof-probe` conta i lanci veri, e prima di credere
+      allo zero chiama `lsof` a mano per verificare che il contatore sappia contare.
+- [x] **ISC-72** Il registro non si può perdere per un permesso. — **il difetto peggiore
+      dell'audit**: con il file non scrivibile, `append` non falliva, *riusciva* — il ripiego
+      atomico rinomina un file nuovo sopra il vecchio, e il permesso che conta è quello della
+      cartella. Mesi di storia sostituiti da una riga sola, con `append` che restituiva `true`.
+      *Falsificatore:* `DurabilityTests`, file a 0444, si pretende `false` **e** che le righe
+      precedenti siano ancora lì.
+- [x] **ISC-73** Una riga rotta non porta via il resto e non sparisce in silenzio. — saltarla è
+      giusto, non contarla no: le statistiche uscivano più basse del vero senza dirlo.
+- [x] **ISC-74** I numeri mostrati raccontano il registro. — tre difetti: togliere una pausa
+      segnata lasciava dentro le sue ripetizioni; la serie dei giorni ignorava le pause naturali,
+      cioè spezzava la serie a chi si alza da solo, che è il comportamento che l'app dice di
+      premiare; e il tempo davanti al Mac poteva andare sotto zero.
+- [x] **ISC-75** La suite non dipende dall'ora del giorno. — nove test costruivano i timestamp
+      rispetto a `Date()` e li leggevano dentro la finestra del giorno: dopo la mezzanotte
+      diventavano rossi. Diciassette rossi comparsi da soli a metà audit, che per un attimo ho
+      creduto miei.
+- [x] **ISC-76** Il fuzz copre anche la progressione, e la copre davvero. — due incoerenze
+      trovate (sospendere e rinviare lasciavano «esercizio fatto» senza pausa) più un bluff
+      possibile («nove su dieci» un istante dopo l'inizio). *Falsificatore, e la parte che conta:*
+      sabotando il pavimento del livello il fuzz restava **verde**, perché non arrivava mai in
+      quello stato — mancava la mossa più umana, aspettare. Aggiunta, la stessa sabotatura produce
+      776 rossi.
+- **Anti-claim** — l'audit non doveva toccare i file dell'altra sessione. `Quotes.swift`,
+  `Mindful.swift` e `Phrases.swift` non sono stati aperti, e `Views.swift` solo dove serviva.
+
+**Aperto:** il quinto asse, accessibilità e contrasto, e tutta la parte contenuti, che aspettano
+la fine delle traduzioni.
+
 ## Test Strategy
 
 Tre strumenti: `swift test` per tutta la logica pura (orologio, motore, rampa, registro), che è
