@@ -17,6 +17,7 @@ enum ProbeMode {
     private static let flags = [
         "--orphan-probe", "--sleep-probe", "--radar-probe", "--menu-probe", "--confirm-probe",
         "--flush-probe", "--window-probe", "--snapshot", "--demo-break", "--demo-hud", "--presence",
+        "--hotkey-probe", "--policy-probe",
     ]
 
     static var active: Bool {
@@ -204,6 +205,9 @@ final class AppModel: ObservableObject {
     /// parlando al telefono la pausa si rimanda, e rimandarla su una lettura vecchia di tre
     /// secondi significa deciderlo su com'era il mondo prima.
     private func environmentSample(now: Date) -> EngineEnvironment {
+        // Sospesa non decide niente: interrogare il sistema mentre il motore ignora la risposta
+        // è lavoro puro, e su un portatile il lavoro puro è batteria.
+        guard engine.phase != .paused else { return cachedEnvironment }
         let stantia = now.timeIntervalSince(lastEnvironmentSample) >= Self.environmentSampleInterval
         guard engine.phase == .warning || stantia else { return cachedEnvironment }
         lastEnvironmentSample = now

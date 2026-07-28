@@ -1,8 +1,9 @@
 import AppKit
+import Carbon.HIToolbox
 import SwiftUI
 import OtiumCore
 
-final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWindowDelegate {
 
     private let model = AppModel()
     private var statusItem: NSStatusItem!
@@ -12,6 +13,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var seatedWindow: NSWindow?
     private var declareWindow: NSWindow?
     private var refreshTimer: Timer?
+    private var statsHotKey: GlobalHotKey?
+
+    /// La scorciatoia globale delle statistiche, scelta dal principale il 2026-07-28: **⌃S**.
+    /// Una costante sola perché cambiarla resti un gesto, non una caccia nel file.
+    /// Prezzo dichiarato in `GlobalHotKey`: ⌃S smette di arrivare alle altre app (XOFF nei
+    /// terminali, ricerca incrementale in Emacs).
+    private static let statsHotKeyCode = UInt32(kVK_ANSI_S)
+    private static let statsHotKeyModifiers = UInt32(controlKey)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Paths.ensureDirectory()
@@ -22,6 +31,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         updateStatusTitle()
 
         model.start()
+
+        // Da qualunque app, senza permessi. Se il tasto è già di qualcun altro non si finge che
+        // vada: si dice, perché una scorciatoia che non c'è e nessuno lo sa è il difetto che ⌘S
+        // aveva già.
+        if !ProbeMode.active {
+            statsHotKey = GlobalHotKey(keyCode: Self.statsHotKeyCode,
+                                       carbonModifiers: Self.statsHotKeyModifiers) { [weak self] in
+                self?.showStats()
+            }
+            if statsHotKey == nil {
+                FileHandle.standardError.write(
+                    "Otium: ⌃S è già di un'altra app, la scorciatoia globale non è attiva\n"
+                        .data(using: .utf8)!
+                )
+            }
+        }
 
         let t = Timer(timeInterval: 5.0, repeats: true) { [weak self] _ in self?.updateStatusTitle() }
         RunLoop.main.add(t, forMode: .common)
@@ -45,6 +70,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         runOrphanProbeIfRequested()
         runSleepProbeIfRequested()
         runMenuProbeIfRequested()
+        runHotKeyProbeIfRequested()
+        runPolicyProbeIfRequested()
         runRadarProbeIfRequested()
 
         // Il secondo avvio non apre niente di nuovo: chiede a questa istanza di farsi vedere.
@@ -436,6 +463,72 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
+    /// `--policy-probe` — dopo aver aperto e chiuso una finestra, Otium torna un'app della barra
+    /// dei menu?
+    ///
+    /// Sospetto nato leggendo `present(_:)`: mette l'app in `.regular` per far comparire una
+    /// finestra vera, e **nessuno la rimette mai in `.accessory`**. Un'app dichiarata `LSUIElement`
+    /// che dopo le preferenze resta per sempre nel Dock, con la sua barra dei menu, non è più
+    /// l'app che dice di essere.
+    private func runPolicyProbeIfRequested() {
+        guard CommandLine.arguments.contains("--policy-probe") else { return }
+        let allAvvio = NSApp.activationPolicy()
+        showStats()
+        let conFinestra = NSApp.activationPolicy()
+        statsWindow?.close()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            let dopo = NSApp.activationPolicy()
+            func nome(_ p: NSApplication.ActivationPolicy) -> String {
+                p == .regular ? "regular (nel Dock)" : p == .accessory ? "accessory (barra dei menu)" : "prohibited"
+            }
+            print("all'avvio: \(nome(allAvvio))")
+            print("con la finestra aperta: \(nome(conFinestra))")
+            print("dopo averla chiusa: \(nome(dopo))")
+            let ok = allAvvio == .accessory && conFinestra == .regular && dopo == .accessory
+            print(ok
+                  ? "RISULTATO: PASS — la finestra la porta nel Dock, chiuderla la riporta nella barra"
+                  : "RISULTATO: FAIL — resta nel Dock per sempre dopo la prima finestra")
+            exit(ok ? 0 : 1)
+        }
+    }
+
+    /// `--hotkey-probe` — ⌃S è davvero registrato a livello di sistema, e il ponte con Carbon
+    /// porta alla finestra giusta?
+    ///
+    /// Si legge a due poli, e il polo interessante è il fallimento: **con Otium viva la
+    /// registrazione deve fallire**, perché il tasto è già suo. È la prova che l'app vera lo tiene
+    /// davvero, non un'asserzione sul fatto che ci abbia provato. Con Otium ferma deve riuscire.
+    private func runHotKeyProbeIfRequested() {
+        guard CommandLine.arguments.contains("--hotkey-probe") else { return }
+        var arrivato = false
+        let hotkey = GlobalHotKey(keyCode: Self.statsHotKeyCode,
+                                  carbonModifiers: Self.statsHotKeyModifiers) { arrivato = true }
+
+        if let hotkey {
+            print("registrazione di ⌃S: RIUSCITA (nessun'altra app lo teneva)")
+            hotkey.fireForProbe()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                print("il gestore è arrivato: \(arrivato ? "sì" : "no")")
+                print(arrivato
+                      ? "RISULTATO: PASS — tasto registrato e ponte con Carbon cablato"
+                      : "RISULTATO: FAIL — registrato ma il gestore non scatta")
+                exit(arrivato ? 0 : 1)
+            }
+        } else {
+            // Chi lo tiene? Se Otium è viva, lo tiene lei — ed è esattamente ciò che si voleva.
+            let viva = NSRunningApplication
+                .runningApplications(withBundleIdentifier: SingleInstance.bundleIdentifier)
+                .contains { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }
+            print("registrazione di ⌃S: FALLITA (il tasto è già di qualcuno)")
+            print("Otium è viva: \(viva ? "sì" : "no")")
+            print(viva
+                  ? "RISULTATO: PASS — ⌃S è tenuto dall'Otium in esecuzione, quindi è vivo"
+                  : "RISULTATO: FAIL — ⌃S è di un'altra app, la scorciatoia non sarà attiva")
+            exit(viva ? 0 : 1)
+        }
+    }
+
     /// `--menu-probe` — quali scorciatoie **promette** il menu, e quali ne ha davvero?
     ///
     /// Nasce dal ⌘S su «Statistiche…»: una combinazione mostrata accanto a una voce si legge come
@@ -765,6 +858,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         )
         window.title = title
         window.contentView = content
+        window.delegate = self
         window.isReleasedWhenClosed = false
         window.setContentSize(size)
         window.center()
@@ -776,6 +870,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
+    }
+
+    /// **Aprire una finestra la porta nel Dock; chiuderla la deve riportare nella barra.**
+    ///
+    /// Difetto trovato cercando, non usando (2026-07-28, `--policy-probe`): `present(_:)` metteva
+    /// l'app in `.regular` per far comparire una finestra vera, e nessuno la rimetteva mai in
+    /// `.accessory`. Bastava aprire le preferenze una volta e Otium restava per sempre nel Dock,
+    /// con la sua barra dei menu — cioè smetteva di essere l'app della barra di stato che
+    /// `LSUIElement` dichiara. Silenzioso, permanente, e invisibile finché non lo si misura.
+    func windowWillClose(_ notification: Notification) {
+        // La notifica arriva **prima** che la finestra sparisca: la decisione va presa al giro
+        // dopo, quando `isVisible` dice la verità e non l'intenzione.
+        DispatchQueue.main.async { [weak self] in self?.restoreAccessoryPolicyIfIdle() }
+    }
+
+    private func restoreAccessoryPolicyIfIdle() {
+        // Durante una pausa la politica è del blocco, che se la riprende da solo alla chiusura:
+        // metterci mano qui vorrebbe dire due padroni per la stessa impostazione.
+        guard model.phase != .breaking else { return }
+        let ancoraAperte = [prefsWindow, evidenceWindow, statsWindow, seatedWindow, declareWindow]
+            .compactMap { $0 }
+            .contains { $0.isVisible }
+        guard !ancoraAperte else { return }
+        NSApp.setActivationPolicy(.accessory)
     }
 }
 

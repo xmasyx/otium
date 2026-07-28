@@ -758,6 +758,37 @@ la stessa cosa due volte, con i secondi esatti della soglia d'assenza.
 - **Anti-claim** — il rallentamento non deve rendere l'app cieca nel momento in cui decide. Il
   preavviso resta a ritmo pieno, e la sonda lo misura invece di dichiararlo.
 
+### Iterazione 13 — ⌃S vero, e la caccia ai bug della stessa famiglia (2026-07-28)
+
+- [x] **ISC-66** ⌃S apre le statistiche **da qualunque app**, senza chiedere permessi. — la via
+      moderna (`NSEvent.addGlobalMonitorForEvents`) pretende il Monitoraggio input, cioè il
+      permesso che l'app ha promesso di non chiedere; `RegisterEventHotKey` non chiede niente.
+      Prezzo dichiarato e non nascosto: ⌃S smette di arrivare alle altre app, quindi niente XOFF
+      nei terminali e niente ricerca incrementale in Emacs. Si cambia da una costante sola.
+      *Falsificatore, e questa volta serve davvero end-to-end:* registrare non basta, il sistema
+      deve **consegnare** il tasto. Con Finder in primo piano, ⌃S sintetizzato ha fatto comparire
+      una finestra di Otium da 640×712 che prima non c'era. `--hotkey-probe` copre l'altro pezzo,
+      cioè che il ponte con Carbon sia cablato.
+- [x] **ISC-67** Il motore regge sequenze che nessuno ha immaginato. — 40 semi × 400 passi con
+      tutte le azioni umane in ordine casuale, invarianti controllati **dopo ogni passo**. Il più
+      importante è quello del guasto: fuori da una pausa non esiste un piano, perché l'interfaccia
+      disegna leggendo il piano. *Falsificatore a tre livelli:* il fuzz è verde; la copertura
+      pretende di aver visitato **tutte** le fasi, o sarebbe verde senza aver provato niente; e
+      sabotando `finish()` perché non azzeri il piano il fuzz **diventa rosso al primo seme**, con
+      la sequenza esatta che lo riproduce. Un test mai visto fallire è un'asserzione travestita.
+- [x] **ISC-68** Chiudere una finestra riporta Otium nella barra dei menu. — trovato cercando, non
+      usando: `present(_:)` metteva l'app nel Dock (`.regular`) e nessuno la rimetteva mai in
+      `.accessory`. Bastava aprire le preferenze una volta e Otium restava per sempre nel Dock con
+      la sua barra dei menu, smettendo di essere l'app di barra di stato che `LSUIElement` dichiara.
+      *Falsificatore:* `--policy-probe`, **rosso prima** (`accessory → regular → regular`) e verde
+      dopo (`accessory → regular → accessory`).
+- [x] **ISC-69** Sospesa, l'app non interroga il sistema. — mentre è in pausa il motore ignora la
+      risposta del radar, quindi chiederla è lavoro puro, e su un portatile il lavoro puro è
+      batteria.
+- **Anti-claim** — una scorciatoia globale non deve rubare un tasto in silenzio. Il prezzo è
+  scritto in `GlobalHotKey`, e se il tasto è già di un'altra app l'avvio lo dice invece di fingere
+  che vada — che è esattamente il difetto che ⌘S aveva.
+
 **Aperto, non fatto:** la livrea tocca solo il recap. Preferenze, dichiarazione e i loro interruttori
 usano ancora l'accento di sistema, quindi blu. E in cima alle Preferenze c'è una fascia vuota di
 circa 120 punti da sondare.
@@ -957,6 +988,12 @@ uno che non copre la barra dei menu sono indistinguibili nei test.
 
 ## Changelog
 
+- **2026-07-28 (iterazione 13)** — ⌃S diventa una scorciatoia vera, che apre le statistiche da
+  qualunque app senza chiedere permessi (Carbon, non il monitor globale che pretende il
+  Monitoraggio input). Poi caccia ai bug della stessa famiglia di quello dello schermo nero: un
+  fuzz sul motore con invarianti a ogni passo (16.000 passi, tutte le fasi visitate, sabotatura che
+  lo fa diventare rosso) non ha trovato niente nel motore, e una sonda nuova ha trovato invece che
+  l'app restava per sempre nel Dock dopo la prima finestra aperta. **174 test verdi.**
 - **2026-07-28 (iterazione 12)** — Il radar di presenza passa da ogni secondo a ogni 3, tranne nel
   preavviso dove il valore decide qualcosa (−67% di interrogazioni, misurate). Il menu smette di
   promettere ⌘S, che era il tasto di Salva e non poteva funzionare fuori dal menu aperto. La
@@ -993,6 +1030,13 @@ eseguito e non asserito. Girate due volte: sul binario di sviluppo e su
 | `--orphan-probe --senza-rete-modello` | — | `PASS` — il battito della finestra basta da solo |
 | `--orphan-probe --senza-reti` | — | guasto **riprodotto** (1 finestra, chiosco 490), poi `PASS`: l'uscita d'emergenza smonta lo scudo a motore già chiuso |
 | `--sleep-probe` | — | `PASS` — bloccato: 0 finestre, chiosco 0, fase ancora `breaking`; sbloccato: 1 finestra, chiosco 490 |
+
+**La scorciatoia globale e la caccia (2026-07-28)** — `--hotkey-probe`: registrazione riuscita e
+gestore Carbon che scatta. **End-to-end, che qui è l'unica prova che conta:** con Finder in primo
+piano, ⌃S sintetizzato ha fatto comparire una finestra di Otium da 640×712 che prima non c'era, sul
+bundle di rilascio. `--policy-probe`: **rosso prima** (`accessory → regular → regular`), verde dopo.
+`InvariantTests`: 40 semi × 400 passi verdi, tutte le fasi visitate, e sabotando `finish()` il fuzz
+diventa rosso al primo seme con la sequenza che lo riproduce.
 
 **Il ritmo del radar (2026-07-28)** — `--radar-probe` conta le interrogazioni vere: **0,33/s
 lavorando** contro **0,80/s nel preavviso**, cioè il **67% in meno** nello stato in cui l'app passa

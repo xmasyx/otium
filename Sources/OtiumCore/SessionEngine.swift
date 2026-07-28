@@ -110,7 +110,7 @@ public struct EngineEnvironment: Equatable, Sendable {
 /// che legge `Date()` da sola non si può provare, e questa deve esserlo riga per riga.
 public struct SessionEngine {
 
-    public enum Phase: String, Equatable, Sendable {
+    public enum Phase: String, Equatable, Sendable, CaseIterable {
         case working
         /// Preavviso: lo schermo non è ancora coperto, hai 60 secondi per chiudere quello che fai.
         case warning
