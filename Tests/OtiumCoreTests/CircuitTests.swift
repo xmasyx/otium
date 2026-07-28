@@ -277,7 +277,7 @@ final class CircuitTests: XCTestCase {
         XCTAssertFalse(ExerciseKind.pushUp.isPerSide)
     }
 
-    /// I nomi che compaiono in «Dove è andato il lavoro»: quello che lavora, non il movimento.
+    /// I nomi che compaiono in «Esercizi svolti»: quello che lavora, non il movimento.
     func testMuscleGroupNamesAreTheOnesShownInTheRecap() {
         XCTAssertEqual(ExerciseKind.archerPushUp.muscleGroup, "petto")
         XCTAssertEqual(ExerciseKind.pushUp.muscleGroup, "petto")

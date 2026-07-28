@@ -218,13 +218,19 @@ public enum Stats {
     /// cosa hanno misurato gli studi su chi ha fatto numeri come questi. La differenza fra le due
     /// frasi è la differenza fra un'app onesta e un'app che vende fumo — e siccome è proprio la
     /// promessa su cui questa app si regge, sbagliarla qui costerebbe tutto il resto.
+    /// «1 interruzioni» fa sembrare fatta male anche la parte fatta bene. In italiano lo zero
+    /// vuole il plurale e l'uno il singolare.
+    private static func plural(_ n: Int, _ one: String, _ many: String) -> String {
+        n == 1 ? one : many
+    }
+
     public static func insights(for stats: PeriodStats, target: Int = 3) -> [Insight] {
         var out: [Insight] = []
         let perDay = Double(stats.interruptions) / Double(max(1, stats.days))
 
         out.append(Insight(
             id: "interruzioni",
-            headline: "\(stats.interruptions) interruzioni della sedentarietà"
+            headline: "\(stats.interruptions) \(plural(stats.interruptions, "interruzione", "interruzioni")) della sedentarietà"
                     + (stats.days > 1 ? String(format: " · %.1f al giorno", perDay) : ""),
             detail: perDay >= 8
                 ? "Un ritmo vicino a quello dell'unica dose che nello studio di Duran ha appiattito i picchi glicemici: un'interruzione ogni 30 minuti di lavoro."
@@ -236,7 +242,7 @@ public enum Stats {
         let vigorousPerDay = Double(stats.vigorousBouts) / Double(max(1, stats.days))
         out.append(Insight(
             id: "vigorosi",
-            headline: "\(stats.vigorousBouts) sessioni intense"
+            headline: "\(stats.vigorousBouts) \(plural(stats.vigorousBouts, "sessione intensa", "sessioni intense"))"
                     + (stats.days > 1 ? String(format: " · %.1f al giorno", vigorousPerDay) : ""),
             detail: vigorousPerDay >= Double(target)
                 ? "Nello studio su 25.241 adulti non sportivi, tre sessioni intense quotidiane da 1-2 minuti si associavano a circa il 40% di mortalità in meno a sette anni."
@@ -248,7 +254,7 @@ public enum Stats {
         if stats.totalReps > 0 {
             out.append(Insight(
                 id: "muscolo",
-                headline: "\(stats.totalReps) ripetizioni · circa \(Int(stats.estimatedMovementSeconds / 60)) minuti di movimento",
+                headline: "\(stats.totalReps) \(plural(stats.totalReps, "ripetizione", "ripetizioni")) · circa \(Int(stats.estimatedMovementSeconds / 60)) \(plural(Int(stats.estimatedMovementSeconds / 60), "minuto", "minuti")) di movimento",
                 detail: "In Gao 2024 il beneficio glicemico seguiva l'attivazione muscolare, non i passi: sono le ripetizioni a contare, non la distanza percorsa. I minuti qui sono una stima dal ritmo di esecuzione, non un cronometro.",
                 study: Evidence.squatsBeatWalking,
                 met: true

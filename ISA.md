@@ -110,7 +110,7 @@ Rampa: settimana 1 al 55% delle ripetizioni, +15% a settimana fino al 100% in se
 
 ## Criteria
 
-> **Stato al 2026-07-28, iterazione 9: 52 chiusi su 53.** L'unico aperto resta ISC-28.
+> **Stato al 2026-07-28, iterazione 10: 55 chiusi su 56.** L'unico aperto resta ISC-28.
 >
 > Chiusi 28 su 29 il 2026-07-26. L'unico aperto è ISC-28, che è esperienziale: si chiude usando
 > l'app per qualche giorno, non con un probe.
@@ -661,6 +661,24 @@ guardando l'app funzionare, non leggendo il codice: è la ragione per cui ISC-28
       consegna, codice nuovo, codice di HEAD.
 - **Dati corretti, non riscritti.** Le 47 righe fantasma sono state tolte dal registro dopo averlo
   archiviato in `ledger.jsonl.pre-fix-20260728`. Il recap di oggi torna a 0 interruzioni.
+
+### Iterazione 10 — le citazioni, e le parole a schermo (2026-07-28)
+
+- [x] **ISC-54** Nel pool firmato non c'è nessuna citazione inventata. — aperta da un errore visto
+      a schermo dal principale, «toglie il giudizio» invece di «togli» (Pensieri IV, 7 è un
+      imperativo). Rilette tutte e 126 e tolte cinque attribuzioni false o non collocabili
+      (Musashi ×2, Schopenhauer, Goethe, Dalai Lama) più cinque doppioni. Aggiunte quattro
+      verificate su fonte in sessione. **Il corpus era sceso a 478 e la guardia del mese senza
+      ripetizioni è diventata rossa da sola**: è la prova che quel test misura qualcosa.
+- [x] **ISC-55** I numeri a schermo concordano con le parole. — «1 interruzioni», «1 fatte»,
+      «1 minuti di movimento». In italiano lo zero vuole il plurale e l'uno il singolare, e uno
+      sbaglio così fa sembrare fatta male anche la parte fatta bene.
+- [x] **ISC-56** Con poche ore attive la striscia resta una striscia. — con una sola ora la barra
+      si allargava per tutta la scheda e si leggeva come un blocco pieno, cioè come un errore.
+
+**Aperto, non fatto:** la livrea tocca solo il recap. Preferenze, dichiarazione e i loro interruttori
+usano ancora l'accento di sistema, quindi blu. E in cima alle Preferenze c'è una fascia vuota di
+circa 120 punti da sondare.
 
 ## Test Strategy
 

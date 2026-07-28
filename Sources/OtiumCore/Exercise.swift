@@ -151,7 +151,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     }
 
     /// Gruppo muscolare, usato per non caricare due volte di fila la stessa catena — e mostrato
-    /// in «Dove è andato il lavoro».
+    /// in «Esercizi svolti».
     ///
     /// Sono i nomi di **quello che lavora**, non della famiglia in cui l'esercizio è archiviato:
     /// «spinta» era il nome del movimento e diceva poco a chi legge il recap accanto a «gambe» e

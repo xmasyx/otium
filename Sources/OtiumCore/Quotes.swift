@@ -11,6 +11,25 @@ import Foundation
 ///
 /// Le frasi belle **senza** fonte tracciabile non si buttano più: vivono in `Mindful`, dove
 /// compaiono come anonime. Perdere l'autore è onesto; inventarlo no.
+///
+/// **Revisione del 2026-07-28, aperta da un errore che il principale ha visto a schermo** («toglie
+/// il giudizio» invece di «togli»). Rilette tutte, e tolte queste, con la fonte del verdetto:
+/// - *«Non c'è nulla fuori di te…»*, Musashi — **inventata**: viene dalla riscrittura di Steve
+///   Kaufman del 1994, venduta da Tuttle come se fosse il testo di Musashi. Nel Go Rin No Sho non
+///   c'è.
+/// - *«Non fare nulla che non serva»*, Musashi — non collocabile in nessuno dei 21 precetti del
+///   Dokkōdō, ed era per giunta citata come se il Dokkōdō fosse un capitolo del Libro dei cinque
+///   anelli, che sono due opere diverse.
+/// - *«La salute non è tutto…»*, Schopenhauer — attribuita per la prima volta un secolo dopo la
+///   sua morte, mai trovata nelle opere (che sono digitalizzate da tempo). La formula «X non è
+///   tutto, ma senza X…» gira dall'Ottocento con parole diverse. Resta l'altra, quella dei nove
+///   decimi, che è sua davvero.
+/// - *«Le cose che contano di più…»*, Goethe — non è nelle sue opere: al massimo un riporto di
+///   seconda mano, e comunque non in *Massime e riflessioni*, che era l'opera dichiarata qui.
+/// - *«La felicità non è qualcosa di pronto»*, Dalai Lama — nessuna pagina, solo aggregatori di
+///   citazioni. Il sito da cui l'hai presa non è un'opera.
+/// Tolti anche cinque doppioni: lo stesso passo compariva due volte con parole diverse (Seneca
+/// due volte, Epitteto, Confucio, Franklin).
 public struct Quote: Equatable, Sendable, Identifiable {
     public let text: String
     public let author: String
@@ -39,13 +58,11 @@ public enum Quotes {
         q("L'ozio senza studio è morte, è tomba dell'uomo vivo.", "Seneca", "Lettere a Lucilio, 82"),
         q("Tutto è d'altri, Lucilio: solo il tempo è nostro.", "Seneca", "Lettere a Lucilio, 1"),
         q("Non abbiamo poco tempo: ne perdiamo molto.", "Seneca", "La brevità della vita, 1"),
-        q("In nessun luogo è chi è dappertutto.", "Seneca", "Lettere a Lucilio, 2"),
         q("Ogni giorno, ogni ora rivela quanto siamo nulla.", "Seneca", "Lettere a Lucilio, 24"),
         q("Nessun vento è favorevole per il marinaio che non sa dove andare.", "Seneca", "Lettere a Lucilio, 71"),
         q("Soffriamo più nell'immaginazione che nella realtà.", "Seneca", "Lettere a Lucilio, 13"),
         q("Comincia subito a vivere, e conta ogni giorno come una vita a sé.", "Seneca", "Lettere a Lucilio, 101"),
         q("Rimandare è la più grande perdita di tempo: porta via il giorno di oggi.", "Seneca", "La brevità della vita, 9"),
-        q("Non è che abbiamo poco tempo: è che ne sprechiamo tanto.", "Seneca", "La brevità della vita, 1"),
         q("Vivere è la cosa che si impara per tutta la vita.", "Seneca", "La brevità della vita, 7"),
         q("Fa' che il corpo obbedisca all'animo senza fatica.", "Seneca", "Lettere a Lucilio, 15"),
         q("Esercitare il corpo con poco, e tornare presto alla mente: è questo il modo.", "Seneca", "Lettere a Lucilio, 15"),
@@ -66,7 +83,7 @@ public enum Quotes {
         q("Non agire come se dovessi vivere diecimila anni.", "Marco Aurelio", "Pensieri, IV"),
         q("La perfezione del carattere è vivere ogni giorno come fosse l'ultimo, senza smania e senza torpore.", "Marco Aurelio", "Pensieri, VII"),
         q("Il tuo dovere è restare uomo giusto, come il masso a cui l'onda si rompe intorno.", "Marco Aurelio", "Pensieri, IV"),
-        q("Toglie il giudizio, e avrai tolto il «sono stato danneggiato».", "Marco Aurelio", "Pensieri, IV"),
+        q("Togli il giudizio, e avrai tolto il «sono stato danneggiato».", "Marco Aurelio", "Pensieri, IV, 7"),
 
         q("Non sono le cose a turbare gli uomini, ma le opinioni che essi ne hanno.", "Epitteto", "Manuale, 5"),
         q("Alcune cose dipendono da noi, altre no.", "Epitteto", "Manuale, 1"),
@@ -75,9 +92,9 @@ public enum Quotes {
         q("Se vuoi migliorare, accetta di sembrare sciocco riguardo alle cose esterne.", "Epitteto", "Manuale, 13"),
         q("Non dire mai di nulla «l'ho perso», ma «l'ho restituito».", "Epitteto", "Manuale, 11"),
         q("Non è chi ti insulta a offenderti, ma il tuo giudizio che quello sia un insulto.", "Epitteto", "Manuale, 20"),
+        q("Delle cose del corpo prendi solo quanto basta all'uso: cibo, bevanda, vestito, casa.", "Epitteto", "Manuale, 33"),
         q("Prima decidi chi vuoi essere, poi fa' quello che devi fare.", "Epitteto", "Discorsi, III"),
         q("Nessuno è libero se non è padrone di sé.", "Epitteto", "Discorsi, IV"),
-        q("Non sono i fatti a farci soffrire, ma il racconto che ce ne facciamo.", "Epitteto", "Manuale, 5"),
 
         q("Otium cum dignitate — il riposo che non toglie nulla alla dignità.", "Cicerone", "Pro Sestio, 98"),
         q("Vivere è pensare.", "Cicerone", "Tusculanae disputationes, V"),
@@ -92,7 +109,7 @@ public enum Quotes {
         q("Chi ha un perché abbastanza forte può sopportare quasi ogni come.", "Nietzsche", "Crepuscolo degli idoli, Massime e strali 12"),
         q("Bisogna avere ancora un caos dentro di sé per partorire una stella danzante.", "Nietzsche", "Così parlò Zarathustra, Prologo"),
         q("Diventa ciò che sei.", "Nietzsche", "Ecce homo (dal motto di Pindaro)"),
-        q("Tutti i pensieri davvero grandi vengono camminando.", "Nietzsche", "Crepuscolo degli idoli, Massime e strali 34"),
+        q("Solo i pensieri che vengono camminando hanno valore.", "Nietzsche", "Crepuscolo degli idoli, Massime e strali 34"),
         q("Chi combatte con i mostri deve guardarsi dal non diventarlo.", "Nietzsche", "Al di là del bene e del male, 146"),
         q("Il segreto per raccogliere dall'esistenza la massima fecondità è vivere pericolosamente.", "Nietzsche", "La gaia scienza, 283"),
 
@@ -106,25 +123,19 @@ public enum Quotes {
         q("L'uomo libero a nulla pensa meno che alla morte, e la sua saggezza è meditazione della vita.", "Spinoza", "Etica, IV, prop. 67"),
         q("Non ridere, non piangere, non detestare: comprendere.", "Spinoza", "Trattato politico, I"),
 
-        q("Le cose che contano di più non devono mai essere alla mercé di quelle che contano di meno.", "Goethe", "Massime e riflessioni"),
-
         q("La maggior parte degli uomini conduce vite di quieta disperazione.", "Thoreau", "Walden, I"),
-        q("Andai nei boschi perché volevo vivere con saggezza, affrontare solo i fatti essenziali della vita.", "Thoreau", "Walden, II"),
+        q("Andai nei boschi perché volevo vivere deliberatamente, affrontare solo i fatti essenziali della vita.", "Thoreau", "Walden, II"),
         q("Semplifica, semplifica.", "Thoreau", "Walden, II"),
         q("Non basta essere occupati: anche le formiche lo sono. La domanda è: di che cosa siamo occupati?", "Thoreau", "Lettere a H. Blake"),
         q("Il costo di una cosa è la quantità di vita che devi scambiare per averla.", "Thoreau", "Walden, I"),
 
         q("Fa' la cosa e avrai il potere.", "Emerson", "Saggi, Compensazione"),
 
-        q("Chi sopporta di essere annoiato è capace di quasi tutto.", "Schopenhauer", "Parerga e paralipomena"),
-        q("La salute non è tutto, ma senza salute tutto è niente.", "Schopenhauer", "Aforismi sulla saggezza del vivere"),
         q("Nove decimi della nostra felicità dipendono dalla salute.", "Schopenhauer", "Aforismi sulla saggezza del vivere, II"),
 
         q("La vita può essere capita solo all'indietro, ma va vissuta in avanti.", "Kierkegaard", "Diari, IV A 164"),
         q("Soprattutto, non perdere il desiderio di camminare.", "Kierkegaard", "Lettera a Jette, 1847"),
 
-        q("La felicità non è qualcosa di pronto: viene dalle tue azioni.", "Dalai Lama", "L'arte della felicità"),
-        q("Il tempo è il tessuto di cui è fatta la vita.", "Benjamin Franklin", "Poor Richard's Almanack"),
         q("Ama la vita? Allora non sprecare il tempo, perché è la materia di cui la vita è fatta.", "Benjamin Franklin", "Poor Richard's Almanack, 1746"),
 
         q("L'uomo può essere privato di tutto, tranne di una cosa: la scelta del proprio atteggiamento.", "Viktor Frankl", "Alla ricerca di un significato della vita"),
@@ -151,6 +162,7 @@ public enum Quotes {
         q("Il grande quadrato non ha angoli; il grande talento matura tardi.", "Laozi", "Tao Te Ching, 41"),
         q("Ritirarsi a opera compiuta è la via del cielo.", "Laozi", "Tao Te Ching, 9"),
         q("Chi si mette in punta di piedi non sta ritto a lungo.", "Laozi", "Tao Te Ching, 24"),
+        q("Chi sa accontentarsi non si disonora; chi sa fermarsi non corre pericolo.", "Laozi", "Tao Te Ching, 44"),
 
         q("Il pesce dimentica la rete quando è nel fiume; l'uomo dimentica le parole quando ha il senso.", "Zhuangzi", "Zhuangzi, XXVI"),
         q("La calma perfetta dell'uomo saggio è specchio del cielo e della terra.", "Zhuangzi", "Zhuangzi, XIII"),
@@ -159,8 +171,8 @@ public enum Quotes {
         q("Chi impara senza pensare è perduto; chi pensa senza imparare è in pericolo.", "Confucio", "Dialoghi, II, 15"),
         q("Quando vedi una persona di valore, cerca di eguagliarla; quando ne vedi una senza, guarda dentro di te.", "Confucio", "Dialoghi, IV, 17"),
         q("L'uomo superiore chiede a sé stesso; l'uomo comune chiede agli altri.", "Confucio", "Dialoghi, XV, 20"),
-        q("Studiare senza riflettere è fatica sprecata.", "Confucio", "Dialoghi, II, 15"),
         q("A quindici anni volsi la mente allo studio; a trenta stavo ritto.", "Confucio", "Dialoghi, II, 4"),
+        q("Errare e non correggersi: questo è errare davvero.", "Confucio", "Dialoghi, XV, 30"),
 
         q("Tutto ciò che siamo è il risultato di ciò che abbiamo pensato.", "Buddha", "Dhammapada, I, 1"),
         q("L'odio non si placa con l'odio: si placa con il non odio.", "Buddha", "Dhammapada, I, 5"),
@@ -170,6 +182,7 @@ public enum Quotes {
         q("Come la pioggia penetra una casa mal coperta, così la passione penetra una mente non allenata.", "Buddha", "Dhammapada, I, 13"),
         q("La mente è difficile da domare, veloce, si posa dove vuole: domarla è bene.", "Buddha", "Dhammapada, III, 35"),
         q("Goccia a goccia si riempie il secchio.", "Buddha", "Dhammapada, IX, 122"),
+        q("Il risvegliato può solo indicare la via: siamo noi a doverla percorrere.", "Buddha", "Dhammapada, XX, 276"),
 
         q("Il tuo diritto è all'azione, mai ai suoi frutti.", "Bhagavad Gita", "Bhagavad Gita, II, 47"),
         q("Meglio il proprio dovere fatto male che quello altrui fatto bene.", "Bhagavad Gita", "Bhagavad Gita, III, 35"),
@@ -185,8 +198,6 @@ public enum Quotes {
         q("Studiare la via del Buddha è studiare sé stessi; studiare sé stessi è dimenticare sé stessi.", "Dōgen", "Shōbōgenzō, Genjōkōan"),
         q("Il tempo vola più veloce di una freccia: non sprecare un istante.", "Dōgen", "Gakudō yōjinshū"),
 
-        q("Non c'è nulla fuori di te che possa permetterti di migliorare: tutto è dentro.", "Miyamoto Musashi", "Il libro dei cinque anelli"),
-        q("Non fare nulla che non serva.", "Miyamoto Musashi", "Il libro dei cinque anelli, Dokkōdō"),
         q("Percepisci ciò che l'occhio non vede.", "Miyamoto Musashi", "Il libro dei cinque anelli, Il libro dell'acqua"),
 
         q("Chi conosce il nemico e conosce sé stesso non sarà in pericolo in cento battaglie.", "Sunzi", "L'arte della guerra, III"),

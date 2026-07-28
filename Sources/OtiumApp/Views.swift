@@ -93,7 +93,7 @@ struct BreakView: View {
                     .tracking(2)
                     .foregroundStyle(Palette.accent)
                 Spacer()
-                Text("break n. \(plan.index) · oggi \(model.summary.totalReps) ripetizioni")
+                Text("pausa n. \(plan.index) · oggi \(model.summary.totalReps) ripetizioni")
                     .font(.system(size: 13, design: .rounded))
                     .foregroundStyle(Palette.dim)
             }
@@ -690,7 +690,7 @@ struct PrefsView: View {
                 LabeledContent("Durata pausa piena") {
                     minuteField($draft.cadence.longDurationSeconds)
                 }
-                Stepper("Pausa piena ogni \(draft.cadence.longEveryNBreaks) break",
+                Stepper("Pausa piena ogni \(draft.cadence.longEveryNBreaks) micro-pause",
                         value: $draft.cadence.longEveryNBreaks, in: 1...8)
                 LabeledContent("Preavviso") {
                     secondField($draft.cadence.warningSeconds)
@@ -1015,11 +1015,20 @@ struct StatsView: View {
     private var numbers: some View {
         let s = stats, p = previous
         return HStack(spacing: 10) {
-            tile("\(s.interruptions)", "interruzioni", delta: s.interruptions - p.interruptions)
-            tile("\(s.totalReps)", "ripetizioni", delta: s.totalReps - p.totalReps)
+            tile("\(s.interruptions)", plural(s.interruptions, "interruzione", "interruzioni"),
+                 delta: s.interruptions - p.interruptions)
+            tile("\(s.totalReps)", plural(s.totalReps, "ripetizione", "ripetizioni"),
+                 delta: s.totalReps - p.totalReps)
             tile(s.label(s.activeSeconds), "davanti al Mac", delta: nil)
-            tile("\(s.vigorousBouts)", "sessioni intense", delta: s.vigorousBouts - p.vigorousBouts)
+            tile("\(s.vigorousBouts)", plural(s.vigorousBouts, "sessione intensa", "sessioni intense"),
+                 delta: s.vigorousBouts - p.vigorousBouts)
         }
+    }
+
+    /// «1 interruzioni» è il genere di dettaglio che fa sembrare fatta male anche la parte fatta
+    /// bene. Lo zero in italiano vuole il plurale, l'uno il singolare.
+    private func plural(_ n: Int, _ one: String, _ many: String) -> String {
+        n == 1 ? one : many
     }
 
     private func tile(_ value: String, _ caption: String, delta: Int?) -> some View {
@@ -1055,7 +1064,7 @@ struct StatsView: View {
                             .frame(width: 260)
                         Text(s.complianceRate < 0.5
                              ? "Sotto la metà: è la cadenza a essere sbagliata, non tu. Allungala nelle preferenze."
-                             : "\(s.completed) fatte · \(s.skipped) saltate\(s.emergency > 0 ? " · \(s.emergency) d'emergenza" : "")")
+                             : "\(s.completed) \(plural(s.completed, "fatta", "fatte")) · \(s.skipped) \(plural(s.skipped, "saltata", "saltate"))\(s.emergency > 0 ? " · \(s.emergency) d'emergenza" : "")")
                             .font(.system(size: 11)).foregroundStyle(.secondary)
                     }
                     Spacer()
@@ -1077,8 +1086,8 @@ struct StatsView: View {
         let groups = stats.repsByMuscleGroup
         if !groups.isEmpty {
             let peak = Double(groups.first?.reps ?? 1)
-            Card(title: "Dove è andato il lavoro",
-                 subtitle: "ripetizioni per catena muscolare — apri un gruppo per vedere quali esercizi") {
+            Card(title: "Esercizi svolti",
+                 subtitle: "ripetizioni per catena muscolare — apri un gruppo per vedere gli esercizi") {
                 VStack(spacing: 4) {
                     ForEach(groups, id: \.group) { g in
                         // La barra dice **quanto**, il gruppo aperto dice **cosa**: senza, «petto
@@ -1147,7 +1156,10 @@ struct StatsView: View {
         let hours = stats.byHour
         if !hours.isEmpty {
             let peak = Double(hours.map { $0.done + $0.missed }.max() ?? 1)
-            Card(title: "Come va nella giornata",
+            // Il titolo dice «per ora del giorno» e non «oggi» di proposito: in Settimana e Mese
+            // queste barre sommano più giornate, e chiamarle «la giornata» le faceva leggere come
+            // se fossero di oggi.
+            Card(title: "Trend pause per ora del giorno",
                  subtitle: "verde: pause fatte · rosso: saltate — se un'ora è sempre rossa, cambia quell'ora") {
                 HStack(alignment: .bottom, spacing: 5) {
                     ForEach(hours, id: \.hour) { h in
@@ -1166,8 +1178,12 @@ struct StatsView: View {
                             .frame(height: 48)
                             Text("\(h.hour)").font(.system(size: 9)).foregroundStyle(.secondary)
                         }
-                        .frame(maxWidth: .infinity)
+                        // Un tetto alla larghezza, o con una sola ora attiva la barra si allarga
+                        // per tutta la scheda e non si legge più come una barra: sembra un blocco
+                        // pieno, cioè un errore di disegno.
+                        .frame(maxWidth: 46)
                     }
+                    if hours.count < 4 { Spacer(minLength: 0) }
                 }
             }
         }
