@@ -47,7 +47,7 @@ struct GrowthCheckInView: View {
             HStack(spacing: 12) {
                 Spacer()
                 button(L.t("No, resto al 100%", "No, I'll stay at 100%"), filled: false) { answer(false) }
-                button(L.t("Sì, falle crescere", "Yes, let them grow"), filled: true) { answer(true) }
+                button(L.t("Sì, aumentiamo", "Yes, let's increase"), filled: true) { answer(true) }
             }
         }
         .padding(30)
