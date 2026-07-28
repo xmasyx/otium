@@ -33,7 +33,7 @@ public enum Mindful {
     // MARK: - Il corpo, adesso
 
     static let corpo: [Phrase] = [
-        m("Il sangue nelle gambe non risale da solo: sono i muscoli a spingerlo su.", "Blood doesn't climb out of your legs on its own — your muscles push it up."),
+        m("Il sangue nelle gambe non risale da solo, sono i muscoli a spingerlo su.", "Blood doesn't climb out of your legs on its own — your muscles push it up."),
         m("Le articolazioni si nutrono di movimento, non di riposo.", "Joints feed on movement, not on rest."),
         m("Il collo che duole di sera è il collo che di mattina non si è mai girato.", "The neck that aches at night is the neck that never turned all morning."),
         m("Alzati come se dovessi guardare fuori dalla finestra. Poi guardaci davvero.", "Stand up as if you were going to look out of the window. Then actually look."),
@@ -67,8 +67,8 @@ public enum Mindful {
     // MARK: - Lavoro e attenzione
 
     static let lavoro: [Phrase] = [
-        m("La stanchezza non si vede da dentro: si vede dagli errori.", "Tiredness can't be seen from the inside: it shows up in the mistakes."),
-        m("Quando rileggi la stessa riga tre volte, non è la riga: sei tu.", "When you read the same line three times, it isn't the line: it's you."),
+        m("La stanchezza non si vede da dentro, si vede dagli errori.", "Tiredness can't be seen from the inside: it shows up in the mistakes."),
+        m("Quando rileggi la stessa riga tre volte, non è la riga, sei tu.", "When you read the same line three times, it isn't the line: it's you."),
         m("Proteggi le tue ore migliori: sono poche, e le stai regalando.", "Guard your best hours: there are few of them, and you're giving them away."),
         m("Fai la cosa difficile per prima, o la penserai tutto il giorno.", "Do the hard thing first, or you'll think about it all day."),
     ]
@@ -88,7 +88,7 @@ public enum Mindful {
         t("Il chiodo che sporge riceve il martello: sappi quando sporgere.", "The nail that sticks out gets hammered: know when to stick out.", "proverbio giapponese", "Japanese proverb"),
         t("La visione senza azione è un sogno a occhi aperti; l'azione senza visione è un incubo.", "Vision without action is a daydream; action without vision is a nightmare.", "proverbio giapponese", "Japanese proverb"),
         t("Il momento migliore per piantare un albero era vent'anni fa. Il secondo migliore è adesso.", "The best time to plant a tree was twenty years ago. The second best is now.", "proverbio cinese", "Chinese proverb"),
-        t("Non temere di andare piano: temi solo di fermarti.", "Do not fear going slowly: fear only standing still.", "proverbio cinese", "Chinese proverb"),
+        t("Non temere di andare piano, temi solo di fermarti.", "Do not fear going slowly: fear only standing still.", "proverbio cinese", "Chinese proverb"),
         t("Il maestro nella pentola non fa bollire due volte lo stesso brodo.", "A good cook does not boil the same broth twice.", "proverbio cinese", "Chinese proverb"),
         t("L'acqua che scorre non marcisce.", "Running water never goes stale.", "proverbio cinese", "Chinese proverb"),
         t("Un centimetro di tempo è un centimetro d'oro, ma un centimetro d'oro non compra un centimetro di tempo.", "An inch of time is an inch of gold, but an inch of gold will not buy an inch of time.", "proverbio cinese", "Chinese proverb"),
@@ -97,7 +97,7 @@ public enum Mindful {
         t("La lingua è morbida e resta; i denti sono duri e cadono.", "The tongue is soft and remains; the teeth are hard and fall out.", "proverbio cinese", "Chinese proverb"),
         t("Le tigri lasciano la pelle, gli uomini il nome.", "Tigers leave their skin behind, men their name.", "proverbio cinese", "Chinese proverb"),
         t("Chi torna indietro per la strada giusta non ha perso tempo.", "Turning back onto the right road is not lost time.", "proverbio orientale", "Eastern proverb"),
-        t("La montagna non si muove: cambia il sentiero.", "The mountain does not move: change the path.", "proverbio orientale", "Eastern proverb"),
+        t("La montagna non si muove, cambia il sentiero.", "The mountain does not move: change the path.", "proverbio orientale", "Eastern proverb"),
         m("Il bambù si piega nella tempesta, e per questo la supera.", "Bamboo bends in the storm, and that is how it comes through it."),
         m("Chi corre dietro a due lepri non ne prende nessuna.", "Chase two hares and you catch neither."),
         m("Il loto cresce nel fango e non se ne lamenta.", "The lotus grows in the mud and does not complain about it."),

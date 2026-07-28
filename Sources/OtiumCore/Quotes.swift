@@ -82,7 +82,7 @@ public enum Quotes {
     static let stoici: [Quote] = [
         q("L'ozio senza studio è morte, è tomba dell'uomo vivo.", "Leisure without study is death; it is a tomb for the living man.", "Seneca", "Lettere a Lucilio, 82"),
         q("Tutto è d'altri, Lucilio: solo il tempo è nostro.", "Nothing, Lucilius, is ours, except time.", "Seneca", "Lettere a Lucilio, 1"),
-        q("Non abbiamo poco tempo: ne perdiamo molto.", "Seneca", "La brevità della vita, 1"),
+        q("Non abbiamo poco tempo, ne perdiamo molto.", "Seneca", "La brevità della vita, 1"),
         q("Ogni giorno, ogni ora rivela quanto siamo nulla.", "Every day and every hour reveal to us what a nothing we are.", "Seneca", "Lettere a Lucilio, 101"),
         q("Nessun vento è favorevole per il marinaio che non sa dove andare.", "When a man does not know what harbour he is making for, no wind is the right wind.", "Seneca", "Lettere a Lucilio, 71"),
         q("Soffriamo più nell'immaginazione che nella realtà.", "We suffer more often in imagination than in reality.", "Seneca", "Lettere a Lucilio, 13"),
@@ -91,7 +91,7 @@ public enum Quotes {
         q("Vivere è la cosa che si impara per tutta la vita.", "Seneca", "La brevità della vita, 7"),
         q("Fa' che il corpo obbedisca all'animo senza fatica.", "Seneca", "Lettere a Lucilio, 15"),
         q("Esercitare il corpo con poco, e tornare presto alla mente: è questo il modo.", "But whatever you do, come back soon from body to mind.", "Seneca", "Lettere a Lucilio, 15"),
-        q("Chi è ovunque non è da nessuna parte: la vita dispersa è la più povera.", "Seneca", "Lettere a Lucilio, 2"),
+        q("Chi è ovunque non è da nessuna parte, la vita dispersa è la più povera.", "Seneca", "Lettere a Lucilio, 2"),
         q("Non c'è bonaccia peggiore di quella dell'animo che non sa dove tende.", "Seneca", "Lettere a Lucilio, 95"),
 
         q("Fa' ogni cosa come se fosse l'ultima della tua vita.", "Do every act of thy life as if it were the last.", "Marco Aurelio", "Pensieri, II"),
@@ -100,7 +100,7 @@ public enum Quotes {
         q("Al mattino, quando ti alzi controvoglia, ricorda: mi sveglio per fare il lavoro di un essere umano.", "In the morning when thou risest unwillingly, let this thought be present: I am rising to the work of a human being.", "Marco Aurelio", "Pensieri, V"),
         q("La vita è ciò che i nostri pensieri la fanno diventare.", "Marco Aurelio", "Pensieri, IV"),
         q("Non perdere altro tempo a discutere come dovrebbe essere un uomo buono. Sii buono.", "No longer talk at all about the kind of man that a good man ought to be, but be such.", "Marco Aurelio", "Pensieri, X"),
-        q("Guarda dentro: dentro è la sorgente del bene, e può zampillare sempre, se scavi.", "Look within. Within is the fountain of good, and it will ever bubble up, if thou wilt ever dig.", "Marco Aurelio", "Pensieri, VII"),
+        q("Guarda dentro. Dentro è la sorgente del bene, e può zampillare sempre, se scavi.", "Look within. Within is the fountain of good, and it will ever bubble up, if thou wilt ever dig.", "Marco Aurelio", "Pensieri, VII"),
         q("Ciò che ostacola l'azione fa avanzare l'azione. Ciò che sta sulla strada diventa la strada.", "Marco Aurelio", "Pensieri, V"),
         q("Hai potere sulla tua mente, non sugli eventi esterni. Renditene conto e troverai la forza.", "Marco Aurelio", "Pensieri, VIII"),
         q("Ogni ora decidi con fermezza di fare ciò che hai per le mani, con dignità semplice.", "Every moment think steadily to do what thou hast in hand with perfect and simple dignity.", "Marco Aurelio", "Pensieri, II"),
@@ -229,7 +229,7 @@ public enum Quotes {
 
         q("In ogni atto osserva ciò che viene prima e ciò che segue: e solo allora mettiti all'opera.", "In every act observe the things which come first, and those which follow it; and so proceed to the act.", "Epitteto", "Manuale, 29"),
         q("Ogni cosa ha due manici: uno per cui si può portare, l'altro per cui non si può.", "Everything has two handles, the one by which it may be borne, the other by which it may not.", "Epitteto", "Manuale, 43"),
-        q("A tavola non dire come si deve mangiare: mangia come si deve.", "At a banquet do not say how a man ought to eat, but eat as you ought to eat.", "Epitteto", "Manuale, 46"),
+        q("A tavola non dire come si deve mangiare, mangia come si deve.", "At a banquet do not say how a man ought to eat, but eat as you ought to eat.", "Epitteto", "Manuale, 46"),
         q("La malattia è un impedimento per il corpo, non per la volontà, a meno che la volontà stessa non lo scelga.", "Disease is an impediment to the body, but not to the will, unless the will itself chooses.", "Epitteto", "Manuale, 9"),
         q("Infinita è la velocità del tempo, e si vede meglio quando ci si volta indietro.", "Infinitely swift is the flight of time, as those see more clearly who are looking backwards.", "Seneca", "Lettere a Lucilio, 49"),
         q("La natura ci ha fatti capaci d'imparare e ci ha dato una ragione imperfetta, ma che si può portare a compimento.", "Seneca", "Lettere a Lucilio, 49"),
@@ -285,12 +285,12 @@ public enum Quotes {
         q("La più grande cosa del mondo è saper appartenere a sé stessi.", "Montaigne", "Saggi, I, 39"),
 
         q("L'uomo libero a nulla pensa meno che alla morte, e la sua saggezza è meditazione della vita.", "Spinoza", "Etica, IV, prop. 67"),
-        q("Non ridere, non piangere, non detestare: comprendere.", "Spinoza", "Trattato politico, I"),
+        q("Non ridere, non piangere, non detestare, ma comprendere.", "Spinoza", "Trattato politico, I"),
 
         q("La maggior parte degli uomini conduce vite di quieta disperazione.", "Thoreau", "Walden, I"),
         q("Andai nei boschi perché volevo vivere deliberatamente, affrontare solo i fatti essenziali della vita.", "Thoreau", "Walden, II"),
         q("Semplifica, semplifica.", "Thoreau", "Walden, II"),
-        q("Non basta essere occupati: anche le formiche lo sono. La domanda è: di che cosa siamo occupati?", "Thoreau", "Lettere a H. Blake"),
+        q("Non basta essere occupati, anche le formiche lo sono. La domanda è: di che cosa siamo occupati?", "Thoreau", "Lettere a H. Blake"),
         q("Il costo di una cosa è la quantità di vita che devi scambiare per averla.", "Thoreau", "Walden, I"),
 
         q("Fa' la cosa e avrai il potere.", "Emerson", "Saggi, Compensazione"),
@@ -345,7 +345,7 @@ public enum Quotes {
         q("L'abitudine è il magistrato principale della vita di un uomo.", "Custom is the principal magistrate of man's life.", "Francis Bacon", "Saggi, Dell'abitudine e dell'educazione"),
         q("La natura spesso si nasconde, a volte si vince, di rado si spegne.", "Nature is often hidden; sometimes overcome; seldom extinguished.", "Francis Bacon", "Saggi, Della natura negli uomini"),
         q("Il tempo è la misura del lavoro, come il denaro è la misura delle merci.", "Time is the measure of business, as money is of wares.", "Francis Bacon", "Saggi, Della speditezza"),
-        q("Chi non vuole applicare rimedi nuovi deve aspettarsi guai nuovi: il tempo è il più grande innovatore.", "He that will not apply new remedies, must expect new evils; for time is the greatest innovator.", "Francis Bacon", "Saggi, Delle innovazioni"),
+        q("Chi non vuole applicare rimedi nuovi deve aspettarsi guai nuovi, il tempo è il più grande innovatore.", "He that will not apply new remedies, must expect new evils; for time is the greatest innovator.", "Francis Bacon", "Saggi, Delle innovazioni"),
         q("La vita non si potrebbe conservare, se non fosse interrotta di frequente.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
         q("Il primo tempo del giorno è di solito il più sopportabile.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
         q("Molti affanni, al mattino, paiono assai minori di quanto parvero la sera prima.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
@@ -377,7 +377,7 @@ public enum Quotes {
         q("C'erano momenti in cui non potevo sacrificare il fiore dell'istante presente a nessun lavoro, né di testa né di mani.", "I could not afford to sacrifice the bloom of the present moment to any work, whether of the head or hands.", "Thoreau", "Walden, IV"),
         q("Era mattina, ed ecco è già sera, e non è stato fatto niente di memorabile.", "It was morning, and lo, now it is evening, and nothing memorable is accomplished.", "Thoreau", "Walden, IV"),
         q("Sono più grande e migliore di quanto pensassi: non sapevo di contenere tanto bene.", "I am larger, better than I thought, I did not know I held so much goodness.", "Walt Whitman", "Foglie d'erba, Canto della strada aperta"),
-        q("Da adesso non chiedo più la buona sorte: la buona sorte sono io.", "Henceforth I ask not good-fortune, I myself am good-fortune.", "Walt Whitman", "Foglie d'erba, Canto della strada aperta"),
+        q("Da adesso non chiedo più la buona sorte, la buona sorte sono io.", "Henceforth I ask not good-fortune, I myself am good-fortune.", "Walt Whitman", "Foglie d'erba, Canto della strada aperta"),
         q("Me ne sto in ozio e invito la mia anima.", "I loafe and invite my soul.", "Walt Whitman", "Foglie d'erba, Canto di me stesso, 1"),
         q("Mi appoggio e me ne sto in ozio, guardando un filo d'erba d'estate.", "I lean and loafe at my ease observing a spear of summer grass.", "Walt Whitman", "Foglie d'erba, Canto di me stesso, 1"),
         q("Esisto come sono, e questo basta.", "I exist as I am, that is enough.", "Walt Whitman", "Foglie d'erba, Canto di me stesso, 20"),
@@ -416,7 +416,7 @@ public enum Quotes {
         q("Se hai saputo regolare la tua condotta, hai fatto molto di più di chi ha composto libri.", "Have you known how to regulate your conduct, you have done a great deal more than he who has composed books.", "Montaigne", "Saggi, Dell'esperienza"),
         q("Il capolavoro glorioso dell'uomo è vivere a proposito: regnare, accumulare, costruire sono piccole appendici e sostegni.", "The glorious masterpiece of man is to live to purpose; to reign, to lay up treasure, to build, are but little appendices.", "Montaigne", "Saggi, Dell'esperienza"),
         q("La cosa più grande al mondo è che un uomo sappia di appartenere a se stesso.", "The greatest thing in the world is for a man to know that he is his own.", "Montaigne", "Saggi, Della solitudine"),
-        q("L'uomo non è qui solo per farsi un'immagine del mondo già fatto: collabora lui stesso a farlo venire in essere.", "Rudolf Steiner", "La concezione goethiana del mondo, Personalità"),
+        q("L'uomo non è qui solo per farsi un'immagine del mondo già fatto, collabora lui stesso a farlo venire in essere.", "Rudolf Steiner", "La concezione goethiana del mondo, Personalità"),
         q("Verrebbe da dire che senza l'uomo il mondo mostrerebbe un volto non vero.", "Rudolf Steiner", "La concezione goethiana del mondo, Personalità"),
         q("Voler conoscere è un'esigenza della natura umana, non delle cose.", "Rudolf Steiner", "La concezione goethiana del mondo, Personalità"),
         q("Al singolo uomo la verità appare in una veste individuale.", "Rudolf Steiner", "La concezione goethiana del mondo, Personalità"),
@@ -458,16 +458,16 @@ public enum Quotes {
 
         q("Il pesce dimentica la rete quando è nel fiume; l'uomo dimentica le parole quando ha il senso.", "Zhuangzi", "Zhuangzi, XXVI"),
         q("La calma perfetta dell'uomo saggio è specchio del cielo e della terra.", "Zhuangzi", "Zhuangzi, XIII"),
-        q("Chi guarda il proprio riflesso nell'acqua corrente non lo vede: solo l'acqua ferma riflette.", "Zhuangzi", "Zhuangzi, V"),
+        q("Chi guarda il proprio riflesso nell'acqua corrente non lo vede, solo l'acqua ferma riflette.", "Zhuangzi", "Zhuangzi, V"),
 
         q("Chi impara senza pensare è perduto; chi pensa senza imparare è in pericolo.", "Learning without thought is labour lost; thought without learning is perilous.", "Confucio", "Dialoghi, II, 15"),
         q("Quando vedi una persona di valore, cerca di eguagliarla; quando ne vedi una senza, guarda dentro di te.", "When we see men of worth, we should think of equalling them; when we see men of a contrary character, we should examine ourselves.", "Confucio", "Dialoghi, IV, 17"),
         q("L'uomo superiore chiede a sé stesso; l'uomo comune chiede agli altri.", "Confucio", "Dialoghi, XV, 20"),
         q("A quindici anni volsi la mente allo studio; a trenta stavo ritto.", "At fifteen, I had my mind bent on learning. At thirty, I stood firm.", "Confucio", "Dialoghi, II, 4"),
-        q("Errare e non correggersi: questo è errare davvero.", "To have faults and not to reform them — this, indeed, should be pronounced having faults.", "Confucio", "Dialoghi, XV, 30"),
+        q("Errare e non correggersi, questo è errare davvero.", "To have faults and not to reform them — this, indeed, should be pronounced having faults.", "Confucio", "Dialoghi, XV, 30"),
 
         q("Tutto ciò che siamo è il risultato di ciò che abbiamo pensato.", "All that we are is the result of what we have thought.", "Buddha", "Dhammapada, I, 1"),
-        q("L'odio non si placa con l'odio: si placa con il non odio.", "Hatred does not cease by hatred at any time: hatred ceases by love, this is an old rule.", "Buddha", "Dhammapada, I, 5"),
+        q("L'odio non si placa con l'odio, si placa con il non odio.", "Hatred does not cease by hatred at any time: hatred ceases by love, this is an old rule.", "Buddha", "Dhammapada, I, 5"),
         q("Meglio una sola parola che porta pace, che mille parole vuote.", "Though a speech be a thousand words, but made up of senseless words, one word of sense is better.", "Buddha", "Dhammapada, VIII, 100"),
         q("Chi vince sé stesso è più grande di chi vince mille uomini in battaglia.", "If one man conquer in battle a thousand times thousand men, and another conquer himself, he is the greatest of conquerors.", "Buddha", "Dhammapada, VIII, 103"),
         q("Non trascurare il proprio bene per quello altrui, per quanto grande.", "Let no one forget his own duty for the sake of another's, however great.", "Buddha", "Dhammapada, XII, 166"),
@@ -481,7 +481,7 @@ public enum Quotes {
         q("Lo yoga non è per chi mangia troppo né per chi digiuna, non per chi dorme troppo né per chi veglia.", "Bhagavad Gita", "Bhagavad Gita, VI, 16"),
         q("Chi è moderato nel mangiare e nel riposo, nel lavoro e nel sonno, per lui lo yoga scioglie ogni pena.", "Bhagavad Gita", "Bhagavad Gita, VI, 17"),
 
-        q("Non seguire le orme degli antichi: cerca ciò che essi cercavano.", "Matsuo Bashō", "Sulle tracce degli antichi (Oi no kobumi)"),
+        q("Non seguire le orme degli antichi, ma cerca ciò che essi cercavano.", "Matsuo Bashō", "Sulle tracce degli antichi (Oi no kobumi)"),
         q("Ogni giorno è un viaggio, e il viaggio stesso è casa.", "Matsuo Bashō", "Lo stretto sentiero verso il profondo Nord"),
 
         q("Nella mente del principiante ci sono molte possibilità; in quella dell'esperto, poche.", "Shunryu Suzuki", "Mente zen, mente di principiante"),
@@ -496,7 +496,7 @@ public enum Quotes {
         q("La suprema arte della guerra è sottomettere il nemico senza combattere.", "Sunzi", "L'arte della guerra, III"),
 
         q("Il lavoro è amore reso visibile.", "Kahlil Gibran", "Il profeta, Il lavoro"),
-        q("I vostri figli non sono figli vostri: sono i figli e le figlie della vita.", "Kahlil Gibran", "Il profeta, I figli"),
+        q("I vostri figli non sono figli vostri, sono i figli e le figlie della vita.", "Kahlil Gibran", "Il profeta, I figli"),
 
         q("Alzati, svegliati, e non fermarti finché la meta non è raggiunta.", "Katha Upanishad", "Katha Upanishad, I, 3, 14"),
         q("Come un uomo si spoglia di vesti logore e ne indossa di nuove, così l'anima lascia il corpo.", "As when one layeth his worn-out robes away and taketh new, so putteth by the spirit lightly its garb of flesh.", "Bhagavad Gita", "Bhagavad Gita, II, 22"),
