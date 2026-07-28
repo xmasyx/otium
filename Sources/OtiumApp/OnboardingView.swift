@@ -57,8 +57,8 @@ struct OnboardingView: View {
             question(
                 number: 2,
                 title: L.t("Sesso", "Sex"),
-                detail: L.t("Serve solo a decidere da quante ripetizioni partire.",
-                            "Used only to decide how many reps to start from.")
+                detail: L.t("Serve a scegliere da dove parti: numero e versione dell'esercizio.",
+                            "Used to choose where you start: the number and the version of the exercise.")
             ) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(spacing: 12) {
@@ -67,8 +67,8 @@ struct OnboardingView: View {
                     }
                     // L'app dice **perché** chiede, mentre lo chiede. Una domanda sul corpo senza
                     // una ragione visibile è una domanda a cui è ragionevole non voler rispondere.
-                    Text(L.t("Uno studio su otto uomini e otto donne (Miller 1993) misura circa il 52% della forza maschile nella parte alta del corpo e il 66% in quella bassa. Proporre a tutti lo stesso numero di flessioni significa proporre a metà delle persone un compito che non riescono a fare. Non è un tetto: è il primo giorno, e da lì si sale.",
-                             "A study of eight men and eight women (Miller 1993) measured roughly 52% of male strength in the upper body and 66% in the lower body. Offering everyone the same number of push-ups means offering half of them a task they cannot do. It is not a ceiling: it is day one, and it goes up from there."))
+                    Text(L.t("Uno studio su otto uomini e otto donne (Miller 1993) misura circa il 52% della forza maschile nella parte alta del corpo e il 66% in quella bassa. Per questo l'app non taglia il numero fino a farlo diventare finto: cambia il movimento — push-up sulle ginocchia invece che a terra — e le ripetizioni restano quelle di un allenamento vero. Dentro la pausa puoi sempre passare alla versione più dura, o a quella più facile.",
+                             "A study of eight men and eight women (Miller 1993) measured roughly 52% of male strength in the upper body and 66% in the lower body. That is why the app does not cut the number until it becomes token: it changes the movement — knee push-ups instead of full ones — and the reps stay those of a real workout. Inside the break you can always switch to the harder version, or the easier one."))
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -131,10 +131,15 @@ struct OnboardingView: View {
     /// risposta.
     private var esempio: String {
         let fattore = gradual ? Settings().rampStartFactor : 1.0
-        let squat = Ramp.reps(for: .squat, factor: fattore, sex: sex ?? .male)
-        let push = Ramp.reps(for: .pushUp, factor: fattore, sex: sex ?? .male)
-        return L.t("Il primo giorno: \(squat) squat, \(push) push-up.",
-                   "Day one: \(squat) squats, \(push) push-ups.")
+        let chi = sex ?? .male
+        let squat = Ramp.reps(for: .squat, factor: fattore, sex: chi)
+        // **L'esercizio che riceverà davvero**, non quello che c'è in tabella: a chi ha dichiarato
+        // «donna» tocca il push-up sulle ginocchia, e l'esempio deve dire quello o mentirebbe
+        // proprio nella riga che serve a farsi un'idea concreta.
+        let spinta = SexCalibration.regression(for: .pushUp, sex: chi)
+        let push = Ramp.reps(for: spinta, factor: fattore, sex: chi)
+        return L.t("Il primo giorno: \(squat) squat, \(push) \(spinta.localizedName).",
+                   "Day one: \(squat) squats, \(push) \(spinta.localizedName).")
     }
 
     private func question<Content: View>(

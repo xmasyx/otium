@@ -759,8 +759,8 @@ struct PrefsView: View {
                 }
                 .pickerStyle(.segmented)
 
-                Text(L.t("Il sesso cambia solo da quante ripetizioni parti, per gruppo muscolare (Miller 1993). Non cambia gli esercizi, la cadenza, né nient'altro.",
-                         "Sex changes only how many reps you start from, per muscle group (Miller 1993). It changes nothing else — not the exercises, not the cadence."))
+                Text(L.t("Il sesso decide da dove parti: le ripetizioni per gruppo muscolare (Miller 1993) e la versione della spinta — sulle ginocchia invece che a terra. Non cambia la cadenza né nient'altro, e ogni esercizio resta scambiabile dentro la pausa.",
+                         "Sex decides where you start: the reps per muscle group (Miller 1993) and the version of the push — on your knees instead of full. It changes nothing else, and every exercise stays swappable inside the break."))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

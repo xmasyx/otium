@@ -172,6 +172,39 @@ final class ProfileTests: XCTestCase {
         XCTAssertEqual(ItalianNumber.il(28), "il 28")
     }
 
+    /// **La regressione, non il numero dimezzato.** È la cura del «3 push-up» del primo avvio.
+    func testWomenGetTheRegressedMovementNotAToyNumber() {
+        let planner = ExercisePlanner(pool: [.pushUp], vigorousPool: [.jumpingJack])
+        let uomo = planner.exercise(breakIndex: 1, kind: .micro, factor: 0.55, sex: .male)
+        let donna = planner.exercise(breakIndex: 1, kind: .micro, factor: 0.55, sex: .female)
+
+        XCTAssertEqual(uomo.kind, .pushUp)
+        XCTAssertEqual(donna.kind, .kneePushUp, "alla donna tocca la regressione, non il push-up")
+        // E il numero non è più il numero-giocattolo: il movimento è già scalato, quindi il
+        // conteggio non si sconta una seconda volta.
+        XCTAssertGreaterThanOrEqual(donna.reps, 5,
+                                    "3 ripetizioni non sono un allenamento, sono un errore che sembra un numero")
+        XCTAssertEqual(donna.reps, Ramp.reps(for: .kneePushUp, factor: 0.55),
+                       "sulle regressioni non si applica lo sconto della parte alta")
+    }
+
+    /// Si scende **e** si sale: chi ha ricevuto le ginocchia deve poter arrivare al push-up pieno
+    /// dentro la pausa, e chi le trova dure deve poter andare al muro.
+    func testRegressionsAreSwappableBothWays() {
+        XCTAssertTrue(ExerciseKind.kneePushUp.variants.contains(.pushUp))
+        XCTAssertTrue(ExerciseKind.kneePushUp.variants.contains(.wallPushUp))
+        XCTAssertTrue(ExerciseKind.pushUp.variants.contains(.kneePushUp))
+        XCTAssertTrue(ExerciseKind.wallPushUp.variants.contains(.kneePushUp))
+    }
+
+    /// Gli uomini non vengono toccati: la sostituzione è mirata, non un cambio di app.
+    func testMenAreUnaffectedByTheRegressionTable() {
+        for kind in ExerciseKind.allCases {
+            XCTAssertEqual(SexCalibration.regression(for: kind, sex: .male), kind)
+            XCTAssertEqual(SexCalibration.regression(for: kind, sex: nil), kind)
+        }
+    }
+
     /// Le impostazioni scritte prima che l'onboarding esistesse non devono morire, e devono
     /// **chiedere**: lingua e sesso restano nil, che è l'innesco della prima schermata.
     func testOldSettingsFileTriggersOnboarding() throws {

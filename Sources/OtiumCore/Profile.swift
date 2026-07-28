@@ -67,6 +67,40 @@ public enum SexCalibration {
         }
     }
 
+    /// **Il movimento sostituito, invece del numero dimezzato.**
+    ///
+    /// Il difetto che questa tabella cura si vedeva nel primo avvio: a una donna in partenza
+    /// graduale l'app proponeva *3 push-up*, perché i due sconti si moltiplicavano (55% della
+    /// partenza × 55% della parte alta). Tre push-up standard non sono un allenamento, sono un
+    /// numero che sembra un errore — e chi non riesce a farne tre neanche li fa.
+    ///
+    /// La leva giusta in programmazione dell'esercizio non è il conteggio, è la **regressione del
+    /// movimento**: stesso gesto, meno peso da spostare. Push-up sulle ginocchia, al muro, o con
+    /// le mani su un rialzo. Sono le stesse progressioni che si insegnano a chiunque parta da
+    /// zero, uomo o donna: qui le riceve chi statisticamente ne ha bisogno più spesso, e restano
+    /// **tutte scambiabili dentro la pausa** — in su e in giù — perché la statistica non sa nulla
+    /// della persona che ha davanti.
+    public static func regression(for kind: ExerciseKind, sex: Sex?) -> ExerciseKind {
+        guard sex == .female else { return kind }
+        switch kind {
+        case .pushUp: return .kneePushUp
+        case .diamondPushUp: return .kneePushUp
+        case .archerPushUp: return .inclinePushUp
+        default: return kind
+        }
+    }
+
+    /// Il coefficiente sulle ripetizioni, **per esercizio**.
+    ///
+    /// Sulle regressioni vale 1.0, e non è una svista: il movimento è già stato scalato, e
+    /// scontare anche il numero significherebbe scontare due volte la stessa cosa. Dodici push-up
+    /// sulle ginocchia sono un allenamento; sette lo sono meno, e tre non lo sono affatto.
+    public static func factor(for kind: ExerciseKind, sex: Sex?) -> Double {
+        guard sex == .female else { return 1.0 }
+        if kind == .kneePushUp || kind == .wallPushUp || kind == .inclinePushUp { return 1.0 }
+        return factor(for: kind.muscleGroup, sex: sex)
+    }
+
     /// La riga da mostrare quando l'app deve spiegare perché il tuo numero è quello.
     public static let source =
         "Miller AE, MacDougall JD, Tarnopolsky MA, Sale DG (1993), «Gender differences in strength "

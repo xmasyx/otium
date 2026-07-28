@@ -60,6 +60,10 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     case diamondPushUp
     case archerPushUp
     case inclinePushUp
+    /// Sulle ginocchia: la regressione classica del push-up, non una versione «per signore».
+    case kneePushUp
+    /// Mani al muro: la più facile di tutte, e la porta d'ingresso di chi parte da zero.
+    case wallPushUp
     case pikePushUp
     case benchDip
     // Addome — aggiunti il 2026-07-27: senza, la giornata allenava gambe e spinta e lasciava
@@ -93,6 +97,8 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .diamondPushUp: return 8
         case .archerPushUp: return 6
         case .inclinePushUp: return 12
+        case .kneePushUp: return 12
+        case .wallPushUp: return 15
         case .pikePushUp: return 8
         case .benchDip: return 12
         case .crunch: return 20
@@ -139,6 +145,8 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .diamondPushUp: return 3.2
         case .archerPushUp: return 4.0
         case .inclinePushUp: return 2.5
+        case .kneePushUp: return 2.6
+        case .wallPushUp: return 2.0
         case .pikePushUp: return 3.2
         case .benchDip: return 2.5
         case .crunch: return 2.0
@@ -175,7 +183,8 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .squat, .lunge, .splitSquat: return "gambe"
         case .gluteBridge: return "glutei"
         case .calfRaise: return "polpacci"
-        case .pushUp, .diamondPushUp, .archerPushUp, .inclinePushUp: return "petto"
+        case .pushUp, .diamondPushUp, .archerPushUp, .inclinePushUp,
+             .kneePushUp, .wallPushUp: return "petto"
         case .pikePushUp: return "spalle"
         case .benchDip: return "tricipiti"
         case .crunch, .sitUp, .legRaise, .bicycleCrunch, .deadBug, .russianTwist,
@@ -226,7 +235,8 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     public var category: ExerciseCategory {
         switch self {
         case .squat, .lunge, .splitSquat, .gluteBridge, .calfRaise: return .gambe
-        case .pushUp, .diamondPushUp, .archerPushUp, .inclinePushUp, .pikePushUp, .benchDip: return .spinta
+        case .pushUp, .diamondPushUp, .archerPushUp, .inclinePushUp, .pikePushUp, .benchDip,
+             .kneePushUp, .wallPushUp: return .spinta
         case .crunch, .sitUp, .legRaise, .bicycleCrunch, .deadBug, .russianTwist,
              .plank, .sidePlank, .hollowHold: return .addome
         case .burpee, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return .vigorosi
@@ -244,6 +254,8 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .diamondPushUp: return "diamond push-up"
         case .archerPushUp: return "archer push-up"
         case .inclinePushUp: return "push-up inclinati"
+        case .kneePushUp: return "push-up sulle ginocchia"
+        case .wallPushUp: return "push-up al muro"
         case .pikePushUp: return "pike push-up"
         case .benchDip: return "dip su sedia"
         case .crunch: return "crunch"
@@ -274,6 +286,8 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .diamondPushUp: return "diamond push-ups"
         case .archerPushUp: return "archer push-ups"
         case .inclinePushUp: return "incline push-ups"
+        case .kneePushUp: return "knee push-ups"
+        case .wallPushUp: return "wall push-ups"
         case .pikePushUp: return "pike push-ups"
         case .benchDip: return "chair dips"
         case .crunch: return "crunches"
@@ -327,6 +341,12 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .inclinePushUp:
             return L.t("Mani sulla scrivania o sulla sedia: più alto è l'appoggio, più è facile.",
                        "Hands on the desk or the chair: the higher the surface, the easier it gets.")
+        case .kneePushUp:
+            return L.t("Ginocchia a terra, corpo in linea dalle ginocchia alla testa. Non è un push-up a metà: è un push-up con meno peso.",
+                       "Knees on the floor, body in line from knees to head. It is not half a push-up: it is a push-up with less weight.")
+        case .wallPushUp:
+            return L.t("Mani al muro all'altezza delle spalle, piedi un passo indietro. Più ti allontani dal muro, più è duro.",
+                       "Hands on the wall at shoulder height, feet a step back. The further from the wall, the harder it gets.")
         case .pikePushUp:
             return L.t("A V rovesciata, bacino alto, scendi con la testa fra le mani. Lavorano le spalle.",
                        "Inverted V, hips high, lower your head between your hands. This one is shoulders.")
@@ -387,7 +407,15 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     public var variants: [ExerciseKind] {
         switch self {
         case .pushUp:
-            return [.diamondPushUp, .archerPushUp, .benchDip, .pikePushUp, .inclinePushUp]
+            return [.kneePushUp, .inclinePushUp, .wallPushUp, .diamondPushUp, .archerPushUp,
+                    .benchDip, .pikePushUp]
+        // Dalle regressioni si sale **e** si scende: chi è partito dal muro deve poter provare le
+        // ginocchia senza cercarle nelle preferenze, e chi ha sbagliato a scegliere deve poter
+        // tornare indietro dentro la pausa, non alla prossima.
+        case .kneePushUp:
+            return [.wallPushUp, .inclinePushUp, .pushUp, .benchDip]
+        case .wallPushUp:
+            return [.inclinePushUp, .kneePushUp, .pushUp]
         case .diamondPushUp, .archerPushUp, .pikePushUp, .inclinePushUp, .benchDip:
             return [.pushUp, .diamondPushUp, .archerPushUp, .benchDip, .pikePushUp, .inclinePushUp]
                 .filter { $0 != self }
@@ -518,7 +546,7 @@ public enum Ramp {
     ///   fondato su Miller 1993). `nil` = nessuna calibrazione, cioè il numero pieno.
     public static func reps(for kind: ExerciseKind, factor: Double, sex: Sex? = nil) -> Int {
         let scaled = Double(kind.baseReps) * factor
-            * SexCalibration.factor(for: kind.muscleGroup, sex: sex)
+            * SexCalibration.factor(for: kind, sex: sex)
         guard kind.isPerSide else { return max(1, Int(scaled.rounded())) }
         return max(2, Int((scaled / 2).rounded()) * 2)
     }
@@ -575,7 +603,7 @@ public struct ExercisePlanner: Sendable {
     public func exercise(breakIndex: Int, kind: BreakKind, factor: Double, sex: Sex? = nil) -> Exercise {
         let table = (kind == .long) ? vigorousPool : pool
         let idx = max(0, breakIndex - 1) % table.count
-        let chosen = table[idx]
+        let chosen = SexCalibration.regression(for: table[idx], sex: sex)
         return Exercise(kind: chosen, reps: Ramp.reps(for: chosen, factor: factor, sex: sex))
     }
 
@@ -603,7 +631,9 @@ public struct ExercisePlanner: Sendable {
             // sempre lo stesso accoppiamento.
             let offset = order.firstIndex(of: category) ?? 0
             let chosen = table[(max(0, breakIndex - 1) + offset) % table.count]
-            return Exercise(kind: chosen, reps: Ramp.reps(for: chosen, factor: scaled, sex: sex))
+            return Exercise(kind: SexCalibration.regression(for: chosen, sex: sex),
+                            reps: Ramp.reps(for: SexCalibration.regression(for: chosen, sex: sex),
+                                            factor: scaled, sex: sex))
         }
     }
 }
