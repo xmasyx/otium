@@ -30,17 +30,19 @@ for (const g of Object.values(gruppi)) g.sort((a, b) => a.autore.localeCompare(b
 let src = readFileSync(FILE, "utf8");
 
 const INTESTAZIONE = (n: number) => `
-        // MARK: Aggiunte del 2026-07-28 — ${n} citazioni ritrovate sul testo primario.
+        // MARK: Secondo giro del 2026-07-28 — ${n} citazioni ritrovate sul testo primario.
         //
-        // Nessuna viene da un aggregatore. Per ognuna il frammento in lingua originale è stato
-        // cercato dentro il testo scaricato (Wikisource latino e italiano, Project Gutenberg,
-        // Zarathustra in tedesco) e ritrovato alla riga indicata dal cancello di verifica; la
-        // resa italiana è nostra, fatta sull'originale dove la lingua lo permetteva — latino,
-        // tedesco, francese, inglese — e sulla traduzione di pubblico dominio altrove.
+        // Chiude il conto lasciato aperto dal primo giro: il corpus passa da 408 a 493 frasi e
+        // la guardia del mese senza ripetizioni torna verde senza essere stata toccata.
         //
-        // Diciannove candidate su centocinquantadue sono state bocciate dal cancello perché il
-        // frammento non esisteva nel testo con quelle parole: quelle NON sono qui, ed è
-        // esattamente il motivo per cui il cancello esiste.
+        // Fonti nuove rispetto al primo giro: Rudolf Steiner in TEDESCO originale (Philosophie
+        // der Freiheit e Goethes Weltanschauung, entrambe da Project Gutenberg), le lettere di
+        // Seneca dalla 49 alla 94 in latino, i Saggi di Bacon, i Saggi di Montaigne, il
+        // Dhammapada e il Manuale di Epitteto, i Pensieri di Leopardi in italiano originale.
+        //
+        // Stesso metodo, stesso cancello: niente aggregatori, ogni candidata porta il frammento
+        // in lingua originale e viene ritrovata dentro il file scaricato prima di essere scritta.
+        // Una sola bocciata su ottantasei, ed era un doppione già in corpus — la lettera 55.
 `;
 
 for (const [nome, lista] of Object.entries(gruppi)) {

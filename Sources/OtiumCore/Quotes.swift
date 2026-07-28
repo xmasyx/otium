@@ -187,6 +187,59 @@ public enum Quotes {
         q("Quanti allenano il corpo, e quanto pochi l'ingegno.", "Seneca", "Lettere a Lucilio, 80"),
         q("L'animo cresce da sé, si nutre da sé, si allena da sé.", "Seneca", "Lettere a Lucilio, 80"),
         q("Al saggio basta sé stesso per vivere bene, non per vivere.", "Seneca", "Lettere a Lucilio, 9"),
+
+        // MARK: Secondo giro del 2026-07-28 — 38 citazioni ritrovate sul testo primario.
+        //
+        // Chiude il conto lasciato aperto dal primo giro: il corpus passa da 408 a 493 frasi e
+        // la guardia del mese senza ripetizioni torna verde senza essere stata toccata.
+        //
+        // Fonti nuove rispetto al primo giro: Rudolf Steiner in TEDESCO originale (Philosophie
+        // der Freiheit e Goethes Weltanschauung, entrambe da Project Gutenberg), le lettere di
+        // Seneca dalla 49 alla 94 in latino, i Saggi di Bacon, i Saggi di Montaigne, il
+        // Dhammapada e il Manuale di Epitteto, i Pensieri di Leopardi in italiano originale.
+        //
+        // Stesso metodo, stesso cancello: niente aggregatori, ogni candidata porta il frammento
+        // in lingua originale e viene ritrovata dentro il file scaricato prima di essere scritta.
+        // Una sola bocciata su ottantasei, ed era un doppione già in corpus — la lettera 55.
+
+        q("In ogni atto osserva ciò che viene prima e ciò che segue: e solo allora mettiti all'opera.", "Epitteto", "Manuale, 29"),
+        q("Ogni cosa ha due manici: uno per cui si può portare, l'altro per cui non si può.", "Epitteto", "Manuale, 43"),
+        q("A tavola non dire come si deve mangiare: mangia come si deve.", "Epitteto", "Manuale, 46"),
+        q("La malattia è un impedimento per il corpo, non per la volontà, a meno che la volontà stessa non lo scelga.", "Epitteto", "Manuale, 9"),
+        q("Infinita è la velocità del tempo, e si vede meglio quando ci si volta indietro.", "Seneca", "Lettere a Lucilio, 49"),
+        q("La natura ci ha fatti capaci d'imparare e ci ha dato una ragione imperfetta, ma che si può portare a compimento.", "Seneca", "Lettere a Lucilio, 49"),
+        q("Nessuno torna alla natura con fatica, se non chi da lei si è allontanato.", "Seneca", "Lettere a Lucilio, 50"),
+        q("La virtù è secondo natura; i vizi le sono nemici e ostili.", "Seneca", "Lettere a Lucilio, 50"),
+        q("Costringo l'animo a stare teso su di sé e a non farsi chiamare fuori dalle cose esterne.", "Seneca", "Lettere a Lucilio, 56"),
+        q("L'animo del saggio è come il cielo sopra la luna: lassù è sempre sereno.", "Seneca", "Lettere a Lucilio, 59"),
+        q("Questa gioia non nasce che dalla coscienza delle proprie virtù.", "Seneca", "Lettere a Lucilio, 59"),
+        q("Che abbiamo vissuto abbastanza non lo decidono gli anni né i giorni, ma l'animo.", "Seneca", "Lettere a Lucilio, 61"),
+        q("Faccio in modo che un solo giorno valga per me quanto una vita intera.", "Seneca", "Lettere a Lucilio, 61"),
+        q("La vita è già abbastanza attrezzata: siamo noi a essere avidi dei suoi strumenti.", "Seneca", "Lettere a Lucilio, 61"),
+        q("Alle cose non mi consegno: le presto me stesso, e non vado a caccia di pretesti per perdere tempo.", "Seneca", "Lettere a Lucilio, 62"),
+        q("Ovunque io mi fermi, lì lavoro i miei pensieri e rivolgo nell'animo qualcosa che fa bene.", "Seneca", "Lettere a Lucilio, 62"),
+        q("Tutto ciò che in me può patire offesa è questo: in questa dimora esposta abita un animo libero.", "Seneca", "Lettere a Lucilio, 65"),
+        q("Il posto che dio occupa nel mondo, nell'uomo lo occupa l'animo.", "Seneca", "Lettere a Lucilio, 65"),
+        q("Ogni arte è imitazione della natura.", "Seneca", "Lettere a Lucilio, 65"),
+        q("Da una capanna può uscire un grande uomo, e da un corpicino deforme e misero un animo bello e grande.", "Seneca", "Lettere a Lucilio, 66"),
+        q("La virtù non è altro che retta ragione.", "Seneca", "Lettere a Lucilio, 66"),
+        q("È più grande sfondare le difficoltà che tenere a freno le cose liete.", "Seneca", "Lettere a Lucilio, 66"),
+        q("Per riuscire a tenere fermo l'animo, ferma prima la fuga del tuo corpo.", "Seneca", "Lettere a Lucilio, 69"),
+        q("Il bene non è vivere, ma vivere bene.", "Seneca", "Lettere a Lucilio, 70"),
+        q("Il saggio vivrà quanto deve, non quanto può.", "Seneca", "Lettere a Lucilio, 70"),
+        q("Pensa sempre a come sia la vita, non a quanta ne sia.", "Seneca", "Lettere a Lucilio, 70"),
+        q("Ogni volta che vuoi sapere cosa fuggire o cosa cercare, guarda al sommo bene, al fine di tutta la tua vita.", "Seneca", "Lettere a Lucilio, 71"),
+        q("Sbagliamo perché tutti decidiamo sulle parti della vita e nessuno sull'insieme.", "Seneca", "Lettere a Lucilio, 71"),
+        q("Nessun momento è poco adatto a un'occupazione che fa bene.", "Seneca", "Lettere a Lucilio, 72"),
+        q("Ciò che è retto non si misura né per grandezza né per numero né per durata.", "Seneca", "Lettere a Lucilio, 74"),
+        q("La vita s'intorpidisce presto in un ozio inerte, se si deve lasciar perdere tutto ciò che dà fastidio.", "Seneca", "Lettere a Lucilio, 81"),
+        q("Sta in un luogo inespugnabile l'animo che ha lasciato le cose esterne e si difende nella propria rocca.", "Seneca", "Lettere a Lucilio, 82"),
+        q("Va' per la strada che hai preso e assestati in questo modo di vivere con calma, non con mollezza.", "Seneca", "Lettere a Lucilio, 82"),
+        q("Oggi è un giorno intero: nessuno me ne ha strappato via un pezzo.", "Seneca", "Lettere a Lucilio, 83"),
+        q("La virtù tocca solo l'animo che sia stato formato, istruito e portato al sommo da un esercizio assiduo.", "Seneca", "Lettere a Lucilio, 90"),
+        q("Il nostro animo è capiente: fin lassù arriva, se i vizi non lo schiacciano.", "Seneca", "Lettere a Lucilio, 92"),
+        q("Per vivere a lungo serve il destino; per vivere abbastanza, l'animo.", "Seneca", "Lettere a Lucilio, 93"),
+        q("Due cose danno all'animo la forza maggiore: la fede nel vero e la fiducia in sé.", "Seneca", "Lettere a Lucilio, 94"),
     ]
 
     // MARK: - Filosofia occidentale
@@ -303,6 +356,60 @@ public enum Quotes {
         q("Me ne sto in ozio e invito la mia anima.", "Walt Whitman", "Foglie d'erba, Canto di me stesso, 1"),
         q("Mi appoggio e me ne sto in ozio, guardando un filo d'erba d'estate.", "Walt Whitman", "Foglie d'erba, Canto di me stesso, 1"),
         q("Esisto come sono, e questo basta.", "Walt Whitman", "Foglie d'erba, Canto di me stesso, 20"),
+
+        // MARK: Secondo giro del 2026-07-28 — 39 citazioni ritrovate sul testo primario.
+        //
+        // Chiude il conto lasciato aperto dal primo giro: il corpus passa da 408 a 493 frasi e
+        // la guardia del mese senza ripetizioni torna verde senza essere stata toccata.
+        //
+        // Fonti nuove rispetto al primo giro: Rudolf Steiner in TEDESCO originale (Philosophie
+        // der Freiheit e Goethes Weltanschauung, entrambe da Project Gutenberg), le lettere di
+        // Seneca dalla 49 alla 94 in latino, i Saggi di Bacon, i Saggi di Montaigne, il
+        // Dhammapada e il Manuale di Epitteto, i Pensieri di Leopardi in italiano originale.
+        //
+        // Stesso metodo, stesso cancello: niente aggregatori, ogni candidata porta il frammento
+        // in lingua originale e viene ritrovata dentro il file scaricato prima di essere scritta.
+        // Una sola bocciata su ottantasei, ed era un doppione già in corpus — la lettera 55.
+
+        q("Non c'è intoppo dell'ingegno che non si possa sciogliere con studi adatti, come i mali del corpo hanno i loro esercizi.", "Francis Bacon", "Saggi, Degli studi"),
+        q("Le bocce fanno bene ai reni, il tiro ai polmoni e al petto, una camminata lenta allo stomaco, la cavalcata alla testa.", "Francis Bacon", "Saggi, Degli studi"),
+        q("Non leggere per contraddire e confutare, né per credere e dare per scontato, ma per pesare e considerare.", "Francis Bacon", "Saggi, Degli studi"),
+        q("Alcuni libri vanno assaggiati, altri inghiottiti, e pochi masticati e digeriti.", "Francis Bacon", "Saggi, Degli studi"),
+        q("Gli studi perfezionano la natura e sono perfezionati dall'esperienza.", "Francis Bacon", "Saggi, Degli studi"),
+        q("L'osservazione di sé, ciò che uno sente che gli giova e ciò che gli nuoce, è la medicina migliore per conservare la salute.", "Francis Bacon", "Saggi, Del governo della salute"),
+        q("Avere la mente libera e l'animo lieto alle ore del cibo, del sonno e dell'esercizio è uno dei precetti migliori per durare a lungo.", "Francis Bacon", "Saggi, Del governo della salute"),
+        q("Veglia e sonno, ma piuttosto il sonno; stare seduti ed esercizio, ma piuttosto l'esercizio.", "Francis Bacon", "Saggi, Del governo della salute"),
+        q("Nella malattia guarda soprattutto alla salute; nella salute, all'azione.", "Francis Bacon", "Saggi, Del governo della salute"),
+        q("Genera grande perfezione che l'esercizio sia più duro dell'uso.", "Francis Bacon", "Saggi, Della natura negli uomini"),
+        q("Non ci si imponga un'abitudine con continuità perpetua, ma con qualche interruzione: la pausa rinforza la ripresa.", "Francis Bacon", "Saggi, Della natura negli uomini"),
+        q("La natura di un uomo va o alle erbe buone o alle erbacce: annaffi al momento giusto le une e distrugga le altre.", "Francis Bacon", "Saggi, Della natura negli uomini"),
+        q("Chi cerca vittoria sulla propria natura non si dia compiti troppo grandi né troppo piccoli.", "Francis Bacon", "Saggi, Della natura negli uomini"),
+        q("Gran rimedio della maldicenza, appunto come delle afflizioni d'animo, è il tempo.", "Leopardi", "Pensieri, XLV"),
+        q("Nessun maggior segno d'essere poco filosofo e poco savio, che volere savia e filosofica tutta la vita.", "Leopardi", "Pensieri, XXVIII"),
+        q("Il segno più manifesto della saggezza è un'allegria continua.", "Montaigne", "Saggi, Dell'educazione dei fanciulli"),
+        q("Se hai saputo prenderti riposo, hai fatto più di chi ha preso imperi e città.", "Montaigne", "Saggi, Dell'esperienza"),
+        q("Se hai saputo regolare la tua condotta, hai fatto molto di più di chi ha composto libri.", "Montaigne", "Saggi, Dell'esperienza"),
+        q("Il capolavoro glorioso dell'uomo è vivere a proposito: regnare, accumulare, costruire sono piccole appendici e sostegni.", "Montaigne", "Saggi, Dell'esperienza"),
+        q("La cosa più grande al mondo è che un uomo sappia di appartenere a se stesso.", "Montaigne", "Saggi, Della solitudine"),
+        q("L'uomo non è qui solo per farsi un'immagine del mondo già fatto: collabora lui stesso a farlo venire in essere.", "Rudolf Steiner", "La concezione goethiana del mondo, Personalità"),
+        q("Verrebbe da dire che senza l'uomo il mondo mostrerebbe un volto non vero.", "Rudolf Steiner", "La concezione goethiana del mondo, Personalità"),
+        q("Voler conoscere è un'esigenza della natura umana, non delle cose.", "Rudolf Steiner", "La concezione goethiana del mondo, Personalità"),
+        q("Al singolo uomo la verità appare in una veste individuale.", "Rudolf Steiner", "La concezione goethiana del mondo, Personalità"),
+        q("Quando l'uomo posa lo sguardo su una cosa, nasce in lui l'impulso a vedere più di quanto la percezione gli offra.", "Rudolf Steiner", "La concezione goethiana del mondo, Personalità"),
+        q("Si respinge tutto ciò che ostacola il pieno dispiegarsi delle forze del singolo.", "Rudolf Steiner", "La filosofia della libertà, I"),
+        q("Una verità che ci viene da fuori porta sempre su di sé il marchio dell'incertezza.", "Rudolf Steiner", "La filosofia della libertà, I"),
+        q("Possiamo credere solo a ciò che a ciascuno di noi appare come verità nel proprio intimo.", "Rudolf Steiner", "La filosofia della libertà, I"),
+        q("Chi è tormentato dai dubbi ha le forze paralizzate.", "Rudolf Steiner", "La filosofia della libertà, I"),
+        q("Aspiriamo a un sapere sicuro, ma ciascuno a modo suo.", "Rudolf Steiner", "La filosofia della libertà, I"),
+        q("Chi sa godere soltanto con i sensi non conosce le leccornie della vita.", "Rudolf Steiner", "La filosofia della libertà, I"),
+        q("Il sapere ha valore solo in quanto contribuisce al dispiegarsi completo di tutta la natura umana.", "Rudolf Steiner", "La filosofia della libertà, I"),
+        q("Davanti all'idea bisogna porsi da padroni, altrimenti si finisce in sua schiavitù.", "Rudolf Steiner", "La filosofia della libertà, I"),
+        q("È libero solo l'uomo che in ogni istante della vita è in grado di seguire se stesso.", "Rudolf Steiner", "La filosofia della libertà, X"),
+        q("Vivere e lasciar vivere è la massima fondamentale degli uomini liberi.", "Rudolf Steiner", "La filosofia della libertà, X"),
+        q("La nostra vita si compone di azioni libere e di azioni non libere.", "Rudolf Steiner", "La filosofia della libertà, X"),
+        q("L'individuo umano è la sorgente di ogni moralità e il centro di ogni vita.", "Rudolf Steiner", "La filosofia della libertà, X"),
+        q("Perciò la vita ha solo lo scopo e la destinazione che l'uomo stesso le dà.", "Rudolf Steiner", "La filosofia della libertà, XII"),
+        q("Non m'incammino nella vita con un itinerario già stabilito.", "Rudolf Steiner", "La filosofia della libertà, XII"),
     ]
 
     // MARK: - Oriente
@@ -385,6 +492,29 @@ public enum Quotes {
         q("Imparare senza pensare è fatica sprecata.", "Confucio", "Dialoghi, II, 15"),
         q("Chi sta in punta di piedi non sta saldo; chi allarga il passo non cammina.", "Laozi", "Tao Te Ching, 24"),
         q("Il morbido e il debole vincono il duro e il forte.", "Laozi", "Tao Te Ching, 36"),
+
+        // MARK: Secondo giro del 2026-07-28 — 8 citazioni ritrovate sul testo primario.
+        //
+        // Chiude il conto lasciato aperto dal primo giro: il corpus passa da 408 a 493 frasi e
+        // la guardia del mese senza ripetizioni torna verde senza essere stata toccata.
+        //
+        // Fonti nuove rispetto al primo giro: Rudolf Steiner in TEDESCO originale (Philosophie
+        // der Freiheit e Goethes Weltanschauung, entrambe da Project Gutenberg), le lettere di
+        // Seneca dalla 49 alla 94 in latino, i Saggi di Bacon, i Saggi di Montaigne, il
+        // Dhammapada e il Manuale di Epitteto, i Pensieri di Leopardi in italiano originale.
+        //
+        // Stesso metodo, stesso cancello: niente aggregatori, ogni candidata porta il frammento
+        // in lingua originale e viene ritrovata dentro il file scaricato prima di essere scritta.
+        // Una sola bocciata su ottantasei, ed era un doppione già in corpus — la lettera 55.
+
+        q("Destandosi, con impegno, con misura e con dominio di sé, il saggio si fa un'isola che nessuna piena può sommergere.", "Buddha", "Dhammapada, II, 25"),
+        q("Come il frecciaio raddrizza la sua freccia, il saggio raddrizza il proprio pensiero tremante e instabile.", "Buddha", "Dhammapada, III, 33"),
+        q("Il saggio sorvegli i propri pensieri, difficili da cogliere e velocissimi: i pensieri ben sorvegliati portano felicità.", "Buddha", "Dhammapada, III, 36"),
+        q("Gli irrigatori guidano l'acqua, i frecciai piegano la freccia, i falegnami piegano il legno: i saggi danno forma a se stessi.", "Buddha", "Dhammapada, VI, 80"),
+        q("Come una roccia salda non è scossa dal vento, così i saggi non vacillano tra il biasimo e la lode.", "Buddha", "Dhammapada, VI, 81"),
+        q("Il sé è signore del sé; chi altri potrebbe esserlo? Con il sé ben domato si trova un signore che pochi trovano.", "Buddha", "Dhammapada, XII, 160"),
+        q("La salute è il più grande dei doni, l'appagamento la ricchezza migliore.", "Buddha", "Dhammapada, XV, 204"),
+        q("Senza conoscenza non c'è meditazione, senza meditazione non c'è conoscenza.", "Buddha", "Dhammapada, XXV, 372"),
     ]
 
     /// Tutte le citazioni verificate. `Mindful` tiene quelle senza fonte tracciabile.
