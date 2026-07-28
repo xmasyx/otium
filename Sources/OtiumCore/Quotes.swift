@@ -180,7 +180,7 @@ public enum Quotes {
         q("Prendi una regola sola per vivere, e adegua a quella tutta la vita.", "Lay hold, once for all, upon a single norm to live by, and regulate your whole life according to this norm.", "Seneca", "Lettere a Lucilio, 20"),
         q("Il giudizio cambia ogni giorno e si rovescia, e per i più la vita passa come un gioco.", "Judgment varies from day to day, and changes to the opposite, making many a man pass his life in a kind of game.", "Seneca", "Lettere a Lucilio, 20"),
         q("Va svegliato dal sonno l'animo, e scosso.", "Seneca", "Lettere a Lucilio, 20"),
-        q("Non c'è da aggiungere anni: c'è da togliere desideri.", "Seneca", "Lettere a Lucilio, 21"),
+        q("Non c'è da aggiungere denaro: c'è da togliere desideri.", "Do not add to his store of money, but subtract from his desires.", "Seneca", "Lettere a Lucilio, 21"),
         q("Non starà dentro gli affari per amore degli affari.", "Seneca", "Lettere a Lucilio, 22"),
         q("L'animo dev'essere sveglio, fiducioso e dritto sopra ogni cosa.", "The very soul must be happy and confident, lifted above every circumstance.", "Seneca", "Lettere a Lucilio, 23"),
         q("Vive male chi comincia sempre a vivere.", "They live ill who are always beginning to live.", "Seneca", "Lettere a Lucilio, 23"),
