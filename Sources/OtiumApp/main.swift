@@ -535,8 +535,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             .appendingPathComponent("otium-demo-\(UUID().uuidString).jsonl")
         let finto = AppModel(settings: s, ledger: Ledger(url: url))
         print("installazione simulata di \(giorni) giorni fa")
-        print(String(format: "oggi sarebbe al %.0f%% delle ripetizioni piene",
-                     s.rampFactor(now: Date()) * 100))
+        // Anche la diagnostica passa dalla regola dell'articolo: una sonda che stampa «al 85%»
+        // mentre la finestra che misura dice «all'85%» è una sonda che si contraddice.
+        print("oggi sarebbe \(ItalianNumber.al(Int(s.rampFactor(now: Date()) * 100)))% delle ripetizioni piene")
         print("la domanda comparirebbe: \(s.shouldOfferFullPace(now: Date()) ? "sì" : "no")")
 
         let hosting = NSHostingView(rootView: PaceCheckInView(model: finto) { NSApp.terminate(nil) })
