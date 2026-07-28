@@ -767,7 +767,7 @@ struct PrefsView: View {
 
                 // Una scelta fatta al primo avvio e mai più modificabile è una trappola: la terza
                 // volta che la incontro in questo file, e la terza volta che la chiudo.
-                Picker(L.t("Livello dei push-up", "Push-up level"), selection: Binding(
+                Picker(L.t("Livello per i push-up", "Push-up level"), selection: Binding(
                     get: { draft.pushVariant },
                     set: { draft.pushVariant = $0 }
                 )) {
@@ -793,7 +793,7 @@ struct PrefsView: View {
                             get: { Int((draft.rampStartFactor * 100).rounded()) },
                             set: { draft.rampStartFactor = Double($0) / 100 }
                         ), in: 20...100, step: 5)
-                Text(L.t("Le ripetizioni partono ridotte e salgono un pochino ogni giorno, fino a quelle piene. Oggi sei \(ItalianNumber.al(Int(draft.rampFactor(now: Date()) * 100)))%.",
+                Text(L.t("Le ripetizioni partono ridotte e salgono un pochino ogni giorno, fino alle full reps. Oggi sei \(ItalianNumber.al(Int(draft.rampFactor(now: Date()) * 100)))%.",
                          "The reps start reduced and go up a little every day, until the full ones. Today you are at \(Int(draft.rampFactor(now: Date()) * 100))%."))
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

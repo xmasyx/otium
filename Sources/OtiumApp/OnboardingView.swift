@@ -95,7 +95,7 @@ struct OnboardingView: View {
             if sex == .female {
                 question(
                     number: 3,
-                    title: L.t("Livello dei push-up", "Push-up level"),
+                    title: L.t("Livello per i push-up", "Push-up level"),
                     detail: L.t("Selezionabile dalle preferenze e dentro ogni pausa.",
                                 "Selectable in preferences and inside any break.")
                 ) {
@@ -127,7 +127,7 @@ struct OnboardingView: View {
                     HStack(spacing: 12) {
                         choice(title: L.t("Partenza graduale", "Gradual start"),
                                selected: gradual, wide: true) { gradual = true }
-                        choice(title: L.t("Ripetizioni piene", "Full reps"),
+                        choice(title: L.t("Full reps", "Full reps"),
                                selected: !gradual, wide: true) { gradual = false }
                     }
                     // **I numeri veri, non una percentuale.** «Parti al 55%» non dice niente a
@@ -137,9 +137,9 @@ struct OnboardingView: View {
                         .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Palette.accentOnWindow)
                     Text(gradual
-                         ? L.t("Si sale un pochino ogni giorno fino alle ripetizioni piene, in tre settimane. Serve a non smettere dopo tre giorni.",
+                         ? L.t("Si sale un pochino ogni giorno fino alle full reps, in tre settimane. Serve a non smettere dopo tre giorni.",
                                "It goes up a little every day until the full reps, over three weeks. It is there so you don't quit after three days.")
-                         : L.t("Nessuna partenza morbida: da subito le ripetizioni sono quelle piene. Se sei già allenato è la scelta giusta.",
+                         : L.t("Nessuna partenza morbida: da subito si fanno le full reps. Se sei già allenato è la scelta giusta.",
                                "No soft start: the reps are the full ones from the start. If you already train, this is the right choice."))
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
