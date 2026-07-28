@@ -46,6 +46,16 @@ enum Palette {
     static var dim: Color { Color(current.dim) }
 }
 
+extension View {
+    /// La livrea addosso ai **controlli di sistema**.
+    ///
+    /// Interruttori, pulsanti predefiniti, link e stepper prendono l'accento del **Mac**, non
+    /// quello dell'app: senza questa riga una finestra verde resta piena di blu, che è la cosa
+    /// che si nota per prima. Va messa alla radice di ogni finestra, perché `tint` scende
+    /// nell'ambiente e vale per tutto quello che c'è sotto.
+    func livrea() -> some View { tint(Palette.accentOnWindow) }
+}
+
 // MARK: - La schermata di blocco
 
 struct BreakView: View {
@@ -93,7 +103,12 @@ struct BreakView: View {
                     .tracking(2)
                     .foregroundStyle(Palette.accent)
                 Spacer()
-                Text("pausa n. \(plan.index) · oggi \(model.summary.totalReps) ripetizioni")
+                // **Due numeri accanto devono parlare dello stesso periodo.** Qui c'era
+                // `plan.index`, che è il contatore di sempre — serve alla rotazione degli
+                // esercizi, non a te — messo accanto alle ripetizioni **di oggi**: si leggeva
+                // «sessanta pause oggi», e non erano sessanta. Segnalato dal principale il
+                // 2026-07-28, quando il numero era 60 e le pause della giornata due.
+                Text("oggi: \(model.summary.completed + model.summary.natural + 1)ª pausa · \(model.summary.totalReps) ripetizioni")
                     .font(.system(size: 13, design: .rounded))
                     .foregroundStyle(Palette.dim)
             }
@@ -375,6 +390,16 @@ struct BreakView: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 620)
 
+            // **Qui il link non ci va, ci va l'indirizzo di dove trovarlo.** Questa schermata
+            // esiste per staccarti dallo schermo: un link aperto durante la pausa aprirebbe il
+            // browser, cioè annullerebbe la pausa nel momento in cui la stai facendo — e per
+            // farlo dovrebbe pure smontare il blocco. Gli studi si leggono da fermi, dopo, e
+            // sono già cliccabili nella finestra delle fonti.
+            Text("Gli articoli per esteso, con il link, stanno in Otium ▸ Le fonti.")
+                .font(.system(size: 11))
+                .foregroundStyle(Palette.dim.opacity(0.7))
+                .multilineTextAlignment(.center)
+
             HStack(spacing: 14) {
                 if model.canPostpone {
                     SecondaryButton(title: "Rinvia 2 minuti", systemImage: "clock.arrow.circlepath") {
@@ -601,6 +626,7 @@ struct MenuPanel: View {
         }
         .padding(16)
         .frame(width: 280)
+        .livrea()
     }
 }
 
@@ -638,7 +664,9 @@ struct EvidenceView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         if let url = URL(string: study.url) {
-                            Link("apri la fonte", destination: url).font(.system(size: 12))
+                            Link("apri l'articolo", destination: url)
+                                .font(.system(size: 12))
+                                .foregroundStyle(Palette.accentOnWindow)
                         }
                     }
                     .padding(14)
@@ -650,6 +678,7 @@ struct EvidenceView: View {
             .padding(28)
         }
         .frame(minWidth: 640, maxWidth: 640, minHeight: 520)
+        .livrea()
     }
 }
 
@@ -720,10 +749,15 @@ struct PrefsView: View {
                             Text(category.subtitle).font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
+                        // `.buttonStyle(.link)` si dipinge da sé con l'accento **di sistema** e
+                        // non ascolta il `tint` dell'ambiente: qui il colore va detto a mano, o
+                        // restano gli unici due blu di una finestra verde.
                         Button("tutti") { setAll(category, on: true) }
                             .buttonStyle(.link).font(.caption)
+                            .foregroundStyle(Palette.accentOnWindow)
                         Button("nessuno") { setAll(category, on: false) }
                             .buttonStyle(.link).font(.caption)
+                            .foregroundStyle(Palette.accentOnWindow)
                     }
                 }
             }
@@ -840,6 +874,7 @@ struct PrefsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 520, height: 620)
+        .livrea()
     }
 
     /// «Tutti» e «nessuno» su una famiglia intera. `nessuno` non può svuotare del tutto un pool:
@@ -969,6 +1004,7 @@ struct StatsView: View {
             }
         }
         .frame(minWidth: 640, minHeight: 540)
+        .livrea()
     }
 
     private var header: some View {
@@ -1159,7 +1195,7 @@ struct StatsView: View {
             // Il titolo dice «per ora del giorno» e non «oggi» di proposito: in Settimana e Mese
             // queste barre sommano più giornate, e chiamarle «la giornata» le faceva leggere come
             // se fossero di oggi.
-            Card(title: "Trend pause per ora del giorno",
+            Card(title: "Trend pause · h/giorno",
                  subtitle: "verde: pause fatte · rosso: saltate — se un'ora è sempre rossa, cambia quell'ora") {
                 HStack(alignment: .bottom, spacing: 5) {
                     ForEach(hours, id: \.hour) { h in

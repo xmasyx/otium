@@ -74,6 +74,7 @@ struct DeclareBreakView: View {
         }
         .formStyle(.grouped)
         .frame(width: 420, height: 330)
+        .livrea()
         .onAppear { if let exercise { reps = model.suggestedReps(for: exercise) } }
     }
 }
@@ -149,6 +150,7 @@ struct DeclareSeatedView: View {
         }
         .formStyle(.grouped)
         .frame(width: 460, height: 420)
+        .livrea()
         .onAppear { totalMinutes = model.todayActiveMinutes }
     }
 }

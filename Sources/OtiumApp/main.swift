@@ -119,7 +119,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             size = NSSize(width: 620, height: 1400)
             host = NSHostingView(rootView: StatsView(model: model).frame(width: size.width, height: size.height))
         case "prefs":
-            size = NSSize(width: 520, height: 900)
+            // **La misura deve essere quella vera della vista** (`.frame(width: 520, height: 620)`).
+            // Con 900 il modulo restava centrato in un host più alto e lo snapshot mostrava una
+            // fascia vuota di ~140 punti in cima: sembrava un difetto di layout dell'app, ed era
+            // un difetto della sonda. Sondato il 2026-07-28.
+            size = NSSize(width: 520, height: 620)
             host = NSHostingView(rootView: PrefsView(model: model).frame(width: size.width, height: size.height))
         default:
             size = NSSize(width: 1440, height: 900)
