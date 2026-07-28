@@ -17,7 +17,7 @@ enum ProbeMode {
     private static let flags = [
         "--orphan-probe", "--sleep-probe", "--radar-probe", "--menu-probe", "--confirm-probe",
         "--flush-probe", "--window-probe", "--snapshot", "--demo-break", "--demo-hud", "--presence",
-        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo", "--demo-ritmo", "--mostra-crescita", "--demo-crescita",
+        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo", "--demo-ritmo", "--mostra-crescita", "--demo-crescita", "--lsof-probe",
     ]
 
     static var active: Bool {
@@ -218,7 +218,10 @@ final class AppModel: ObservableObject {
         environmentSamples += 1
         cachedEnvironment = EngineEnvironment(
             microphoneActive: engine.settings.deferWhenMicrophoneActive ? MicRadar.isInputActive() : false,
-            presence: engine.settings.detectQuietPresence ? PresenceRadar.current() : nil
+            // Il nome del documento si chiede solo nel preavviso, che è l'unico momento in cui
+            // finirà davvero sotto gli occhi di qualcuno.
+            presence: engine.settings.detectQuietPresence
+                ? PresenceRadar.current(includeDocument: engine.phase == .warning) : nil
         )
         return cachedEnvironment
     }

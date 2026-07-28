@@ -654,6 +654,16 @@ final class NoRawMarkdownTests: XCTestCase {
 
 /// Pause dichiarate a posteriori, e la distinzione affondo / split squat.
 final class DeclaredBreaksTests: XCTestCase {
+    /// **L'ora fissa, e perché.**
+    ///
+    /// `entry(minutiFa)` costruiva i timestamp rispetto a `Date()`, e `Stats.compute(period:.day)`
+    /// guarda dalla mezzanotte a adesso: alle 00:06 una riga «di 120 minuti fa» finisce ieri, e
+    /// mezza suite diventa rossa. Trovato nell'audit del 2026-07-28, girando i test dopo la
+    /// mezzanotte — cioè per caso. Una suite che dipende dall'ora del giorno è una suite di cui
+    /// non ci si fida, e la si smette di guardare proprio quando avrebbe qualcosa da dire.
+    private let adesso = Calendar.current.startOfDay(for: Date()).addingTimeInterval(12 * 3600)
+
+
 
     private func makeEngine() -> SessionEngine {
         var s = Settings(); s.startDate = Date()
@@ -720,11 +730,21 @@ final class DeclaredBreaksTests: XCTestCase {
 
 /// Togliere una pausa segnata, e le statistiche.
 final class StatsTests: XCTestCase {
+    /// **L'ora fissa, e perché.**
+    ///
+    /// `entry(minutiFa)` costruiva i timestamp rispetto a `Date()`, e `Stats.compute(period:.day)`
+    /// guarda dalla mezzanotte a adesso: alle 00:06 una riga «di 120 minuti fa» finisce ieri, e
+    /// mezza suite diventa rossa. Trovato nell'audit del 2026-07-28, girando i test dopo la
+    /// mezzanotte — cioè per caso. Una suite che dipende dall'ora del giorno è una suite di cui
+    /// non ci si fida, e la si smette di guardare proprio quando avrebbe qualcosa da dire.
+    private let adesso = Calendar.current.startOfDay(for: Date()).addingTimeInterval(12 * 3600)
+
+
 
     private func entry(_ minutesAgo: Double, _ type: EntryType, kind: BreakKind = .micro,
                        exercise: ExerciseKind? = nil, reps: Int? = nil,
                        seconds: Double? = nil, reason: String? = nil) -> LedgerEntry {
-        LedgerEntry(timestamp: Date().addingTimeInterval(-minutesAgo * 60), type: type,
+        LedgerEntry(timestamp: adesso.addingTimeInterval(-minutesAgo * 60), type: type,
                     breakKind: kind, exercise: exercise, reps: reps, seconds: seconds, reason: reason)
     }
 
@@ -736,7 +756,7 @@ final class StatsTests: XCTestCase {
             entry(30, .completed, exercise: .benchDip, reps: 7),
             entry(29, .undo, reason: "tolta a mano"),
         ]
-        let s = Stats.compute(entries: rows, period: .day)
+        let s = Stats.compute(entries: rows, period: .day, now: adesso)
         XCTAssertEqual(s.completed, 1, "una segnata + una vera − una tolta = una")
         XCTAssertEqual(s.moments.count, 1)
     }
@@ -761,7 +781,7 @@ final class StatsTests: XCTestCase {
             entry(10, .skipped, reason: SkipReason.emergency.rawValue),
             entry(20, .skipped, reason: SkipReason.escapePhrase.rawValue),
         ]
-        let s = Stats.compute(entries: rows, period: .day)
+        let s = Stats.compute(entries: rows, period: .day, now: adesso)
         XCTAssertEqual(s.emergency, 1)
         XCTAssertEqual(s.skipped, 1)
         XCTAssertTrue(s.moments.contains { $0.outcome == .emergency })
@@ -775,7 +795,7 @@ final class StatsTests: XCTestCase {
             entry(30, .completed, kind: .long, exercise: .burpee, reps: 8),
             entry(20, .natural),
         ]
-        let s = Stats.compute(entries: rows, period: .day)
+        let s = Stats.compute(entries: rows, period: .day, now: adesso)
         XCTAssertEqual(s.totalReps, 38)
         XCTAssertEqual(s.vigorousBouts, 1)
         XCTAssertEqual(s.interruptions, 4, "tre fatte + una spontanea")
@@ -786,7 +806,7 @@ final class StatsTests: XCTestCase {
     /// «hai ottenuto», dicono cosa è stato osservato su numeri come questi.
     func testInsightsNeverClaimAPersonalResult() {
         let rows = (0..<12).map { entry(Double($0) * 20, .completed, exercise: .squat, reps: 15) }
-        let insights = Stats.insights(for: Stats.compute(entries: rows, period: .day))
+        let insights = Stats.insights(for: Stats.compute(entries: rows, period: .day, now: adesso))
         XCTAssertFalse(insights.isEmpty)
         for i in insights {
             let text = (i.headline + " " + i.detail).lowercased()
@@ -798,8 +818,8 @@ final class StatsTests: XCTestCase {
     }
 
     func testInsightsMarkTheThresholdAsMetOnlyWhenItIs() {
-        let pochi = Stats.compute(entries: [entry(10, .completed, exercise: .squat, reps: 15)], period: .day)
-        let molti = Stats.compute(entries: (0..<12).map { entry(Double($0) * 20, .completed, exercise: .squat, reps: 15) }, period: .day)
+        let pochi = Stats.compute(entries: [entry(10, .completed, exercise: .squat, reps: 15)], period: .day, now: adesso)
+        let molti = Stats.compute(entries: (0..<12).map { entry(Double($0) * 20, .completed, exercise: .squat, reps: 15) }, period: .day, now: adesso)
         let a = Stats.insights(for: pochi).first { $0.id == "interruzioni" }
         let b = Stats.insights(for: molti).first { $0.id == "interruzioni" }
         XCTAssertEqual(a?.met, false)
@@ -859,10 +879,20 @@ final class SourceUrlTests: XCTestCase {
 
 /// Il report riorganizzato: confronto, tasso di rispetto, gruppi muscolari, fasce orarie.
 final class ReportTests: XCTestCase {
+    /// **L'ora fissa, e perché.**
+    ///
+    /// `entry(minutiFa)` costruiva i timestamp rispetto a `Date()`, e `Stats.compute(period:.day)`
+    /// guarda dalla mezzanotte a adesso: alle 00:06 una riga «di 120 minuti fa» finisce ieri, e
+    /// mezza suite diventa rossa. Trovato nell'audit del 2026-07-28, girando i test dopo la
+    /// mezzanotte — cioè per caso. Una suite che dipende dall'ora del giorno è una suite di cui
+    /// non ci si fida, e la si smette di guardare proprio quando avrebbe qualcosa da dire.
+    private let adesso = Calendar.current.startOfDay(for: Date()).addingTimeInterval(12 * 3600)
+
+
 
     private func e(_ minutesAgo: Double, _ type: EntryType, kind: BreakKind = .micro,
                    exercise: ExerciseKind? = nil, reps: Int? = nil, reason: String? = nil) -> LedgerEntry {
-        LedgerEntry(timestamp: Date().addingTimeInterval(-minutesAgo * 60), type: type,
+        LedgerEntry(timestamp: adesso.addingTimeInterval(-minutesAgo * 60), type: type,
                     breakKind: kind, exercise: exercise, reps: reps, reason: reason)
     }
 
@@ -874,7 +904,7 @@ final class ReportTests: XCTestCase {
             e(30, .skipped, reason: SkipReason.emergency.rawValue),
             e(40, .natural),   // spontanea: non era una pausa proposta
         ]
-        let s = Stats.compute(entries: rows, period: .day)
+        let s = Stats.compute(entries: rows, period: .day, now: adesso)
         XCTAssertEqual(s.complianceRate, 1.0 / 3.0, accuracy: 0.001)
     }
 
@@ -885,7 +915,7 @@ final class ReportTests: XCTestCase {
             e(30, .completed, exercise: .pushUp, reps: 10),
             e(40, .completed, exercise: .benchDip, reps: 12),
         ]
-        let groups = Stats.compute(entries: rows, period: .day).repsByMuscleGroup
+        let groups = Stats.compute(entries: rows, period: .day, now: adesso).repsByMuscleGroup
         XCTAssertEqual(groups.count, 3, "gambe, spinta, tricipiti")
         XCTAssertEqual(groups.first?.group, "gambe")
         XCTAssertEqual(groups.first?.reps, 27, "squat e affondi sommati")
@@ -907,7 +937,7 @@ final class ReportTests: XCTestCase {
             LedgerEntry(timestamp: istante, type: .skipped, breakKind: .micro,
                         reason: SkipReason.emergency.rawValue),
         ]
-        let byHour = Stats.compute(entries: rows, period: .day).byHour
+        let byHour = Stats.compute(entries: rows, period: .day, now: adesso).byHour
         let slot = byHour.first { $0.hour == hour }
         XCTAssertEqual(slot?.done, 1)
         XCTAssertEqual(slot?.missed, 1)
@@ -918,8 +948,8 @@ final class ReportTests: XCTestCase {
             e(10, .completed, exercise: .squat, reps: 8),                    // oggi
             e(60 * 30, .completed, exercise: .squat, reps: 99),              // ~30 ore fa: ieri
         ]
-        let today = Stats.compute(entries: rows, period: .day)
-        let yesterday = Stats.previous(entries: rows, period: .day)
+        let today = Stats.compute(entries: rows, period: .day, now: adesso)
+        let yesterday = Stats.previous(entries: rows, period: .day, now: adesso)
         XCTAssertEqual(today.totalReps, 8)
         XCTAssertEqual(yesterday.totalReps, 99, "il confronto guarda il periodo prima, non questo")
     }
@@ -939,6 +969,16 @@ final class ReportTests: XCTestCase {
 
 /// I due modi di dichiarare il tempo già seduto — e il fatto che sono due numeri diversi.
 final class SeatedTimeTests: XCTestCase {
+    /// **L'ora fissa, e perché.**
+    ///
+    /// `entry(minutiFa)` costruiva i timestamp rispetto a `Date()`, e `Stats.compute(period:.day)`
+    /// guarda dalla mezzanotte a adesso: alle 00:06 una riga «di 120 minuti fa» finisce ieri, e
+    /// mezza suite diventa rossa. Trovato nell'audit del 2026-07-28, girando i test dopo la
+    /// mezzanotte — cioè per caso. Una suite che dipende dall'ora del giorno è una suite di cui
+    /// non ci si fida, e la si smette di guardare proprio quando avrebbe qualcosa da dire.
+    private let adesso = Calendar.current.startOfDay(for: Date()).addingTimeInterval(12 * 3600)
+
+
 
     private func engineWith(_ seconds: Double) -> SessionEngine {
         var s = Settings(); s.startDate = Date()
@@ -973,7 +1013,7 @@ final class SeatedTimeTests: XCTestCase {
             LedgerEntry(timestamp: now, type: .active, seconds: 10800),           // 3 ore
             LedgerEntry(timestamp: now, type: .active, seconds: -3600, reason: "correzione"),
         ]
-        let s = Stats.compute(entries: rows, period: .day)
+        let s = Stats.compute(entries: rows, period: .day, now: adesso)
         XCTAssertEqual(s.activeSeconds, 7200, accuracy: 1, "tre ore meno una: due")
     }
 }

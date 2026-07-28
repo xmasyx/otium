@@ -104,7 +104,13 @@ public struct PeriodStats: Sendable {
     /// Giorni consecutivi, fino a oggi, con almeno una pausa fatta.
     public var streakDays: Int {
         let cal = Calendar.current
-        let giorni = Set(moments.filter { $0.outcome == .completed }.map { cal.startOfDay(for: $0.at) })
+        // **Stessa definizione di pausa del resto dell'app.** `interruptions` dice che una pausa
+        // è `completed + natural` — alzarsi da soli conta, ed è il comportamento che l'app dice
+        // di voler premiare. La serie guardava solo le `completed`, quindi una giornata passata
+        // ad alzarsi spontaneamente la spezzava: l'app puniva ciò che dichiara di apprezzare.
+        let giorni = Set(moments
+            .filter { $0.outcome == .completed || $0.outcome == .natural }
+            .map { cal.startOfDay(for: $0.at) })
         guard !giorni.isEmpty else { return 0 }
         var streak = 0
         var day = cal.startOfDay(for: Date())
@@ -199,15 +205,29 @@ public enum Stats {
                     if kind.isVigorous { s.vigorousBouts += 1 }
                 }
             case .undo:
-                // Una pausa segnata a mano e poi tolta: sparisce dai conti, non resta a metà.
+                // Una pausa segnata a mano e poi tolta sparisce dai conti, **e si porta via le
+                // proprie ripetizioni**. Prima restavano: il totale del giorno continuava a
+                // includere il lavoro di una pausa che l'utente aveva appena dichiarato mai
+                // avvenuta, e il numero grosso in cima al recap era più alto della verità.
+                // Trovato nell'audit del 2026-07-28.
                 if let index = s.moments.lastIndex(where: { $0.outcome == .completed && $0.kind == (e.breakKind ?? .micro) }) {
-                    s.moments.remove(at: index)
+                    let tolto = s.moments.remove(at: index)
                     s.completed = max(0, s.completed - 1)
+                    if let kind = tolto.exercise, let reps = tolto.reps {
+                        s.repsByExercise[kind, default: 0] -= reps
+                        if s.repsByExercise[kind] ?? 0 <= 0 { s.repsByExercise[kind] = nil }
+                        if kind.isVigorous { s.vigorousBouts = max(0, s.vigorousBouts - 1) }
+                    }
                 }
             case .postponed, .deferred:
                 break
             }
         }
+        // Le correzioni sono righe negative, ed è giusto che lo siano: correggere all'ingiù è
+        // metà del motivo per cui esistono. Ma il totale mostrato non può finire sotto zero —
+        // «meno venti minuti davanti al Mac» non vuol dire niente, e basta una correzione
+        // esagerata per arrivarci. Trovato nell'audit del 2026-07-28.
+        s.activeSeconds = max(0, s.activeSeconds)
         s.moments.sort { $0.at > $1.at }
         return s
     }

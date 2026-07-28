@@ -99,6 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         runCircuitProbeIfRequested()
         runPaceDemoIfRequested()
         runGrowthDemoIfRequested()
+        runLsofProbeIfRequested()
         runRadarProbeIfRequested()
 
         // Il secondo avvio non apre niente di nuovo: chiede a questa istanza di farsi vedere.
@@ -557,6 +558,59 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // Una demo che resta aperta per sempre diventa una finestra dimenticata.
         let killswitch = Timer(timeInterval: 600, repeats: false) { _ in NSApp.terminate(nil) }
         RunLoop.main.add(killswitch, forMode: .common)
+    }
+
+    /// `--lsof-probe` — durante il lavoro normale l'app lancia processi esterni?
+    ///
+    /// Nato dall'audit: chiedere quale documento hai aperto costa un `lsof`, ed era l'operazione
+    /// più cara che Otium facesse. Adesso si chiede solo nel preavviso. La sonda conta i lanci
+    /// veri in tutte e due le fasi, invece di fidarsi del ramo `if`.
+    private func runLsofProbeIfRequested() {
+        guard CommandLine.arguments.contains("--lsof-probe") else { return }
+        Thread.detachNewThread {
+            Thread.sleep(forTimeInterval: 60)
+            FileHandle.standardError.write("sonda: guardiano scattato\n".data(using: .utf8)!)
+            exit(3)
+        }
+        var s = Settings()
+        s.startDate = Date()
+        s.detectQuietPresence = true
+        s.cadence.intervalSeconds = 12          // il preavviso arriva presto
+        s.cadence.warningSeconds = 8
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("otium-lsof-\(UUID().uuidString).jsonl")
+        let probe = AppModel(settings: s, ledger: Ledger(url: url))
+        probe.headless = true
+        probe.idleOverride = 0
+        PresenceRadar.resetForProbe()
+        probe.start()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 11) {
+            let lavorando = PresenceRadar.documentLookups
+            print("fase \(probe.phase.rawValue) dopo 11 s — lanci di lsof: \(lavorando)")
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                let dopo = PresenceRadar.documentLookups
+                print("fase \(probe.phase.rawValue) dopo altri 10 s — lanci totali: \(dopo)")
+                // Il preavviso può non essere raggiunto se l'app in primo piano non è da lettura:
+                // in quel caso `lsof` non serve comunque, e la sonda misura solo il primo polo.
+                // **Controllo del contatore.** Un contatore fermo a zero non prova niente se non
+                // sa contare: prima di credere allo zero, si chiama `lsof` a mano e si pretende
+                // che il numero si muova. È lo stesso principio del test negativo.
+                _ = PresenceRadar.openDocument(pid: ProcessInfo.processInfo.processIdentifier)
+                let dopoLaProva = PresenceRadar.documentLookups
+                print("controllo del contatore — dopo una chiamata diretta: \(dopoLaProva)")
+
+                let contatoreVivo = dopoLaProva == dopo + 1
+                let ok = lavorando == 0 && contatoreVivo
+                if !contatoreVivo { print("  il contatore non conta: lo zero qui sopra non vale niente") }
+                print(ok
+                      ? "RISULTATO: PASS — lavorando non lancia nessun processo esterno, e il contatore lo sa vedere"
+                      : "RISULTATO: FAIL — \(lavorando) lanci di lsof durante il lavoro normale")
+                try? FileManager.default.removeItem(at: url)
+                exit(ok ? 0 : 1)
+            }
+        }
     }
 
     /// `--demo-crescita` — la domanda della settimana al 100%, come la vede chi ci è dentro.

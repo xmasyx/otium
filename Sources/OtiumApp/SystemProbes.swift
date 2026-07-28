@@ -96,11 +96,24 @@ public enum PresenceRadar {
     private static let refreshInterval: TimeInterval = 8
     private static var cached: PresenceSignal?
     private static var cachedAt: Date = .distantPast
+    /// Quante volte è stato davvero lanciato `lsof`. Un contatore e non una stima: senza,
+    /// «adesso gira solo nel preavviso» resta un'affermazione nei commenti.
+    public private(set) static var documentLookups = 0
 
-    public static func current() -> PresenceSignal? {
+    /// Solo per le sonde: azzera cache e contatore, così la misura parte da zero.
+    public static func resetForProbe() {
+        cached = nil
+        cachedAt = .distantPast
+        documentLookups = 0
+    }
+
+    /// - Parameter includeDocument: vedi `detect(includeDocument:)`. La cache non distingue fra
+    ///   una lettura col documento e una senza, e va bene così: il dettaglio in più non cambia il
+    ///   verdetto, e un secondo campione appena chiesto il primo sarebbe solo un altro `lsof`.
+    public static func current(includeDocument: Bool = false) -> PresenceSignal? {
         if Date().timeIntervalSince(cachedAt) < refreshInterval { return cached }
         cachedAt = Date()
-        cached = detect()
+        cached = detect(includeDocument: includeDocument)
         return cached
     }
 
@@ -122,12 +135,23 @@ public enum PresenceRadar {
     /// a scrivania vuota si scioglie da sola e si registra come naturale. L'errore opposto non
     /// ha rete: leggere un articolo lungo verrebbe contato come assenza, e ti regalerebbe pause
     /// mai fatte — cioè il difetto che questo radar esiste per uccidere.
-    static func detect() -> PresenceSignal? {
+    /// - Parameter includeDocument: chiedere **quale** documento è aperto costa un processo
+    ///   esterno (`lsof`), misurato in ~31 ms e 0,03 s di CPU a chiamata. La cache da 8 secondi
+    ///   lo teneva già a bada — la prima stima dell'audit, «ogni tre secondi», era sbagliata e
+    ///   l'ha corretta il codice — ma 0,03 s ogni 8 fanno comunque circa lo 0,4% di un core, tre
+    ///   volte quello che l'app consuma in tutto (0,13% misurato), e per giunta solo mentre hai
+    ///   davanti Anteprima o Word.
+    ///
+    ///   E non serviva a decidere niente: la classificazione di un'app da lettura è `.reading`
+    ///   **con o senza** il nome del documento — guarda `PresenceClassifier`, il ramo è lo stesso.
+    ///   Il nome serve solo alla riga che compare nella schermata di blocco, cioè una volta ogni
+    ///   mezz'ora e non venti volte al minuto. Trovato durante l'audit del 2026-07-28.
+    static func detect(includeDocument: Bool = false) -> PresenceSignal? {
         guard let front = NSWorkspace.shared.frontmostApplication else { return nil }
         let classified = PresenceClassifier.classify(
             frontmost: front.bundleIdentifier,
             isPlayingAudio: isPlayingAudio(front),
-            document: ReaderApps.isReader(front.bundleIdentifier)
+            document: includeDocument && ReaderApps.isReader(front.bundleIdentifier)
                 ? openDocument(pid: front.processIdentifier) : nil,
             appName: front.localizedName ?? "un'app"
         )
@@ -299,6 +323,7 @@ public enum PresenceRadar {
     /// Argomenti passati come array a `Process`, mai una stringa di shell: il PID viene da
     /// un'API di sistema, ma la regola non ammette eccezioni "tanto questo valore è sicuro".
     static func openDocument(pid: pid_t) -> String? {
+        documentLookups += 1
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
         task.arguments = ["-p", String(pid), "-Fn"]

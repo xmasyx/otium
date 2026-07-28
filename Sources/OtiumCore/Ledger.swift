@@ -105,20 +105,54 @@ public final class Ledger: @unchecked Sendable {
             if let handle = try? FileHandle(forWritingTo: url) {
                 defer { try? handle.close() }
                 _ = try? handle.seekToEnd()
-                try? handle.write(contentsOf: data)
-                return true
+                // **Il `try?` qui diceva sempre di sì.** Con il disco pieno, o il file senza
+                // permesso di scrittura, la riga non veniva scritta e `append` restituiva `true`
+                // lo stesso: il lavoro spariva e nessuno lo sapeva. Trovato nell'audit del
+                // 2026-07-28. Adesso il risultato è il risultato.
+                do {
+                    try handle.write(contentsOf: data)
+                    return true
+                } catch {
+                    return false
+                }
             }
+            // **Il ripiego serve solo a creare il file la prima volta.**
+            //
+            // Prima era incondizionato, e questa è la riga più pericolosa che l'audit del
+            // 2026-07-28 abbia trovato: `write(to:options:.atomic)` scrive un file nuovo e lo
+            // rinomina sopra il vecchio, e la rinomina riesce anche quando il file esistente non
+            // è scrivibile, perché il permesso che conta è quello della **cartella**. Cioè: un
+            // registro reso di sola lettura — da un backup, da un errore, da chiunque — non
+            // faceva fallire la scrittura, la faceva riuscire **sostituendo mesi di storia con
+            // una riga sola**. Il difetto era invisibile: `append` restituiva `true`.
+            guard !fm.fileExists(atPath: url.path) else { return false }
             return (try? data.write(to: url, options: .atomic)) != nil
         }
     }
 
+    /// Quante righe del registro non si sono lasciate leggere, all'ultima lettura.
+    ///
+    /// Saltare una riga rotta è la cosa giusta — un registro che si rifiuta di aprirsi per una
+    /// riga sbagliata perde tutto il resto — ma **saltarla in silenzio** no: le statistiche
+    /// verrebbero fuori più basse del vero e nessuno saprebbe perché. Qui il numero resta, e chi
+    /// mostra i numeri può dirlo.
+    public private(set) var unreadableLines = 0
+
     public func entries() -> [LedgerEntry] {
         queue.sync {
             guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
-            return text.split(separator: "\n").compactMap { line in
-                guard let data = line.data(using: .utf8) else { return nil }
-                return try? decoder.decode(LedgerEntry.self, from: data)
+            var scartate = 0
+            let righe: [LedgerEntry] = text.split(separator: "\n").compactMap { line in
+                guard let data = line.data(using: .utf8),
+                      let entry = try? decoder.decode(LedgerEntry.self, from: data)
+                else {
+                    if !line.trimmingCharacters(in: .whitespaces).isEmpty { scartate += 1 }
+                    return nil
+                }
+                return entry
             }
+            unreadableLines = scartate
+            return righe
         }
     }
 
