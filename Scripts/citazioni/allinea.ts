@@ -54,10 +54,22 @@ for (const c of citazioni) c.originale = originali.get(c.it);
 // — l'originale, appiattito una volta sola
 const testoOR = readFileSync(join(QUI, "fonti", fileOR), "utf8");
 const orPiatto = piatto(testoOR);
-/** I confini della sezione (una lettera) attorno a un offset: le intestazioni in numeri romani. */
-const CONFINI = [...testoOR.matchAll(/^\s*([IVXLCDM]{1,7})\.\s*$|^\s*([IVXLCDM]{1,7})\.\s+SENECA/gm)]
+/**
+ * I confini fra una lettera e l'altra.
+ *
+ * **La forma dell'intestazione va guardata, non indovinata.** La prima versione cercava una riga
+ * col solo numero romano e ne trovava 7 su 124: l'edizione latina di Wikisource scrive le
+ * intestazioni in wikitext, `== CI. SENECA LUCILIO SUO SALUTEM ==`, e con sette confini su
+ * centoventiquattro ogni posizione risultava relativa al file intero invece che alla lettera —
+ * cioè sempre vicina a zero, e sempre sbagliata. Il difetto non si annunciava: il tool rispondeva,
+ * i numeri sembravano numeri.
+ */
+const CONFINI = [...testoOR.matchAll(/^\s*={2,}\s*([IVXLCDM]{1,7})\.[^\n=]*={2,}\s*$|^\s*([IVXLCDM]{1,7})\.\s+SENECA/gm)]
   .map((m) => piatto(testoOR.slice(0, m.index!)).length)
   .sort((a, b) => a - b);
+if (CONFINI.length < 50) {
+  process.stderr.write(`  ⚠ solo ${CONFINI.length} confini di lettera trovati: la posizione sarà inaffidabile\n`);
+}
 
 function posizioneRelativa(frammento: string): number | null {
   const off = orPiatto.indexOf(piatto(frammento).trim());

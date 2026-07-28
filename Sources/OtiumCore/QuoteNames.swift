@@ -33,6 +33,7 @@ public enum QuoteNames {
         "Sunzi": "Sun Tzu",
         "Laozi": "Laozi",
         "Buddha": "the Buddha",
+        "Epicuro": "Epicurus",
     ]
 
     /// Il nome dell'autore in inglese, **senza guardare la lingua corrente**. Serve a chi
@@ -61,6 +62,9 @@ public enum QuoteNames {
 
         // — Seneca
         "Lettere a Lucilio": "Letters to Lucilius",
+        // Chi ha detto la frase e chi ce l'ha tramandata sono due cose diverse: la 21 è di
+        // Epicuro, Seneca la cita. L'autore è di chi l'ha pensata, il luogo dice dove trovarla.
+        "in Seneca": "in Seneca",
         "La brevità della vita": "On the Shortness of Life",
 
         // — greci e romani
