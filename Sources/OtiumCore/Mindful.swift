@@ -202,11 +202,9 @@ public enum Mindful {
         m("La luna si riflette in mille pozzanghere ed è sempre una."),
         m("Chi ha imparato ad aspettare non ha più bisogno di correre."),
         m("La strada la fa il camminare, non la mappa."),
-        m("La perfezione non è quando non c'è più niente da aggiungere, ma quando non c'è più niente da togliere."),
         m("Il maestro e il principiante fanno lo stesso gesto: il maestro ci mette meno sforzo."),
         m("Quello che resisti, persiste."),
         m("Il pesce è l'ultimo a scoprire l'acqua."),
-        m("Non puoi calmare le onde, ma puoi imparare a stare sulla tavola."),
     ]
 
     // MARK: - Tempo e impermanenza

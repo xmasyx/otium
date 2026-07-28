@@ -395,7 +395,7 @@ struct BreakView: View {
             // browser, cioè annullerebbe la pausa nel momento in cui la stai facendo — e per
             // farlo dovrebbe pure smontare il blocco. Gli studi si leggono da fermi, dopo, e
             // sono già cliccabili nella finestra delle fonti.
-            Text("Gli articoli per esteso, con il link, stanno in Otium ▸ Le fonti.")
+            Text("Gli articoli per esteso, con il link, sono in Otium ▸ Le fonti.")
                 .font(.system(size: 11))
                 .foregroundStyle(Palette.dim.opacity(0.7))
                 .multilineTextAlignment(.center)

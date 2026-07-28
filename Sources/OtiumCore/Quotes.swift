@@ -133,6 +133,11 @@ public enum Quotes {
 
         q("Nove decimi della nostra felicità dipendono dalla salute.", "Schopenhauer", "Aforismi sulla saggezza del vivere, II"),
 
+        // **Recuperate dal pool anonimo il 2026-07-28.** Non erano frasi senza padre: erano
+        // citazioni a cui la firma era stata tolta strada facendo, che è l'errore opposto a
+        // inventare un autore ma resta un errore.
+        q("Sembra che la perfezione sia raggiunta non quando non c'è più niente da aggiungere, ma quando non c'è più niente da togliere.", "Antoine de Saint-Exupéry", "Terre des hommes, III"),
+        q("Non puoi fermare le onde, ma puoi imparare a fare surf.", "Jon Kabat-Zinn", "Dovunque tu vada, ci sei già"),
         q("La vita può essere capita solo all'indietro, ma va vissuta in avanti.", "Kierkegaard", "Diari, IV A 164"),
         q("Soprattutto, non perdere il desiderio di camminare.", "Kierkegaard", "Lettera a Jette, 1847"),
 
