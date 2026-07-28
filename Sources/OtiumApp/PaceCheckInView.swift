@@ -36,8 +36,8 @@ struct PaceCheckInView: View {
                 Text(titolo)
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundStyle(Palette.accentOnWindow)
-                Text(L.t("Sei partito piano, come si deve: oggi fai \(ItalianNumber.il(percentualeOggi))% delle ripetizioni piene. Se ti stanno venendo facili, puoi passare al numero pieno da adesso.",
-                         "You started gently, as you should: today you do \(percentualeOggi)% of the full reps. If they are coming easy, you can move to the full number right now."))
+                Text(L.t("Sei partito piano, come si deve: oggi fai \(ItalianNumber.il(percentualeOggi))% delle ripetizioni. Se ti stanno venendo facili, puoi passare a quelle piene da adesso.",
+                         "You started gently, as you should: today you do \(percentualeOggi)% of the reps. If they are coming easy, you can move to the full ones right now."))
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -45,8 +45,8 @@ struct PaceCheckInView: View {
 
             // Prima diceva «è quello a cui la salita arriva da sola», che è contorto e non
             // significa niente a prima lettura. Segnalato dal principale il 2026-07-28.
-            Text(L.t("Non c'è una risposta giusta: se rispondi «non ancora», al numero pieno ci arrivi comunque fra qualche settimana.",
-                     "There is no right answer: if you say «not yet», you get to the full number anyway in a few weeks."))
+            Text(L.t("Non c'è una risposta giusta: se rispondi «non ancora», alle ripetizioni piene ci arrivi comunque fra qualche settimana.",
+                     "There is no right answer: if you say «not yet», you get to the full reps anyway in a few weeks."))
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -54,7 +54,7 @@ struct PaceCheckInView: View {
             HStack(spacing: 12) {
                 Spacer()
                 button(L.t("Non ancora", "Not yet"), filled: false) { answer(fullPace: false) }
-                button(L.t("Sì, numero pieno", "Yes, full number"), filled: true) { answer(fullPace: true) }
+                button(L.t("Sì, ripetizioni piene", "Yes, full reps"), filled: true) { answer(fullPace: true) }
             }
         }
         .padding(30)
@@ -89,9 +89,9 @@ struct PaceCheckInView: View {
         if fullPace { s.rampStartFactor = 1.0 }
         model.update(settings: s)
         if fullPace {
-            model.announce(title: L.t("Numero pieno", "Full number"),
-                           subtitle: L.t("Da adesso le ripetizioni sono quelle intere.",
-                                         "From now on the reps are the whole thing."))
+            model.announce(title: L.t("Ripetizioni piene", "Full reps"),
+                           subtitle: L.t("Da adesso le ripetizioni sono quelle piene.",
+                                         "From now on the reps are the full ones."))
         }
         onDone()
     }

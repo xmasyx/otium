@@ -52,8 +52,8 @@ struct OnboardingView: View {
             question(
                 number: 1,
                 title: L.t("Lingua", "Language"),
-                detail: L.t("Si cambia quando vuoi dalle preferenze.",
-                            "You can change it any time in preferences.")
+                detail: L.t("Selezionabile anche dopo, dalle preferenze.",
+                            "Also selectable later, in preferences.")
             ) {
                 HStack(spacing: 12) {
                     ForEach(AppLanguage.allCases, id: \.self) { lang in
@@ -70,8 +70,8 @@ struct OnboardingView: View {
             question(
                 number: 2,
                 title: L.t("Sesso", "Sex"),
-                detail: L.t("Serve a scegliere da dove parti: numero e versione dell'esercizio.",
-                            "Used to choose where you start: the number and the version of the exercise.")
+                detail: L.t("Decide da dove parti: ripetizioni e livello dell'esercizio.",
+                            "Sets where you start: reps and exercise level.")
             ) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(spacing: 12) {
@@ -95,9 +95,9 @@ struct OnboardingView: View {
             if sex == .female {
                 question(
                     number: 3,
-                    title: L.t("Da quale push-up parti", "Which push-up you start from"),
-                    detail: L.t("Si cambia dalle preferenze, e dentro ogni pausa.",
-                                "You can change it in preferences, and inside any break.")
+                    title: L.t("Livello dei push-up", "Push-up level"),
+                    detail: L.t("Selezionabile dalle preferenze e dentro ogni pausa.",
+                                "Selectable in preferences and inside any break.")
                 ) {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 10) {
@@ -119,14 +119,15 @@ struct OnboardingView: View {
 
             question(
                 number: sex == .female ? 4 : 3,
-                title: L.t("Da che numeri parti", "Where you start from"),
-                detail: L.t("Si cambia dalle preferenze.", "You can change it in preferences.")
+                title: L.t("Quante ripetizioni", "How many reps"),
+                detail: L.t("Selezionabile anche dopo, dalle preferenze.",
+                            "Also selectable later, in preferences.")
             ) {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 12) {
                         choice(title: L.t("Partenza graduale", "Gradual start"),
                                selected: gradual, wide: true) { gradual = true }
-                        choice(title: L.t("Numeri pieni", "Full numbers"),
+                        choice(title: L.t("Ripetizioni piene", "Full reps"),
                                selected: !gradual, wide: true) { gradual = false }
                     }
                     // **I numeri veri, non una percentuale.** «Parti al 55%» non dice niente a
@@ -136,10 +137,10 @@ struct OnboardingView: View {
                         .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(Palette.accentOnWindow)
                     Text(gradual
-                         ? L.t("Si sale un pochino ogni giorno fino ai numeri interi, in tre settimane. Serve a non smettere dopo tre giorni.",
-                               "It goes up a little every day until the whole numbers, over three weeks. It is there so you don't quit after three days.")
-                         : L.t("Nessuna partenza morbida: da domani i numeri sono quelli. Se sei già allenato è la scelta giusta.",
-                               "No soft start: from tomorrow those are the numbers. If you already train, this is the right choice."))
+                         ? L.t("Si sale un pochino ogni giorno fino alle ripetizioni piene, in tre settimane. Serve a non smettere dopo tre giorni.",
+                               "It goes up a little every day until the full reps, over three weeks. It is there so you don't quit after three days.")
+                         : L.t("Nessuna partenza morbida: da subito le ripetizioni sono quelle piene. Se sei già allenato è la scelta giusta.",
+                               "No soft start: the reps are the full ones from the start. If you already train, this is the right choice."))
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
