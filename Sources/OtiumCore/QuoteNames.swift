@@ -100,6 +100,7 @@ public enum QuoteNames {
         "Così parlò Zarathustra": "Thus Spoke Zarathustra",
         "Prologo": "Prologue",
         "Dei disprezzatori del corpo": "On the Despisers of the Body",
+        "Dell'albero sul monte": "The Tree on the Hill",
         "Del leggere e dello scrivere": "On Reading and Writing",
         "Crepuscolo degli idoli": "Twilight of the Idols",
         "Massime e strali 12": "Maxims and Arrows 12",

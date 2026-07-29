@@ -582,11 +582,14 @@ struct QuoteBlock: View {
         VStack(spacing: 6) {
             // **La voce dell'app non porta i caporali e non porta una firma.** I caporali dicono
             // «questo lo ha detto qualcun altro» e «anonimo» dice «qualcuno l'ha detto e non
-            // sappiamo chi»: su una riga scritta per Otium sono due affermazioni false. Il
-            // carattere cambia con loro — grazia per ciò che è citato, lineare per ciò che dice
-            // l'app — così la differenza si vede prima di leggere la firma che non c'è.
+            // sappiamo chi»: su una riga scritta per Otium sono due affermazioni false.
+            //
+            // **Il carattere invece resta lo stesso** (scelta dell'autore, 2026-07-29). Avevo
+            // messo il lineare per la voce e le grazie per le citazioni: due caratteri sulla
+            // stessa schermata sono un cambio di tono che nessuno ha chiesto, e la distinzione la
+            // fanno già i caporali che non ci sono.
             Text(phrase.kind == .voce ? phrase.localizedText : "«\(phrase.localizedText)»")
-                .font(.system(size: 18, design: phrase.kind == .voce ? .default : .serif))
+                .font(.system(size: 18, design: .serif))
                 .foregroundStyle(Palette.paper.opacity(0.62))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -713,9 +716,9 @@ struct QuoteHUDView: View {
         HStack(spacing: 14) {
             RoundedRectangle(cornerRadius: 2).fill(Palette.accent).frame(width: 4)
             VStack(alignment: .leading, spacing: 8) {
-                // Stessa regola della pausa: la voce dell'app non si veste da citazione.
+                // Stessa regola della pausa: via i caporali e la firma, il carattere non si tocca.
                 Text(phrase.kind == .voce ? phrase.localizedText : "«\(phrase.localizedText)»")
-                    .font(.system(size: 14, design: phrase.kind == .voce ? .default : .serif))
+                    .font(.system(size: 14, design: .serif))
                     .fixedSize(horizontal: false, vertical: true)
                 if phrase.kind != .voce {
                     Text(phrase.localizedCredit)

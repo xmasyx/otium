@@ -358,7 +358,10 @@ public enum Quotes {
         q("Il modo in cui conduciamo la vita è lo specchio vero di ciò che pensiamo.", "The conduct of our lives is the true mirror of our doctrine.", "Montaigne", "Saggi, I, 51"),
         q("Il corpo è una grande ragione, una molteplicità con un senso solo, una guerra e una pace, un gregge e un pastore.", "The body is a big sagacity, a plurality with one sense, a war and a peace, a flock and a shepherd.", "Nietzsche", "Così parlò Zarathustra, I, Dei disprezzatori del corpo"),
         q("Sono corpo, tutto intero, e nient'altro.", "Body am I entirely, and nothing more.", "Nietzsche", "Così parlò Zarathustra, I, Dei disprezzatori del corpo"),
-        q("Anche la tua piccola ragione, quella che chiami spirito, è uno strumento del tuo corpo.", "An instrument of thy body is also thy little sagacity, which thou callest spirit.", "Nietzsche", "Così parlò Zarathustra, I, Dei disprezzatori del corpo"),
+        // Il passo intero al posto della glossa anonima «nessun albero cresce solo verso l'alto»:
+        // in Nietzsche l'albero e' l'uomo, e le radici scendono NEL MALE. Tolto quello, restava
+        // un consiglio da vivaio.
+        q("Più cerca di salire in alto e nella luce, più le sue radici tendono alla terra, in basso, nel male.", "The more he seeketh to rise into the height and light, the more vigorously do his roots struggle earthward, downward—into the evil.", "Nietzsche", "Così parlò Zarathustra, I, Dell'albero sul monte"),
         q("In montagna la via più breve va da cima a cima, ma ci vogliono gambe lunghe.", "In the mountains the shortest way is from peak to peak, but for that route thou must have long legs.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
         q("Voi guardate in alto quando volete sollevarvi. Io guardo in basso, perché sono sollevato.", "Ye look aloft when ye long for exaltation; and I look downward because I am exalted.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
         q("Chi scrive col sangue non vuole essere letto, vuole essere imparato a memoria.", "He that writeth in blood and proverbs doth not want to be read, but learnt by heart.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
@@ -444,6 +447,9 @@ public enum Quotes {
         q("Chi conosce gli altri è sapiente; chi conosce sé stesso è illuminato.", "He who knows other men is discerning; he who knows himself is intelligent.", "Laozi", "Tao Te Ching, 33"),
         q("Chi vince gli altri ha forza; chi vince sé stesso è potente.", "He who overcomes others is strong; he who overcomes himself is mighty.", "Laozi", "Tao Te Ching, 33"),
         q("Chi sa di avere abbastanza è ricco.", "He who is satisfied with his lot is rich.", "Laozi", "Tao Te Ching, 33"),
+        // Il testo vero dietro l'anonima «la natura non ha fretta, eppure tutto si compie», che
+        // resta dov'è: quella e' una parafrasi moderna, questo e' il capitolo 37.
+        q("Il Tao nel suo corso costante non fa nulla, e così non c'è nulla che non faccia.", "The Tao in its regular course does nothing, and so there is nothing which it does not do.", "Laozi", "Tao Te Ching, 37"),
         q("Il Tao di cui si può parlare non è l'eterno Tao.", "The Tao that can be trodden is not the enduring and unchanging Tao.", "Laozi", "Tao Te Ching, 1"),
         q("La suprema bontà è come l'acqua: giova a tutte le cose e non contende.", "The highest excellence is like that of water: it benefits all things, and does not strive.", "Laozi", "Tao Te Ching, 8"),
         q("Trenta raggi convergono nel mozzo, ma è il vuoto al centro che fa girare la ruota.", "The thirty spokes unite in the one nave; but it is on the empty space for the axle that the use of the wheel depends.", "Laozi", "Tao Te Ching, 11"),
@@ -539,6 +545,15 @@ public enum Quotes {
         q("Il sé è signore del sé; chi altri potrebbe esserlo? Con il sé ben domato si trova un signore che pochi trovano.", "Self is the lord of self, who else could be the lord? With self well subdued, a man finds a lord such as few can find.", "Buddha", "Dhammapada, XII, 160"),
         q("La salute è il più grande dei doni, l'appagamento la ricchezza migliore.", "Health is the greatest of gifts, contentedness the best riches.", "Buddha", "Dhammapada, XV, 204"),
         q("Senza conoscenza non c'è meditazione, senza meditazione non c'è conoscenza.", "Without knowledge there is no meditation, without meditation there is no knowledge.", "Buddha", "Dhammapada, XXV, 372"),
+        // Il passo intero dietro l'anonima «il loto cresce nel fango»: il Buddha non dice che il
+        // fiore non si lamenta, dice a CHI somiglia il fiore e a chi il mucchio.
+        //
+        // **L'italiano dice loto, l'inglese dice giglio, e non è una svista.** Il pali ha
+        // *paduma*, che è il loto; Max Müller, la traduzione pubblica su cui questo corpus
+        // verifica, al verso 55 scrive «lotus-flower» e qui sceglie «lily». L'italiano segue
+        // l'originale, l'inglese la traduzione pubblicata: cambiare l'uno o l'altro vorrebbe dire
+        // inventare una fonte che non esiste.
+        q("Come su un mucchio di rifiuti gettato sulla strada cresce un loto pieno di profumo e di gioia.", "As on a heap of rubbish cast upon the highway the lily will grow full of sweet perfume and delight.", "Buddha", "Dhammapada, IV, 58"),
     ]
 
     /// Tutte le citazioni verificate. `Mindful` tiene quelle senza fonte tracciabile.
