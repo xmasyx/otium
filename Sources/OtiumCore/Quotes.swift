@@ -124,7 +124,7 @@ public enum Quotes {
         q("Otium cum dignitate — il riposo che non toglie nulla alla dignità.", "Cicerone", "Pro Sestio, 98"),
         q("Vivere è pensare.", "Cicerone", "Tusculanae disputationes, V"),
         q("Il giardino e la biblioteca: se hai questi, hai tutto quello che serve.", "Cicerone", "Lettere a Varrone (Ad familiares, IX)"),
-        q("Nessuno è così vecchio da non credere di poter vivere ancora un anno.", "Cicerone", "De senectute, 24"),
+        q("Nessuno è così vecchio da non credere di poter vivere ancora un anno.", "No one is so old as to think that he may not live a year.", "Cicerone", "De senectute, 24"),
         q("Il tempo distrugge le finzioni dell'opinione, e conferma i giudizi della natura.", "Cicerone", "De natura deorum, II"),
 
         // MARK: Aggiunte del 2026-07-28 — 73 citazioni ritrovate sul testo primario.
@@ -277,14 +277,14 @@ public enum Quotes {
         q("Chi combatte con i mostri deve guardarsi dal non diventarlo.", "He who fights with monsters should be careful lest he thereby become a monster.", "Nietzsche", "Al di là del bene e del male, 146"),
         q("Il segreto per raccogliere dall'esistenza la massima fecondità è vivere pericolosamente.", "The secret of realising the largest productivity and the greatest enjoyment of existence is to live in danger.", "Nietzsche", "La gaia scienza, 283"),
 
-        q("Tutta l'infelicità degli uomini deriva da una cosa sola: non saper restare in riposo in una stanza.", "Pascal", "Pensieri, 139"),
-        q("Il cuore ha le sue ragioni che la ragione non conosce.", "Pascal", "Pensieri, 277"),
+        q("Tutta l'infelicità degli uomini deriva da una cosa sola: non saper restare in riposo in una stanza.", "The unhappiness of men arises from one single fact, that they cannot stay quietly in their own chamber.", "Pascal", "Pensieri, 139"),
+        q("Il cuore ha le sue ragioni che la ragione non conosce.", "The heart has its reasons, which reason does not know.", "Pascal", "Pensieri, 277"),
         q("Ho scritto una lettera lunga perché non ho avuto il tempo di scriverne una breve.", "Pascal", "Lettere provinciali, XVI"),
 
         q("La vita che ci è data è breve, ma la memoria di una vita ben spesa è eterna.", "Montaigne", "Saggi, I"),
         q("La più grande cosa del mondo è saper appartenere a sé stessi.", "Montaigne", "Saggi, I, 39"),
 
-        q("L'uomo libero a nulla pensa meno che alla morte, e la sua saggezza è meditazione della vita.", "Spinoza", "Etica, IV, prop. 67"),
+        q("L'uomo libero a nulla pensa meno che alla morte, e la sua saggezza è meditazione della vita.", "A free man thinks of death least of all things; and his wisdom is a meditation not of death but of life.", "Spinoza", "Etica, IV, prop. 67"),
         q("Non ridere, non piangere, non detestare, ma comprendere.", "Spinoza", "Trattato politico, I"),
 
         q("La maggior parte degli uomini conduce vite di quieta disperazione.", "The mass of men lead lives of quiet desperation.", "Thoreau", "Walden, I"),
@@ -492,11 +492,11 @@ public enum Quotes {
 
         q("Percepisci ciò che l'occhio non vede.", "Miyamoto Musashi", "Il libro dei cinque anelli, Il libro dell'acqua"),
 
-        q("Chi conosce il nemico e conosce sé stesso non sarà in pericolo in cento battaglie.", "Sunzi", "L'arte della guerra, III"),
-        q("La suprema arte della guerra è sottomettere il nemico senza combattere.", "Sunzi", "L'arte della guerra, III"),
+        q("Chi conosce il nemico e conosce sé stesso non sarà in pericolo in cento battaglie.", "If you know the enemy and know yourself, you need not fear the result of a hundred battles.", "Sunzi", "L'arte della guerra, III"),
+        q("La suprema arte della guerra è sottomettere il nemico senza combattere.", "Supreme excellence consists in breaking the enemy's resistance without fighting.", "Sunzi", "L'arte della guerra, III"),
 
-        q("Il lavoro è amore reso visibile.", "Kahlil Gibran", "Il profeta, Il lavoro"),
-        q("I vostri figli non sono figli vostri, sono i figli e le figlie della vita.", "Kahlil Gibran", "Il profeta, I figli"),
+        q("Il lavoro è amore reso visibile.", "Work is love made visible.", "Kahlil Gibran", "Il profeta, Il lavoro"),
+        q("I vostri figli non sono figli vostri, sono i figli e le figlie della vita.", "Your children are not your children. They are the sons and daughters of Life's longing for itself.", "Kahlil Gibran", "Il profeta, I figli"),
 
         q("Alzati, svegliati, e non fermarti finché la meta non è raggiunta.", "Katha Upanishad", "Katha Upanishad, I, 3, 14"),
         q("Come un uomo si spoglia di vesti logore e ne indossa di nuove, così l'anima lascia il corpo.", "As when one layeth his worn-out robes away and taketh new, so putteth by the spirit lightly its garb of flesh.", "Bhagavad Gita", "Bhagavad Gita, II, 22"),
