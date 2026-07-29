@@ -860,6 +860,22 @@ sarebbe emerso dall'uso: sette fallivano in silenzio e uno solo in modo visibile
       dichiara per nome le due stringhe di sonda ammesse. Provato al polo opposto rimettendo una
       `Section` non tradotta.
 
+### Iterazione 16 — il doctor (2026-07-29)
+
+- [x] **ISC-82** L'app sa dire cosa è rotto e come si aggiusta. — `Otium --doctor` e la voce
+      Diagnostica del menu, che condividono lo stesso `Doctor.report()` così non possono
+      raccontare cose diverse. Undici controlli, esce 1 se un controllo **obbligatorio** fallisce;
+      gli stati (avvio automatico assente, primo avvio non fatto, crescita spenta) si riportano e
+      non fanno mai fallire, perché sono scelte e non guasti. Autonomo per costruzione: legge il
+      disco, non tocca `AppModel`, e **non passa da `ProbeMode`** — guarderebbe una cartella usa e
+      getta e direbbe che va tutto bene guardando altrove.
+      *Falsificatore, ai due poli sui difetti che l'hanno fatto nascere:* avvio automatico
+      dirottato dentro `.build/` → rosso, `exit 1`, con la riga da premere; registro a 444 → rosso,
+      `exit 1`; ripristinati entrambi → verde.
+      *Dead end pagato:* il primo controllo dell'avvio automatico chiedeva «punta a me?» invece di
+      «punta a qualcosa che regge?», e dal terminale dava rosso su un'installazione sana. Terza
+      volta nella stessa giornata che una sonda risponde a una domanda più debole di quella fatta.
+
 **L'audit è chiuso.** Sedici difetti in tutto, tredici dei quali fallivano in silenzio, e nessuno
 sarebbe emerso dall'uso. Quattro li ha trovati un test che prima non esisteva, due il fuzz, uno la
 guardia di un'altra sessione, e uno l'ho causato io stesso sondando.
