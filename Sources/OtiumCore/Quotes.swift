@@ -195,7 +195,7 @@ public enum Quotes {
         q("Per sapere se hai fatto progressi, guarda se vuoi oggi le stesse cose di ieri.", "If you would find out whether you have accomplished anything, consider whether you desire the same things to-day that you desired yesterday.", "Seneca", "Lettere a Lucilio, 35"),
         q("Il posto va scelto sano non solo per il corpo, ma anche per il carattere.", "We ought to select abodes which are wholesome not only for the body but also for the character.", "Seneca", "Lettere a Lucilio, 51"),
         q("Anche le mani che passano dall'aratro alle armi non rifiutano nessuna fatica.", "The hand which turns from the plough to the sword never objects to toil.", "Seneca", "Lettere a Lucilio, 51"),
-        q("Solo la filosofia ci sveglia, solo lei scuote via il sonno pesante.", "Seneca", "Lettere a Lucilio, 53"),
+        q("Solo la filosofia ci sveglia, solo lei scuote via il sonno pesante.", "Philosophy is the only power that can stir us, the only power that can shake off our deep slumber.", "Seneca", "Lettere a Lucilio, 53"),
         q("Confessare i propri difetti è già un segno di salute.", "A confession of sin is a proof of sound mind.", "Seneca", "Lettere a Lucilio, 53"),
         q("Torno adesso da un giro, stanco come se avessi camminato quanto sono stato seduto.", "I have just returned from a ride in my litter, as weary as if I had walked the distance instead of being seated.", "Seneca", "Lettere a Lucilio, 55"),
         q("C'è una gran differenza fra una vita di ozio e una vita inerte.", "It makes a great deal of difference whether your life be one of leisure or one of idleness.", "Seneca", "Lettere a Lucilio, 55"),
@@ -207,11 +207,11 @@ public enum Quotes {
         q("Tutto quello che solleva l'animo fa bene anche al corpo.", "Seneca", "Lettere a Lucilio, 78"),
         q("Il medico ti dirà quanto camminare e quanto esercitarti.", "The physician will prescribe your walks and your exercise.", "Seneca", "Lettere a Lucilio, 78"),
         q("Non cedere all'ozio, che è dove scivola la salute pigra.", "He will warn you not to become addicted to idleness, as is the tendency of the inactive invalid.", "Seneca", "Lettere a Lucilio, 78"),
-        q("Chi sembra non fare nulla, sta facendo le cose più grandi.", "Seneca", "Lettere a Lucilio, 8"),
+        q("Chi sembra non fare nulla, sta facendo le cose più grandi.", "Those who seem to be busied with nothing are busied with the greater tasks.", "Seneca", "Lettere a Lucilio, 8"),
         q("Concedi al corpo solo quanto basta a stare in salute.", "Indulge the body only so far as is needful for good health.", "Seneca", "Lettere a Lucilio, 8"),
-        q("Quanti allenano il corpo, e quanto pochi l'ingegno.", "Seneca", "Lettere a Lucilio, 80"),
+        q("Quanti allenano il corpo, e quanto pochi l'ingegno.", "How many men train their bodies, and how few train their minds!", "Seneca", "Lettere a Lucilio, 80"),
         q("L'animo cresce da sé, si nutre da sé, si allena da sé.", "The mind grows from within, giving to itself nourishment and exercise.", "Seneca", "Lettere a Lucilio, 80"),
-        q("Al saggio basta sé stesso per vivere bene, non per vivere.", "Seneca", "Lettere a Lucilio, 9"),
+        q("Al saggio basta sé stesso per vivere bene, non per vivere.", "The wise man is sufficient unto himself for a happy existence, but not for mere existence.", "Seneca", "Lettere a Lucilio, 9"),
 
         // MARK: Secondo giro del 2026-07-28 — 38 citazioni ritrovate sul testo primario.
         //
