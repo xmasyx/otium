@@ -103,7 +103,7 @@ struct BreakView: View {
                     primary(L.t("Sblocca lo schermo", "Unlock the screen"), enabled: true) { model.emergencyExit() }
                     Text(L.t("Puoi anche premere Esc due volte.", "You can also press Esc twice."))
                         .font(.system(size: 11))
-                        .foregroundStyle(Palette.dim.opacity(0.8))
+                        .foregroundStyle(Palette.dim)
                 }
                 .padding(48)
             }
@@ -164,9 +164,14 @@ struct BreakView: View {
         .onAppear { partialReps = max(0, plan.exercise.reps - 1) }
     }
 
+    /// **Un pulsante che è solo un'icona non ha nome**, e per VoiceOver diventa «pulsante» e
+    /// basta: due tondi identici, uno che aggiunge e uno che toglie, indistinguibili a voce.
+    /// Trovato nell'audit del 2026-07-29 — l'unico controllo dell'app in quella condizione.
     private func stepperButton(_ symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
+                .accessibilityLabel(symbol == "plus" ? L.t("una in più", "one more")
+                                                     : L.t("una in meno", "one less"))
                 .font(.system(size: 20, weight: .semibold))
                 .frame(width: 48, height: 48)
                 .foregroundStyle(Palette.paper)
@@ -327,7 +332,7 @@ struct BreakView: View {
                     .frame(maxWidth: 620)
                 Text(phrase.localizedCredit)
                     .font(.system(size: 11))
-                    .foregroundStyle(Palette.dim.opacity(0.55))
+                    .foregroundStyle(Palette.dim)
             }
             .padding(.top, 26)
         }
@@ -347,7 +352,7 @@ struct BreakView: View {
                 Text(L.t("oppure", "or"))
                     .font(.system(size: 11, weight: .medium, design: .rounded))
                     .tracking(1.5)
-                    .foregroundStyle(Palette.dim.opacity(0.65))
+                    .foregroundStyle(Palette.dim)
                 HStack(spacing: 8) {
                     ForEach(options, id: \.kind) { option in
                         Button { model.swapExercise(to: option.kind) } label: {
@@ -510,7 +515,7 @@ struct BreakView: View {
             // sono già cliccabili nella finestra delle fonti.
             Text(L.t("Gli articoli per esteso, con il link, sono in Otium ▸ Le fonti.", "Full articles, with links, are in Otium ▸ The sources."))
                 .font(.system(size: 11))
-                .foregroundStyle(Palette.dim.opacity(0.7))
+                .foregroundStyle(Palette.dim)
                 .multilineTextAlignment(.center)
 
             HStack(spacing: 14) {
@@ -560,7 +565,7 @@ struct BreakView: View {
                     Text(L.t("Ogni salto finisce nel registro. Non è un giudizio, è un dato.",
                      "Every skip goes into the log. It is not a judgement: it is data."))
                         .font(.system(size: 11))
-                        .foregroundStyle(Palette.dim.opacity(0.7))
+                        .foregroundStyle(Palette.dim)
                 }
             }
         }

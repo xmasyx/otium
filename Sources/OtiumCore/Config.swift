@@ -92,10 +92,23 @@ public struct Settings: Codable, Equatable, Sendable {
     public var cadence: Cadence
     /// Data della prima esecuzione: da qui parte la rampa.
     public var startDate: Date
-    public var rampWeeks: Int
-    public var rampStartFactor: Double
-    public var exercisePool: [ExerciseKind]
-    public var vigorousPool: [ExerciseKind]
+    /// **I limiti stanno sul campo, non nell'`init`.**
+    ///
+    /// Vivevano solo nel costruttore, e questo lasciava due porte aperte: assegnare la proprietà
+    /// dopo, e **decodificare il file**. `settings.json` è un file di testo nella cartella
+    /// dell'utente: con `rampStartFactor: -5` scritto a mano le ripetizioni diventavano negative,
+    /// e con `exercisePool: []` la rotazione restava senza esercizi. Trovato dall'audit del
+    /// 2026-07-29 con impostazioni assurde, non con impostazioni sbagliate.
+    public var rampWeeks: Int { didSet { rampWeeks = max(1, rampWeeks) } }
+    public var rampStartFactor: Double {
+        didSet { rampStartFactor = min(1.0, max(0.1, rampStartFactor)) }
+    }
+    public var exercisePool: [ExerciseKind] {
+        didSet { if exercisePool.isEmpty { exercisePool = [.squat] } }
+    }
+    public var vigorousPool: [ExerciseKind] {
+        didSet { if vigorousPool.isEmpty { vigorousPool = [.jumpingJack] } }
+    }
     /// Bersaglio giornaliero di sessioni intense — Stamatakis 2022 → 3.
     public var vigorousDailyTarget: Int
     /// La frase da digitare per esteso per saltare un break. Attrito, non impossibilità.
@@ -265,12 +278,14 @@ public struct Settings: Codable, Equatable, Sendable {
         return Ramp.weeksElapsed(since: startDate, now: now) >= fullPaceOfferWeeks
     }
 
+    /// Il moltiplicatore di oggi. **Sempre fra 0 e 1**, qualunque cosa dicano i campi: è l'imbuto
+    /// da cui passano tutte le ripetizioni proposte, e una cintura qui costa nulla.
     public func rampFactor(now: Date) -> Double {
-        Ramp.factor(
+        min(1.0, max(0.1, Ramp.factor(
             daysElapsed: Ramp.daysElapsed(since: startDate, now: now),
             weeks: rampWeeks,
             startFactor: rampStartFactor
-        )
+        )))
     }
 
     /// Le decodifiche vecchie non devono morire quando aggiungo un campo: ogni chiave assente
@@ -280,10 +295,14 @@ public struct Settings: Codable, Equatable, Sendable {
         let d = Settings()
         cadence = (try? c.decode(Cadence.self, forKey: .cadence)) ?? d.cadence
         startDate = (try? c.decode(Date.self, forKey: .startDate)) ?? d.startDate
-        rampWeeks = (try? c.decode(Int.self, forKey: .rampWeeks)) ?? d.rampWeeks
-        rampStartFactor = (try? c.decode(Double.self, forKey: .rampStartFactor)) ?? d.rampStartFactor
-        exercisePool = (try? c.decode([ExerciseKind].self, forKey: .exercisePool)) ?? d.exercisePool
-        vigorousPool = (try? c.decode([ExerciseKind].self, forKey: .vigorousPool)) ?? d.vigorousPool
+        rampWeeks = max(1, (try? c.decode(Int.self, forKey: .rampWeeks)) ?? d.rampWeeks)
+        // I `didSet` non scattano dentro un inizializzatore: qui i limiti si riapplicano a mano,
+        // o il file scritto a mano li scavalcherebbe tutti.
+        rampStartFactor = min(1.0, max(0.1, (try? c.decode(Double.self, forKey: .rampStartFactor)) ?? d.rampStartFactor))
+        let poolLetto = (try? c.decode([ExerciseKind].self, forKey: .exercisePool)) ?? d.exercisePool
+        exercisePool = poolLetto.isEmpty ? d.exercisePool : poolLetto
+        let vigorosiLetti = (try? c.decode([ExerciseKind].self, forKey: .vigorousPool)) ?? d.vigorousPool
+        vigorousPool = vigorosiLetti.isEmpty ? d.vigorousPool : vigorosiLetti
         vigorousDailyTarget = (try? c.decode(Int.self, forKey: .vigorousDailyTarget)) ?? d.vigorousDailyTarget
         escapePhrase = (try? c.decode(String.self, forKey: .escapePhrase)) ?? d.escapePhrase
         // Assenti nei file scritti prima dell'onboarding: restano nil, e l'app chiede.
