@@ -33,7 +33,9 @@ import Foundation
 public struct Quote: Equatable, Sendable, Identifiable {
     /// L'italiano. Resta la forma canonica anche quando a schermo c'è l'inglese — vedi `id`.
     public let text: String
-    /// L'inglese. Vuoto solo durante la migrazione: `QuoteLanguageTests` lo pretende pieno.
+    /// L'inglese. **Non ha valore di default e non lo avra' piu':** il ponte di migrazione e'
+    /// stato tolto il 2026-07-29, chiusa l'ultima delle 338. Da qui in avanti una citazione senza
+    /// inglese non compila, e il test smette di essere l'unica rete.
     public let textEN: String
     public let author: String
     /// L'opera, non il sito da cui l'ho presa.
@@ -53,7 +55,7 @@ public struct Quote: Equatable, Sendable, Identifiable {
     public var localizedAuthor: String { QuoteNames.author(author) }
     public var localizedWork: String { QuoteNames.work(work, author: author) }
 
-    public init(_ text: String, en: String = "", author: String, work: String) {
+    public init(_ text: String, en: String, author: String, work: String) {
         self.text = text
         self.textEN = en
         self.author = author
@@ -68,15 +70,6 @@ public enum Quotes {
         Quote(text, en: en, author: author, work: work)
     }
 
-    /// **Ponte di migrazione: da togliere quando l'ultima citazione ha il suo inglese.**
-    ///
-    /// Finché esiste, una citazione può entrare senza traduzione e il test la conta invece di
-    /// bloccare la compilazione di tutto il pool. Quando sparisce, la guardia diventa il
-    /// compilatore, che è più forte di qualunque test: una citazione monca non compila.
-    private static func q(_ text: String, _ author: String, _ work: String) -> Quote {
-        Quote(text, author: author, work: work)
-    }
-
     // MARK: - Stoici
 
     static let stoici: [Quote] = [
@@ -89,10 +82,10 @@ public enum Quotes {
         q("Comincia subito a vivere, e conta ogni giorno come una vita a sé.", "Begin at once to live, and count each separate day as a separate life.", "Seneca", "Lettere a Lucilio, 101"),
         q("Rimandare è la più grande perdita di tempo: porta via il giorno di oggi.", "Postponement is the greatest waste of life; it deprives us of each day as it comes.", "Seneca", "La brevità della vita, 9"),
         q("Vivere è la cosa che si impara per tutta la vita.", "It takes the whole of life to learn how to live.", "Seneca", "La brevità della vita, 7"),
-        q("Fa' che il corpo obbedisca all'animo senza fatica.", "Seneca", "Lettere a Lucilio, 15"),
+        q("Fa' che il corpo obbedisca all'animo senza fatica.", "See to it that the body obeys the mind without effort.", "Seneca", "Lettere a Lucilio, 15"),
         q("Esercitare il corpo con poco, e tornare presto alla mente: è questo il modo.", "But whatever you do, come back soon from body to mind.", "Seneca", "Lettere a Lucilio, 15"),
         q("Chi è ovunque non è da nessuna parte, la vita dispersa è la più povera.", "Everywhere means nowhere.", "Seneca", "Lettere a Lucilio, 2"),
-        q("Non c'è bonaccia peggiore di quella dell'animo che non sa dove tende.", "Seneca", "Lettere a Lucilio, 95"),
+        q("Non c'è bonaccia peggiore di quella dell'animo che non sa dove tende.", "There is no worse calm than that of a mind which does not know where it is bound.", "Seneca", "Lettere a Lucilio, 95"),
 
         q("Fa' ogni cosa come se fosse l'ultima della tua vita.", "Do every act of thy life as if it were the last.", "Marco Aurelio", "Pensieri, II"),
         q("Se soffri per qualcosa di esterno, non è quella cosa a turbarti, ma il tuo giudizio su di essa.", "If thou art pained by any external thing, it is not this thing that disturbs thee, but thy own judgment about it.", "Marco Aurelio", "Pensieri, VIII"),
@@ -179,7 +172,7 @@ public enum Quotes {
         q("Alleniamoci al palo, perché la sorte non ci trovi impreparati.", "Let us practise our strokes on the dummy, and become intimate with poverty, so that Fortune may not catch us off our guard.", "Seneca", "Lettere a Lucilio, 18"),
         q("Prendi una regola sola per vivere, e adegua a quella tutta la vita.", "Lay hold, once for all, upon a single norm to live by, and regulate your whole life according to this norm.", "Seneca", "Lettere a Lucilio, 20"),
         q("Il giudizio cambia ogni giorno e si rovescia, e per i più la vita passa come un gioco.", "Judgment varies from day to day, and changes to the opposite, making many a man pass his life in a kind of game.", "Seneca", "Lettere a Lucilio, 20"),
-        q("Va svegliato dal sonno l'animo, e scosso.", "Seneca", "Lettere a Lucilio, 20"),
+        q("Va svegliato dal sonno l'animo, e scosso.", "Let the soul be roused from its sleep and be prodded.", "Seneca", "Lettere a Lucilio, 20"),
         q("Non c'è da aumentare il denaro, ma da ridurre il desiderio.", "Do not add to his store of money, but subtract from his desires.", "Epicuro", "in Seneca, Lettere a Lucilio, 21"),
         q("Non starà dentro gli affari per amore degli affari.", "A good man will not be busy merely for the sake of being busy.", "Seneca", "Lettere a Lucilio, 22"),
         q("L'animo dev'essere sveglio, fiducioso e dritto sopra ogni cosa.", "The very soul must be happy and confident, lifted above every circumstance.", "Seneca", "Lettere a Lucilio, 23"),
@@ -200,7 +193,7 @@ public enum Quotes {
         q("Torno adesso da un giro, stanco come se avessi camminato quanto sono stato seduto.", "I have just returned from a ride in my litter, as weary as if I had walked the distance instead of being seated.", "Seneca", "Lettere a Lucilio, 55"),
         q("C'è una gran differenza fra una vita di ozio e una vita inerte.", "It makes a great deal of difference whether your life be one of leisure or one of idleness.", "Seneca", "Lettere a Lucilio, 55"),
         q("Studia con me, cena con me, cammina con me.", "I would have you share your studies with me, your meals, and your walks.", "Seneca", "Lettere a Lucilio, 55"),
-        q("Non c'è quiete davvero tranquilla se non quella che la ragione ha messo in ordine.", "Seneca", "Lettere a Lucilio, 56"),
+        q("Non c'è quiete davvero tranquilla se non quella che la ragione ha messo in ordine.", "No real rest can be found when reason has not done the lulling.", "Seneca", "Lettere a Lucilio, 56"),
         q("Lunga è la strada dei precetti, breve ed efficace quella degli esempi.", "The way is long if one follows precepts, but short and helpful, if one follows patterns.", "Seneca", "Lettere a Lucilio, 6"),
         q("Ritirati in te stesso, quanto più puoi.", "Withdraw into yourself, as far as you can.", "Seneca", "Lettere a Lucilio, 7"),
         q("Cibo, sonno, desiderio: si corre sempre dentro questo cerchio.", "Reflect how long you have been doing the same thing: food, sleep, lust — this is one's daily round.", "Seneca", "Lettere a Lucilio, 77"),
@@ -232,23 +225,23 @@ public enum Quotes {
         q("A tavola non dire come si deve mangiare, mangia come si deve.", "At a banquet do not say how a man ought to eat, but eat as you ought to eat.", "Epitteto", "Manuale, 46"),
         q("La malattia è un impedimento per il corpo, non per la volontà, a meno che la volontà stessa non lo scelga.", "Disease is an impediment to the body, but not to the will, unless the will itself chooses.", "Epitteto", "Manuale, 9"),
         q("Infinita è la velocità del tempo, e si vede meglio quando ci si volta indietro.", "Infinitely swift is the flight of time, as those see more clearly who are looking backwards.", "Seneca", "Lettere a Lucilio, 49"),
-        q("La natura ci ha fatti capaci d'imparare e ci ha dato una ragione imperfetta, ma che si può portare a compimento.", "Seneca", "Lettere a Lucilio, 49"),
+        q("La natura ci ha fatti capaci d'imparare e ci ha dato una ragione imperfetta, ma che si può portare a compimento.", "Nature brought us forth apt to learn, and gave us a reason imperfect, but capable of being made perfect.", "Seneca", "Lettere a Lucilio, 49"),
         q("Nessuno torna alla natura con fatica, se non chi da lei si è allontanato.", "No man finds it difficult to return to nature, except the man who has deserted nature.", "Seneca", "Lettere a Lucilio, 50"),
         q("La virtù è secondo natura; i vizi le sono nemici e ostili.", "Virtue is according to nature; vice is opposed to it and hostile.", "Seneca", "Lettere a Lucilio, 50"),
-        q("Costringo l'animo a stare intento a sé e a non lasciarsi distrarre dalle cose esterne.", "Seneca", "Lettere a Lucilio, 56"),
+        q("Costringo l'animo a stare intento a sé e a non lasciarsi distrarre dalle cose esterne.", "I force my mind to concentrate, and keep it from straying to things outside itself.", "Seneca", "Lettere a Lucilio, 56"),
         q("L'animo del saggio è come il cielo sopra la luna: lassù è sempre sereno.", "The mind of the wise man is like the ultra-lunar firmament; eternal calm pervades that region.", "Seneca", "Lettere a Lucilio, 59"),
         q("La gioia non nasce che dalla coscienza delle proprie virtù.", "This joy springs only from the knowledge that you possess the virtues.", "Seneca", "Lettere a Lucilio, 59"),
         q("Che abbiamo vissuto abbastanza non lo decidono gli anni né i giorni, ma l'animo.", "To have lived long enough depends neither upon our years nor upon our days, but upon our minds.", "Seneca", "Lettere a Lucilio, 61"),
         q("Faccio in modo che un solo giorno valga per me quanto una vita intera.", "I am endeavouring to live every day as if it were a complete life.", "Seneca", "Lettere a Lucilio, 61"),
         q("La vita è già abbastanza attrezzata: siamo noi a essere avidi dei suoi strumenti.", "Life is well enough furnished, but we are too greedy with regard to its furnishings.", "Seneca", "Lettere a Lucilio, 61"),
         q("Alle cose non mi consegno: le presto me stesso, e non vado a caccia di pretesti per perdere tempo.", "I do not surrender myself to my affairs, but loan myself to them, and I do not hunt out excuses for wasting my time.", "Seneca", "Lettere a Lucilio, 62"),
-        q("Ovunque io mi fermi, lì lavoro i miei pensieri e rivolgo nell'animo qualcosa che fa bene.", "Seneca", "Lettere a Lucilio, 62"),
-        q("In questa dimora esposta abita un animo libero.", "Seneca", "Lettere a Lucilio, 65"),
-        q("Il posto che dio occupa nel mondo, nell'uomo lo occupa l'animo.", "Seneca", "Lettere a Lucilio, 65"),
+        q("Ovunque io mi fermi, lì lavoro i miei pensieri e rivolgo nell'animo qualcosa che fa bene.", "Wherever I am situated, I carry on my own meditations and ponder in my mind some wholesome thought.", "Seneca", "Lettere a Lucilio, 62"),
+        q("In questa dimora esposta abita un animo libero.", "In this dwelling, which is exposed to peril, my soul lives free.", "Seneca", "Lettere a Lucilio, 65"),
+        q("Il posto che dio occupa nel mondo, nell'uomo lo occupa l'animo.", "God's place in the universe corresponds to the soul's relation to man.", "Seneca", "Lettere a Lucilio, 65"),
         q("Ogni arte è imitazione della natura.", "All art is but imitation of nature.", "Seneca", "Lettere a Lucilio, 65"),
         q("Da una capanna può uscire un grande uomo, e da un corpicino deforme e misero un animo bello e grande.", "A great man can spring from a hovel; so can a beautiful and great soul from an ugly and insignificant body.", "Seneca", "Lettere a Lucilio, 66"),
         q("La virtù non è altro che retta ragione.", "Virtue is nothing else than right reason.", "Seneca", "Lettere a Lucilio, 66"),
-        q("È più grande sfondare le difficoltà che tenere a freno le cose liete.", "Seneca", "Lettere a Lucilio, 66"),
+        q("È più grande sfondare le difficoltà che tenere a freno le cose liete.", "It is more of an accomplishment to break one's way through difficulties than to keep joy within bounds.", "Seneca", "Lettere a Lucilio, 66"),
         q("Per riuscire a tenere fermo l'animo, ferma prima la fuga del tuo corpo.", "To be able to hold your spirit in check, you must first stop the runaway flight of the body.", "Seneca", "Lettere a Lucilio, 69"),
         q("Il bene non è vivere, ma vivere bene.", "Mere living is not a good, but living well.", "Seneca", "Lettere a Lucilio, 70"),
         q("Il saggio vivrà quanto deve, non quanto può.", "The wise man will live as long as he ought, not as long as he can.", "Seneca", "Lettere a Lucilio, 70"),
@@ -257,14 +250,14 @@ public enum Quotes {
         q("Sbagliamo perché tutti decidiamo sulle parti della vita e nessuno sull'insieme.", "The reason we make mistakes is because we all consider the parts of life, but never life as a whole.", "Seneca", "Lettere a Lucilio, 71"),
         q("Nessun momento è poco adatto a un'occupazione che fa bene.", "There is no time that is unsuitable for helpful studies.", "Seneca", "Lettere a Lucilio, 72"),
         q("Ciò che è retto non si misura né per grandezza né per numero né per durata.", "That which is straight is not judged by its size, or by its number, or by its duration.", "Seneca", "Lettere a Lucilio, 74"),
-        q("La vita s'intorpidisce presto in un ozio inerte, se si deve lasciar perdere tutto ciò che dà fastidio.", "Seneca", "Lettere a Lucilio, 81"),
+        q("La vita s'intorpidisce presto in un ozio inerte, se si deve lasciar perdere tutto ciò che dà fastidio.", "If one were compelled to drop everything that caused trouble, life would soon grow dull amid sluggish idleness.", "Seneca", "Lettere a Lucilio, 81"),
         q("Sta in un luogo inespugnabile l'animo che ha lasciato le cose esterne e si difende nella propria rocca.", "The soul stands on unassailable ground, if it has abandoned external things; it is independent in its own fortress.", "Seneca", "Lettere a Lucilio, 82"),
         q("Va' per la strada che hai preso e assestati in questo modo di vivere con calma, non con mollezza.", "Proceed as you have begun, and settle yourself in this way of living, not luxuriously, but calmly.", "Seneca", "Lettere a Lucilio, 82"),
-        q("Oggi è un giorno intero: nessuno me ne ha strappato via un pezzo.", "Seneca", "Lettere a Lucilio, 83"),
-        q("La virtù tocca solo l'animo che sia stato formato, istruito e portato al sommo da un esercizio assiduo.", "Seneca", "Lettere a Lucilio, 90"),
+        q("Oggi è un giorno intero: nessuno me ne ha strappato via un pezzo.", "To-day has been unbroken; no one has filched the slightest part of it from me.", "Seneca", "Lettere a Lucilio, 83"),
+        q("La virtù tocca solo l'animo che sia stato formato, istruito e portato al sommo da un esercizio assiduo.", "Virtue is not vouchsafed to a soul unless that soul has been trained and taught, and by unremitting practice brought to perfection.", "Seneca", "Lettere a Lucilio, 90"),
         q("Il nostro animo è capiente: arriva in alto, se i vizi non lo schiacciano.", "Our soul has capabilities, and is carried thither, if vices do not hold it down.", "Seneca", "Lettere a Lucilio, 92"),
-        q("Per vivere a lungo serve il destino; per vivere abbastanza, l'animo.", "Seneca", "Lettere a Lucilio, 93"),
-        q("Due cose danno all'animo la forza maggiore: la fede nel vero e la fiducia in sé.", "Seneca", "Lettere a Lucilio, 94"),
+        q("Per vivere a lungo serve il destino; per vivere abbastanza, l'animo.", "To achieve long life you have need of Fate only, but for right living you need the soul.", "Seneca", "Lettere a Lucilio, 93"),
+        q("Due cose danno all'animo la forza maggiore: la fede nel vero e la fiducia in sé.", "There are two strong supports to the soul — trust in the truth and confidence.", "Seneca", "Lettere a Lucilio, 94"),
     ]
 
     // MARK: - Filosofia occidentale
