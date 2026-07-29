@@ -282,7 +282,6 @@ public enum Quotes {
         q("Ho scritto una lettera lunga perché non ho avuto il tempo di scriverne una breve.", "I have made this longer than usual because I have not had the time to make it shorter.", "Pascal", "Lettere provinciali, XVI"),
 
         q("La vita che ci è data è breve, ma la memoria di una vita ben spesa è eterna.", "The life given us is short, but the memory of a life well spent is eternal.", "Montaigne", "Saggi, I"),
-        q("La più grande cosa del mondo è saper appartenere a sé stessi.", "The greatest thing in the world is to know how to belong to oneself.", "Montaigne", "Saggi, I, 39"),
 
         q("L'uomo libero a nulla pensa meno che alla morte, e la sua saggezza è meditazione della vita.", "A free man thinks of death least of all things; and his wisdom is a meditation not of death but of life.", "Spinoza", "Etica, IV, prop. 67"),
         q("Non ridere, non piangere, non detestare, ma comprendere.", "Not to laugh, not to lament, nor to curse, but to understand.", "Spinoza", "Trattato politico, I"),
