@@ -39,7 +39,7 @@ struct OnboardingView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 26) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Otium")
+                Text("Otium")   // lingua: ok nome proprio dell'app
                     .font(.system(size: 30, weight: .bold, design: .rounded))
                     .foregroundStyle(Palette.accentOnWindow)
                 Text(L.t("Conta il tempo che passi davvero al computer e, ogni tanto, ti ferma per farti muovere.",
@@ -150,6 +150,8 @@ struct OnboardingView: View {
                 }
             }
 
+            primaDiCominciare
+
             HStack {
                 Spacer()
                 Button(action: finish) {
@@ -169,6 +171,99 @@ struct OnboardingView: View {
         }
         .padding(34)
         .frame(width: 540)
+    }
+
+    /// **Cosa fa l'app, perché lo fa, e come si esce.** Non è una domanda: è l'unica cosa che
+    /// l'onboarding deve *dire* invece di chiedere.
+    ///
+    /// Le ragioni stavano in fondo a ogni pausa, tre righe di grigio sotto l'esercizio, e da lì
+    /// sono uscite il 2026-07-29: rubavano il ruolo alla frase e alla sedicesima ripetizione della
+    /// giornata erano arredamento. Dette una volta qui, con calma, valgono di più. **Il rischio
+    /// dichiarato è che chi salta questa schermata non le legga mai** — per questo nella pausa
+    /// resta comunque la riga che dice dove trovarle.
+    ///
+    /// L'uscita d'emergenza sta qui per una ragione diversa e più seria: è una schermata che
+    /// copre tutto e disabilita ⌘Q, e scoprire come uscirne **mentre** ti serve uscire è troppo
+    /// tardi. Richiesta esplicita del principale, 2026-07-29.
+    private var primaDiCominciare: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(L.t("Prima di cominciare", "Before you start"))
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(L.t("Cosa fa", "What it does")).font(.system(size: 13, weight: .semibold))
+                Text(comeFunziona)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(L.t("Perché ti interrompe", "Why it interrupts you"))
+                    .font(.system(size: 13, weight: .semibold))
+                // **Le righe le scrivono gli studi, non io.** Ricopiarle a mano qui vorrebbe dire
+                // due copie della stessa affermazione che invecchiano separate: il giorno che una
+                // fonte cambia, questa schermata continuerebbe a citare la vecchia senza che
+                // niente lo dica.
+                ForEach(Self.ragioni, id: \.id) { studio in
+                    Text("· \(studio.localizedGoverns) — \(studio.shortCitation), \(String(studio.year)).")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Text(L.t("Tutti gli studi, con i link, sono in Otium ▸ Le fonti.",
+                         "All the studies, with links, are in Otium ▸ The sources."))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(L.t("Come esci, se devi", "How to get out, if you must"))
+                    .font(.system(size: 13, weight: .semibold))
+                // L'istruzione che conta sta su una riga sua, in accento: è quella che uno cerca
+                // con gli occhi mentre gli serve, e in mezzo a un paragrafo grigio non si trova.
+                Text(L.t("Premi Esc due volte, oppure il pulsante «Emergenza» in fondo alla schermata.",
+                         "Press Esc twice, or the «Emergency» button at the bottom of the screen."))
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Palette.accentOnWindow)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(L.t("La pausa copre tutto lo schermo e non si chiude con ⌘Q né con ⌘W: è attrito voluto. Ogni uscita d'emergenza viene contata e compare nelle statistiche, e non è un giudizio, è un dato.",
+                         "The break covers the whole screen and does not close with ⌘Q or ⌘W: the friction is deliberate. Every emergency exit is counted and shows up in your statistics — it is not a judgement, it is data."))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Palette.accentOnWindow.opacity(0.07)))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Palette.accentOnWindow.opacity(0.25)))
+    }
+
+    /// I tre studi che spiegano la forma dell'app: ogni quanto, che esercizi, e chi decide.
+    private static let ragioni: [Study] = [
+        Evidence.sittingInterval, Evidence.squatsBeatWalking, Evidence.systematicBreaks,
+    ]
+
+    /// **I numeri vengono dalla cadenza vera**, non da una frase scritta a mano: cambiarla nelle
+    /// preferenze e leggere qui i vecchi numeri sarebbe una bugia che nessun test vedrebbe.
+    private var comeFunziona: String {
+        let c = model.settings.cadence
+        let ogni = Int(c.intervalSeconds / 60)
+        let micro = Int(c.microDurationSeconds)
+        let piena = Int(c.longDurationSeconds / 60)
+        let quanto = c.longEveryNBreaks
+        // Niente asterischi del grassetto: questa stringa arriva a `Text` come `String`
+        // interpolata, non come letterale, quindi il markdown non viene interpretato e i due
+        // asterischi si vedrebbero a schermo. È lo stesso difetto già pagato nei fatti.
+        // **Nessun ordinale scritto a mano accanto a un numero che può cambiare.** La prima
+        // stesura diceva «le prime \(quanto - 1) volte, 5 minuti la terza»: con `longEveryNBreaks`
+        // a 4 sarebbe diventata «le prime 3 volte, 5 minuti la terza», che si contraddice da sola.
+        // Trovato dall'audit cross-vendor del 2026-07-29 — e il difetto è più insidioso di come
+        // sembra, perché nasce proprio dall'aver tirato dentro i numeri veri lasciando lì accanto
+        // una parola che i numeri veri non li segue.
+        return L.t("Ogni \(ogni) minuti passati davvero al computer lo schermo si copre e ti chiede un esercizio breve: \(micro) secondi, e una pausa ogni \(quanto) dura \(piena) minuti. Il conto sale solo mentre tocchi tastiera o mouse, quindi una riunione o un pranzo non ti fanno arrivare la pausa addosso appena torni.",
+                   "Every \(ogni) minutes actually spent at the computer the screen covers itself and asks you for a short exercise: \(micro) seconds, and one break in every \(quanto) lasts \(piena) minutes. The count only rises while you touch the keyboard or the mouse, so a meeting or a lunch will not make a break land on you the moment you come back.")
     }
 
     /// Due esercizi che tutti conoscono, coi numeri che vedrebbe davvero questa persona: il
@@ -258,6 +353,21 @@ struct OnboardingView: View {
         s.language = language
         s.sex = sex
         s.pushVariant = pushVariant
+        // **La frase per saltare va digitata per intero, quindi dev'essere nella tua lingua.**
+        // Il valore di serie è italiano perché le impostazioni nascono prima che si sappia chi
+        // sei; qui la lingua è appena stata scelta. Si tocca **solo** se è ancora una delle due
+        // di serie: una frase che hai cambiato tu è una tua decisione, e riscriverla te la
+        // farebbe sparire senza dire niente.
+        //
+        // **E vale nei due versi.** La prima stesura traduceva solo verso l'inglese: chi tornava
+        // all'italiano restava con «skip the break» per sempre, perché quel valore non era più
+        // uguale al default italiano e nessun ramo lo riportava indietro. Rilievo dell'audit
+        // cross-vendor, 2026-07-29 — ed è la forma classica del difetto, una migrazione a senso
+        // unico che sembra completa perché il caso che si prova è quello che si è scritto.
+        let diSerie = [AppLanguage.italian: Settings().escapePhrase, .english: "skip the break"]
+        if let attesa = diSerie[language], diSerie.values.contains(s.escapePhrase) {
+            s.escapePhrase = attesa
+        }
         // **La rampa parte da oggi.** Chi installa l'app oggi non deve ereditare la data di
         // creazione del file delle impostazioni, che l'app scrive al primo avvio prima ancora di
         // sapere chi sei: significherebbe cominciare a settimane già passate.

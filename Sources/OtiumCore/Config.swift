@@ -189,7 +189,7 @@ public struct Settings: Codable, Equatable, Sendable {
                                         .calfRaise, .gluteBridge, .legRaise],   // split squat non c'è: è una variante dell'affondo, non un esercizio a sé in rotazione
         vigorousPool: [ExerciseKind] = [.burpee, .jumpingJack, .mountainClimber, .highKnees],
         vigorousDailyTarget: Int = 3,
-        escapePhrase: String = "salto la pausa",
+        escapePhrase: String = "salto la pausa",   // lingua: ok valore di serie; l'onboarding lo mette in inglese se scegli English
         pushVariant: ExerciseKind? = nil,
         progressBeyondFull: Bool = false,
         fullReachedAt: Date? = nil,

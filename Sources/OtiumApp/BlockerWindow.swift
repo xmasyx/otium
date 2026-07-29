@@ -243,7 +243,7 @@ final class WarningHUD {
         )
     }
 
-    func show(title: String, subtitle: String, sound: String? = "Tink", seconds: Double = 8) {
+    func show(title: String, subtitle: String, sound: String? = "Tink", seconds: Double = 8) {  // lingua: ok "Tink" è il nome di un suono di sistema, non un testo
         present(
             NSHostingView(rootView: Dismissible(onDismiss: { [weak self] in self?.hide() }) {
                 HUDView(title: title, subtitle: subtitle)

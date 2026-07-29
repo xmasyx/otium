@@ -880,6 +880,92 @@ sarebbe emerso dall'uso: sette fallivano in silenzio e uno solo in modo visibile
 sarebbe emerso dall'uso. Quattro li ha trovati un test che prima non esisteva, due il fuzz, uno la
 guardia di un'altra sessione, e uno l'ho causato io stesso sondando.
 
+### Iterazione 17 — la lingua che non arrivava in fondo, e la frase persa (2026-07-29)
+
+Due segnalazioni dallo stesso schermo, alla fine di una pausa da cinque minuti con l'app in
+inglese: il complimento finale era in italiano, e la citazione «lì sembra persa».
+
+- [x] **ISC-83** Nessuna stringa a schermo esce nella lingua sbagliata. — Il difetto visto era
+      `Praise`, cioè le 22 righe di complimento, **solo italiane**: non una traduzione dimenticata
+      ma una *forma* sbagliata, perché una riga lì era un dato di un `enum` e non una `Text` in una
+      vista, e nessuno cerca le stringhe da tradurre dentro i dati. Ora la coppia `(it, en)` è il
+      tipo: aggiungerne una senza inglese non compila. Sondando il resto ne sono uscite altre
+      dodici della stessa specie — `StatsPeriod`, «sospesa», «apri l'articolo», «Suono del
+      preavviso», «nessuno», «Frase per saltare», «Ore attive», «ieri/prima», «minuti», e i tre
+      pulsanti «Applica / Correggi / Chiudi» che nessuno dei miei grep aveva visto.
+      `SeatedMode.title` era codice morto e l'ho tolto invece di tradurlo.
+      *La rete, che è il punto:* `LanguageLintTests` legge il **sorgente** e boccia ogni testo
+      dentro `Text`/`Button`/`Label`/`Picker`/`Stepper`/`LabeledContent`/`Link`/`title:` che non
+      passi da `L.t`. Le eccezioni si dichiarano accanto alla riga con `// lingua: ok <motivo>` —
+      il nome dell'app, le sonde di sviluppo, il nome di un suono — perché una lista di eccezioni
+      in fondo a un test è un posto dove le eccezioni invecchiano senza che nessuno se ne accorga.
+      *Falsificatore ai due poli:* `testTheLintActuallyCatchesAnUntranslatedLine` gli dà la riga
+      esatta che il principale ha visto (deve bocciarla), la stessa tradotta (deve promuoverla) e
+      una esentata (deve ignorarla). Più il conteggio delle righe lette: sotto le 5.000 il verde
+      vorrebbe dire «non ho guardato», non «tutto tradotto».
+      *Prova che era rosso:* il primo giro ha stampato 11 rilievi, tre dei quali difetti veri che i
+      miei `grep` sull'italiano avevano mancato perché erano parole singole senza accenti.
+
+- [x] **ISC-84** Dentro la pausa la frase non è una didascalia. — La schermata era **una colonna di
+      dodici blocchi**, quasi tutti grigi fra gli 11 e i 17 punti, e la citazione era il settimo,
+      schiacciata fra l'elenco del microcircuito e il cronometro. Ora la pausa ha due facce, sulla
+      `exerciseDone` che il motore già conosceva: finché devi muoverti la pagina parla solo
+      dell'esercizio; premuto «Fatte tutte», la frase prende la pagina a 40 punti di grazie su
+      nero, con la conferma di quello che hai fatto in alto e il conto alla rovescia sotto.
+      **I tre minuti e mezzo che riempie erano una schermata ferma con un pulsante spento.**
+      *Falsificatore misurato, non stimato:* `--surface=provino --riposo --misura` disegna
+      `RestQuote`, cioè **la stessa vista** che si vede nella pausa, e stampa l'altezza di tutte e
+      492 le frasi. La più alta è 171 punti in italiano e 171 in inglese, contro i ~580 disponibili
+      fra intestazione e comandi: la soglia dei 95 caratteri che scende da 40 a 30 punti regge.
+      *Rete sul caso limite:* mazzo illeggibile → la fase di riposo dice comunque qualcosa. Uno
+      schermo nero muto è la ferita del 27-28 luglio e non si ripete.
+
+- [x] **ISC-85** Dalla fase di riposo si esce come dalla prima. — Richiesta esplicita del
+      principale. I tre pulsanti e il doppio Esc vivono fuori dal ramo che distingue le due facce,
+      quindi ci sono in entrambe.
+      *Falsificatore:* `testEmergencyExitStillWorksAfterTheExerciseIsDone` — esercizio confermato,
+      poi `emergencyExit()` deve produrre eventi e togliere la fase da `.breaking`. I pulsanti li
+      ho guardati nei pixel, ma «ci sono» e «premerli funziona» sono due affermazioni diverse, e la
+      seconda è quella che conta nel momento in cui ti serve uscire.
+
+- [x] **ISC-86** L'onboarding dice cosa fa l'app, perché, e come si esce. — Il blocco «Perché:
+      <studio>» in fondo alla pausa occupava tre righe di grigio e rubava il ruolo alla frase: due
+      testi da leggere sulla stessa pagina, e vinceva il più lungo. Nella pausa resta la **mini
+      frase** — cosa governa quello studio, con chi lo firma, su una riga — e solo mentre devi
+      muoverti; le ragioni per esteso le dice l'onboarding una volta, con calma, insieme all'uscita
+      d'emergenza. **Il doppio Esc sta lì perché scoprire come si esce mentre ti serve uscire è
+      troppo tardi.**
+      *Vincolo di costruzione:* le tre righe del «perché» le scrivono gli `Study`, non io — una
+      copia a mano invecchierebbe separata dalla fonte — e i numeri della cadenza vengono dalle
+      impostazioni vere.
+      *Rischio dichiarato e accettato dal principale:* chi salta l'onboarding non legge mai le
+      ragioni. Mitigazione: nella pausa resta la riga che dice dove trovarle.
+      *Dead end pagato:* avevo messo il grassetto markdown dentro le stringhe. Arrivano a `Text`
+      come `String` interpolata e non come letterale, quindi il markdown non viene interpretato e
+      gli asterischi si vedono a schermo — lo stesso difetto già pagato nei fatti, ripetuto.
+
+**L'audit cross-vendor ha girato quattro volte, e undici rilievi su dodici erano veri.** Nessuno
+sull'app: tutti sulla **guardia**, cioè sulla cosa che deve impedire il ritorno del difetto. Il più
+importante è arrivato al secondo giro e diceva la cosa più scomoda possibile — *il lettore non
+prende la classe di difetti che dichiara di prendere* — perché guardava le viste, e il difetto
+segnalato dal principale viveva in un `enum`. Da lì: la ricerca di prosa italiana su tutto
+`Sources`, `Praise` traslocato in un file suo perché la guardia potesse vederlo, e il test negativo
+che gli dà in pasto il testo com'era davvero. Tre giri dopo, la classe era diventata **22 righe di
+complimento più 70 punti bilingui**, e più di metà li aveva trovati il lettore invece dei miei
+`grep`: le quattro schede delle statistiche, le tre livree, il suggerimento della barra dei menu,
+le targhette con le loro parole al plurale.
+
+Il dodicesimo rilievo era **falso** — diceva che la resa della fase di riposo sporca il registro
+vero, e non è così perché `--snapshot` passa da `ProbeMode`, che devia i percorsi su una cartella
+temporanea prima che nasca qualunque modello. Sondato nel sorgente prima di rispondere: un rilievo
+di un agente delegato è a fonte singola, anche quando ha ragione undici volte su dodici.
+
+*Dove ci si è fermati, e perché:* dal terzo giro in poi i rilievi riguardano solo casi limite del
+lettore lessicale, e un parser scritto a mano ne ha sempre uno in più. Il caso patologico — testo
+composto a pezzi da più variabili — resta **scritto dentro il test** invece che risolto: risolverlo
+vorrebbe dire SwiftSyntax, cioè una dipendenza su un'app che non ne ha nessuna, e quella è una
+decisione del principale.
+
 ## Test Strategy
 
 Tre strumenti: `swift test` per tutta la logica pura (orologio, motore, rampa, registro), che è

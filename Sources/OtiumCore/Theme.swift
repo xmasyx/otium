@@ -54,7 +54,8 @@ public enum ThemeName: String, Codable, CaseIterable, Sendable {
                 accentOnLight: RGB(hex: "#2F6B4F"),
                 dim: RGB(hex: "#8A968F"),
                 name: "Alloro",
-                description: "Verde notte e salvia. La corona romana, e un colore che dice riposo invece di allarme."
+                description: L.t("Verde notte e salvia. La corona romana, e un colore che dice riposo invece di allarme.",
+                                 "Night green and sage. The Roman crown, and a colour that says rest instead of alarm.")
             )
         case .ardesia:
             return ThemePalette(
@@ -64,7 +65,8 @@ public enum ThemeName: String, Codable, CaseIterable, Sendable {
                 accentOnLight: RGB(hex: "#2C5A75"),
                 dim: RGB(hex: "#8896A0"),
                 name: "Ardesia",
-                description: "Blu-grigio profondo, freddo e silenzioso. Per chi lavora di notte."
+                description: L.t("Blu-grigio profondo, freddo e silenzioso. Per chi lavora di notte.",
+                                 "Deep blue-grey, cold and quiet. For people who work at night.")
             )
         case .porpora:
             return ThemePalette(
@@ -74,7 +76,8 @@ public enum ThemeName: String, Codable, CaseIterable, Sendable {
                 accentOnLight: RGB(hex: "#5C3D70"),
                 dim: RGB(hex: "#948A99"),
                 name: "Porpora",
-                description: "Il colore che a Roma se lo poteva permettere solo chi non doveva lavorare."
+                description: L.t("Il colore che a Roma se lo poteva permettere solo chi non doveva lavorare.",
+                                 "The colour that in Rome only those who did not have to work could afford.")
             )
         }
     }

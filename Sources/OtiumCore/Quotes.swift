@@ -569,22 +569,3 @@ public enum Quotes {
 ///
 /// Variabili di proposito: un complimento sempre uguale smette di essere un complimento e
 /// diventa carta da parati.
-public enum Praise {
-    public static let afterBreak = [
-        "Bel lavoro.", "Fatto.", "Così si fa.", "Una in più.",
-        "Ottimo.", "Sei stato di parola.", "Bravo.", "Segnata, e meritata.",
-        "Detto e fatto.", "Questa è disciplina.", "Un'altra nel conto.", "Preciso.",
-        "Non era scontato: l'hai fatta.", "Il corpo ringrazia.", "Puntuale.",
-    ]
-    public static let afterHardOne = [
-        "Quella era la parte dura.", "Col fiatone, come deve essere.",
-        "La più faticosa della giornata, fatta.", "Bel fegato.",
-        "Quella costava, e l'hai pagata.", "Cuore a mille: è il punto.",
-        "La più scomoda, tolta di mezzo.",
-    ]
-
-    public static func line(at index: Int, hard: Bool = false) -> String {
-        let list = hard ? afterHardOne : afterBreak
-        return list[((index % list.count) + list.count) % list.count]
-    }
-}

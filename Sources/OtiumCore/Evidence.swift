@@ -33,6 +33,16 @@ public struct Study: Identifiable, Equatable, Sendable {
 
     public var localizedClaim: String { L.t(claim, claimEN) }
     public var localizedGoverns: String { L.t(governs, governsEN) }
+
+    /// Solo chi firma, senza il titolo dell'articolo: «Duran et al.» invece di quattro righe.
+    ///
+    /// Serve alla schermata di pausa, dove la fonte deve stare su **una** riga accanto alla
+    /// ragione. Il titolo per esteso non sparisce, vive nella finestra delle fonti insieme al
+    /// link — che è l'unico posto in cui una citazione serve a ritrovare davvero l'articolo.
+    public var shortCitation: String {
+        guard let taglio = citation.range(of: ", «") else { return citation }
+        return String(citation[..<taglio.lowerBound])
+    }
 }
 
 public enum Evidence {

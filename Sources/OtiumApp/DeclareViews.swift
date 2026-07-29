@@ -107,7 +107,7 @@ struct DeclareSeatedView: View {
                 HStack {
                     TextField("", value: $minutes, format: .number)
                         .frame(width: 74)
-                    Text("minuti").foregroundStyle(.secondary)
+                    Text(L.t("minuti", "minutes")).foregroundStyle(.secondary)
                     Spacer()
                     ForEach([30, 60, 90, 120, 180], id: \.self) { m in
                         Button("\(m)") { minutes = m }.buttonStyle(.bordered)
@@ -125,7 +125,7 @@ struct DeclareSeatedView: View {
                          "the count currently says \(Int(model.engine.clock.activeSeconds / 60)) min"))
                         .font(.caption).foregroundStyle(.secondary)
                     Spacer()
-                    Button("Applica") {
+                    Button(L.t("Applica", "Apply")) {
                         model.declareTimeAlreadySeated(minutes: minutes, mode: mode)
                     }
                     .keyboardShortcut(.defaultAction)
@@ -138,7 +138,7 @@ struct DeclareSeatedView: View {
                         .frame(width: 74)
                     Text(L.t("minuti in tutto oggi", "minutes in total today")).foregroundStyle(.secondary)
                     Spacer()
-                    Button("Correggi") { model.correctTodayActiveTime(toMinutes: totalMinutes) }
+                    Button(L.t("Correggi", "Correct")) { model.correctTodayActiveTime(toMinutes: totalMinutes) }
                 }
                 Text(L.t("È un numero diverso da quello sopra, qui è quanto sei stato al Mac in tutta la giornata. Correggerlo scrive una riga di rettifica, il registro non si riscrive mai.",
                          "It is a different number from the one above: this is how long you were at the Mac all day. Correcting it writes a correction row, the log is never rewritten."))
@@ -148,7 +148,7 @@ struct DeclareSeatedView: View {
             Section {
                 HStack {
                     Spacer()
-                    Button("Chiudi") { onDone() }
+                    Button(L.t("Chiudi", "Close")) { onDone() }
                 }
             }
         }

@@ -133,4 +133,34 @@ final class QuoteLanguageTests: XCTestCase {
         L.language = .english
         XCTAssertEqual(campione.localizedText, campione.textEN)
     }
+
+    // MARK: - Il complimento di fine pausa
+
+    /// **Il difetto vero del 2026-07-29**, quello che il principale ha visto: pausa finita con
+    /// l'app in inglese, esercizi in inglese, e il complimento sotto in italiano.
+    func testPraiseIsWrittenInTheLanguageInUse() {
+        L.language = .english
+        for indice in 0..<Praise.afterBreak.count {
+            let riga = Praise.line(at: indice)
+            XCTAssertEqual(riga, Praise.afterBreak[indice].en,
+                           "con l'app in inglese la riga \(indice) esce «\(riga)»")
+        }
+        for indice in 0..<Praise.afterHardOne.count {
+            let riga = Praise.line(at: indice, hard: true)
+            XCTAssertEqual(riga, Praise.afterHardOne[indice].en,
+                           "con l'app in inglese la riga dura \(indice) esce «\(riga)»")
+        }
+        L.language = .italian
+        XCTAssertEqual(Praise.line(at: 0), Praise.afterBreak[0].it)
+    }
+
+    /// Nessuna coppia con l'inglese vuoto o copiato dall'italiano: un ripiego silenzioso qui
+    /// riporterebbe lo stesso difetto, solo più difficile da vedere.
+    func testEveryPraiseLineHasARealEnglish() {
+        let rotte = Praise.allPairs.filter {
+            $0.en.trimmingCharacters(in: .whitespaces).isEmpty || $0.en == $0.it
+        }
+        XCTAssertTrue(rotte.isEmpty,
+                      "\(rotte.count) complimenti senza un inglese vero: \(rotte.map(\.it))")
+    }
 }

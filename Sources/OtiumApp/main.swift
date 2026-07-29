@@ -162,6 +162,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // guardarlo. Un `if let` senza `else` non si vede leggendo il codice: si vede nei pixel.
         if !CommandLine.arguments.contains("--orfana") {
             model.forceBreakNow(long: long)
+            // `--fatto` fotografa la **seconda faccia** della pausa: esercizio confermato, la
+            // frase che prende la pagina, il conto che scende. Senza, la resa mostra sempre e
+            // solo il primo minuto e mezzo, cioè metà della schermata che l'app disegna.
+            if CommandLine.arguments.contains("--fatto") { model.fastForwardToRest() }
         }
 
         // Quale schermata rendere: la pausa di default, ma anche le due superfici che finora
@@ -172,10 +176,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // larghezza vera della pausa. Su 492 frasi guardare ogni immagine costa un pomeriggio e
         // non si rifà mai; l'altezza dice in un colpo quali vanno a capo, e quelle si guardano.
         // Il numero è già una risposta, l'immagine resta la prova.
+        //
+        // `--riposo` misura la **fase di riposo** invece della vecchia collocazione: lì la frase
+        // è la pagina, gira a 40 punti e scende a 30 sopra i 95 caratteri, e la domanda «la più
+        // lunga ci sta?» ha una risposta sola, che è un numero. Stimarla sarebbe indistinguibile
+        // dal non averla misurata.
         if surface == "provino", CommandLine.arguments.contains("--misura") {
+            let riposo = CommandLine.arguments.contains("--riposo")
             for (i, p) in PhraseLibrary.breakPool().enumerated() {
-                let v = NSHostingView(rootView: QuoteBlock(phrase: p).frame(width: 760))
-                print("\(i)\t\(Int(v.fittingSize.height))\t\(p.localizedText)")
+                let v = riposo
+                    ? NSHostingView(rootView: RestQuote(phrase: p).frame(width: RestQuote.width))
+                    : NSHostingView(rootView: QuoteBlock(phrase: p).frame(width: 760))
+                print("\(i)\t\(Int(v.fittingSize.height))\t\(p.localizedText.count)\t\(p.localizedText)")
             }
             NSApp.terminate(nil)
             return
@@ -232,7 +244,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                 .split(separator: "=", maxSplits: 1).last.map(String.init)
                 ?? "prossima pausa fra 30 min di lavoro attivo"
             let hud = NSHostingView(rootView: HUDView(
-                title: "Otium è già attiva",
+                title: "Otium è già attiva",   // lingua: ok sonda di sviluppo (--surface=hud), non la vede nessun utente
                 subtitle: testo
             ))
             size = hud.fittingSize
@@ -333,7 +345,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         if quote, let phrase = model.launchPhrase {
             model.showLaunchPhraseForSeconds(phrase, seconds: seconds)
         } else {
-            model.announceForSeconds(title: "Pausa fra un minuto", subtitle: "12 affondi",
+            model.announceForSeconds(title: "Pausa fra un minuto", subtitle: "12 affondi",   // lingua: ok sonda di sviluppo (--demo-hud)
                                      seconds: seconds)
         }
         let killswitch = Timer(timeInterval: seconds + 2, repeats: false) { _ in NSApp.terminate(nil) }
@@ -912,7 +924,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
         let visible = (NSScreen.main ?? NSScreen.screens.first)!.visibleFrame
         let wanted = content.fittingSize
-        let window = makeWindow(title: "sonda", content: content)
+        let window = makeWindow(title: "sonda", content: content)   // lingua: ok sonda di sviluppo (--window-probe)
         let frame = window.frame
 
         print("superficie: \(surface)")
@@ -954,8 +966,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private func updateStatusTitle() {
         statusItem.button?.title = model.statusTitle
         statusItem.button?.toolTip = model.phase == .paused
-            ? "Otium sospesa"
-            : "Prossima pausa fra \(model.minutesToNextBreak) minuti di lavoro attivo"
+            ? L.t("Otium sospesa", "Otium paused")
+            : L.t("Prossima pausa fra \(model.minutesToNextBreak) minuti di lavoro attivo",
+                  "Next break in \(model.minutesToNextBreak) minutes of active work")
     }
 
     // MARK: - Menu

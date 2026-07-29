@@ -650,8 +650,9 @@ public struct SessionEngine {
         case total
         /// «Aggiungine altri 20 a quello che hai già»: si somma.
         case add
-
-        public var title: String { self == .total ? "in tutto" : "in più" }
+        // Qui c'era un `title` italiano-e-basta che non chiamava nessuno: le due voci del
+        // selettore le scrive `DeclareSeatedView` con `L.t`. Tolto invece di tradotto — una
+        // stringa a schermo che nessuna vista mostra è solo un posto in più da sbagliare.
     }
 
     /// «Sono già al computer da un'ora, mi sono scordato di aprirti.»

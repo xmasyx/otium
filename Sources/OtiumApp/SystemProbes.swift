@@ -356,7 +356,7 @@ public enum PresenceRadar {
 /// lancia esiste ancora, ed è questo qui?" — un agent che punta a un binario sparito riparte
 /// ogni giorno fallendo in silenzio.
 public enum LaunchAgent {
-    public static let label = "app.otium.mac"
+    public static let label = "app.otium.mac"   // lingua: ok identificativo del LaunchAgent, non un testo
 
     public static var plistURL: URL {
         URL(fileURLWithPath: NSHomeDirectory())

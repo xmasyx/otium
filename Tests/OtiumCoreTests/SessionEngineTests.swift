@@ -495,4 +495,23 @@ final class SessionEngineTests: XCTestCase {
         engine.settings.escapePhrase = "basta"
         XCTAssertEqual(engine.clock.activeSeconds, before, accuracy: 0.001)
     }
+
+    /// **L'uscita d'emergenza vale anche a esercizio già fatto.**
+    ///
+    /// Dal 2026-07-29 la pausa ha due facce, e la seconda disegna un'altra schermata: la richiesta
+    /// esplicita del principale è che da lì si esca comunque. I pulsanti li ho guardati nei pixel,
+    /// ma «i pulsanti ci sono» e «premerli funziona» sono due affermazioni diverse, e questa è
+    /// quella che conta nel momento in cui ti serve davvero uscire.
+    func testEmergencyExitStillWorksAfterTheExerciseIsDone() {
+        var engine = makeEngine()
+        guard let plan = reachBreak(&engine) else { return XCTFail("nessun break in corso") }
+        advance(&engine, seconds: plan.exercise.minimumSeconds + 10, step: 1)
+        engine.markExerciseDone()
+        XCTAssertTrue(engine.exerciseDone, "l'esercizio non risulta fatto: il test proverebbe altro")
+        XCTAssertEqual(engine.phase, .breaking, "la pausa deve essere ancora in corso")
+
+        let events = engine.emergencyExit()
+        XCTAssertFalse(events.isEmpty, "l'uscita d'emergenza non produce nulla nella fase di riposo")
+        XCTAssertNotEqual(engine.phase, .breaking, "lo schermo resterebbe coperto")
+    }
 }

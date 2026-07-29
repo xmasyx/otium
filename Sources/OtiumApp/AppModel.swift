@@ -169,6 +169,23 @@ final class AppModel: ObservableObject {
         timer = nil
     }
 
+    /// **Porta la pausa in corso alla fase di riposo, senza aspettare i secondi veri.**
+    ///
+    /// Serve alle rese. La seconda faccia della pausa — la frase grande, il conto che scende —
+    /// esiste solo dopo che l'esercizio è confermato, e `markExerciseDone` rifiuta finché non è
+    /// passato il minimo del movimento: senza questo, fotografarla vorrebbe dire stare lì un
+    /// minuto e mezzo a ogni resa, che è il modo di non guardarla mai.
+    ///
+    /// Muove il motore vero con un `tick` vero: una scorciatoia che scavalcasse il minimo
+    /// renderebbe una schermata che nella vita non si raggiunge in quel modo.
+    func fastForwardToRest() {
+        guard engine.phase == .breaking, let plan else { return }
+        let now = Date()
+        _ = engine.tick(elapsed: plan.exercise.minimumSeconds + 5, idle: 0, now: now,
+                        environment: environmentSample(now: now))
+        markExerciseDone()
+    }
+
     private func tick() {
         let now = Date()
         let elapsed = now.timeIntervalSince(lastTick)
@@ -563,7 +580,7 @@ final class AppModel: ObservableObject {
         refreshSummary()
         let cosa = (exercise != nil && reps != nil)
             ? Exercise(kind: exercise!, reps: reps!).label
-            : "pausa segnata"
+            : L.t("pausa segnata", "break logged")
         announce(title: Praise.line(at: engine.breakIndex, hard: exercise?.isVigorous ?? false),
                  subtitle: L.t("\(cosa) · prossima fra \(minutesToNextBreak) min", "\(cosa) · next in \(minutesToNextBreak) min"))
         objectWillChange.send()

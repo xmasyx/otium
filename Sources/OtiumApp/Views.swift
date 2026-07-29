@@ -73,10 +73,19 @@ struct BreakView: View {
         ZStack {
             Palette.ink.ignoresSafeArea()
             if let plan {
+                // **La pausa ha due mestieri, e adesso ha due facce.**
+                //
+                // Finché devi muoverti la pagina parla solo dell'esercizio. Fatto quello restano
+                // tre minuti e mezzo in cui la schermata era identica a prima, con un pulsante
+                // spento che diceva «ancora 3:28»: tempo vuoto, e l'unico momento della giornata
+                // in cui una frase la leggeresti davvero. Prima la citazione stava a metà della
+                // colonna dell'esercizio, fra l'elenco del circuito e il cronometro, nello stesso
+                // grigio di tutto il resto — settima di dodici cose impilate. Segnalata dal
+                // principale il 2026-07-29 con le parole giuste: «lì sembra persa».
                 VStack(spacing: 0) {
-                    header(plan)
+                    if model.exerciseDone { restHeader(plan) } else { header(plan) }
                     Spacer()
-                    exercise(plan)
+                    if model.exerciseDone { restBody } else { exercise(plan) }
                     Spacer()
                     controls(plan)
                     footer
@@ -243,7 +252,6 @@ struct BreakView: View {
 
             variantRow
             circuitOffer(plan)
-            breakQuoteView
         }
     }
 
@@ -312,18 +320,48 @@ struct BreakView: View {
         }
     }
 
-    /// La citazione, al centro della schermata.
+    /// L'intestazione della fase di riposo: cosa hai appena finito, e il conto della giornata.
     ///
-    /// Sta qui e non in fondo perché i due testi hanno due mestieri diversi: **lo studio** in
-    /// fondo risponde a «perché mi stai interrompendo» ed è quello che ti tiene fedele al
-    /// quarantesimo giorno; **la citazione** riempie i secondi in cui stai lì a contare, ed è
-    /// quella che rende il momento sopportabile. Toglierei la citazione prima dello studio, se
-    /// dovessi sceglierne una — ma non devo, e non competono: occupano due punti diversi
-    /// dell'occhio e due momenti diversi della pausa.
+    /// Prende il posto di «PAUSA PIENA», che a esercizio fatto risponde a una domanda scaduta.
+    private func restHeader(_ plan: BreakPlan) -> some View {
+        HStack {
+            HStack(spacing: 7) {
+                Image(systemName: "checkmark.circle.fill").font(.system(size: 13))
+                Text(doneLabel(plan))
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+            }
+            .foregroundStyle(Palette.accent)
+            Spacer()
+            Text(L.t("oggi: \(model.summary.completed + model.summary.natural + 1)ª pausa · \(model.summary.totalReps) ripetizioni",
+                     "today: break #\(model.summary.completed + model.summary.natural + 1) · \(model.summary.totalReps) reps"))
+                .font(.system(size: 13, design: .rounded))
+                .foregroundStyle(Palette.dim)
+        }
+    }
+
+    /// **Sul circuito il piano tiene l'esercizio *corrente*, che alla fine è l'ultimo.** Dirlo qui
+    /// nominerebbe un quarto del lavoro fatto: è lo stesso difetto già corretto nella notifica di
+    /// fine pausa il 2026-07-28, e questa riga nasce dopo, quindi non ha scuse per ripeterlo.
+    private func doneLabel(_ plan: BreakPlan) -> String {
+        if plan.circuitActive, plan.circuit.count > 1 {
+            return L.t("Circuito completo — \(plan.circuit.count) esercizi",
+                       "Full circuit — \(plan.circuit.count) exercises")
+        }
+        return L.t("\(plan.exercise.label) — segnati", "\(plan.exercise.label) — logged")
+    }
+
+    /// La frase, quando è lei la pagina.
     @ViewBuilder
-    private var breakQuoteView: some View {
+    private var restBody: some View {
         if let phrase = model.currentPhrase {
-            QuoteBlock(phrase: phrase).padding(.top, 26)
+            RestQuote(phrase: phrase)
+        } else {
+            // Il mazzo può essere vuoto solo se il file delle frasi è illeggibile, cioè quasi
+            // mai. Ma «quasi mai» disegnava uno schermo nero muto ed è esattamente la ferita del
+            // 27-28 luglio: qui la fase di riposo ha comunque qualcosa da dire.
+            Text(L.t("Alzati e guarda lontano.", "Stand up and look far away."))
+                .font(.system(size: 30, design: .serif))
+                .foregroundStyle(Palette.paper.opacity(0.8))
         }
     }
 
@@ -377,6 +415,15 @@ struct BreakView: View {
     @ViewBuilder
     private func controls(_ plan: BreakPlan) -> some View {
         VStack(spacing: 16) {
+            // Sopra il cronometro e non sotto il pulsante: nella fase di riposo è l'istruzione
+            // della schermata, e un'istruzione sotto il suo pulsante arriva a cose fatte.
+            if model.exerciseDone && !model.canReturnToWork {
+                Text(L.t("Alzati e guarda lontano. Il resto della pausa è tuo.",
+                         "Stand up and look far away. The rest of the break is yours."))
+                    .font(.system(size: 13, design: .rounded))
+                    .foregroundStyle(Palette.accent.opacity(0.85))
+            }
+
             Text(clock(model.secondsLeftOfBreak))
                 .font(.system(size: 34, weight: .light, design: .rounded))
                 .monospacedDigit()
@@ -436,12 +483,6 @@ struct BreakView: View {
                 }
             }
 
-            if model.exerciseDone && !model.canReturnToWork {
-                Text(L.t("Esercizio fatto. Resta il tempo della pausa, alzati e guarda lontano.",
-                     "Exercise done. The rest of the break is yours: stand up, look far away."))
-                    .font(.system(size: 13, design: .rounded))
-                    .foregroundStyle(Palette.accent)
-            }
         }
     }
 
@@ -486,26 +527,37 @@ struct BreakView: View {
         VStack(spacing: 14) {
             Divider().overlay(Color.white.opacity(0.08)).frame(width: 620)
 
-            // Sempre "Perché": qui girano solo le fonti che giustificano qualcosa che sta
-            // succedendo. Le due voci «non promesso» sono uscite dal giro della pausa — nel
-            // mezzo di un esercizio spiegavano una funzione assente — e vivono nella finestra
-            // delle fonti, dove le apri tu.
-            Text(L.t("Perché: \(model.currentStudy.localizedGoverns) — \(model.currentStudy.citation), \(String(model.currentStudy.year)).",
-                     "Why: \(model.currentStudy.localizedGoverns) — \(model.currentStudy.citation), \(String(model.currentStudy.year))."))
-                .font(.system(size: 12))
-                .foregroundStyle(Palette.dim)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 620)
+            // **Il perché resta, ma su una riga sola, e solo mentre devi muoverti.**
+            //
+            // Il titolo per esteso dell'articolo occupava tre righe di grigio e rubava il ruolo
+            // alla frase: due testi da leggere sulla stessa pagina, e vinceva il più lungo. Qui
+            // resta la ragione — cosa governa questo studio — con chi la firma, e il titolo vive
+            // dove serve davvero, nella finestra delle fonti insieme al link.
+            //
+            // Nella fase di riposo sparisce: lì la pagina è la frase, e il motivo per cui ti ho
+            // interrotto l'hai già letto un minuto fa.
+            //
+            // Qui girano solo le fonti che giustificano qualcosa che sta succedendo. Le due voci
+            // «non promesso» sono uscite dal giro della pausa — nel mezzo di un esercizio
+            // spiegavano una funzione assente — e vivono nella finestra delle fonti.
+            if !model.exerciseDone {
+                Text(L.t("Perché: \(model.currentStudy.localizedGoverns) — \(model.currentStudy.shortCitation), \(String(model.currentStudy.year)).",
+                         "Why: \(model.currentStudy.localizedGoverns) — \(model.currentStudy.shortCitation), \(String(model.currentStudy.year))."))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Palette.dim)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 620)
 
-            // **Qui il link non ci va, ci va l'indirizzo di dove trovarlo.** Questa schermata
-            // esiste per staccarti dallo schermo: un link aperto durante la pausa aprirebbe il
-            // browser, cioè annullerebbe la pausa nel momento in cui la stai facendo — e per
-            // farlo dovrebbe pure smontare il blocco. Gli studi si leggono da fermi, dopo, e
-            // sono già cliccabili nella finestra delle fonti.
-            Text(L.t("Gli articoli per esteso, con il link, sono in Otium ▸ Le fonti.", "Full articles, with links, are in Otium ▸ The sources."))
-                .font(.system(size: 11))
-                .foregroundStyle(Palette.dim)
-                .multilineTextAlignment(.center)
+                // **Qui il link non ci va, ci va l'indirizzo di dove trovarlo.** Questa schermata
+                // esiste per staccarti dallo schermo: un link aperto durante la pausa aprirebbe il
+                // browser, cioè annullerebbe la pausa nel momento in cui la stai facendo — e per
+                // farlo dovrebbe pure smontare il blocco. Gli studi si leggono da fermi, dopo, e
+                // sono già cliccabili nella finestra delle fonti.
+                Text(L.t("Gli articoli per esteso, con il link, sono in Otium ▸ Le fonti.", "Full articles, with links, are in Otium ▸ The sources."))
+                    .font(.system(size: 11))
+                    .foregroundStyle(Palette.dim)
+                    .multilineTextAlignment(.center)
+            }
 
             HStack(spacing: 14) {
                 if model.canPostpone {
@@ -575,6 +627,41 @@ struct BreakView: View {
 /// provino ricopiasse questi numeri invece di usare questa vista, il giorno che cambia la
 /// tipografia della pausa il provino continuerebbe a mostrare quella vecchia — e un
 /// verificatore che non condivide il codice del verificato è l'unico che vale.
+/// La frase **quando è lei la pagina**, cioè nella fase di riposo della pausa.
+///
+/// Il corpo è grande sul serio: a quaranta punti su nero una riga di Seneca ti ferma, a diciotto
+/// in mezzo agli esercizi sembrava una didascalia — che è esattamente il difetto segnalato dal
+/// principale il 2026-07-29.
+///
+/// **La misura scende sulle frasi lunghe.** Il mazzo ne ammette fino a 145 caratteri, e una da 145
+/// a quaranta punti mangerebbe l'altezza del cronometro. La soglia non si stima: sta qui perché il
+/// provino la misura con `--surface=provino --riposo --misura`, e la misura vale solo se il
+/// provino disegna **questa** vista invece di ricopiarne i numeri.
+struct RestQuote: View {
+    let phrase: Phrase
+
+    /// Larghezza vera della fase di riposo: 1440 di schermo meno i 48+48 di margine, arrotondati
+    /// al valore che la vista impone. Serve al provino per misurare la stessa cosa che si vede.
+    static let width: CGFloat = 1000
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Text(phrase.kind == .voce ? phrase.localizedText : "«\(phrase.localizedText)»")
+                .font(.system(size: phrase.localizedText.count > 95 ? 30 : 40, design: .serif))
+                .foregroundStyle(Palette.paper.opacity(0.94))
+                .multilineTextAlignment(.center)
+                .lineSpacing(10)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: Self.width)
+            if phrase.kind != .voce {
+                Text(phrase.localizedCredit)
+                    .font(.system(size: 15, design: .rounded))
+                    .foregroundStyle(Palette.dim)
+            }
+        }
+    }
+}
+
 struct QuoteBlock: View {
     let phrase: Phrase
 
@@ -743,9 +830,10 @@ struct MenuPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("Otium").font(.system(size: 15, weight: .semibold, design: .rounded))
+                Text("Otium").font(.system(size: 15, weight: .semibold, design: .rounded))   // lingua: ok nome proprio
                 Spacer()
-                Text(model.phase == .paused ? "sospesa" : "prossima fra \(model.minutesToNextBreak) min")
+                Text(model.phase == .paused ? L.t("sospesa", "paused")
+                     : L.t("prossima fra \(model.minutesToNextBreak) min", "next in \(model.minutesToNextBreak) min"))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
@@ -825,7 +913,7 @@ struct EvidenceView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         if let url = URL(string: study.url) {
-                            Link("apri l'articolo", destination: url)
+                            Link(L.t("apri l'articolo", "open the paper"), destination: url)
                                 .font(.system(size: 12))
                                 .foregroundStyle(Palette.accentOnWindow)
                         }
@@ -1014,10 +1102,10 @@ struct PrefsView: View {
                 }
                 Text(draft.theme.palette.description)
                     .font(.caption).foregroundStyle(.secondary)
-                LabeledContent("Suono del preavviso") {
+                LabeledContent(L.t("Suono del preavviso", "Warning sound")) {
                     HStack {
                         Picker("", selection: $draft.notificationSound) {
-                            Text("nessuno").tag(NotificationSounds.silent)
+                            Text(L.t("nessuno", "none")).tag(NotificationSounds.silent)
                             ForEach(NotificationSounds.names, id: \.self) { Text($0).tag($0) }
                         }
                         .labelsHidden()
@@ -1036,12 +1124,13 @@ struct PrefsView: View {
                     + "a well-taken break. Caps without a single input: 45 min for a video, 15 for "
                     + "reading."))
                     .font(.caption).foregroundStyle(.secondary)
-                Stepper("Consenti \(draft.cadence.postponesAllowed) rinvio/i a mano",
+                Stepper(L.t("Consenti \(draft.cadence.postponesAllowed) rinvio/i a mano",
+                            "Allow \(draft.cadence.postponesAllowed) manual postponement(s)"),
                         value: $draft.cadence.postponesAllowed, in: 0...3)
-                LabeledContent("Frase per saltare") {
+                LabeledContent(L.t("Frase per saltare", "Skip phrase")) {
                     TextField("", text: $draft.escapePhrase).frame(width: 180)
                 }
-                LabeledContent("Ore attive") {
+                LabeledContent(L.t("Ore attive", "Active hours")) {
                     HStack {
                         Stepper("\(draft.activeFromHour)", value: $draft.activeFromHour, in: 0...23)
                         Text("→")
@@ -1242,7 +1331,7 @@ struct StatsView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Otium").font(.system(size: 22, weight: .semibold, design: .rounded))
+            Text("Otium").font(.system(size: 22, weight: .semibold, design: .rounded))   // lingua: ok nome proprio
             periodPicker
         }
         .padding(.horizontal, 22).padding(.top, 18).padding(.bottom, 14)
@@ -1284,20 +1373,42 @@ struct StatsView: View {
     private var numbers: some View {
         let s = stats, p = previous
         return HStack(spacing: 10) {
-            tile("\(s.interruptions)", plural(s.interruptions, "interruzione", "interruzioni"),
+            tile("\(s.interruptions)",
+                 plural(s.interruptions, it: "interruzione", "interruzioni",
+                        en: "interruption", "interruptions"),
                  delta: s.interruptions - p.interruptions)
-            tile("\(s.totalReps)", plural(s.totalReps, "ripetizione", "ripetizioni"),
+            tile("\(s.totalReps)",
+                 plural(s.totalReps, it: "ripetizione", "ripetizioni", en: "rep", "reps"),
                  delta: s.totalReps - p.totalReps)
-            tile(s.label(s.activeSeconds), "davanti al Mac", delta: nil)
-            tile("\(s.vigorousBouts)", plural(s.vigorousBouts, "sessione intensa", "sessioni intense"),
+            tile(s.label(s.activeSeconds), L.t("davanti al Mac", "at the Mac"), delta: nil)
+            tile("\(s.vigorousBouts)",
+                 plural(s.vigorousBouts, it: "sessione intensa", "sessioni intense",
+                        en: "vigorous bout", "vigorous bouts"),
                  delta: s.vigorousBouts - p.vigorousBouts)
         }
     }
 
     /// «1 interruzioni» è il genere di dettaglio che fa sembrare fatta male anche la parte fatta
     /// bene. Lo zero in italiano vuole il plurale, l'uno il singolare.
-    private func plural(_ n: Int, _ one: String, _ many: String) -> String {
-        n == 1 ? one : many
+    ///
+    /// **Era italiano e basta**, e non lo vedeva nessuno: la parola arriva a schermo passando per
+    /// `tile`, quindi nel sorgente non è dentro una `Text` e il primo lettore della lingua non la
+    /// guardava. Trovata il 2026-07-29 riscrivendo quel lettore. Il numero resta fuori, perché le
+    /// targhette ce l'hanno già grande sopra: `L.plural` lo metterebbe due volte.
+    private func plural(_ n: Int, it one: String, _ many: String,
+                        en oneEN: String, _ manyEN: String) -> String {
+        L.language == .italian ? (n == 1 ? one : many) : (n == 1 ? oneEN : manyEN)
+    }
+
+    /// «3 fatte · 1 saltata · 1 d'emergenza». Ogni pezzo sa già la propria lingua, quindi la riga
+    /// intera non passa da `L.t`: incartarla in un `L.t` vorrebbe dire scriverla due volte identica.
+    private func riepilogoPause(_ s: PeriodStats) -> String {
+        let fatte = plural(s.completed, it: "fatta", "fatte", en: "done", "done")
+        let saltate = plural(s.skipped, it: "saltata", "saltate", en: "skipped", "skipped")
+        let emergenze = s.emergency > 0
+            ? L.t(" · \(s.emergency) d'emergenza", " · \(s.emergency) emergency")
+            : ""
+        return "\(s.completed) \(fatte) · \(s.skipped) \(saltate)\(emergenze)"
     }
 
     private func tile(_ value: String, _ caption: String, delta: Int?) -> some View {
@@ -1307,7 +1418,7 @@ struct StatsView: View {
                 .lineLimit(1).minimumScaleFactor(0.6)
             Text(caption).font(.system(size: 10)).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Text(delta.map { $0 == 0 ? " " : "\($0 > 0 ? "+" : "")\($0) vs \(period == .day ? "ieri" : "prima")" } ?? " ")
+            Text(delta.map { $0 == 0 ? " " : "\($0 > 0 ? "+" : "")\($0) vs \(period == .day ? L.t("ieri", "yesterday") : L.t("prima", "before"))" } ?? " ")   // lingua: ok «vs» si scrive uguale nelle due lingue
                 .font(.system(size: 9))
                 .foregroundStyle((delta ?? 0) > 0 ? Palette.accentOnWindow : Color.secondary)
         }
@@ -1332,8 +1443,9 @@ struct StatsView: View {
                         ProgressView(value: s.complianceRate).tint(Palette.accentOnWindow)
                             .frame(width: 260)
                         Text(s.complianceRate < 0.5
-                             ? "Sotto la metà: è la cadenza a essere sbagliata, non tu. Allungala nelle preferenze."
-                             : "\(s.completed) \(plural(s.completed, "fatta", "fatte")) · \(s.skipped) \(plural(s.skipped, "saltata", "saltate"))\(s.emergency > 0 ? " · \(s.emergency) d'emergenza" : "")")
+                             ? L.t("Sotto la metà: è la cadenza a essere sbagliata, non tu. Allungala nelle preferenze.",
+                                   "Below half: it is the cadence that is wrong, not you. Lengthen it in preferences.")
+                             : riepilogoPause(s))
                             .font(.system(size: 11)).foregroundStyle(.secondary)
                     }
                     Spacer()
@@ -1418,7 +1530,8 @@ struct StatsView: View {
     private func detail(_ kind: ExerciseKind, _ reps: Int) -> String? {
         guard kind.isPerSide else { return nil }
         let perSide = max(1, reps / 2)
-        return kind.isTimed ? "\(perSide) s per lato" : "\(perSide) per lato"
+        return kind.isTimed ? L.t("\(perSide) s per lato", "\(perSide) s per side")
+                            : L.t("\(perSide) per lato", "\(perSide) per side")
     }
 
     @ViewBuilder

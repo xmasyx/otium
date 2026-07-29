@@ -6,9 +6,9 @@ public enum StatsPeriod: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .day: return "Oggi"
-        case .week: return "Settimana"
-        case .month: return "Mese"
+        case .day: return L.t("Oggi", "Today")
+        case .week: return L.t("Settimana", "Week")
+        case .month: return L.t("Mese", "Month")
         }
     }
 
@@ -240,8 +240,19 @@ public enum Stats {
     /// promessa su cui questa app si regge, sbagliarla qui costerebbe tutto il resto.
     /// «1 interruzioni» fa sembrare fatta male anche la parte fatta bene. In italiano lo zero
     /// vuole il plurale e l'uno il singolare.
-    private static func plural(_ n: Int, _ one: String, _ many: String) -> String {
-        n == 1 ? one : many
+    ///
+    /// **Era italiano e basta, come `Praise`.** Queste parole arrivano a schermo dentro una
+    /// struttura dati, non dentro una `Text`, e il lettore della lingua guarda le viste: è la
+    /// stessa specie di difetto segnalata dal principale il 2026-07-29, trovata lo stesso giorno
+    /// rendendo la finestra delle statistiche in inglese e guardandola.
+    private static func plural(_ n: Int, it one: String, _ many: String,
+                               en oneEN: String, _ manyEN: String) -> String {
+        L.language == .italian ? (n == 1 ? one : many) : (n == 1 ? oneEN : manyEN)
+    }
+
+    /// «· 8,4 al giorno». Separato perché il formato del numero e la parola cambiano insieme.
+    private static func alGiorno(_ valore: Double) -> String {
+        L.t(String(format: " · %.1f al giorno", valore), String(format: " · %.1f a day", valore))
     }
 
     public static func insights(for stats: PeriodStats, target: Int = 3) -> [Insight] {
@@ -250,11 +261,14 @@ public enum Stats {
 
         out.append(Insight(
             id: "interruzioni",
-            headline: "\(stats.interruptions) \(plural(stats.interruptions, "interruzione", "interruzioni")) della sedentarietà"
-                    + (stats.days > 1 ? String(format: " · %.1f al giorno", perDay) : ""),
+            headline: L.t("\(stats.interruptions) \(plural(stats.interruptions, it: "interruzione", "interruzioni", en: "interruption", "interruptions")) della sedentarietà",
+                          "\(stats.interruptions) sitting \(plural(stats.interruptions, it: "interruzione", "interruzioni", en: "interruption", "interruptions"))")
+                    + (stats.days > 1 ? alGiorno(perDay) : ""),
             detail: perDay >= 8
-                ? "Un ritmo vicino a quello dell'unica dose che nello studio di Duran ha appiattito i picchi glicemici: un'interruzione ogni 30 minuti di lavoro."
-                : "Duran ha visto l'effetto sulla glicemia solo con interruzioni ogni 30 minuti — cioè circa 8-12 in una giornata di lavoro piena.",
+                ? L.t("Un ritmo vicino a quello dell'unica dose che nello studio di Duran ha appiattito i picchi glicemici: un'interruzione ogni 30 minuti di lavoro.",
+                      "A pace close to the only dose that flattened glucose spikes in Duran's trial: one interruption every 30 minutes of work.")
+                : L.t("Duran ha visto l'effetto sulla glicemia solo con interruzioni ogni 30 minuti — cioè circa 8-12 in una giornata di lavoro piena.",
+                      "Duran only saw the effect on blood sugar with interruptions every 30 minutes, that is roughly 8-12 in a full working day."),
             study: Evidence.sittingInterval,
             met: perDay >= 8
         ))
@@ -262,11 +276,13 @@ public enum Stats {
         let vigorousPerDay = Double(stats.vigorousBouts) / Double(max(1, stats.days))
         out.append(Insight(
             id: "vigorosi",
-            headline: "\(stats.vigorousBouts) \(plural(stats.vigorousBouts, "sessione intensa", "sessioni intense"))"
-                    + (stats.days > 1 ? String(format: " · %.1f al giorno", vigorousPerDay) : ""),
+            headline: "\(stats.vigorousBouts) \(plural(stats.vigorousBouts, it: "sessione intensa", "sessioni intense", en: "vigorous bout", "vigorous bouts"))"
+                    + (stats.days > 1 ? alGiorno(vigorousPerDay) : ""),
             detail: vigorousPerDay >= Double(target)
-                ? "Nello studio su 25.241 adulti non sportivi, tre sessioni intense quotidiane da 1-2 minuti si associavano a circa il 40% di mortalità in meno a sette anni."
-                : "Il bersaglio dello studio di Stamatakis è tre al giorno: sotto, l'associazione misurata era più debole.",
+                ? L.t("Nello studio su 25.241 adulti non sportivi, tre sessioni intense quotidiane da 1-2 minuti si associavano a circa il 40% di mortalità in meno a sette anni.",
+                      "In the study of 25,241 non-exercising adults, three daily 1-2 minute vigorous bouts were associated with about 40% lower mortality over seven years.")
+                : L.t("Il bersaglio dello studio di Stamatakis è tre al giorno: sotto, l'associazione misurata era più debole.",
+                      "Stamatakis's target is three a day: below that, the measured association was weaker."),
             study: Evidence.vilpa,
             met: vigorousPerDay >= Double(target)
         ))
@@ -274,8 +290,10 @@ public enum Stats {
         if stats.totalReps > 0 {
             out.append(Insight(
                 id: "muscolo",
-                headline: "\(stats.totalReps) \(plural(stats.totalReps, "ripetizione", "ripetizioni")) · circa \(Int(stats.estimatedMovementSeconds / 60)) \(plural(Int(stats.estimatedMovementSeconds / 60), "minuto", "minuti")) di movimento",
-                detail: "In Gao 2024 il beneficio glicemico seguiva l'attivazione muscolare, non i passi: sono le ripetizioni a contare, non la distanza percorsa. I minuti qui sono una stima dal ritmo di esecuzione, non un cronometro.",
+                headline: L.t("\(stats.totalReps) \(plural(stats.totalReps, it: "ripetizione", "ripetizioni", en: "rep", "reps")) · circa \(Int(stats.estimatedMovementSeconds / 60)) \(plural(Int(stats.estimatedMovementSeconds / 60), it: "minuto", "minuti", en: "minute", "minutes")) di movimento",
+                              "\(stats.totalReps) \(plural(stats.totalReps, it: "ripetizione", "ripetizioni", en: "rep", "reps")) · about \(Int(stats.estimatedMovementSeconds / 60)) \(plural(Int(stats.estimatedMovementSeconds / 60), it: "minuto", "minuti", en: "minute", "minutes")) of movement"),
+                detail: L.t("In Gao 2024 il beneficio glicemico seguiva l'attivazione muscolare, non i passi: sono le ripetizioni a contare, non la distanza percorsa. I minuti qui sono una stima dal ritmo di esecuzione, non un cronometro.",
+                            "In Gao 2024 the glycaemic benefit followed muscle activation, not steps: it is the reps that count, not the distance covered. The minutes here are an estimate from the pace of execution, not a stopwatch."),
                 study: Evidence.squatsBeatWalking,
                 met: true
             ))
@@ -285,10 +303,15 @@ public enum Stats {
             let saltate = stats.skipped + stats.emergency
             out.append(Insight(
                 id: "saltate",
-                headline: "\(saltate) pause saltate" + (stats.emergency > 0 ? " · \(stats.emergency) d'emergenza" : ""),
+                headline: L.t("\(saltate) pause saltate", "\(saltate) breaks skipped")
+                        + (stats.emergency > 0
+                           ? L.t(" · \(stats.emergency) d'emergenza", " · \(stats.emergency) emergency")
+                           : ""),
                 detail: saltate > stats.completed
-                    ? "Più saltate che fatte: la cadenza è sbagliata, non tu. Allungala nelle preferenze — una pausa che salti sempre non è una pausa, è un rumore."
-                    : "Le uscite d'emergenza sono contate apposta: servono, ma se diventano la regola vuol dire che l'orario o la cadenza vanno cambiati.",
+                    ? L.t("Più saltate che fatte: la cadenza è sbagliata, non tu. Allungala nelle preferenze — una pausa che salti sempre non è una pausa, è un rumore.",
+                          "More skipped than done: it is the cadence that is wrong, not you. Lengthen it in preferences: a break you always skip is not a break, it is noise.")
+                    : L.t("Le uscite d'emergenza sono contate apposta: servono, ma se diventano la regola vuol dire che l'orario o la cadenza vanno cambiati.",
+                          "Emergency exits are counted on purpose: they are useful, but if they become the rule it means the hours or the cadence need changing."),
                 study: nil,
                 met: saltate <= stats.completed
             ))
