@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var onboardingWindow: NSWindow?
     private var paceWindow: NSWindow?
     private var growthWindow: NSWindow?
+    private var doctorWindow: NSWindow?
     private var refreshTimer: Timer?
     private var statsHotKey: GlobalHotKey?
 
@@ -952,6 +953,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         menu.addItem(stats)
         menu.addItem(NSMenuItem(title: L.t("Da dove vengono questi numeri…", "Where these numbers come from…"), action: #selector(showEvidence), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: L.t("Apri il registro", "Open the log"), action: #selector(revealLedger), keyEquivalent: ""))
+        // Lo stesso rapporto di `--doctor`, per chi non apre mai un terminale: è la voce da
+        // premere quando «non funziona», e da copiare dentro una segnalazione.
+        menu.addItem(NSMenuItem(title: L.t("Diagnostica…", "Diagnostics…"), action: #selector(showDoctor), keyEquivalent: ""))
         let prefs = NSMenuItem(title: L.t("Preferenze…", "Preferences…"), action: #selector(showPrefs), keyEquivalent: ",")
         prefs.keyEquivalentModifierMask = []
         menu.addItem(prefs)
@@ -1065,6 +1069,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             statsWindow?.contentView = view
         }
         present(statsWindow)
+    }
+
+    /// La diagnostica in finestra. **Stesso `Doctor.report()` del comando**, così i due non
+    /// possono raccontare cose diverse.
+    @objc private func showDoctor() {
+        let rapporto = Doctor.report()
+        let testo = NSTextView(frame: NSRect(x: 0, y: 0, width: 560, height: 380))
+        testo.string = rapporto.text
+        testo.isEditable = false
+        testo.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+        testo.textContainerInset = NSSize(width: 16, height: 16)
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 560, height: 380))
+        scroll.documentView = testo
+        scroll.hasVerticalScroller = true
+        doctorWindow = makeWindow(title: L.t("Otium — diagnostica", "Otium — diagnostics"),
+                                  content: scroll)
+        present(doctorWindow)
     }
 
     @objc private func revealLedger() {
@@ -1233,6 +1254,18 @@ if arguments.contains("--presence") {
     }
     exit(0)
 }
+// `--doctor` **prima di tutto**, e fuori da ProbeMode: deve leggere i file veri, non una
+// cartella usa e getta, o direbbe che va tutto bene guardando altrove. E prima del lock
+// dell'istanza unica, perché il caso in cui serve di più è proprio «ce n'è già una viva».
+if arguments.contains("--doctor") {
+    exit(Doctor.run())
+}
+
+if arguments.contains("--version") {
+    print("Otium \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev")")
+    exit(0)
+}
+
 if arguments.contains("--agent-status") {
     print(LaunchAgent.state())
     exit(0)
