@@ -117,15 +117,15 @@ public enum Quotes {
         q("Se vuoi migliorare, accetta di sembrare sciocco riguardo alle cose esterne.", "If you would improve, submit to be considered without sense and foolish with respect to externals.", "Epitteto", "Manuale, 13"),
         q("Non dire mai di nulla «l'ho perso», ma «l'ho restituito».", "Never say about anything, I have lost it, but say I have restored it.", "Epitteto", "Manuale, 11"),
         q("Non è chi ti insulta a offenderti, ma il tuo giudizio che quello sia un insulto.", "It is not he who reviles you or strikes you who insults you, but your opinion about these things as being insulting.", "Epitteto", "Manuale, 20"),
-        q("Delle cose del corpo prendi solo quanto basta all'uso: cibo, bevanda, vestito, casa.", "Epitteto", "Manuale, 33"),
-        q("Prima decidi chi vuoi essere, poi fa' quello che devi fare.", "Epitteto", "Discorsi, III"),
-        q("Nessuno è libero se non è padrone di sé.", "Epitteto", "Discorsi, IV"),
+        q("Delle cose del corpo prendi solo quanto basta all'uso: cibo, bevanda, vestito, casa.", "As to the body, take only what bare need requires: food, drink, clothing, house.", "Epitteto", "Manuale, 33"),
+        q("Prima decidi chi vuoi essere, poi fa' quello che devi fare.", "First say to yourself what you would be; and then do what you have to do.", "Epitteto", "Discorsi, III"),
+        q("Nessuno è libero se non è padrone di sé.", "No man is free who is not master of himself.", "Epitteto", "Discorsi, IV"),
 
-        q("Otium cum dignitate — il riposo che non toglie nulla alla dignità.", "Cicerone", "Pro Sestio, 98"),
-        q("Vivere è pensare.", "Cicerone", "Tusculanae disputationes, V"),
-        q("Il giardino e la biblioteca: se hai questi, hai tutto quello che serve.", "Cicerone", "Lettere a Varrone (Ad familiares, IX)"),
+        q("Otium cum dignitate — il riposo che non toglie nulla alla dignità.", "Otium cum dignitate — leisure that takes nothing away from dignity.", "Cicerone", "Pro Sestio, 98"),
+        q("Vivere è pensare.", "To live is to think.", "Cicerone", "Tusculanae disputationes, V"),
+        q("Il giardino e la biblioteca: se hai questi, hai tutto quello che serve.", "If you have a garden and a library, you have everything you need.", "Cicerone", "Lettere a Varrone (Ad familiares, IX)"),
         q("Nessuno è così vecchio da non credere di poter vivere ancora un anno.", "No one is so old as to think that he may not live a year.", "Cicerone", "De senectute, 24"),
-        q("Il tempo distrugge le finzioni dell'opinione, e conferma i giudizi della natura.", "Cicerone", "De natura deorum, II"),
+        q("Il tempo distrugge le finzioni dell'opinione, e conferma i giudizi della natura.", "Time destroys the fictions of opinion, and confirms the judgements of nature.", "Cicerone", "De natura deorum, II"),
 
         // MARK: Aggiunte del 2026-07-28 — 73 citazioni ritrovate sul testo primario.
         //
@@ -272,46 +272,46 @@ public enum Quotes {
     static let occidentali: [Quote] = [
         q("Chi ha un perché abbastanza forte può sopportare quasi ogni come.", "If a man knows the wherefore of his existence, then the manner of it can take care of itself.", "Nietzsche", "Crepuscolo degli idoli, Massime e strali 12"),
         q("Bisogna avere ancora un caos dentro di sé per partorire una stella danzante.", "One must still have chaos in one, to give birth to a dancing star.", "Nietzsche", "Così parlò Zarathustra, Prologo"),
-        q("Diventa ciò che sei.", "Nietzsche", "Ecce homo (dal motto di Pindaro)"),
+        q("Diventa ciò che sei.", "Become what thou art.", "Nietzsche", "Ecce homo (dal motto di Pindaro)"),
         q("Solo i pensieri che vengono camminando hanno valore.", "Only those thoughts that come by walking have any value.", "Nietzsche", "Crepuscolo degli idoli, Massime e strali 34"),
         q("Chi combatte con i mostri deve guardarsi dal non diventarlo.", "He who fights with monsters should be careful lest he thereby become a monster.", "Nietzsche", "Al di là del bene e del male, 146"),
         q("Il segreto per raccogliere dall'esistenza la massima fecondità è vivere pericolosamente.", "The secret of realising the largest productivity and the greatest enjoyment of existence is to live in danger.", "Nietzsche", "La gaia scienza, 283"),
 
         q("Tutta l'infelicità degli uomini deriva da una cosa sola: non saper restare in riposo in una stanza.", "The unhappiness of men arises from one single fact, that they cannot stay quietly in their own chamber.", "Pascal", "Pensieri, 139"),
         q("Il cuore ha le sue ragioni che la ragione non conosce.", "The heart has its reasons, which reason does not know.", "Pascal", "Pensieri, 277"),
-        q("Ho scritto una lettera lunga perché non ho avuto il tempo di scriverne una breve.", "Pascal", "Lettere provinciali, XVI"),
+        q("Ho scritto una lettera lunga perché non ho avuto il tempo di scriverne una breve.", "I have made this longer than usual because I have not had the time to make it shorter.", "Pascal", "Lettere provinciali, XVI"),
 
-        q("La vita che ci è data è breve, ma la memoria di una vita ben spesa è eterna.", "Montaigne", "Saggi, I"),
-        q("La più grande cosa del mondo è saper appartenere a sé stessi.", "Montaigne", "Saggi, I, 39"),
+        q("La vita che ci è data è breve, ma la memoria di una vita ben spesa è eterna.", "The life given us is short, but the memory of a life well spent is eternal.", "Montaigne", "Saggi, I"),
+        q("La più grande cosa del mondo è saper appartenere a sé stessi.", "The greatest thing in the world is to know how to belong to oneself.", "Montaigne", "Saggi, I, 39"),
 
         q("L'uomo libero a nulla pensa meno che alla morte, e la sua saggezza è meditazione della vita.", "A free man thinks of death least of all things; and his wisdom is a meditation not of death but of life.", "Spinoza", "Etica, IV, prop. 67"),
-        q("Non ridere, non piangere, non detestare, ma comprendere.", "Spinoza", "Trattato politico, I"),
+        q("Non ridere, non piangere, non detestare, ma comprendere.", "Not to laugh, not to lament, nor to curse, but to understand.", "Spinoza", "Trattato politico, I"),
 
         q("La maggior parte degli uomini conduce vite di quieta disperazione.", "The mass of men lead lives of quiet desperation.", "Thoreau", "Walden, I"),
         q("Andai nei boschi perché volevo vivere deliberatamente, affrontare solo i fatti essenziali della vita.", "I went to the woods because I wished to live deliberately, to front only the essential facts of life.", "Thoreau", "Walden, II"),
         q("Semplifica, semplifica.", "Simplify, simplify.", "Thoreau", "Walden, II"),
-        q("Non basta essere occupati, anche le formiche lo sono. La domanda è: di che cosa siamo occupati?", "Thoreau", "Lettere a H. Blake"),
+        q("Non basta essere occupati, anche le formiche lo sono. La domanda è: di che cosa siamo occupati?", "It is not enough to be busy; so are the ants. The question is: what are we busy about?", "Thoreau", "Lettere a H. Blake"),
         q("Il costo di una cosa è la quantità di vita che devi scambiare per averla.", "The cost of a thing is the amount of life which is required to be exchanged for it.", "Thoreau", "Walden, I"),
 
-        q("Fa' la cosa e avrai il potere.", "Emerson", "Saggi, Compensazione"),
+        q("Fa' la cosa e avrai il potere.", "The law of nature is: do the thing, and you shall have the power.", "Emerson", "Saggi, Compensazione"),
 
-        q("Nove decimi della nostra felicità dipendono dalla salute.", "Schopenhauer", "Aforismi sulla saggezza del vivere, II"),
+        q("Nove decimi della nostra felicità dipendono dalla salute.", "Nine-tenths of our happiness depends upon health alone.", "Schopenhauer", "Aforismi sulla saggezza del vivere, II"),
 
         // **Recuperate dal pool anonimo il 2026-07-28.** Non erano frasi senza padre: erano
         // citazioni a cui la firma era stata tolta strada facendo, che è l'errore opposto a
         // inventare un autore ma resta un errore.
-        q("Sembra che la perfezione sia raggiunta non quando non c'è più niente da aggiungere, ma quando non c'è più niente da togliere.", "Antoine de Saint-Exupéry", "Terre des hommes, III"),
-        q("Non puoi fermare le onde, ma puoi imparare a fare surf.", "Jon Kabat-Zinn", "Dovunque tu vada, ci sei già"),
-        q("La vita può essere capita solo all'indietro, ma va vissuta in avanti.", "Kierkegaard", "Diari, IV A 164"),
-        q("Soprattutto, non perdere il desiderio di camminare.", "Kierkegaard", "Lettera a Jette, 1847"),
+        q("Sembra che la perfezione sia raggiunta non quando non c'è più niente da aggiungere, ma quando non c'è più niente da togliere.", "Perfection is attained not when there is nothing more to add, but when there is nothing more to take away.", "Antoine de Saint-Exupéry", "Terre des hommes, III"),
+        q("Non puoi fermare le onde, ma puoi imparare a fare surf.", "You can't stop the waves, but you can learn to surf.", "Jon Kabat-Zinn", "Dovunque tu vada, ci sei già"),
+        q("La vita può essere capita solo all'indietro, ma va vissuta in avanti.", "Life can only be understood backwards; but it must be lived forwards.", "Kierkegaard", "Diari, IV A 164"),
+        q("Soprattutto, non perdere il desiderio di camminare.", "Above all, do not lose your desire to walk.", "Kierkegaard", "Lettera a Jette, 1847"),
 
-        q("Ama la vita? Allora non sprecare il tempo, perché è la materia di cui la vita è fatta.", "Benjamin Franklin", "Poor Richard's Almanack, 1746"),
+        q("Ama la vita? Allora non sprecare il tempo, perché è la materia di cui la vita è fatta.", "Dost thou love life? Then do not squander time, for that is the stuff life is made of.", "Benjamin Franklin", "Poor Richard's Almanack, 1746"),
 
-        q("L'uomo può essere privato di tutto, tranne di una cosa: la scelta del proprio atteggiamento.", "Viktor Frankl", "Alla ricerca di un significato della vita"),
-        q("Chi ha un perché per vivere può sopportare quasi ogni come.", "Viktor Frankl", "Alla ricerca di un significato della vita (citando Nietzsche)"),
+        q("L'uomo può essere privato di tutto, tranne di una cosa: la scelta del proprio atteggiamento.", "Everything can be taken from a man but one thing: to choose one's attitude in any given set of circumstances.", "Viktor Frankl", "Alla ricerca di un significato della vita"),
+        q("Chi ha un perché per vivere può sopportare quasi ogni come.", "He who has a why to live for can bear almost any how.", "Viktor Frankl", "Alla ricerca di un significato della vita (citando Nietzsche)"),
 
-        q("L'abitudine è il volano della società, il suo agente conservatore più prezioso.", "William James", "Principi di psicologia, IV"),
-        q("L'arte di essere saggi è l'arte di sapere cosa trascurare.", "William James", "Principi di psicologia, XXII"),
+        q("L'abitudine è il volano della società, il suo agente conservatore più prezioso.", "Habit is the enormous fly-wheel of society, its most precious conservative agent.", "William James", "Principi di psicologia, IV"),
+        q("L'arte di essere saggi è l'arte di sapere cosa trascurare.", "The art of being wise is the art of knowing what to overlook.", "William James", "Principi di psicologia, XXII"),
 
         // MARK: Aggiunte del 2026-07-28 — 56 citazioni ritrovate sul testo primario.
         //
@@ -346,11 +346,11 @@ public enum Quotes {
         q("La natura spesso si nasconde, a volte si vince, di rado si spegne.", "Nature is often hidden; sometimes overcome; seldom extinguished.", "Francis Bacon", "Saggi, Della natura negli uomini"),
         q("Il tempo è la misura del lavoro, come il denaro è la misura delle merci.", "Time is the measure of business, as money is of wares.", "Francis Bacon", "Saggi, Della speditezza"),
         q("Chi non vuole applicare rimedi nuovi deve aspettarsi guai nuovi, il tempo è il più grande innovatore.", "He that will not apply new remedies, must expect new evils; for time is the greatest innovator.", "Francis Bacon", "Saggi, Delle innovazioni"),
-        q("La vita non si potrebbe conservare, se non fosse interrotta di frequente.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
+        q("La vita non si potrebbe conservare, se non fosse interrotta di frequente.", "Life would fail were it not often suspended.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
         q("Il primo tempo del giorno è di solito il più sopportabile.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
         q("Molti affanni, al mattino, paiono assai minori di quanto parvero la sera prima.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
-        q("Su, mortali, destatevi. Il dì rinasce.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
-        q("Sorgete, ripigliatevi la soma della vita, riducetevi dal mondo falso nel vero.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
+        q("Su, mortali, destatevi. Il dì rinasce.", "Mortals, awake! The day breaks.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
+        q("Sorgete, ripigliatevi la soma della vita, riducetevi dal mondo falso nel vero.", "Arise; take up again the burden of life; forsake the false world for the true.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
         q("C'è differenza fra la fatica e il disagio, e fra il vivere quieto e il vivere ozioso.", "Leopardi", "Operette morali, Dialogo della Natura e di un Islandese"),
         q("Il valore della vita non sta nella lunghezza dei giorni, ma nell'uso che ne facciamo.", "The utility of living consists not in the length of days, but in the use of time.", "Montaigne", "Saggi, I, 20"),
         q("Il segno più evidente della saggezza è un'allegria continua.", "The most manifest sign of wisdom is a continual cheerfulness.", "Montaigne", "Saggi, I, 25"),
@@ -451,14 +451,14 @@ public enum Quotes {
         q("Agisci senza sforzare, opera senza affannarti.", "To act without thinking of acting; to conduct affairs without feeling the trouble of them.", "Laozi", "Tao Te Ching, 63"),
         q("Affronta il difficile finché è facile; fa' la grande cosa finché è piccola.", "Anticipate things that are difficult while they are easy, and do things that would become great while they are small.", "Laozi", "Tao Te Ching, 63"),
         q("L'albero che riempie le braccia nasce da un germoglio sottile.", "The tree which fills the arms grew from the tiniest sprout.", "Laozi", "Tao Te Ching, 64"),
-        q("Il grande quadrato non ha angoli; il grande talento matura tardi.", "Laozi", "Tao Te Ching, 41"),
+        q("Il grande quadrato non ha angoli; il grande talento matura tardi.", "The greatest square has no corners; the greatest talent is slow to ripen.", "Laozi", "Tao Te Ching, 41"),
         q("Ritirarsi a opera compiuta è la via del cielo.", "When the work is done, to withdraw into obscurity is the way of Heaven.", "Laozi", "Tao Te Ching, 9"),
         q("Chi si mette in punta di piedi non sta ritto a lungo.", "He who stands on his tiptoes does not stand firm.", "Laozi", "Tao Te Ching, 24"),
         q("Chi sa accontentarsi non si disonora; chi sa fermarsi non corre pericolo.", "Who is content needs fear no shame. Who knows to stop incurs no blame. From danger free, long live shall he.", "Laozi", "Tao Te Ching, 44"),
 
-        q("Il pesce dimentica la rete quando è nel fiume; l'uomo dimentica le parole quando ha il senso.", "Zhuangzi", "Zhuangzi, XXVI"),
-        q("La calma perfetta dell'uomo saggio è specchio del cielo e della terra.", "Zhuangzi", "Zhuangzi, XIII"),
-        q("Chi guarda il proprio riflesso nell'acqua corrente non lo vede, solo l'acqua ferma riflette.", "Zhuangzi", "Zhuangzi, V"),
+        q("Il pesce dimentica la rete quando è nel fiume; l'uomo dimentica le parole quando ha il senso.", "The fish forgets the net in the river; man forgets words when he has the meaning.", "Zhuangzi", "Zhuangzi, XXVI"),
+        q("La calma perfetta dell'uomo saggio è specchio del cielo e della terra.", "The perfect stillness of the sage is the mirror of heaven and earth.", "Zhuangzi", "Zhuangzi, XIII"),
+        q("Chi guarda il proprio riflesso nell'acqua corrente non lo vede, solo l'acqua ferma riflette.", "No one mirrors himself in running water; only still water gives back the image.", "Zhuangzi", "Zhuangzi, V"),
 
         q("Chi impara senza pensare è perduto; chi pensa senza imparare è in pericolo.", "Learning without thought is labour lost; thought without learning is perilous.", "Confucio", "Dialoghi, II, 15"),
         q("Quando vedi una persona di valore, cerca di eguagliarla; quando ne vedi una senza, guarda dentro di te.", "When we see men of worth, we should think of equalling them; when we see men of a contrary character, we should examine ourselves.", "Confucio", "Dialoghi, IV, 17"),
@@ -478,19 +478,19 @@ public enum Quotes {
 
         q("Il tuo diritto è all'azione, mai ai suoi frutti.", "Let right deeds be thy motive, not the fruit which comes from them.", "Bhagavad Gita", "Bhagavad Gita, II, 47"),
         q("Meglio il proprio dovere fatto male che quello altrui fatto bene.", "Better that one do his own task as he may, even though he fail, than take tasks not his own, though they seem good.", "Bhagavad Gita", "Bhagavad Gita, III, 35"),
-        q("Lo yoga non è per chi mangia troppo né per chi digiuna, non per chi dorme troppo né per chi veglia.", "Bhagavad Gita", "Bhagavad Gita, VI, 16"),
-        q("Chi è moderato nel mangiare e nel riposo, nel lavoro e nel sonno, per lui lo yoga scioglie ogni pena.", "Bhagavad Gita", "Bhagavad Gita, VI, 17"),
+        q("Lo yoga non è per chi mangia troppo né per chi digiuna, non per chi dorme troppo né per chi veglia.", "Yoga is not for him who eats too much, nor for him who fasts; not for him who sleeps too much, nor for him who keeps vigil.", "Bhagavad Gita", "Bhagavad Gita, VI, 16"),
+        q("Chi è moderato nel mangiare e nel riposo, nel lavoro e nel sonno, per lui lo yoga scioglie ogni pena.", "For him who is temperate in food and rest, in work and sleep, yoga puts an end to every sorrow.", "Bhagavad Gita", "Bhagavad Gita, VI, 17"),
 
-        q("Non seguire le orme degli antichi, ma cerca ciò che essi cercavano.", "Matsuo Bashō", "Sulle tracce degli antichi (Oi no kobumi)"),
-        q("Ogni giorno è un viaggio, e il viaggio stesso è casa.", "Matsuo Bashō", "Lo stretto sentiero verso il profondo Nord"),
+        q("Non seguire le orme degli antichi, ma cerca ciò che essi cercavano.", "Do not seek to follow in the footsteps of the men of old; seek what they sought.", "Matsuo Bashō", "Sulle tracce degli antichi (Oi no kobumi)"),
+        q("Ogni giorno è un viaggio, e il viaggio stesso è casa.", "Every day is a journey, and the journey itself is home.", "Matsuo Bashō", "Lo stretto sentiero verso il profondo Nord"),
 
-        q("Nella mente del principiante ci sono molte possibilità; in quella dell'esperto, poche.", "Shunryu Suzuki", "Mente zen, mente di principiante"),
-        q("Quando fai qualcosa, devi bruciarti completamente, come un buon falò.", "Shunryu Suzuki", "Mente zen, mente di principiante"),
+        q("Nella mente del principiante ci sono molte possibilità; in quella dell'esperto, poche.", "In the beginner's mind there are many possibilities, but in the expert's there are few.", "Shunryu Suzuki", "Mente zen, mente di principiante"),
+        q("Quando fai qualcosa, devi bruciarti completamente, come un buon falò.", "When you do something, you should burn yourself completely, like a good bonfire.", "Shunryu Suzuki", "Mente zen, mente di principiante"),
 
-        q("Studiare la via del Buddha è studiare sé stessi; studiare sé stessi è dimenticare sé stessi.", "Dōgen", "Shōbōgenzō, Genjōkōan"),
-        q("Il tempo vola più veloce di una freccia: non sprecare un istante.", "Dōgen", "Gakudō yōjinshū"),
+        q("Studiare la via del Buddha è studiare sé stessi; studiare sé stessi è dimenticare sé stessi.", "To study the Buddha Way is to study the self; to study the self is to forget the self.", "Dōgen", "Shōbōgenzō, Genjōkōan"),
+        q("Il tempo vola più veloce di una freccia: non sprecare un istante.", "Time flies faster than an arrow; do not waste a single moment.", "Dōgen", "Gakudō yōjinshū"),
 
-        q("Percepisci ciò che l'occhio non vede.", "Miyamoto Musashi", "Il libro dei cinque anelli, Il libro dell'acqua"),
+        q("Percepisci ciò che l'occhio non vede.", "Perceive that which cannot be seen with the eye.", "Miyamoto Musashi", "Il libro dei cinque anelli, Il libro dell'acqua"),
 
         q("Chi conosce il nemico e conosce sé stesso non sarà in pericolo in cento battaglie.", "If you know the enemy and know yourself, you need not fear the result of a hundred battles.", "Sunzi", "L'arte della guerra, III"),
         q("La suprema arte della guerra è sottomettere il nemico senza combattere.", "Supreme excellence consists in breaking the enemy's resistance without fighting.", "Sunzi", "L'arte della guerra, III"),
@@ -498,7 +498,7 @@ public enum Quotes {
         q("Il lavoro è amore reso visibile.", "Work is love made visible.", "Kahlil Gibran", "Il profeta, Il lavoro"),
         q("I vostri figli non sono figli vostri, sono i figli e le figlie della vita.", "Your children are not your children. They are the sons and daughters of Life's longing for itself.", "Kahlil Gibran", "Il profeta, I figli"),
 
-        q("Alzati, svegliati, e non fermarti finché la meta non è raggiunta.", "Katha Upanishad", "Katha Upanishad, I, 3, 14"),
+        q("Alzati, svegliati, e non fermarti finché la meta non è raggiunta.", "Arise, awake, and stop not till the goal is reached.", "Katha Upanishad", "Katha Upanishad, I, 3, 14"),
         q("Come un uomo si spoglia di vesti logore e ne indossa di nuove, così l'anima lascia il corpo.", "As when one layeth his worn-out robes away and taketh new, so putteth by the spirit lightly its garb of flesh.", "Bhagavad Gita", "Bhagavad Gita, II, 22"),
 
         // MARK: Aggiunte del 2026-07-28 — 4 citazioni ritrovate sul testo primario.
