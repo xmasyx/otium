@@ -832,8 +832,26 @@ sarebbe emerso dall'uso: sette fallivano in silenzio e uno solo in modo visibile
 - **Anti-claim** — l'audit non doveva toccare i file dell'altra sessione. `Quotes.swift`,
   `Mindful.swift` e `Phrases.swift` non sono stati aperti, e `Views.swift` solo dove serviva.
 
-**Aperto:** il quinto asse, accessibilità e contrasto, e tutta la parte contenuti, che aspettano
-la fine delle traduzioni.
+### Iterazione 15 — l'audit, seconda parte (2026-07-29)
+
+- [x] **ISC-77** La livrea regge la soglia di leggibilità su ogni tema. — WCAG AA, calcolata e non
+      guardata. I tre temi passano con margine (il peggiore 5,67:1 contro 4,5), ma **cinque punti
+      di testo stendevano un'opacità su `dim`**, che è già il colore più tenue leggibile: al 55%
+      scendeva a 2,67:1, e sempre su testo da 11 punti. *Falsificatore:* `ContrastTests` calcola i
+      rapporti, pretende che l'opacità sul secondario **fallisca** (se passasse, la regola non
+      servirebbe) e scansiona i sorgenti perché il difetto non torni.
+- [x] **ISC-78** Un file di impostazioni scritto a mano non rompe l'app. — le validazioni vivevano
+      solo nell'`init`, quindi l'assegnazione e **la decodifica** le scavalcavano: con
+      `rampStartFactor: -5` le ripetizioni diventavano negative, con `exercisePool: []` la
+      rotazione restava senza esercizi. *Falsificatore:* sedici configurazioni assurde guidate per
+      duecento passi ciascuna, nessun NaN e nessun giro a vuoto.
+- [x] **ISC-79** Viaggiare non rompe i conti. — nessun difetto trovato, ed è la notizia buona: la
+      salita non salta né torna indietro attraversando i giorni da 23 e 25 ore, il registro tiene
+      istanti assoluti, e le statistiche seguono il calendario che gli passi invece di uno cablato.
+- [x] **ISC-80** Nessun controllo parla per sola icona. — i due tondi «+» e «−» del pannello delle
+      ripetizioni erano, per VoiceOver, due pulsanti identici senza nome.
+
+**Aperto:** la parte contenuti, che aspetta la fine delle traduzioni dell'altra sessione.
 
 ## Test Strategy
 
