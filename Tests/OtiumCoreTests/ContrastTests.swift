@@ -83,3 +83,55 @@ final class ContrastTests: XCTestCase {
         }
     }
 }
+
+/// Nessuna stringa visibile resta in una lingua sola.
+///
+/// Audit del 2026-07-29, asse contenuti. La traduzione di un'app non finisce quando le schermate
+/// principali parlano inglese: finisce quando **nessuna** stringa che può finire sotto gli occhi
+/// di qualcuno è rimasta indietro. Le sedici trovate stavano nei due pannelli di dichiarazione e
+/// nelle intestazioni delle statistiche, cioè in superfici che si aprono di rado — che è
+/// esattamente il posto dove una traduzione mancante sopravvive per mesi.
+final class NoUntranslatedStringsTests: XCTestCase {
+
+    /// Le due sole stringhe italiane ammesse: sono testi di **sonda**, non interfaccia. La prima
+    /// è il campione della resa della notifica, la seconda la demo del pannello. Dichiarate qui
+    /// per nome, così restare in italiano è una scelta e non una dimenticanza.
+    private let ammesse = ["Otium è già attiva", "Pausa fra un minuto"]
+
+    func testNoUserFacingStringIsLeftUntranslated() throws {
+        let parole = try! NSRegularExpression(
+            pattern: "\\b(il|la|le|lo|gli|un|una|del|della|che|non|per|con|sono|hai|puoi|questa|questo|dei|delle|come|già|anche|ogni|quando|dove|solo)\\b",
+            options: .caseInsensitive)
+        let mostra = try! NSRegularExpression(
+            pattern: "Text\\(|title:|subtitle:|label|Button\\(|Toggle\\(|Picker\\(|Section\\(|announce")
+        let letterale = try! NSRegularExpression(pattern: "\"((?:[^\"\\\\]|\\\\.){8,})\"")
+
+        var trovate: [String] = []
+        let dir = URL(fileURLWithPath: "Sources/OtiumApp")
+        for file in (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)) ?? []
+        where file.pathExtension == "swift" {
+            guard let src = try? String(contentsOf: file, encoding: .utf8) else { continue }
+            for (n, riga) in src.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
+                let s = String(riga)
+                let trim = s.trimmingCharacters(in: .whitespaces)
+                if trim.hasPrefix("//") || s.contains("L.t(") { continue }
+                if s.contains("italianName") || s.contains("englishName") { continue }
+                let range = NSRange(s.startIndex..., in: s)
+                guard mostra.firstMatch(in: s, range: range) != nil else { continue }
+                for m in letterale.matches(in: s, range: range) {
+                    guard let r = Range(m.range(at: 1), in: s) else { continue }
+                    let testo = String(s[r])
+                    if ammesse.contains(testo) || testo.hasPrefix("--") { continue }
+                    let tr = NSRange(testo.startIndex..., in: testo)
+                    let haItaliano = parole.firstMatch(in: testo, range: tr) != nil
+                        || testo.rangeOfCharacter(from: CharacterSet(charactersIn: "àèéìòù")) != nil
+                    if haItaliano {
+                        trovate.append("\(file.lastPathComponent):\(n + 1)  \(testo.prefix(60))")
+                    }
+                }
+            }
+        }
+        XCTAssertTrue(trovate.isEmpty,
+                      "\(trovate.count) stringhe visibili non passano da L.t:\n" + trovate.joined(separator: "\n"))
+    }
+}

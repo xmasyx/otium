@@ -20,18 +20,18 @@ struct DeclareBreakView: View {
 
     var body: some View {
         Form {
-            Section("Che pausa era") {
-                Picker("Tipo", selection: $kind) {
-                    Text("micro-pausa").tag(BreakKind.micro)
-                    Text("pausa piena").tag(BreakKind.long)
+            Section(L.t("Che pausa era", "Which break it was")) {
+                Picker(L.t("Tipo", "Kind"), selection: $kind) {
+                    Text(L.t("micro-pausa", "micro-break")).tag(BreakKind.micro)
+                    Text(L.t("pausa piena", "full break")).tag(BreakKind.long)
                 }
                 .pickerStyle(.segmented)
 
-                Picker("Esercizio", selection: $exercise) {
-                    Text("non lo ricordo").tag(ExerciseKind?.none)
+                Picker(L.t("Esercizio", "Exercise"), selection: $exercise) {
+                    Text(L.t("non lo ricordo", "I don't remember")).tag(ExerciseKind?.none)
                     Divider()
                     ForEach(ExerciseKind.allCases, id: \.self) { k in
-                        Text("\(k.italianName)\(k.isVigorous ? " · intenso" : "")").tag(ExerciseKind?.some(k))
+                        Text("\(k.localizedName)\(k.isVigorous ? L.t(" · intenso", " · vigorous") : "")").tag(ExerciseKind?.some(k))
                     }
                 }
                 .onChange(of: exercise) { _, new in
@@ -49,20 +49,22 @@ struct DeclareBreakView: View {
                             in: exercise.isPerSide ? 2...200 : 1...200,
                             step: exercise.isPerSide ? 2 : 1)
                 } else {
-                    Text("Senza esercizio la pausa viene contata, le ripetizioni no.")
+                    Text(L.t("Senza esercizio la pausa viene contata, le ripetizioni no.",
+                             "Without an exercise the break is counted, the reps are not."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
-                Stepper(minutesAgo == 0 ? "adesso" : "\(minutesAgo) minuti fa",
+                Stepper(minutesAgo == 0 ? L.t("adesso", "just now") : L.t("\(minutesAgo) minuti fa", "\(minutesAgo) minutes ago"),
                         value: $minutesAgo, in: 0...240, step: 5)
             }
 
             Section {
                 HStack {
-                    Text("Il conto alla prossima pausa non viene toccato.")
+                    Text(L.t("Il conto alla prossima pausa non viene toccato.",
+                         "The countdown to the next break is left alone."))
                         .font(.caption).foregroundStyle(.secondary)
                     Spacer()
-                    Button("Annulla") { onDone() }
-                    Button("Registra") {
+                    Button(L.t("Annulla", "Cancel")) { onDone() }
+                    Button(L.t("Registra", "Log it")) {
                         model.recordCompletedBreak(kind: kind, exercise: exercise,
                                                    reps: exercise == nil ? nil : reps,
                                                    minutesAgo: minutesAgo)
@@ -95,10 +97,10 @@ struct DeclareSeatedView: View {
 
     var body: some View {
         Form {
-            Section("Il conto per la prossima pausa") {
+            Section(L.t("Il conto per la prossima pausa", "The countdown to the next break")) {
                 Picker("", selection: $mode) {
-                    Text("in tutto sono").tag(SessionEngine.SeatedMode.total)
-                    Text("aggiungine").tag(SessionEngine.SeatedMode.add)
+                    Text(L.t("in tutto sono", "in total it is")).tag(SessionEngine.SeatedMode.total)
+                    Text(L.t("aggiungine", "add")).tag(SessionEngine.SeatedMode.add)
                 }
                 .pickerStyle(.segmented).labelsHidden()
 
@@ -112,12 +114,15 @@ struct DeclareSeatedView: View {
                     }
                 }
                 Text(mode == .total
-                     ? "Il conto diventa esattamente questo: se ti sei seduto alle 13 e adesso sono 100 minuti, scrivi 100. Serve anche per abbassarlo, quando hai dichiarato troppo."
-                     : "Questi minuti si sommano a quelli già contati.")
+                     ? L.t("Il conto diventa esattamente questo. Se ti sei seduto alle 13 e adesso sono 100 minuti, scrivi 100. Serve anche per abbassarlo, quando hai dichiarato troppo.",
+                           "The count becomes exactly this. If you sat down at 1pm and it is now 100 minutes, write 100. It also works to lower it, when you declared too much.")
+                     : L.t("Questi minuti si sommano a quelli già contati.",
+                           "These minutes are added to the ones already counted."))
                     .font(.caption).foregroundStyle(.secondary)
 
                 HStack {
-                    Text("adesso il conto dice \(Int(model.engine.clock.activeSeconds / 60)) min")
+                    Text(L.t("adesso il conto dice \(Int(model.engine.clock.activeSeconds / 60)) min",
+                         "the count currently says \(Int(model.engine.clock.activeSeconds / 60)) min"))
                         .font(.caption).foregroundStyle(.secondary)
                     Spacer()
                     Button("Applica") {
@@ -127,17 +132,16 @@ struct DeclareSeatedView: View {
                 }
             }
 
-            Section("Il totale di oggi davanti al Mac") {
+            Section(L.t("Il totale di oggi davanti al Mac", "Today's total at the Mac")) {
                 HStack {
                     TextField("", value: $totalMinutes, format: .number)
                         .frame(width: 74)
-                    Text("minuti in tutto oggi").foregroundStyle(.secondary)
+                    Text(L.t("minuti in tutto oggi", "minutes in total today")).foregroundStyle(.secondary)
                     Spacer()
                     Button("Correggi") { model.correctTodayActiveTime(toMinutes: totalMinutes) }
                 }
-                Text("È un numero diverso da quello sopra: qui è quanto sei stato al Mac in "
-                   + "tutta la giornata. Correggerlo scrive una riga di rettifica — il registro "
-                   + "non si riscrive mai.")
+                Text(L.t("È un numero diverso da quello sopra, qui è quanto sei stato al Mac in tutta la giornata. Correggerlo scrive una riga di rettifica, il registro non si riscrive mai.",
+                         "It is a different number from the one above: this is how long you were at the Mac all day. Correcting it writes a correction row, the log is never rewritten."))
                     .font(.caption).foregroundStyle(.secondary)
             }
 

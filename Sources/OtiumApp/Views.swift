@@ -501,8 +501,8 @@ struct BreakView: View {
             // succedendo. Le due voci «non promesso» sono uscite dal giro della pausa — nel
             // mezzo di un esercizio spiegavano una funzione assente — e vivono nella finestra
             // delle fonti, dove le apri tu.
-            Text("Perché: \(model.currentStudy.localizedGoverns) — "
-               + "\(model.currentStudy.citation), \(String(model.currentStudy.year)).")
+            Text(L.t("Perché: \(model.currentStudy.localizedGoverns) — \(model.currentStudy.citation), \(String(model.currentStudy.year)).",
+                     "Why: \(model.currentStudy.localizedGoverns) — \(model.currentStudy.citation), \(String(model.currentStudy.year))."))
                 .font(.system(size: 12))
                 .foregroundStyle(Palette.dim)
                 .multilineTextAlignment(.center)
@@ -1327,8 +1327,9 @@ struct StatsView: View {
         let groups = stats.repsByMuscleGroup
         if !groups.isEmpty {
             let peak = Double(groups.first?.reps ?? 1)
-            Card(title: "Esercizi svolti",
-                 subtitle: "ripetizioni per catena muscolare — apri un gruppo per vedere gli esercizi") {
+            Card(title: L.t("Esercizi svolti", "Exercises done"),
+                 subtitle: L.t("ripetizioni per catena muscolare, apri un gruppo per vedere gli esercizi",
+                               "reps by muscle chain, open a group to see the exercises")) {
                 VStack(spacing: 4) {
                     ForEach(groups, id: \.group) { g in
                         // La barra dice **quanto**, il gruppo aperto dice **cosa**: senza, «petto
@@ -1400,8 +1401,9 @@ struct StatsView: View {
             // Il titolo dice «per ora del giorno» e non «oggi» di proposito: in Settimana e Mese
             // queste barre sommano più giornate, e chiamarle «la giornata» le faceva leggere come
             // se fossero di oggi.
-            Card(title: "Trend pause · h/giorno",
-                 subtitle: "verde: pause fatte · rosso: saltate — se un'ora è sempre rossa, cambia quell'ora") {
+            Card(title: L.t("Trend pause · h/giorno", "Break trend · h/day"),
+                 subtitle: L.t("verde le pause fatte, rosso le saltate. Se un'ora è sempre rossa, cambia quell'ora",
+                               "green means taken, red means skipped. If one hour is always red, change that hour")) {
                 HStack(alignment: .bottom, spacing: 5) {
                     ForEach(hours, id: \.hour) { h in
                         VStack(spacing: 4) {
@@ -1431,8 +1433,10 @@ struct StatsView: View {
     }
 
     private var insights: some View {
-        Card(title: "Cosa dicono gli studi per numeri come questi",
-             subtitle: "non è una misura su di te: è ciò che è stato osservato su chi ha fatto numeri simili") {
+        Card(title: L.t("Cosa dicono gli studi per numeri come questi",
+                        "What the studies say for numbers like these"),
+             subtitle: L.t("non è una misura su di te, è ciò che è stato osservato su chi ha fatto numeri simili",
+                           "it is not a measurement of you, it is what was observed in people with similar numbers")) {
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(Stats.insights(for: stats, target: model.settings.vigorousDailyTarget)) { insight in
                     HStack(alignment: .top, spacing: 10) {
