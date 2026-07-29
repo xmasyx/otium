@@ -1,18 +1,138 @@
 [
-  {"it":"Si respinge tutto ciò che ostacola il pieno dispiegarsi delle forze del singolo.","en":"Everything is rejected that hinders the full unfolding of the individual's powers.","de":"Abgewiesen wird alles, was die volle Entfaltung der Kräfte des Einzelnen hemmt.","opera":"La filosofia della libertà, I","motivo":"capitolo tolto dall'autore nel 1918"},
-  {"it":"Una verità che ci viene da fuori porta sempre su di sé il marchio dell'incertezza.","en":"A truth that comes to us from outside always bears the stamp of uncertainty.","de":"Eine Wahrheit, die uns von außen kommt, trägt immer den Stempel der Unsicherheit an sich.","opera":"La filosofia della libertà, I","motivo":"capitolo tolto dall'autore nel 1918"},
-  {"it":"Possiamo credere solo a ciò che a ciascuno di noi appare come verità nel proprio intimo.","en":"We may believe only in what appears as truth to each of us within his own inner being.","de":"Nur was einem jeden von uns in seinem eigenen Innern als Wahrheit erscheint, daran mögen wir glauben.","opera":"La filosofia della libertà, I","motivo":"capitolo tolto dall'autore nel 1918"},
-  {"it":"Chi è tormentato dai dubbi ha le forze paralizzate.","en":"Whoever is tormented by doubt has his powers paralysed.","de":"Wer von Zweifeln gequält ist, dessen Kräfte sind gelähmt.","opera":"La filosofia della libertà, I","motivo":"capitolo tolto dall'autore nel 1918"},
-  {"it":"Aspiriamo a un sapere sicuro, ma ciascuno a modo suo.","en":"We strive for certain knowledge, but each of us in his own way.","de":"Wir erstreben ein sicheres Wissen, aber jeder auf seine eigene Art.","opera":"La filosofia della libertà, I","motivo":"capitolo tolto dall'autore nel 1918"},
-  {"it":"Chi sa godere soltanto con i sensi non conosce le leccornie della vita.","en":"Whoever knows how to enjoy with the senses alone does not know the delicacies of life.","de":"Wer nur mit den Sinnen zu genießen versteht, der kennt die Leckerbissen des Lebens nicht.","opera":"La filosofia della libertà, I","motivo":"capitolo tolto dall'autore nel 1918"},
-  {"it":"Il sapere ha valore solo in quanto contribuisce al dispiegarsi in ogni direzione di tutta la natura umana.","en":"Knowledge has value only in so far as it contributes to the all-round unfolding of the whole of human nature.","de":"Das Wissen hat nur dadurch Wert, daß es einen Beitrag liefert zur allseitigen Entfaltung der ganzen Menschennatur.","opera":"La filosofia della libertà, I","motivo":"capitolo tolto dall'autore nel 1918"},
-  {"it":"Davanti all'idea bisogna porsi da padroni, altrimenti si finisce in sua schiavitù.","en":"One must face the idea as its master, or one falls into bondage to it.","de":"Man muß sich der Idee als Herr gegenüberstellen, sonst gerät man unter ihre Knechtschaft.","opera":"La filosofia della libertà, I","motivo":"capitolo tolto dall'autore nel 1918"},
-  {"it":"È libero solo l'uomo che in ogni istante della vita è in grado di seguire se stesso.","en":"Only that man is free who at every moment of his life is able to follow himself.","de":"Frei ist nur der Mensch, der in jedem Augenblicke seines Lebens sich selbst zu folgen in der Lage ist.","opera":"La filosofia della libertà, X","motivo":"passo riscritto nella seconda edizione"},
-  {"it":"La vita ha solo lo scopo e la destinazione che l'uomo stesso le dà.","en":"Life has only the purpose and the destiny that man himself gives it.","de":"Deshalb hat das Leben nur den Zweck und die Bestimmung, die der Mensch ihm giebt.","opera":"La filosofia della libertà, XII","motivo":"passo riscritto nella seconda edizione"},
-  {"it":"Non m'incammino nella vita con un itinerario già stabilito.","en":"I do not set out upon my path through life with a fixed route laid down.","de":"Ich trete nicht mit gebundener Marschroute meinen Lebensweg an.","opera":"La filosofia della libertà, XII","motivo":"passo riscritto nella seconda edizione"},
-  {"it":"L'uomo non è qui solo per farsi un'immagine del mondo già fatto, collabora lui stesso a farlo venire in essere.","en":"Man is not here merely to form a picture of a finished world; he himself takes part in bringing that world about.","de":"Der Mensch ist nicht bloß dazu da, um sich von der fertigen Welt ein Bild zu machen; nein, er wirkt selbst mit an dem Zustandekommen dieser Welt.","opera":"La concezione goethiana del mondo, Personalità","motivo":"l'inglese traduce la revisione del 1918, il tedesco su cui lavoro è del 1897"},
-  {"it":"Verrebbe da dire che senza l'uomo il mondo mostrerebbe un volto non vero.","en":"One might say that without man the world would show an untrue countenance.","de":"Man möchte sagen, ohne den Menschen würde die Welt ein unwahres Antlitz zeigen.","opera":"La concezione goethiana del mondo, Personalità","motivo":"l'inglese traduce la revisione del 1918, il tedesco su cui lavoro è del 1897"},
-  {"it":"Voler conoscere è un'esigenza della natura umana, non delle cose.","en":"The will to know is a demand of human nature, not of things.","de":"Erkennen wollen ist eine Forderung der menschlichen Natur und nicht der Dinge.","opera":"La concezione goethiana del mondo, Personalità","motivo":"l'inglese traduce la revisione del 1918, il tedesco su cui lavoro è del 1897"},
-  {"it":"Al singolo uomo la verità appare in una veste individuale.","en":"To each individual man, truth appears in an individual garment.","de":"Dem einzelnen Menschen erscheint die Wahrheit in einem individuellen Kleide.","opera":"La concezione goethiana del mondo, Personalità","motivo":"l'inglese traduce la revisione del 1918, il tedesco su cui lavoro è del 1897"},
-  {"it":"Quando l'uomo posa lo sguardo su una cosa, nasce in lui l'impulso a vedere più di quanto la percezione gli offra.","en":"When a man turns his gaze upon a thing, there arises in him the urge to see more than perception offers him.","de":"Wenn der Mensch den Blick auf ein Ding richtet, dann entsteht in ihm der Drang, mehr zu sehen, als ihm in der Wahrnehmung entgegentritt.","opera":"La concezione goethiana del mondo, Personalità","motivo":"l'inglese traduce la revisione del 1918, il tedesco su cui lavoro è del 1897"}
+  {
+    "it": "Si respinge tutto ciò che ostacola il pieno dispiegarsi delle forze del singolo.",
+    "en": "Everything is rejected that hinders the full unfolding of the individual's powers.",
+    "de": "Abgewiesen wird alles, was die volle Entfaltung der Kräfte des Einzelnen hemmt.",
+    "opera": "La filosofia della libertà, I",
+    "motivo": "capitolo tolto dall'autore nel 1918"
+  },
+  {
+    "it": "Una verità che ci viene da fuori porta sempre su di sé il marchio dell'incertezza.",
+    "en": "A truth that comes to us from outside always bears the stamp of uncertainty.",
+    "de": "Eine Wahrheit, die uns von außen kommt, trägt immer den Stempel der Unsicherheit an sich.",
+    "opera": "La filosofia della libertà, I",
+    "motivo": "capitolo tolto dall'autore nel 1918"
+  },
+  {
+    "it": "Possiamo credere solo a ciò che a ciascuno di noi appare come verità nel proprio intimo.",
+    "en": "We may believe only in what appears as truth to each of us within his own inner being.",
+    "de": "Nur was einem jeden von uns in seinem eigenen Innern als Wahrheit erscheint, daran mögen wir glauben.",
+    "opera": "La filosofia della libertà, I",
+    "motivo": "capitolo tolto dall'autore nel 1918"
+  },
+  {
+    "it": "Chi è tormentato dai dubbi ha le forze paralizzate.",
+    "en": "Whoever is tormented by doubt has his powers paralysed.",
+    "de": "Wer von Zweifeln gequält ist, dessen Kräfte sind gelähmt.",
+    "opera": "La filosofia della libertà, I",
+    "motivo": "capitolo tolto dall'autore nel 1918"
+  },
+  {
+    "it": "Aspiriamo a un sapere sicuro, ma ciascuno a modo suo.",
+    "en": "We strive for certain knowledge, but each of us in his own way.",
+    "de": "Wir erstreben ein sicheres Wissen, aber jeder auf seine eigene Art.",
+    "opera": "La filosofia della libertà, I",
+    "motivo": "capitolo tolto dall'autore nel 1918"
+  },
+  {
+    "it": "Chi sa godere soltanto con i sensi non conosce le leccornie della vita.",
+    "en": "Whoever knows how to enjoy with the senses alone does not know the delicacies of life.",
+    "de": "Wer nur mit den Sinnen zu genießen versteht, der kennt die Leckerbissen des Lebens nicht.",
+    "opera": "La filosofia della libertà, I",
+    "motivo": "capitolo tolto dall'autore nel 1918"
+  },
+  {
+    "it": "Il sapere ha valore solo in quanto contribuisce al dispiegarsi in ogni direzione di tutta la natura umana.",
+    "en": "Knowledge has value only in so far as it contributes to the all-round unfolding of the whole of human nature.",
+    "de": "Das Wissen hat nur dadurch Wert, daß es einen Beitrag liefert zur allseitigen Entfaltung der ganzen Menschennatur.",
+    "opera": "La filosofia della libertà, I",
+    "motivo": "capitolo tolto dall'autore nel 1918"
+  },
+  {
+    "it": "Davanti all'idea bisogna porsi da padroni, altrimenti si finisce in sua schiavitù.",
+    "en": "One must face the idea as its master, or one falls into bondage to it.",
+    "de": "Man muß sich der Idee als Herr gegenüberstellen, sonst gerät man unter ihre Knechtschaft.",
+    "opera": "La filosofia della libertà, I",
+    "motivo": "capitolo tolto dall'autore nel 1918"
+  },
+  {
+    "it": "È libero solo l'uomo che in ogni istante della vita è in grado di seguire se stesso.",
+    "en": "Only that man is free who at every moment of his life is able to follow himself.",
+    "de": "Frei ist nur der Mensch, der in jedem Augenblicke seines Lebens sich selbst zu folgen in der Lage ist.",
+    "opera": "La filosofia della libertà, X",
+    "motivo": "passo riscritto nella seconda edizione"
+  },
+  {
+    "it": "La vita ha solo lo scopo e la destinazione che l'uomo stesso le dà.",
+    "en": "Life has only the purpose and the destiny that man himself gives it.",
+    "de": "Deshalb hat das Leben nur den Zweck und die Bestimmung, die der Mensch ihm giebt.",
+    "opera": "La filosofia della libertà, XII",
+    "motivo": "passo riscritto nella seconda edizione"
+  },
+  {
+    "it": "Non m'incammino nella vita con un itinerario già stabilito.",
+    "en": "I do not set out upon my path through life with a fixed route laid down.",
+    "de": "Ich trete nicht mit gebundener Marschroute meinen Lebensweg an.",
+    "opera": "La filosofia della libertà, XII",
+    "motivo": "passo riscritto nella seconda edizione"
+  },
+  {
+    "it": "L'uomo non è qui solo per farsi un'immagine del mondo già fatto, collabora lui stesso a farlo venire in essere.",
+    "en": "Man is not here merely to form a picture of a finished world; he himself takes part in bringing that world about.",
+    "de": "Der Mensch ist nicht bloß dazu da, um sich von der fertigen Welt ein Bild zu machen; nein, er wirkt selbst mit an dem Zustandekommen dieser Welt.",
+    "opera": "La concezione goethiana del mondo, Personalità",
+    "motivo": "l'inglese traduce la revisione del 1918, il tedesco su cui lavoro è del 1897"
+  },
+  {
+    "it": "Verrebbe da dire che senza l'uomo il mondo mostrerebbe un volto non vero.",
+    "en": "One might say that without man the world would show an untrue countenance.",
+    "de": "Man möchte sagen, ohne den Menschen würde die Welt ein unwahres Antlitz zeigen.",
+    "opera": "La concezione goethiana del mondo, Personalità",
+    "motivo": "l'inglese traduce la revisione del 1918, il tedesco su cui lavoro è del 1897"
+  },
+  {
+    "it": "Voler conoscere è un'esigenza della natura umana, non delle cose.",
+    "en": "The will to know is a demand of human nature, not of things.",
+    "de": "Erkennen wollen ist eine Forderung der menschlichen Natur und nicht der Dinge.",
+    "opera": "La concezione goethiana del mondo, Personalità",
+    "motivo": "l'inglese traduce la revisione del 1918, il tedesco su cui lavoro è del 1897"
+  },
+  {
+    "it": "Al singolo uomo la verità appare in una veste individuale.",
+    "en": "To each individual man, truth appears in an individual garment.",
+    "de": "Dem einzelnen Menschen erscheint die Wahrheit in einem individuellen Kleide.",
+    "opera": "La concezione goethiana del mondo, Personalità",
+    "motivo": "l'inglese traduce la revisione del 1918, il tedesco su cui lavoro è del 1897"
+  },
+  {
+    "it": "Quando l'uomo posa lo sguardo su una cosa, nasce in lui l'impulso a vedere più di quanto la percezione gli offra.",
+    "en": "When a man turns his gaze upon a thing, there arises in him the urge to see more than perception offers him.",
+    "de": "Wenn der Mensch den Blick auf ein Ding richtet, dann entsteht in ihm der Drang, mehr zu sehen, als ihm in der Wahrnehmung entgegentritt.",
+    "opera": "La concezione goethiana del mondo, Personalità",
+    "motivo": "l'inglese traduce la revisione del 1918, il tedesco su cui lavoro è del 1897"
+  },
+  {
+    "it": "Hai potere sulla tua mente, non sugli eventi esterni. Renditene conto e troverai la forza.",
+    "en": "You have power over your mind — not over outside events. Realize this, and you will find strength.",
+    "opera": "Pensieri, VIII",
+    "motivo": "NEL LONG NON ESISTE in nessuna forma: e la parafrasi moderna che circola. l'autore ha scelto di tenerla. I passi veri e vicini sono VIII,47 e VIII,48"
+  },
+  {
+    "it": "La vita e cio che i nostri pensieri la fanno diventare.",
+    "en": "Our life is what our thoughts make it.",
+    "opera": "Pensieri, IV",
+    "motivo": "non trovata nel Long; se viene da V,16 e un doppione di senso di «L anima prende il colore dei suoi pensieri»"
+  },
+  {
+    "it": "Presto avrai dimenticato tutto; presto tutti avranno dimenticato te.",
+    "en": "Soon you will have forgotten everything; and soon everyone will have forgotten you.",
+    "opera": "Pensieri, VII",
+    "motivo": "il passo greco esiste (VII,21) ma la resa nel Long non c e. everything/everyone tiene l eco e rispetta il greco: apanton sono le cose, apantes le persone"
+  },
+  {
+    "it": "Cio che ostacola l azione fa avanzare l azione. Cio che sta sulla strada diventa la strada.",
+    "en": "The impediment to action advances action. What stands in the way becomes the way.",
+    "opera": "Pensieri, V",
+    "motivo": "passo autentico (V,20) ma questa resa e di Gregory Hays 2002, non verificabile su disco. Scelta dell'autore perche l italiano traduce Hays"
+  }
 ]
