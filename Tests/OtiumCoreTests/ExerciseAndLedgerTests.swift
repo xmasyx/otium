@@ -519,6 +519,22 @@ final class RotatingTextTests: XCTestCase {
         XCTAssertTrue(ripetuti.isEmpty, "stesso passo tradotto due volte: \(ripetuti.keys.sorted())")
     }
 
+    /// La voce dell'app non prende una firma, mai.
+    ///
+    /// `.voce` sono righe scritte per Otium: a schermo escono senza caporali e senza credito,
+    /// perché non citano nessuno. Il giorno che una di queste si prende un'attribuzione torna a
+    /// essere quello che era prima del 2026-07-29 — testo dell'AI vestito da massima — e stavolta
+    /// con un nome sotto, che è peggio. Il pool anonimo (`.mindful` senza attribuzione) resta
+    /// legittimo: lì l'autore è esistito e non lo sappiamo.
+    func testTheAppsOwnVoiceIsNeverSigned() {
+        let voci = PhraseLibrary.breakPool(includingUser: false).filter { $0.kind == .voce }
+        XCTAssertGreaterThan(voci.count, 20, "il pool della voce si è svuotato: è un errore, non una pulizia")
+        for v in voci {
+            XCTAssertTrue(v.attribution.isEmpty, "la voce dell'app si è presa una firma: \(v.text)")
+            XCTAssertTrue(v.attributionEN.isEmpty, "la voce dell'app si è presa una firma: \(v.text)")
+        }
+    }
+
     /// Niente marcatori markdown dentro le frasi.
     ///
     /// `Text("«\(phrase.localizedText)»")` interpola, e un valore interpolato **non** passa dal

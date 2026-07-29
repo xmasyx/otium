@@ -24,6 +24,20 @@ public enum Mindful {
         Phrase(id: "m:\(text.prefix(28))", kind: .mindful, text: text, textEN: en)
     }
 
+    /// **La voce dell'app**: righe scritte per Otium, che non citano nessuno.
+    ///
+    /// Stavano dentro `m(…)` e uscivano a schermo con i caporali e «anonimo» sotto, cioè
+    /// travestite da massima di cui si è perso l'autore. Il 2026-07-29 l'autore ha deciso di
+    /// smettere di spacciarle per citazioni invece di buttarle: sono buone righe, il difetto era
+    /// la veste. Vedi `Phrase.Kind.voce`.
+    ///
+    /// **L'`id` resta `m:`** e non diventa `v:`: cambiarlo azzererebbe queste frasi nel mazzo di
+    /// chi ha l'app installata, e rivedrebbe subito quaranta righe già viste. La veste cambia,
+    /// l'identità no.
+    private static func v(_ text: String, _ en: String) -> Phrase {
+        Phrase(id: "m:\(text.prefix(28))", kind: .voce, text: text, textEN: en)
+    }
+
     /// Con la sua tradizione dichiarata, nelle due lingue.
     private static func t(_ text: String, _ en: String, _ source: String, _ sourceEN: String) -> Phrase {
         Phrase(id: "t:\(text.prefix(28))", kind: .mindful, text: text, textEN: en,
@@ -33,44 +47,42 @@ public enum Mindful {
     // MARK: - Il corpo, adesso
 
     static let corpo: [Phrase] = [
-        m("Il sangue nelle gambe non risale da solo, sono i muscoli a spingerlo su.", "Blood doesn't climb out of your legs on its own — your muscles push it up."),
-        m("Le articolazioni si nutrono di movimento, non di riposo.", "Joints feed on movement, not on rest."),
-        m("Il collo che duole di sera è il collo che di mattina non si è mai girato.", "The neck that aches at night is the neck that never turned all morning."),
-        m("Alzati come se dovessi guardare fuori dalla finestra. Poi guardaci davvero.", "Stand up as if you were going to look out of the window. Then actually look."),
-        m("Espira più a lungo di quanto inspiri: è il modo più corto per calmarsi.", "Breathe out longer than you breathe in: it's the shortest way to calm down."),
-        m("Gli occhi hanno un muscolo anche loro, e l'hai tenuto contratto per un'ora.", "Your eyes have a muscle too, and you've held it clenched for an hour."),
-        m("Guarda qualcosa di lontano. Gli occhi si sono dimenticati che esiste la distanza.", "Look at something far away. Your eyes have forgotten that distance exists."),
-        m("Sciogli le spalle: le tieni alzate da così tanto che non te ne accorgi più.", "Drop your shoulders: you've held them up so long you no longer notice."),
-        m("La mandibola stretta è una decisione che stai prendendo senza saperlo. Lasciala andare.", "A clenched jaw is a decision you're making without knowing it. Let it go."),
-        m("Se ti accorgi di essere in apnea davanti allo schermo, non sei il solo. Respira.", "If you catch yourself holding your breath at the screen, you're not the only one. Breathe."),
+        v("Il collo che duole di sera è il collo che di mattina non si è mai girato.", "The neck that aches at night is the neck that never turned all morning."),
+        v("Alzati come se dovessi guardare fuori dalla finestra. Poi guardaci davvero.", "Stand up as if you were going to look out of the window. Then actually look."),
+        v("Espira più a lungo di quanto inspiri: è il modo più corto per calmarsi.", "Breathe out longer than you breathe in: it's the shortest way to calm down."),
+        v("Gli occhi hanno un muscolo anche loro, e l'hai tenuto contratto per un'ora.", "Your eyes have a muscle too, and you've held it clenched for an hour."),
+        v("Guarda qualcosa di lontano. Gli occhi si sono dimenticati che esiste la distanza.", "Look at something far away. Your eyes have forgotten that distance exists."),
+        v("Sciogli le spalle: le tieni alzate da così tanto che non te ne accorgi più.", "Drop your shoulders: you've held them up so long you no longer notice."),
+        v("La mandibola stretta è una decisione che stai prendendo senza saperlo. Lasciala andare.", "A clenched jaw is a decision you're making without knowing it. Let it go."),
+        v("Se ti accorgi di essere in apnea davanti allo schermo, non sei il solo. Respira.", "If you catch yourself holding your breath at the screen, you're not the only one. Breathe."),
     ]
 
     // MARK: - Presenza
 
     static let presenza: [Phrase] = [
-        m("Ascolta i rumori della stanza. Ci sono da un'ora e non li avevi sentiti.", "Listen to the sounds of the room. They've been there an hour and you hadn't heard them."),
-        m("Accorgersi di essersi distratti è già essere tornati.", "Noticing that you drifted off is already being back."),
-        m("Chiudi gli occhi per dieci secondi. Non succede niente, ed è la notizia buona.", "Close your eyes for ten seconds. Nothing happens, and that's the good news."),
-        m("Sentire i piedi appoggiati per terra è il modo più veloce di tornare nel corpo.", "Feeling your feet on the floor is the fastest way back into your body."),
-        m("Guarda una cosa sola per dieci secondi, senza nominarla.", "Look at one thing for ten seconds without naming it."),
-        m("Le mani sono contratte sul mouse da un'ora. Aprile.", "Your hands have been clamped on the mouse for an hour. Open them."),
+        v("Ascolta i rumori della stanza. Ci sono da un'ora e non li avevi sentiti.", "Listen to the sounds of the room. They've been there an hour and you hadn't heard them."),
+        v("Accorgersi di essersi distratti è già essere tornati.", "Noticing that you drifted off is already being back."),
+        v("Chiudi gli occhi per dieci secondi. Non succede niente, ed è la notizia buona.", "Close your eyes for ten seconds. Nothing happens, and that's the good news."),
+        v("Sentire i piedi appoggiati per terra è il modo più veloce di tornare nel corpo.", "Feeling your feet on the floor is the fastest way back into your body."),
+        v("Guarda una cosa sola per dieci secondi, senza nominarla.", "Look at one thing for ten seconds without naming it."),
+        v("Le mani sono contratte sul mouse da un'ora. Aprile.", "Your hands have been clamped on the mouse for an hour. Open them."),
     ]
 
     // MARK: - Costanza e piccoli passi
 
     static let costanza: [Phrase] = [
-        m("Comincia male, ma comincia.", "Start badly, but start."),
-        m("Fai la versione più piccola possibile: quella si fa anche nei giorni storti.", "Do the smallest possible version: that one gets done even on bad days."),
-        m("La regola dei due minuti: comincia e vedi se ti fermi davvero dopo.", "The two-minute rule: begin, then see whether you really stop."),
+        v("Comincia male, ma comincia.", "Start badly, but start."),
+        v("Fai la versione più piccola possibile: quella si fa anche nei giorni storti.", "Do the smallest possible version: that one gets done even on bad days."),
+        v("La regola dei due minuti: comincia e vedi se ti fermi davvero dopo.", "The two-minute rule: begin, then see whether you really stop."),
     ]
 
     // MARK: - Lavoro e attenzione
 
     static let lavoro: [Phrase] = [
-        m("La stanchezza non si vede da dentro, si vede dagli errori.", "Tiredness can't be seen from the inside: it shows up in the mistakes."),
-        m("Quando rileggi la stessa riga tre volte, non è la riga, sei tu.", "When you read the same line three times, it isn't the line: it's you."),
-        m("Proteggi le tue ore migliori: sono poche, e le stai regalando.", "Guard your best hours: there are few of them, and you're giving them away."),
-        m("Fai la cosa difficile per prima, o la penserai tutto il giorno.", "Do the hard thing first, or you'll think about it all day."),
+        v("La stanchezza non si vede da dentro, si vede dagli errori.", "Tiredness can't be seen from the inside: it shows up in the mistakes."),
+        v("Quando rileggi la stessa riga tre volte, non è la riga, sei tu.", "When you read the same line three times, it isn't the line: it's you."),
+        v("Proteggi le tue ore migliori: sono poche, e le stai regalando.", "Guard your best hours: there are few of them, and you're giving them away."),
+        v("Fai la cosa difficile per prima, o la penserai tutto il giorno.", "Do the hard thing first, or you'll think about it all day."),
     ]
 
     // MARK: - Filosofia orientale, senza firma certa
@@ -107,17 +119,17 @@ public enum Mindful {
     // MARK: - Tempo e impermanenza
 
     static let tempo: [Phrase] = [
-        m("Nessuno ricorda le mail. Tutti ricordano come stavano.", "Nobody remembers the emails. Everybody remembers how they felt."),
-        m("La cosa che rimandi da tre settimane richiede venti minuti.", "The thing you've been putting off for three weeks takes twenty minutes."),
+        v("Nessuno ricorda le mail. Tutti ricordano come stavano.", "Nobody remembers the emails. Everybody remembers how they felt."),
+        v("La cosa che rimandi da tre settimane richiede venti minuti.", "The thing you've been putting off for three weeks takes twenty minutes."),
     ]
 
     // MARK: - Sé, con misura
 
     static let se: [Phrase] = [
-        m("Quando tutto sembra pesante, comincia dal corpo. La testa segue.", "When everything feels heavy, start with the body. The head follows."),
-        m("Fatti una domanda semplice: quando ho bevuto l'ultima volta?", "Ask yourself a simple question: when did I last drink some water?"),
-        m("La forza di volontà si esaurisce. L'ambiente no: cambia quello.", "Willpower runs out. Your surroundings don't: change those."),
-        m("Lunedì è un giorno come oggi, con meno vantaggio.", "Monday is a day like today, with less of a head start."),
+        v("Quando tutto sembra pesante, comincia dal corpo. La testa segue.", "When everything feels heavy, start with the body. The head follows."),
+        v("Fatti una domanda semplice: quando ho bevuto l'ultima volta?", "Ask yourself a simple question: when did I last drink some water?"),
+        v("La forza di volontà si esaurisce. L'ambiente no: cambia quello.", "Willpower runs out. Your surroundings don't: change those."),
+        v("Lunedì è un giorno come oggi, con meno vantaggio.", "Monday is a day like today, with less of a head start."),
     ]
 
     // MARK: - Natura e respiro largo
@@ -131,35 +143,35 @@ public enum Mindful {
         m("Nessun albero cresce solo verso l'alto: prima va giù.", "No tree grows only upward: first it goes down."),
         m("Anche il campo migliore riposa un anno su tre.", "Even the best field lies fallow one year in three."),
         m("Il grano cresce di notte, quando nessuno guarda.", "Wheat grows at night, when nobody is watching."),
-        m("Guarda il cielo: è lì tutto il giorno e non lo alzi mai.", "Look at the sky: it's there all day and you never look up."),
+        v("Guarda il cielo: è lì tutto il giorno e non lo alzi mai.", "Look at the sky: it's there all day and you never look up."),
     ]
 
     // MARK: - Cominciare, finire, ricominciare
 
     static let soglie: [Phrase] = [
-        m("Metti le scarpe. Il resto viene da sé.", "Put your shoes on. The rest follows by itself."),
-        m("Finire una cosa piccola rimette in moto tutto il resto.", "Finishing one small thing sets everything else moving again."),
-        m("Il momento in cui vorresti smettere è di solito appena prima del punto interessante.", "The moment you want to quit is usually just before the interesting part."),
-        m("Lascia il lavoro a metà di una frase: domani saprai dove riprendere.", "Stop work in the middle of a sentence: tomorrow you'll know where to pick up."),
+        v("Metti le scarpe. Il resto viene da sé.", "Put your shoes on. The rest follows by itself."),
+        v("Finire una cosa piccola rimette in moto tutto il resto.", "Finishing one small thing sets everything else moving again."),
+        v("Il momento in cui vorresti smettere è di solito appena prima del punto interessante.", "The moment you want to quit is usually just before the interesting part."),
+        v("Lascia il lavoro a metà di una frase: domani saprai dove riprendere.", "Stop work in the middle of a sentence: tomorrow you'll know where to pick up."),
     ]
 
     // MARK: - Relazione con lo schermo
 
     static let schermo: [Phrase] = [
-        m("Il feed è progettato per non finire mai. La tua giornata no.", "The feed is designed never to end. Your day isn't."),
-        m("Se hai aperto il telefono senza motivo, l'hai fatto per abitudine, non per bisogno.", "If you opened your phone for no reason, that was habit, not need."),
-        m("Guarda un punto lontano: gli occhi ricordano com'era il mondo prima dei quaranta centimetri.", "Look at a distant point: your eyes remember the world before it shrank to arm's length."),
-        m("La finestra è lì da stamattina.", "The window has been there since this morning."),
-        m("Non devi rispondere subito. Quasi mai.", "You don't have to reply right away. Almost never."),
+        v("Il feed è progettato per non finire mai. La tua giornata no.", "The feed is designed never to end. Your day isn't."),
+        v("Se hai aperto il telefono senza motivo, l'hai fatto per abitudine, non per bisogno.", "If you opened your phone for no reason, that was habit, not need."),
+        v("Guarda un punto lontano: gli occhi ricordano com'era il mondo prima dei quaranta centimetri.", "Look at a distant point: your eyes remember the world before it shrank to arm's length."),
+        v("La finestra è lì da stamattina.", "The window has been there since this morning."),
+        v("Non devi rispondere subito. Quasi mai.", "You don't have to reply right away. Almost never."),
     ]
 
     // MARK: - Con misura
 
     static let misura: [Phrase] = [
-        m("Se domani non puoi ripeterlo, oggi hai fatto troppo.", "If you can't repeat it tomorrow, you did too much today."),
-        m("Il riposo è la parte dell'allenamento in cui succedono le cose.", "Rest is the part of training where things actually happen."),
-        m("Il muscolo cresce mentre dormi, non mentre spingi.", "Muscle grows while you sleep, not while you push."),
-        m("Se ti fa paura cominciare, dimezza. Poi dimezza ancora.", "If starting scares you, halve it. Then halve it again."),
+        v("Se domani non puoi ripeterlo, oggi hai fatto troppo.", "If you can't repeat it tomorrow, you did too much today."),
+        v("Il riposo è la parte dell'allenamento in cui succedono le cose.", "Rest is the part of training where things actually happen."),
+        v("Il muscolo cresce mentre dormi, non mentre spingi.", "Muscle grows while you sleep, not while you push."),
+        v("Se ti fa paura cominciare, dimezza. Poi dimezza ancora.", "If starting scares you, halve it. Then halve it again."),
     ]
 
     /// Tutto il pool contemplativo.

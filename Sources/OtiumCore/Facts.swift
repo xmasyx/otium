@@ -241,6 +241,13 @@ public enum Facts {
           "biomeccanica del rachide, nozione di base",
           "The intervertebral disc feeds by diffusion, and diffusion depends on movement.",
           "spinal biomechanics, basic knowledge"),
+        // Arrivata qui dal pool anonimo il 2026-07-29: è un fatto di fisiologia, non un pensiero,
+        // e senza una fonte dichiarata stava nel posto sbagliato. La cartilagine non ha vasi e
+        // vive del liquido sinoviale che il carico ciclico le fa entrare e uscire.
+        f("Le articolazioni si nutrono di movimento, non di riposo.",
+          "fisiologia articolare, nozione di base",
+          "Joints feed on movement, not on rest.",
+          "joint physiology, basic knowledge"),
         f("La pressione sui dischi lombari da seduti è maggiore che in piedi.",
           "biomeccanica del rachide, misurazioni classiche di Nachemson",
           "Pressure on the lumbar discs is higher seated than standing.",

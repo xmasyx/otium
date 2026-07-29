@@ -15,6 +15,18 @@ public struct Phrase: Equatable, Sendable, Identifiable {
         case mindful
         /// Un fatto, con la sua fonte o dichiarato come consenso.
         case fatto
+        /// **La voce dell'app.** Righe scritte per Otium, non citazioni di nessuno.
+        ///
+        /// Esiste perché fino al 2026-07-29 stavano nel pool anonimo e uscivano a schermo dentro
+        /// i caporali con «anonimo» sotto: vestite da aforisma di cui si è perso l'autore, mentre
+        /// un autore non c'è mai stato. «Le mani sono contratte sul mouse da un'ora. Aprile.» non
+        /// è una massima orientale, è l'app che ti parla, e presentarla così era la stessa bugia
+        /// che il pool firmato vieta — solo più difficile da vedere, perché non c'era nessun nome
+        /// sbagliato da controllare.
+        ///
+        /// Restano `mindful` **anonime** solo le frasi che qualcuno ha davvero detto e di cui non
+        /// sappiamo chi: quelle tengono i caporali e la firma «anonimo».
+        case voce
     }
 
     public let id: String

@@ -580,15 +580,22 @@ struct QuoteBlock: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            Text("«\(phrase.localizedText)»")
-                .font(.system(size: 18, design: .serif))
+            // **La voce dell'app non porta i caporali e non porta una firma.** I caporali dicono
+            // «questo lo ha detto qualcun altro» e «anonimo» dice «qualcuno l'ha detto e non
+            // sappiamo chi»: su una riga scritta per Otium sono due affermazioni false. Il
+            // carattere cambia con loro — grazia per ciò che è citato, lineare per ciò che dice
+            // l'app — così la differenza si vede prima di leggere la firma che non c'è.
+            Text(phrase.kind == .voce ? phrase.localizedText : "«\(phrase.localizedText)»")
+                .font(.system(size: 18, design: phrase.kind == .voce ? .default : .serif))
                 .foregroundStyle(Palette.paper.opacity(0.62))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: 620)
-            Text(phrase.localizedCredit)
-                .font(.system(size: 11))
-                .foregroundStyle(Palette.dim)
+            if phrase.kind != .voce {
+                Text(phrase.localizedCredit)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Palette.dim)
+            }
         }
     }
 }
@@ -706,12 +713,15 @@ struct QuoteHUDView: View {
         HStack(spacing: 14) {
             RoundedRectangle(cornerRadius: 2).fill(Palette.accent).frame(width: 4)
             VStack(alignment: .leading, spacing: 8) {
-                Text("«\(phrase.localizedText)»")
-                    .font(.system(size: 14, design: .serif))
+                // Stessa regola della pausa: la voce dell'app non si veste da citazione.
+                Text(phrase.kind == .voce ? phrase.localizedText : "«\(phrase.localizedText)»")
+                    .font(.system(size: 14, design: phrase.kind == .voce ? .default : .serif))
                     .fixedSize(horizontal: false, vertical: true)
-                Text(phrase.localizedCredit)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                if phrase.kind != .voce {
+                    Text(phrase.localizedCredit)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
             }
             Spacer(minLength: 0)
         }
