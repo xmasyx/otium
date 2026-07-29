@@ -851,7 +851,18 @@ sarebbe emerso dall'uso: sette fallivano in silenzio e uno solo in modo visibile
 - [x] **ISC-80** Nessun controllo parla per sola icona. — i due tondi «+» e «−» del pannello delle
       ripetizioni erano, per VoiceOver, due pulsanti identici senza nome.
 
-**Aperto:** la parte contenuti, che aspetta la fine delle traduzioni dell'altra sessione.
+- [x] **ISC-81** Nessuna stringa visibile resta in una lingua sola. — sedici trovate: nove nei due
+      pannelli di dichiarazione, quattro nelle intestazioni delle statistiche, una nella riga dello
+      studio sotto il blocco. Tutte in superfici che si aprono di rado, che è il posto dove una
+      traduzione mancante sopravvive per mesi — chi apre le statistiche una volta a settimana non
+      segnala, si abitua. *Falsificatore:* `NoUntranslatedStringsTests` scansiona i sorgenti,
+      riconosce l'italiano per parole e accenti, guarda solo le righe che finiscono a schermo, e
+      dichiara per nome le due stringhe di sonda ammesse. Provato al polo opposto rimettendo una
+      `Section` non tradotta.
+
+**L'audit è chiuso.** Sedici difetti in tutto, tredici dei quali fallivano in silenzio, e nessuno
+sarebbe emerso dall'uso. Quattro li ha trovati un test che prima non esisteva, due il fuzz, uno la
+guardia di un'altra sessione, e uno l'ho causato io stesso sondando.
 
 ## Test Strategy
 
