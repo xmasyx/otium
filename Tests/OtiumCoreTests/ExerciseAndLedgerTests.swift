@@ -508,6 +508,33 @@ final class RotatingTextTests: XCTestCase {
 
         let ids = PhraseLibrary.breakPool(includingUser: false).map(\.id)
         XCTAssertEqual(Set(ids).count, ids.count, "id duplicati: il mazzo ne perderebbe una")
+
+        // **Anche l'inglese**, e non è un di più: il 29 luglio 2026 il corpus conteneva lo stesso
+        // passo di Bacon due volte, «Certi libri…» e «Alcuni libri…», con inglese identico. Il
+        // controllo sull'italiano non poteva vederlo — due traduzioni diverse dello stesso testo
+        // sono due stringhe diverse — e un doppione così esce due volte nello stesso mese.
+        let englishes = PhraseLibrary.breakPool(includingUser: false)
+            .map(\.textEN).filter { !$0.isEmpty }
+        let ripetuti = Dictionary(grouping: englishes, by: { $0 }).filter { $0.value.count > 1 }
+        XCTAssertTrue(ripetuti.isEmpty, "stesso passo tradotto due volte: \(ripetuti.keys.sorted())")
+    }
+
+    /// Niente marcatori markdown dentro le frasi.
+    ///
+    /// `Text("«\(phrase.localizedText)»")` interpola, e un valore interpolato **non** passa dal
+    /// parser markdown: gli asterischi arrivano sullo schermo così come sono. Il 29 luglio 2026
+    /// una frase diceva `lo stai **di fila**` e si è vista solo guardando il provino — il cancello
+    /// delle citazioni cerca il testo nella fonte e non sa niente di come è fatto lo schermo.
+    /// Questo test è quella lettura, resa automatica.
+    func testNoMarkdownMarkersInPhrases() {
+        for p in PhraseLibrary.breakPool(includingUser: false) {
+            for testo in [p.text, p.textEN, p.attribution, p.attributionEN] where !testo.isEmpty {
+                XCTAssertFalse(testo.contains("**"), "asterischi di grassetto a schermo: \(testo)")
+                XCTAssertFalse(testo.contains("__"), "trattini bassi di markdown a schermo: \(testo)")
+                XCTAssertNil(testo.range(of: #"\[[^\]]+\]\([^)]+\)"#, options: .regularExpression),
+                             "link markdown a schermo: \(testo)")
+            }
+        }
     }
 
     /// Il numero che rende vera la promessa «frasi sempre diverse per almeno un mese».
@@ -928,8 +955,13 @@ final class ReportTests: XCTestCase {
     /// finivano in quella precedente e il test diventava rosso da solo. Scoperto alle 20:00:21 del
     /// 2026-07-27, cioè ventun secondi dentro la finestra in cui falliva. Un test che dipende da
     /// che ore sono non misura il codice: misura l'orologio.
+    /// **La stessa trappola, dall'altro lato, chiusa il 2026-07-29.** Le righe erano marcate
+    /// `Date()` mentre il conto girava con `now: adesso`, che è mezzogiorno di oggi: dopo le
+    /// 12:00 le righe cadevano *dopo* l'istante del calcolo e sparivano dalla finestra. Il test
+    /// era verde di mattina e rosso di pomeriggio. L'istante delle righe e quello del conto
+    /// devono essere lo stesso, e nessuno dei due può essere l'orologio vero.
     func testHourlyBreakdownSeparatesDoneFromMissed() {
-        let istante = Date()
+        let istante = adesso
         let hour = Calendar.current.component(.hour, from: istante)
         let rows = [
             LedgerEntry(timestamp: istante, type: .completed, breakKind: .micro,
@@ -1007,8 +1039,11 @@ final class SeatedTimeTests: XCTestCase {
 
     /// Il totale del giorno è una **somma di righe**: correggerlo all'ingiù significa scriverne
     /// una negativa, non riscrivere il registro.
+    /// Le righe portano `adesso`, non `Date()`: vedi la nota su `testHourlyBreakdownSeparates…`.
+    /// Con l'orologio vero il test cadeva ogni pomeriggio, perché le righe finivano dopo
+    /// l'istante del conto.
     func testTheDailyTotalIsCorrectedWithASignedRow() {
-        let now = Date()
+        let now = adesso
         let rows = [
             LedgerEntry(timestamp: now, type: .active, seconds: 10800),           // 3 ore
             LedgerEntry(timestamp: now, type: .active, seconds: -3600, reason: "correzione"),

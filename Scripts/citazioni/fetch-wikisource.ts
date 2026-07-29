@@ -86,10 +86,16 @@ async function reso(title: string): Promise<string> {
   await Bun.sleep(900);
   return html
     .replace(/<style[\s\S]*?<\/style>/g, "")
+    .replace(/<script[\s\S]*?<\/script>/g, "")
     .replace(/<sup[\s\S]*?<\/sup>/g, "")
+    // **Gli attributi PRIMA dei tag, e in tutte e due le virgolette.** Parsoid mette il suo JSON
+    // in `data-mw='{"parts":[…]}'` con gli apici singoli, e quel JSON contiene `>`: uno strip
+    // `<[^>]+>` si ferma lì e riversa mezzo template dentro la prosa.
+    .replace(/\s(?:data-mw|data-parsoid|about|typeof|id|title|href)\s*=\s*'[^']*'/g, "")
+    .replace(/\s(?:data-mw|data-parsoid|about|typeof|id|title|href)\s*=\s*"[^"]*"/g, "")
     .replace(/<\/(p|div|h[1-6]|li|br)>/g, "\n")
     .replace(/<br\s*\/?>/g, "\n")
-    .replace(/<[^>]+>/g, "")
+    .replace(/<[^<>]*>/g, "")
     .replace(/&#160;|&nbsp;/g, " ")
     .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
     .replace(/\n{3,}/g, "\n\n")
@@ -119,10 +125,22 @@ async function contents(titles: string[]): Promise<Map<string, string>> {
   return map;
 }
 
-/** Ordina numerando i romani in coda al titolo, così i capitoli non escono in ordine alfabetico. */
+/**
+ * Ordina numerando i romani in coda al titolo, così i capitoli non escono in ordine alfabetico.
+ *
+ * **E anche i numeri arabi, che è il difetto costato il 2026-07-29.** Il Gummere inglese ha
+ * sottopagine «Letter 1 … Letter 124»: nessuna comincia con un numero romano, quindi ognuna
+ * prendeva `Infinity`, il `sort` restava stabile e teneva l'ordine alfabetico dell'API — «Letter
+ * 1, Letter 10, Letter 100, … Letter 49, Letter 5, Letter 50». Il file finito sembrava intero
+ * (1,3 MB, tutte le lettere dentro) ma la 5 stava sotto l'intestazione della 49, la 49 era
+ * troncata e dieci lettere mancavano del tutto. Una ricerca dentro un testo così non dice niente
+ * sulla citazione: dice che la fonte è rotta, e lo dice sotto forma di «frammento non trovato».
+ */
 const ROMANI: Record<string, number> = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
 function chiave(t: string): number {
   const coda = t.split("/").pop() ?? "";
+  const arabo = coda.match(/(\d+)\s*$/);
+  if (arabo) return Number(arabo[1]);
   const m = coda.match(/^([IVXLCDM]+)\b/);
   if (!m) return Number.POSITIVE_INFINITY;
   let n = 0;
@@ -207,5 +225,24 @@ const perPagina = prese ? body.length / prese : 0;
 if (prese && perPagina < 300) {
   console.error(`\nSOSPETTO: ${Math.round(perPagina)} byte a pagina. Questo non è testo — controlla`);
   console.error(`se «${prefix}» è una pagina indice o una raccolta di rinvii, e punta al titolo vero.`);
+  process.exit(1);
+}
+
+// **Una pagina mancante è un guasto, non una statistica.** Prima venivano contate e stampate fra
+// parentesi, e il file usciva lo stesso: dieci lettere di Seneca sono sparite così, in silenzio,
+// e il difetto si è presentato mesi dopo come «questa citazione non esiste nel Gummere». Il conto
+// per pagina non le vede, perché la media delle 114 rimaste resta altissima.
+if (mancanti) {
+  console.error(`\n${mancanti} pagine su ${list.length} sono tornate vuote: il file NON è l'opera.`);
+  console.error(`Quasi sempre è una strozzatura (429) e basta rilanciare; se insiste, la pagina non c'è.`);
+  process.exit(1);
+}
+
+// Il JSON di Parsoid vive negli attributi `data-mw='…'` con gli APICI SINGOLI. Se lo strip dei
+// tag lo incontra, taglia al primo `>` che sta dentro il JSON e lascia frammenti di template
+// dentro la prosa. Si vede solo aprendo il file, quindi lo guarda questo.
+if (/Proofreadpage|"wt":|\{"parts":/.test(body)) {
+  console.error(`\nRESIDUI DI TEMPLATE nel testo: lo strip dell'HTML ha lasciato passare il JSON`);
+  console.error(`di Parsoid. Togli gli attributi (anche quelli con apici singoli) PRIMA dei tag.`);
   process.exit(1);
 }

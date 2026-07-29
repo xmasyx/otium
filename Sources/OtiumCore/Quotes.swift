@@ -30,6 +30,17 @@ import Foundation
 ///   citazioni. Il sito da cui l'hai presa non è un'opera.
 /// Tolti anche cinque doppioni: lo stesso passo compariva due volte con parole diverse (Seneca
 /// due volte, Epitteto, Confucio, Franklin).
+///
+/// **Revisione del 2026-07-29, aperta guardando il provino.** Tolti altri quattro doppioni, tutti
+/// trovati dal confronto sull'inglese e nessuno visibile dal confronto sull'italiano, perché due
+/// traduzioni diverse dello stesso passo sono due stringhe diverse:
+/// - Bacon, *Degli studi* — «Certi libri…» e «Alcuni libri…», tenuta la seconda.
+/// - Bacon, *Del governo della salute* — due rese dello stesso periodo, tenuta la più fedele.
+/// - Montaigne, «il segno più manifesto della saggezza» — la copia tolta portava per giunta
+///   l'opera sbagliata (*Saggi, I, 25* invece del capitolo sull'educazione dei fanciulli).
+/// - Laozi, *Tao Te Ching* 24 — tenuto il verso intero invece del solo primo membro.
+/// Il test che li ha trovati adesso è nel corpus (`testNoDuplicateTextsAcrossThePools`), così il
+/// prossimo doppione cade prima di entrare.
 public struct Quote: Equatable, Sendable, Identifiable {
     /// L'italiano. Resta la forma canonica anche quando a schermo c'è l'inglese — vedi `id`.
     public let text: String
@@ -79,11 +90,11 @@ public enum Quotes {
         q("Ogni giorno, ogni ora rivela quanto siamo nulla.", "Every day and every hour reveal to us what a nothing we are.", "Seneca", "Lettere a Lucilio, 101"),
         q("Nessun vento è favorevole per il marinaio che non sa dove andare.", "When a man does not know what harbour he is making for, no wind is the right wind.", "Seneca", "Lettere a Lucilio, 71"),
         q("Soffriamo più nell'immaginazione che nella realtà.", "We suffer more often in imagination than in reality.", "Seneca", "Lettere a Lucilio, 13"),
-        q("Comincia subito a vivere, e conta ogni giorno come una vita a sé.", "Begin at once to live, and count each separate day as a separate life.", "Seneca", "Lettere a Lucilio, 101"),
+        q("Comincia subito a vivere e conta ogni giorno come una vita a sé.", "Begin at once to live, and count each separate day as a separate life.", "Seneca", "Lettere a Lucilio, 101"),
         q("Rimandare è la più grande perdita di tempo: porta via il giorno di oggi.", "Postponement is the greatest waste of life; it deprives us of each day as it comes.", "Seneca", "La brevità della vita, 9"),
         q("Vivere è la cosa che si impara per tutta la vita.", "It takes the whole of life to learn how to live.", "Seneca", "La brevità della vita, 7"),
         q("Fa' che il corpo obbedisca all'animo senza fatica.", "See to it that the body obeys the mind without effort.", "Seneca", "Lettere a Lucilio, 15"),
-        q("Esercitare il corpo con poco, e tornare presto alla mente: è questo il modo.", "But whatever you do, come back soon from body to mind.", "Seneca", "Lettere a Lucilio, 15"),
+        q("Esercitare il corpo con poco e tornare presto alla mente: è questo il modo.", "But whatever you do, come back soon from body to mind.", "Seneca", "Lettere a Lucilio, 15"),
         q("Chi è ovunque non è da nessuna parte, la vita dispersa è la più povera.", "Everywhere means nowhere.", "Seneca", "Lettere a Lucilio, 2"),
         q("Non c'è bonaccia peggiore di quella dell'animo che non sa dove tende.", "There is no worse calm than that of a mind which does not know where it is bound.", "Seneca", "Lettere a Lucilio, 95"),
 
@@ -93,7 +104,7 @@ public enum Quotes {
         q("Al mattino, quando ti alzi controvoglia, ricorda: mi sveglio per fare il lavoro di un essere umano.", "In the morning when thou risest unwillingly, let this thought be present: I am rising to the work of a human being.", "Marco Aurelio", "Pensieri, V"),
         q("La vita è ciò che i nostri pensieri la fanno diventare.", "Our life is what our thoughts make it.", "Marco Aurelio", "Pensieri, IV"),
         q("Non perdere altro tempo a discutere come dovrebbe essere un uomo buono. Sii buono.", "No longer talk at all about the kind of man that a good man ought to be, but be such.", "Marco Aurelio", "Pensieri, X"),
-        q("Guarda dentro. Dentro è la sorgente del bene, e può zampillare sempre, se scavi.", "Look within. Within is the fountain of good, and it will ever bubble up, if thou wilt ever dig.", "Marco Aurelio", "Pensieri, VII"),
+        q("Guarda dentro. Dentro è la sorgente del bene e può zampillare sempre, se scavi.", "Look within. Within is the fountain of good, and it will ever bubble up, if thou wilt ever dig.", "Marco Aurelio", "Pensieri, VII"),
         q("Ciò che ostacola l'azione fa avanzare l'azione. Ciò che sta sulla strada diventa la strada.", "The impediment to action advances action. What stands in the way becomes the way.", "Marco Aurelio", "Pensieri, V"),
         q("Hai potere sulla tua mente, non sugli eventi esterni. Renditene conto e troverai la forza.", "You have power over your mind — not over outside events. Realize this, and you will find strength.", "Marco Aurelio", "Pensieri, VIII"),
         q("Ogni ora decidi con fermezza di fare ciò che hai per le mani, con dignità semplice.", "Every moment think steadily to do what thou hast in hand with perfect and simple dignity.", "Marco Aurelio", "Pensieri, II"),
@@ -101,14 +112,14 @@ public enum Quotes {
         q("Non agire come se dovessi vivere diecimila anni.", "Do not act as if thou wert going to live ten thousand years.", "Marco Aurelio", "Pensieri, IV"),
         q("La perfezione del carattere è vivere ogni giorno come fosse l'ultimo, senza smania e senza torpore.", "The perfection of moral character consists in passing every day as the last, neither violently excited nor torpid nor playing the hypocrite.", "Marco Aurelio", "Pensieri, VII"),
         q("Il tuo dovere è restare uomo giusto, come il masso a cui l'onda si rompe intorno.", "Be like the promontory against which the waves continually break, but it stands firm and tames the fury of the water around it.", "Marco Aurelio", "Pensieri, IV"),
-        q("Togli il giudizio, e avrai tolto il «sono stato danneggiato».", "Take away thy opinion, and then there is taken away the complaint, I have been harmed.", "Marco Aurelio", "Pensieri, IV, 7"),
+        q("Togli il giudizio e avrai tolto il \"sono stato danneggiato\".", "Take away thy opinion, and then there is taken away the complaint, I have been harmed.", "Marco Aurelio", "Pensieri, IV, 7"),
 
         q("Non sono le cose a turbare gli uomini, ma le opinioni che essi ne hanno.", "Men are disturbed not by the things which happen, but by the opinions about the things.", "Epitteto", "Manuale, 5"),
         q("Alcune cose dipendono da noi, altre no.", "Of things some are in our power, and others are not.", "Epitteto", "Manuale, 1"),
-        q("Non chiedere che le cose vadano come vuoi tu: vogli che vadano come vanno, e starai bene.", "Seek not that the things which happen should happen as you wish; but wish the things which happen to be as they are.", "Epitteto", "Manuale, 8"),
+        q("Non chiedere che le cose vadano come vuoi tu, ma vogli che vadano come vanno e starai bene.", "Seek not that the things which happen should happen as you wish; but wish the things which happen to be as they are.", "Epitteto", "Manuale, 8"),
         q("Ricordati che sei un attore in un dramma scelto dall'autore.", "Remember that thou art an actor in a play, of such a kind as the author may choose.", "Epitteto", "Manuale, 17"),
         q("Se vuoi migliorare, accetta di sembrare sciocco riguardo alle cose esterne.", "If you would improve, submit to be considered without sense and foolish with respect to externals.", "Epitteto", "Manuale, 13"),
-        q("Non dire mai di nulla «l'ho perso», ma «l'ho restituito».", "Never say about anything, I have lost it, but say I have restored it.", "Epitteto", "Manuale, 11"),
+        q("Non dire mai di nulla \"l'ho perso\", ma \"l'ho restituito\".", "Never say about anything, I have lost it, but say I have restored it.", "Epitteto", "Manuale, 11"),
         q("Non è chi ti insulta a offenderti, ma il tuo giudizio che quello sia un insulto.", "It is not he who reviles you or strikes you who insults you, but your opinion about these things as being insulting.", "Epitteto", "Manuale, 20"),
         q("Delle cose del corpo prendi solo quanto basta all'uso: cibo, bevanda, vestito, casa.", "As to the body, take only what bare need requires: food, drink, clothing, house.", "Epitteto", "Manuale, 33"),
         q("Prima decidi chi vuoi essere, poi fa' quello che devi fare.", "First say to yourself what you would be; and then do what you have to do.", "Epitteto", "Discorsi, III"),
@@ -118,7 +129,7 @@ public enum Quotes {
         q("Vivere è pensare.", "To live is to think.", "Cicerone", "Tusculanae disputationes, V"),
         q("Il giardino e la biblioteca: se hai questi, hai tutto quello che serve.", "If you have a garden and a library, you have everything you need.", "Cicerone", "Lettere a Varrone (Ad familiares, IX)"),
         q("Nessuno è così vecchio da non credere di poter vivere ancora un anno.", "No one is so old as to think that he may not live a year.", "Cicerone", "De senectute, 24"),
-        q("Il tempo distrugge le finzioni dell'opinione, e conferma i giudizi della natura.", "Time destroys the fictions of opinion, and confirms the judgements of nature.", "Cicerone", "De natura deorum, II"),
+        q("Il tempo distrugge le finzioni dell'opinione e conferma i giudizi della natura.", "Time destroys the fictions of opinion, and confirms the judgements of nature.", "Cicerone", "De natura deorum, II"),
 
         // MARK: Aggiunte del 2026-07-28 — 73 citazioni ritrovate sul testo primario.
         //
@@ -138,14 +149,14 @@ public enum Quotes {
         q("Non fare niente a caso, né senza uno scopo.", "Never to do anything either rashly, or feignedly, or hypocritically.", "Marco Aurelio", "Pensieri, II, 15"),
         q("Guarda quanto in fretta ogni cosa si scioglie e si disfa.", "Consider how quickly all things are dissolved and resolved.", "Marco Aurelio", "Pensieri, II, 9"),
         q("Non fare niente controvoglia, né senza averlo esaminato, né a malincuore.", "Do nothing against thy will, nor contrary to the community, nor without due examination, nor with reluctancy.", "Marco Aurelio", "Pensieri, III, 5"),
-        q("Scegli liberamente ciò che è meglio, e restaci attaccato.", "Make choice of that which is best, and stick unto it.", "Marco Aurelio", "Pensieri, III, 7"),
+        q("Scegli liberamente ciò che è meglio e restaci attaccato.", "Make choice of that which is best, and stick unto it.", "Marco Aurelio", "Pensieri, III, 7"),
         q("Quello che sto per fare, non sarà per caso una delle cose che non servono?", "May not this that now I go about, be of the number of unnecessary actions.", "Marco Aurelio", "Pensieri, IV, 20"),
         q("Non c'è niente di meglio, per un uomo, che limitarsi alle azioni necessarie.", "There is nothing better, than for a man to confine himself to necessary actions.", "Marco Aurelio", "Pensieri, IV, 20"),
         q("Gran parte di quello che diciamo e facciamo non serve.", "Most of those things, which we either speak or do, are unnecessary.", "Marco Aurelio", "Pensieri, IV, 20"),
         q("La vita è breve: guadagniamoci il tempo presente con giudizio e giustizia.", "Our life is short; we must endeavour to gain the present time with best discretion and justice.", "Marco Aurelio", "Pensieri, IV, 21"),
         q("Prendi lo svago con sobrietà.", "Use recreation with sobriety.", "Marco Aurelio", "Pensieri, IV, 21"),
-        q("Smetti di tormentarti, e riducíti a una semplicità perfetta.", "Trouble not thyself any more henceforth, reduce thyself unto perfect simplicity.", "Marco Aurelio", "Pensieri, IV, 21"),
-        q("Qualunque mestiere tu abbia imparato, amalo, e trova conforto in quello.", "What art and profession soever thou hast learned, endeavour to affect it, and comfort thyself in it.", "Marco Aurelio", "Pensieri, IV, 26"),
+        q("Smetti di tormentarti e riduciti a una semplicità perfetta.", "Trouble not thyself any more henceforth, reduce thyself unto perfect simplicity.", "Marco Aurelio", "Pensieri, IV, 21"),
+        q("Qualunque mestiere tu abbia imparato, amalo e trova conforto in quello.", "What art and profession soever thou hast learned, endeavour to affect it, and comfort thyself in it.", "Marco Aurelio", "Pensieri, IV, 26"),
         q("Non c'è ritiro migliore, per un uomo, della propria anima.", "A man cannot any whither retire better than to his own soul.", "Marco Aurelio", "Pensieri, IV, 3"),
         q("In qualunque momento vuoi, puoi ritirarti in te stesso e stare in pace, libero da ogni faccenda.", "It is in thy power to retire into thyself, and to be at rest, and free from all businesses.", "Marco Aurelio", "Pensieri, IV, 3"),
         q("Non ferito da ciò che è presente, né in paura di ciò che verrà.", "Neither wounded by that which is present, nor in fear of that which is to come.", "Marco Aurelio", "Pensieri, IV, 41"),
@@ -154,23 +165,23 @@ public enum Quotes {
         q("Anche al riposo la natura ha dato una misura, come al mangiare e al bere.", "Nature has fixed bounds to rest too, as she has fixed bounds to eating and drinking.", "Marco Aurelio", "Pensieri, V, 1"),
         q("Se una cosa è giusta da dire o da fare, non svalutarti al punto di rinunciarci.", "If it be right and honest to be spoken or done, undervalue not thyself so much, as to be discouraged from it.", "Marco Aurelio", "Pensieri, V, 3"),
         q("La vita, se sai usarla, è lunga.", "Life is long enough, and it has been given in sufficiently generous measure.", "Seneca", "La brevità della vita, 2"),
-        q("Rivendica te stesso a te stesso, e raccogli il tempo che finora ti veniva portato via.", "Set yourself free for your own sake; gather and save your time, which till lately has been forced from you.", "Seneca", "Lettere a Lucilio, 1"),
+        q("Rivendica te stesso a te stesso e raccogli il tempo che finora ti veniva portato via.", "Set yourself free for your own sake; gather and save your time, which till lately has been forced from you.", "Seneca", "Lettere a Lucilio, 1"),
         q("Certi tempi ci vengono strappati, altri sottratti, altri semplicemente scorrono via.", "Certain moments are torn from us, some are gently removed, and others glide beyond our reach.", "Seneca", "Lettere a Lucilio, 1"),
         q("Gran parte della vita se ne va a chi agisce male, la maggior parte a chi non fa niente, tutta quanta a chi fa altro.", "Our life passes largely in doing ill, a good share in doing nothing, and the whole in doing what is not to the purpose.", "Seneca", "Lettere a Lucilio, 1"),
         q("Dipenderai meno dal domani, se metti le mani sull'oggi.", "Lay hold of to-day's task, and you will not need to depend so much upon to-morrow's.", "Seneca", "Lettere a Lucilio, 1"),
-        q("Chiedi una mente sana, poi la salute dell'animo, e solo dopo quella del corpo.", "Pray for a sound mind and for good health, first of soul and then of body.", "Seneca", "Lettere a Lucilio, 10"),
+        q("Chiedi una mente sana, poi la salute dell'animo e solo dopo quella del corpo.", "Pray for a sound mind and for good health, first of soul and then of body.", "Seneca", "Lettere a Lucilio, 10"),
         q("Vivi con gli uomini come se ti vedesse un dio, parla con dio come se ti ascoltassero gli uomini.", "Live among men as if God beheld you; speak with God as if men were listening.", "Seneca", "Lettere a Lucilio, 10"),
         q("L'animo abbia qualcuno che rispetta: basta la sua autorità a rendere più pulito anche ciò che fai da solo.", "The soul should have someone whom it can respect, one by whose authority it may make even its inner shrine more hallowed.", "Seneca", "Lettere a Lucilio, 11"),
-        q("Ordina ogni giornata come se chiudesse la fila, e completasse la vita.", "Every day ought to be regulated as if it closed the series, as if it rounded out and completed our existence.", "Seneca", "Lettere a Lucilio, 12"),
+        q("Ordina ogni giornata come se chiudesse la fila e completasse la vita.", "Every day ought to be regulated as if it closed the series, as if it rounded out and completed our existence.", "Seneca", "Lettere a Lucilio, 12"),
         q("Un giorno solo vale quanto tutti gli altri.", "One day is equal to every day.", "Seneca", "Lettere a Lucilio, 12"),
         q("Il giro del giorno è strettissimo, eppure anche lui va da un inizio a una fine, dall'alba al tramonto.", "The smallest circle of all is the day; but even a day has its beginning and its ending, its sunrise and its sunset.", "Seneca", "Lettere a Lucilio, 12"),
         q("Ci sono esercizi facili e brevi, che stancano il corpo subito e risparmiano il tempo.", "There are short and simple exercises which tire the body rapidly, and so save our time.", "Seneca", "Lettere a Lucilio, 15"),
         q("Il moto scuote il corpo e non toglie niente allo studio.", "Riding in a litter shakes up the body, and does not interfere with study.", "Seneca", "Lettere a Lucilio, 15"),
-        q("Dà al corpo meno spazio che puoi, e fa' largo all'animo.", "Limit the flesh as much as possible, and allow free play to the spirit.", "Seneca", "Lettere a Lucilio, 15"),
+        q("Dà al corpo meno spazio che puoi e fa' largo all'animo.", "Limit the flesh as much as possible, and allow free play to the spirit.", "Seneca", "Lettere a Lucilio, 15"),
         q("Se vuoi avere l'animo libero, devi essere povero o vivere come uno che lo è.", "If you wish to have leisure for your mind, either be a poor man, or resemble a poor man.", "Seneca", "Lettere a Lucilio, 17"),
         q("Ciò per cui non vuoi tremare al momento buono, allenalo prima.", "If you would not have a man flinch when the crisis comes, train him before it comes.", "Seneca", "Lettere a Lucilio, 18"),
         q("Alleniamoci al palo, perché la sorte non ci trovi impreparati.", "Let us practise our strokes on the dummy, and become intimate with poverty, so that Fortune may not catch us off our guard.", "Seneca", "Lettere a Lucilio, 18"),
-        q("Prendi una regola sola per vivere, e adegua a quella tutta la vita.", "Lay hold, once for all, upon a single norm to live by, and regulate your whole life according to this norm.", "Seneca", "Lettere a Lucilio, 20"),
+        q("Prendi una regola sola per vivere e adegua a quella tutta la vita.", "Lay hold, once for all, upon a single norm to live by, and regulate your whole life according to this norm.", "Seneca", "Lettere a Lucilio, 20"),
         q("Il giudizio cambia ogni giorno e si rovescia, e per i più la vita passa come un gioco.", "Judgment varies from day to day, and changes to the opposite, making many a man pass his life in a kind of game.", "Seneca", "Lettere a Lucilio, 20"),
         q("Va svegliato dal sonno l'animo, e scosso.", "Let the soul be roused from its sleep and be prodded.", "Seneca", "Lettere a Lucilio, 20"),
         q("Non c'è da aumentare il denaro, ma da ridurre il desiderio.", "Do not add to his store of money, but subtract from his desires.", "Epicuro", "in Seneca, Lettere a Lucilio, 21"),
@@ -180,10 +191,10 @@ public enum Quotes {
         q("Certi hanno smesso di vivere prima ancora di cominciare.", "Some men have left off living before they have begun.", "Seneca", "Lettere a Lucilio, 23"),
         q("Il corpo è una cosa più necessaria che grande.", "The frail body is to be regarded as necessary rather than as important.", "Seneca", "Lettere a Lucilio, 23"),
         q("Ogni giorno ci viene tolta una parte di vita, e anche mentre cresciamo la vita cala.", "Every day a little of our life is taken from us; even when we are growing, our life is on the wane.", "Seneca", "Lettere a Lucilio, 24"),
-        q("Non amare troppo la vita, e non odiarla troppo.", "He is so trained that he neither loves nor hates life.", "Seneca", "Lettere a Lucilio, 65"),
+        q("Non amare troppo la vita e non odiarla troppo.", "He is so trained that he neither loves nor hates life.", "Seneca", "Lettere a Lucilio, 65"),
         q("La notte incalza il giorno e il giorno la notte, l'estate finisce nell'autunno.", "Night is close at the heels of day, day at the heels of night; summer ends in autumn.", "Seneca", "Lettere a Lucilio, 24"),
         q("Chi riposa deve agire, e chi agisce deve riposare.", "He who reposes should act, and he who acts should take repose.", "Seneca", "Lettere a Lucilio, 3"),
-        q("Sbagliano tutti e due: chi non sta mai fermo, e chi sta fermo sempre.", "You should rebuke both kinds of men: those who always lack repose, and those who are always in repose.", "Seneca", "Lettere a Lucilio, 3"),
+        q("Sbagliano tutti e due: chi non sta mai fermo e chi sta fermo sempre.", "You should rebuke both kinds of men: those who always lack repose, and those who are always in repose.", "Seneca", "Lettere a Lucilio, 3"),
         q("Come chiamarlo, se non un dio ospitato dentro un corpo umano?", "What else could you call such a soul than a god dwelling as a guest in a human body?", "Seneca", "Lettere a Lucilio, 31"),
         q("Per sapere se hai fatto progressi, guarda se vuoi oggi le stesse cose di ieri.", "If you would find out whether you have accomplished anything, consider whether you desire the same things to-day that you desired yesterday.", "Seneca", "Lettere a Lucilio, 35"),
         q("Il posto va scelto sano non solo per il corpo, ma anche per il carattere.", "We ought to select abodes which are wholesome not only for the body but also for the character.", "Seneca", "Lettere a Lucilio, 51"),
@@ -225,7 +236,7 @@ public enum Quotes {
         q("A tavola non dire come si deve mangiare, mangia come si deve.", "At a banquet do not say how a man ought to eat, but eat as you ought to eat.", "Epitteto", "Manuale, 46"),
         q("La malattia è un impedimento per il corpo, non per la volontà, a meno che la volontà stessa non lo scelga.", "Disease is an impediment to the body, but not to the will, unless the will itself chooses.", "Epitteto", "Manuale, 9"),
         q("Infinita è la velocità del tempo, e si vede meglio quando ci si volta indietro.", "Infinitely swift is the flight of time, as those see more clearly who are looking backwards.", "Seneca", "Lettere a Lucilio, 49"),
-        q("La natura ci ha fatti capaci d'imparare e ci ha dato una ragione imperfetta, ma che si può portare a compimento.", "Nature brought us forth apt to learn, and gave us a reason imperfect, but capable of being made perfect.", "Seneca", "Lettere a Lucilio, 49"),
+        q("La natura ci ha fatti capaci d'imparare e ci ha dato una ragione imperfetta, ma che si può portare a compimento.", "At our birth nature made us teachable, and gave us reason, not perfect, but capable of being perfected.", "Seneca", "Lettere a Lucilio, 49"),
         q("Nessuno torna alla natura con fatica, se non chi da lei si è allontanato.", "No man finds it difficult to return to nature, except the man who has deserted nature.", "Seneca", "Lettere a Lucilio, 50"),
         q("La virtù è secondo natura; i vizi le sono nemici e ostili.", "Virtue is according to nature; vice is opposed to it and hostile.", "Seneca", "Lettere a Lucilio, 50"),
         q("Costringo l'animo a stare intento a sé e a non lasciarsi distrarre dalle cose esterne.", "I force my mind to concentrate, and keep it from straying to things outside itself.", "Seneca", "Lettere a Lucilio, 56"),
@@ -234,7 +245,7 @@ public enum Quotes {
         q("Che abbiamo vissuto abbastanza non lo decidono gli anni né i giorni, ma l'animo.", "To have lived long enough depends neither upon our years nor upon our days, but upon our minds.", "Seneca", "Lettere a Lucilio, 61"),
         q("Faccio in modo che un solo giorno valga per me quanto una vita intera.", "I am endeavouring to live every day as if it were a complete life.", "Seneca", "Lettere a Lucilio, 61"),
         q("La vita è già abbastanza attrezzata: siamo noi a essere avidi dei suoi strumenti.", "Life is well enough furnished, but we are too greedy with regard to its furnishings.", "Seneca", "Lettere a Lucilio, 61"),
-        q("Alle cose non mi consegno: le presto me stesso, e non vado a caccia di pretesti per perdere tempo.", "I do not surrender myself to my affairs, but loan myself to them, and I do not hunt out excuses for wasting my time.", "Seneca", "Lettere a Lucilio, 62"),
+        q("Alle cose non mi consegno: le presto me stesso e non vado a caccia di pretesti per perdere tempo.", "I do not surrender myself to my affairs, but loan myself to them, and I do not hunt out excuses for wasting my time.", "Seneca", "Lettere a Lucilio, 62"),
         q("Ovunque io mi fermi, lì lavoro i miei pensieri e rivolgo nell'animo qualcosa che fa bene.", "Wherever I am situated, I carry on my own meditations and ponder in my mind some wholesome thought.", "Seneca", "Lettere a Lucilio, 62"),
         q("In questa dimora esposta abita un animo libero.", "In this dwelling, which is exposed to peril, my soul lives free.", "Seneca", "Lettere a Lucilio, 65"),
         q("Il posto che dio occupa nel mondo, nell'uomo lo occupa l'animo.", "God's place in the universe corresponds to the soul's relation to man.", "Seneca", "Lettere a Lucilio, 65"),
@@ -331,9 +342,7 @@ public enum Quotes {
         q("La prudenza è la virtù dei sensi.", "Prudence is the virtue of the senses.", "Emerson", "Saggi, Prudenza"),
         q("La lettura fa l'uomo completo, il parlare l'uomo pronto, lo scrivere l'uomo esatto.", "Reading maketh a full man; conference a ready man; and writing an exact man.", "Francis Bacon", "Saggi, Degli studi"),
         q("Gli studi servono al diletto, all'ornamento e alla capacità.", "Studies serve for delight, for ornament, and for ability.", "Francis Bacon", "Saggi, Degli studi"),
-        q("Certi libri vanno assaggiati, altri inghiottiti, e pochi masticati e digeriti.", "Some books are to be tasted, others to be swallowed, and some few to be chewed and digested.", "Francis Bacon", "Saggi, Degli studi"),
         q("Le storie rendono saggi, i poeti arguti, la matematica sottili, la filosofia naturale profondi.", "Histories make men wise; poets witty; the mathematics subtile; natural philosophy deep.", "Francis Bacon", "Saggi, Degli studi"),
-        q("La tua osservazione di ciò che ti fa bene e di ciò che ti fa male è la miglior medicina per restare sano.", "A man's own observation, what he finds good of, and what he finds hurt of, is the best physic to preserve health.", "Francis Bacon", "Saggi, Del regime della salute"),
         q("L'abitudine è il magistrato principale della vita di un uomo.", "Custom is the principal magistrate of man's life.", "Francis Bacon", "Saggi, Dell'abitudine e dell'educazione"),
         q("La natura spesso si nasconde, a volte si vince, di rado si spegne.", "Nature is often hidden; sometimes overcome; seldom extinguished.", "Francis Bacon", "Saggi, Della natura negli uomini"),
         q("Il tempo è la misura del lavoro, come il denaro è la misura delle merci.", "Time is the measure of business, as money is of wares.", "Francis Bacon", "Saggi, Della speditezza"),
@@ -345,7 +354,6 @@ public enum Quotes {
         q("Sorgete, ripigliatevi la soma della vita, riducetevi dal mondo falso nel vero.", "Arise; take up again the burden of life; forsake the false world for the true.", "Leopardi", "Operette morali, Cantico del gallo silvestre"),
         q("C'è differenza fra la fatica e il disagio, e fra il vivere quieto e il vivere ozioso.", "There is as great a difference between mere fatigue and pain, as between a peaceful and an idle life.", "Leopardi", "Operette morali, Dialogo della Natura e di un Islandese"),
         q("Il valore della vita non sta nella lunghezza dei giorni, ma nell'uso che ne facciamo.", "The utility of living consists not in the length of days, but in the use of time.", "Montaigne", "Saggi, I, 20"),
-        q("Il segno più evidente della saggezza è un'allegria continua.", "The most manifest sign of wisdom is a continual cheerfulness.", "Montaigne", "Saggi, I, 25"),
         q("Ci insegnano a vivere quando la vita è quasi finita.", "They begin to teach us to live when we have almost done living.", "Montaigne", "Saggi, I, 26"),
         q("Il modo in cui conduciamo la vita è lo specchio vero di ciò che pensiamo.", "The conduct of our lives is the true mirror of our doctrine.", "Montaigne", "Saggi, I, 51"),
         q("Il corpo è una grande ragione, una molteplicità con un senso solo, una guerra e una pace, un gregge e un pastore.", "The body is a big sagacity, a plurality with one sense, a war and a peace, a flock and a shepherd.", "Nietzsche", "Così parlò Zarathustra, I, Dei disprezzatori del corpo"),
@@ -355,7 +363,7 @@ public enum Quotes {
         q("Voi guardate in alto quando volete sollevarvi. Io guardo in basso, perché sono sollevato.", "Ye look aloft when ye long for exaltation; and I look downward because I am exalted.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
         q("Chi scrive col sangue non vuole essere letto, vuole essere imparato a memoria.", "He that writeth in blood and proverbs doth not want to be read, but learnt by heart.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
         q("Le massime devono essere cime.", "Proverbs should be peaks.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
-        q("Aria sottile e pulita, il pericolo vicino, e lo spirito pieno di una cattiveria allegra: stanno bene insieme.", "The atmosphere rare and pure, danger near and the spirit full of a joyful wickedness: thus are things well matched.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
+        q("Aria sottile e pulita, il pericolo vicino e lo spirito pieno di una cattiveria allegra: stanno bene insieme.", "The atmosphere rare and pure, danger near and the spirit full of a joyful wickedness: thus are things well matched.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
         q("Il coraggio vuole ridere.", "The courage which scareth away ghosts createth for itself goblins: it wanteth to laugh.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
         q("Chi di voi sa insieme ridere ed essere sollevato?", "Who among you can at the same time laugh and be exalted?", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
         q("Restate fedeli alla terra.", "Remain true to the earth.", "Nietzsche", "Così parlò Zarathustra, Prologo, 3"),
@@ -391,7 +399,7 @@ public enum Quotes {
         q("Non c'è intoppo dell'ingegno che non si possa sciogliere con studi adatti, come i mali del corpo hanno i loro esercizi.", "There is no stond or impediment in the wit, but may be wrought out by fit studies; like as diseases of the body, may have appropriate exercises.", "Francis Bacon", "Saggi, Degli studi"),
         q("Le bocce fanno bene ai calcoli e ai reni, il tiro ai polmoni e al petto, la camminata lenta allo stomaco, la cavalcata alla testa.", "Bowling is good for the stone and reins; shooting for the lungs and breast; gentle walking for the stomach; riding for the head.", "Francis Bacon", "Saggi, Degli studi"),
         q("Non leggere per contraddire, né per credere sulla parola, né per far conversazione, ma per pesare e considerare.", "Read not to contradict and confute; nor to believe and take for granted; nor to find talk and discourse; but to weigh and consider.", "Francis Bacon", "Saggi, Degli studi"),
-        q("Alcuni libri vanno assaggiati, altri inghiottiti, e pochi masticati e digeriti.", "Some books are to be tasted, others to be swallowed, and some few to be chewed and digested.", "Francis Bacon", "Saggi, Degli studi"),
+        q("Alcuni libri vanno assaggiati, altri inghiottiti e pochi masticati e digeriti.", "Some books are to be tasted, others to be swallowed, and some few to be chewed and digested.", "Francis Bacon", "Saggi, Degli studi"),
         q("Gli studi perfezionano la natura e sono perfezionati dall'esperienza.", "They perfect nature, and are perfected by experience.", "Francis Bacon", "Saggi, Degli studi"),
         q("L'osservazione di sé, ciò che uno sente che gli giova e ciò che gli nuoce, è la medicina migliore per conservare la salute.", "A man's own observation, what he finds good of, and what he finds hurt of, is the best physic to preserve health.", "Francis Bacon", "Saggi, Del governo della salute"),
         q("Avere la mente libera e l'animo lieto alle ore del cibo, del sonno e dell'esercizio è uno dei precetti migliori per durare a lungo.", "To be free-minded and cheerfully disposed, at hours of meat, and of sleep, and of exercise, is one of the best precepts of long lasting.", "Francis Bacon", "Saggi, Del governo della salute"),
@@ -445,7 +453,6 @@ public enum Quotes {
         q("L'albero che riempie le braccia nasce da un germoglio sottile.", "The tree which fills the arms grew from the tiniest sprout.", "Laozi", "Tao Te Ching, 64"),
         q("Il grande quadrato non ha angoli; il grande talento matura tardi.", "The greatest square has no corners; the greatest talent is slow to ripen.", "Laozi", "Tao Te Ching, 41"),
         q("Ritirarsi a opera compiuta è la via del cielo.", "When the work is done, to withdraw into obscurity is the way of Heaven.", "Laozi", "Tao Te Ching, 9"),
-        q("Chi si mette in punta di piedi non sta ritto a lungo.", "He who stands on his tiptoes does not stand firm.", "Laozi", "Tao Te Ching, 24"),
         q("Chi sa accontentarsi non si disonora; chi sa fermarsi non corre pericolo.", "Who is content needs fear no shame. Who knows to stop incurs no blame. From danger free, long live shall he.", "Laozi", "Tao Te Ching, 44"),
 
         q("Il pesce dimentica la rete quando è nel fiume; l'uomo dimentica le parole quando ha il senso.", "The fish forgets the net in the river; man forgets words when he has the meaning.", "Zhuangzi", "Zhuangzi, XXVI"),
@@ -490,7 +497,7 @@ public enum Quotes {
         q("Il lavoro è amore reso visibile.", "Work is love made visible.", "Kahlil Gibran", "Il profeta, Il lavoro"),
         q("I vostri figli non sono figli vostri, sono i figli e le figlie della vita.", "Your children are not your children. They are the sons and daughters of Life's longing for itself.", "Kahlil Gibran", "Il profeta, I figli"),
 
-        q("Alzati, svegliati, e non fermarti finché la meta non è raggiunta.", "Arise, awake, and stop not till the goal is reached.", "Katha Upanishad", "Katha Upanishad, I, 3, 14"),
+        q("Alzati, svegliati e non fermarti finché la meta non è raggiunta.", "Arise, awake, and stop not till the goal is reached.", "Katha Upanishad", "Katha Upanishad, I, 3, 14"),
         q("Come un uomo si spoglia di vesti logore e ne indossa di nuove, così l'anima lascia il corpo.", "As when one layeth his worn-out robes away and taketh new, so putteth by the spirit lightly its garb of flesh.", "Bhagavad Gita", "Bhagavad Gita, II, 22"),
 
         // MARK: Aggiunte del 2026-07-28 — 4 citazioni ritrovate sul testo primario.

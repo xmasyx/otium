@@ -168,9 +168,59 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // non aveva mai guardato nessuno.
         let surface = CommandLine.arguments.first { $0.hasPrefix("--surface=") }?
             .split(separator: "=", maxSplits: 1).last.map(String.init) ?? "break"
+        // `--surface=provino --misura` non disegna un file: stampa quanto è ALTA ogni frase nella
+        // larghezza vera della pausa. Su 492 frasi guardare ogni immagine costa un pomeriggio e
+        // non si rifà mai; l'altezza dice in un colpo quali vanno a capo, e quelle si guardano.
+        // Il numero è già una risposta, l'immagine resta la prova.
+        if surface == "provino", CommandLine.arguments.contains("--misura") {
+            for (i, p) in PhraseLibrary.breakPool().enumerated() {
+                let v = NSHostingView(rootView: QuoteBlock(phrase: p).frame(width: 760))
+                print("\(i)\t\(Int(v.fittingSize.height))\t\(p.localizedText)")
+            }
+            NSApp.terminate(nil)
+            return
+        }
+
         let size: NSSize
         let host: NSView
         switch surface {
+        case "provino":
+            // **Il provino delle frasi.** `--da=<n> --quante=<n>`, e ogni frase esce nella
+            // tipografia vera della pausa perché disegna `QuoteBlock`, la stessa vista che
+            // usa `BreakView`.
+            //
+            // Serve perché il cancello delle citazioni risponde a una domanda più debole di
+            // quella che conta: prova che il testo *esiste* nella fonte, non come *suona*
+            // mentre stai lì a contare i secondi. Guardarle una per una lanciando l'app 411
+            // volte costa venti minuti e nessuno lo fa due volte; qui è una corsa sola.
+            let numero = { (arg: String) -> Int? in
+                CommandLine.arguments.first { $0.hasPrefix(arg) }?
+                    .split(separator: "=", maxSplits: 1).last.flatMap { Int($0) }
+            }
+            let pool = PhraseLibrary.breakPool()
+            let da = max(0, numero("--da=") ?? 0)
+            let quante = max(1, numero("--quante=") ?? 25)
+            let fette = Array(pool.dropFirst(da).prefix(quante))
+            let colonna = VStack(alignment: .center, spacing: 30) {
+                ForEach(Array(fette.enumerated()), id: \.element.id) { coppia in
+                    HStack(alignment: .top, spacing: 14) {
+                        // L'ordinale serve a ritrovare la riga nel sorgente dopo averla vista
+                        // storta. Tenuto scialbo di proposito: deve essere leggibile e non
+                        // deve entrare nel giudizio su come sta la frase.
+                        Text("\(da + coppia.offset)")
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundStyle(Palette.dim.opacity(0.5))
+                            .frame(width: 34, alignment: .trailing)
+                        QuoteBlock(phrase: coppia.element)
+                    }
+                }
+            }
+            .padding(.vertical, 34)
+            .frame(width: 760)
+            .background(Palette.ink)
+            let v = NSHostingView(rootView: colonna)
+            size = NSSize(width: 760, height: v.fittingSize.height)
+            host = v
         case "evidence":
             size = NSSize(width: 640, height: 3200)   // alta: si vuole vedere tutta, non scorrerla
             host = NSHostingView(rootView: EvidenceView().frame(width: size.width, height: size.height))

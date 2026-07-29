@@ -46,9 +46,13 @@ public enum Facts {
           "Healy et al., Diabetes Care, 2008",
           "Breaking up sitting time often is associated with better waist circumference and triglycerides, at the same total hours seated.",
           "Healy et al., Diabetes Care, 2008"),
-        f("Non è quanto stai seduto in totale: è quanto a lungo lo stai **di fila**.",
+        // Gli asterischi del grassetto stavano nel testo e si vedevano a schermo come asterischi:
+        // `Text` riceve la frase interpolata, e un valore interpolato non passa dal markdown.
+        // Trovato guardando il provino il 2026-07-29; il cancello delle citazioni non poteva
+        // vederlo, perché cerca il testo nella fonte e non sa com'è fatto lo schermo.
+        f("Non è quanto stai seduto in totale, è quanto a lungo lo stai di fila.",
           "consenso della ricerca sul comportamento sedentario",
-          "It is not how long you sit in total: it is how long you sit **without a break**.",
+          "It is not how long you sit in total, it is how long you sit without a break.",
           "consensus in sedentary behaviour research"),
         f("Restare seduti a lungo riduce l'attività della lipoproteina lipasi, l'enzima che ripulisce i grassi dal sangue.",
           "fisiologia dell'inattività, letteratura consolidata",
@@ -192,7 +196,7 @@ public enum Facts {
           "teoria del ripristino dell'attenzione, Kaplan",
           "Looking at something natural — even just out of the window — restores attention better than looking at another screen.",
           "attention restoration theory, Kaplan"),
-        f("La memoria di lavoro ha una capacità piccolissima: è il collo di bottiglia di quasi tutto quello che chiami «concentrazione»."
+        f("La memoria di lavoro ha una capacità piccolissima: è il collo di bottiglia di quasi tutto quello che chiami \"concentrazione\"."
           , "psicologia cognitiva, consenso",
           "Working memory has a tiny capacity: it is the bottleneck of almost everything you call «concentration».",
           "cognitive psychology consensus"),

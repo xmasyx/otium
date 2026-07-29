@@ -61,7 +61,7 @@ public enum Mindful {
     static let costanza: [Phrase] = [
         m("Comincia male, ma comincia.", "Start badly, but start."),
         m("Fai la versione più piccola possibile: quella si fa anche nei giorni storti.", "Do the smallest possible version: that one gets done even on bad days."),
-        m("La regola dei due minuti: comincia, e vedi se ti fermi davvero dopo.", "The two-minute rule: begin, then see whether you really stop."),
+        m("La regola dei due minuti: comincia e vedi se ti fermi davvero dopo.", "The two-minute rule: begin, then see whether you really stop."),
     ]
 
     // MARK: - Lavoro e attenzione

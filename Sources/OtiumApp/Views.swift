@@ -323,18 +323,7 @@ struct BreakView: View {
     @ViewBuilder
     private var breakQuoteView: some View {
         if let phrase = model.currentPhrase {
-            VStack(spacing: 6) {
-                Text("«\(phrase.localizedText)»")
-                    .font(.system(size: 18, design: .serif))
-                    .foregroundStyle(Palette.paper.opacity(0.62))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: 620)
-                Text(phrase.localizedCredit)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Palette.dim)
-            }
-            .padding(.top, 26)
+            QuoteBlock(phrase: phrase).padding(.top, 26)
         }
     }
 
@@ -577,6 +566,32 @@ struct BreakView: View {
     }
 }
 
+
+/// La frase e la sua firma, come si vedono durante una pausa.
+///
+/// **Sta qui, e non dentro `BreakView`, perché il provino deve disegnare la stessa cosa.** Il
+/// cancello delle citazioni prova che il testo esiste nella fonte; non dice come suona a
+/// schermo, e la revisione del 28 luglio è nata da un errore che si vedeva solo lì. Se il
+/// provino ricopiasse questi numeri invece di usare questa vista, il giorno che cambia la
+/// tipografia della pausa il provino continuerebbe a mostrare quella vecchia — e un
+/// verificatore che non condivide il codice del verificato è l'unico che vale.
+struct QuoteBlock: View {
+    let phrase: Phrase
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text("«\(phrase.localizedText)»")
+                .font(.system(size: 18, design: .serif))
+                .foregroundStyle(Palette.paper.opacity(0.62))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 620)
+            Text(phrase.localizedCredit)
+                .font(.system(size: 11))
+                .foregroundStyle(Palette.dim)
+        }
+    }
+}
 
 /// I comandi in fondo alla schermata di blocco.
 ///
