@@ -110,10 +110,10 @@ Rampa: settimana 1 al 55% delle ripetizioni, +15% a settimana fino al 100% in se
 
 ## Criteria
 
-> **Stato al 2026-07-28, iterazione 10: 55 chiusi su 56.** L'unico aperto resta ISC-28.
+> **Stato al 2026-07-29, iterazione 16: 142 chiusi su 143.** L'unico aperto resta ISC-28.
 >
-> Chiusi 28 su 29 il 2026-07-26. L'unico aperto è ISC-28, che è esperienziale: si chiude usando
-> l'app per qualche giorno, non con un probe.
+> ISC-28 è esperienziale e non si chiude con un probe: si chiude **usando l'app**. Al 29 luglio
+> sono 16 pause vere in tutto, quindi la cadenza non è ancora stata falsificata da nessuno.
 
 ### Tempo attivo
 
