@@ -496,6 +496,38 @@ final class SessionEngineTests: XCTestCase {
         XCTAssertEqual(engine.clock.activeSeconds, before, accuracy: 0.001)
     }
 
+    /// **Un esercizio tolto dalle preferenze non ricompare fra le alternative.**
+    ///
+    /// Segnalato dal principale il 2026-07-30: aveva tolto i push-up inclinati dall'elenco, e la
+    /// pausa continuava a offrirglieli nella riga «oppure». Il falsificatore è ai due poli — con
+    /// la casella tolta l'alternativa sparisce, rimettendola torna — perché una guardia che
+    /// nasconde tutto passerebbe la metà facile del test senza fare il suo lavoro.
+    func testVariantsNeverOfferAnExerciseRemovedFromThePool() {
+        var senza = Settings()
+        senza.exercisePool = [.pushUp, .diamondPushUp, .archerPushUp, .pikePushUp, .benchDip]
+        var engine = makeEngine(senza)
+        guard reachBreak(&engine) != nil else { return XCTFail("nessun break in corso") }
+        engine.swapExercise(to: .pushUp, now: SessionEngineTests.workingHour, force: true)
+
+        let offerte = engine.variants(now: SessionEngineTests.workingHour).map(\.kind)
+        XCTAssertFalse(offerte.contains(.inclinePushUp),
+                       "offre gli inclinati anche se sono stati tolti dalle preferenze")
+        XCTAssertFalse(offerte.isEmpty, "non offre più niente: la guardia sta nascondendo tutto")
+        for k in offerte {
+            XCTAssertTrue(senza.exercisePool.contains(k) || senza.vigorousPool.contains(k),
+                          "\(k) non sta in nessuno dei due elenchi scelti")
+        }
+
+        // L'altro polo: rimessa la casella, l'alternativa torna disponibile.
+        var con = senza
+        con.exercisePool.append(.inclinePushUp)
+        var engine2 = makeEngine(con)
+        guard reachBreak(&engine2) != nil else { return XCTFail("nessun break in corso") }
+        engine2.swapExercise(to: .pushUp, now: SessionEngineTests.workingHour, force: true)
+        XCTAssertTrue(engine2.variants(now: SessionEngineTests.workingHour).map(\.kind).contains(.inclinePushUp),
+                      "rimessa la casella, l'alternativa non torna")
+    }
+
     /// **L'uscita d'emergenza vale anche a esercizio già fatto.**
     ///
     /// Dal 2026-07-29 la pausa ha due facce, e la seconda disegna un'altra schermata: la richiesta
