@@ -496,36 +496,49 @@ final class SessionEngineTests: XCTestCase {
         XCTAssertEqual(engine.clock.activeSeconds, before, accuracy: 0.001)
     }
 
-    /// **Un esercizio tolto dalle preferenze non ricompare fra le alternative.**
+    /// **L'esercizio del turno esce sempre dal tuo elenco. Le alternative no, ed è giusto così.**
     ///
-    /// Segnalato dal principale il 2026-07-30: aveva tolto i push-up inclinati dall'elenco, e la
-    /// pausa continuava a offrirglieli nella riga «oppure». Il falsificatore è ai due poli — con
-    /// la casella tolta l'alternativa sparisce, rimettendola torna — perché una guardia che
-    /// nasconde tutto passerebbe la metà facile del test senza fare il suo lavoro.
-    func testVariantsNeverOfferAnExerciseRemovedFromThePool() {
-        var senza = Settings()
-        senza.exercisePool = [.pushUp, .diamondPushUp, .archerPushUp, .pikePushUp, .benchDip]
-        var engine = makeEngine(senza)
+    /// La regola, con le parole del principale (2026-07-30): *«l'opzione più semplice può essere
+    /// proposta come sostituzione, ma se non è nel pool mai come esercizio»*. Sono due ruoli
+    /// diversi per lo stesso elenco, e il primo tentativo di correzione li aveva confusi:
+    /// avevo filtrato anche le sostituzioni, cioè tolto la via d'uscita verso il gesto più facile
+    /// proprio nel momento in cui serve — dentro una pausa che non riesci a fare.
+    ///
+    /// Questo test tiene ferma la metà che conta, su una rotazione lunga e non su un turno solo:
+    /// una casella tolta non può tornare come esercizio proposto, mai.
+    func testTheTurnExerciseAlwaysComesFromThePool() {
+        var s = Settings()
+        s.sex = .male
+        s.pushVariant = .pushUp
+        s.exercisePool = [.pushUp, .diamondPushUp, .archerPushUp, .pikePushUp, .benchDip]
+        var engine = makeEngine(s)
+
+        var visti: Set<ExerciseKind> = []
+        for turno in 0..<24 {
+            guard let plan = reachBreak(&engine) else { return XCTFail("nessun break al turno \(turno)") }
+            let ammessi = plan.kind == .long ? s.exercisePool + s.vigorousPool : s.exercisePool
+            XCTAssertTrue(ammessi.contains(plan.exercise.kind),
+                          "turno \(turno): propone \(plan.exercise.kind), che non è nell'elenco scelto")
+            visti.insert(plan.exercise.kind)
+            performExercise(&engine)
+        }
+        XCTAssertFalse(visti.contains(.inclinePushUp), "gli inclinati sono arrivati come esercizio del turno")
+        // Se la rotazione girasse su un esercizio solo, il test sopra passerebbe senza provare nulla.
+        XCTAssertGreaterThan(visti.count, 2, "la rotazione non gira: il test non sta provando niente")
+    }
+
+    /// L'altra metà, quella che il primo tentativo aveva rotto: **la sostituzione più facile resta
+    /// offerta anche se non è nell'elenco**, perché serve dentro la pausa e non alla prossima.
+    func testVariantsStillOfferTheEasierWayOut() {
+        var s = Settings()
+        s.exercisePool = [.pushUp, .diamondPushUp, .archerPushUp, .pikePushUp, .benchDip]
+        var engine = makeEngine(s)
         guard reachBreak(&engine) != nil else { return XCTFail("nessun break in corso") }
         engine.swapExercise(to: .pushUp, now: SessionEngineTests.workingHour, force: true)
 
         let offerte = engine.variants(now: SessionEngineTests.workingHour).map(\.kind)
-        XCTAssertFalse(offerte.contains(.inclinePushUp),
-                       "offre gli inclinati anche se sono stati tolti dalle preferenze")
-        XCTAssertFalse(offerte.isEmpty, "non offre più niente: la guardia sta nascondendo tutto")
-        for k in offerte {
-            XCTAssertTrue(senza.exercisePool.contains(k) || senza.vigorousPool.contains(k),
-                          "\(k) non sta in nessuno dei due elenchi scelti")
-        }
-
-        // L'altro polo: rimessa la casella, l'alternativa torna disponibile.
-        var con = senza
-        con.exercisePool.append(.inclinePushUp)
-        var engine2 = makeEngine(con)
-        guard reachBreak(&engine2) != nil else { return XCTFail("nessun break in corso") }
-        engine2.swapExercise(to: .pushUp, now: SessionEngineTests.workingHour, force: true)
-        XCTAssertTrue(engine2.variants(now: SessionEngineTests.workingHour).map(\.kind).contains(.inclinePushUp),
-                      "rimessa la casella, l'alternativa non torna")
+        XCTAssertTrue(offerte.contains(.kneePushUp),
+                      "la regressione sulle ginocchia non è più offerta come sostituzione")
     }
 
     /// **L'uscita d'emergenza vale anche a esercizio già fatto.**

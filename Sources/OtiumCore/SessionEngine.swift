@@ -543,24 +543,12 @@ public struct SessionEngine {
     }
 
     /// Le alternative proponibili adesso, con le ripetizioni già calcolate per oggi.
-    /// **Le alternative passano dal tuo elenco, non solo dalla tabella delle famiglie.**
-    ///
-    /// Fino al 2026-07-30 la riga «oppure» nasceva dalla sola tabella statica delle varianti, e
-    /// non guardava mai le caselle delle preferenze: il principale aveva tolto i push-up inclinati
-    /// dagli esercizi, e la pausa continuava a proporglieli due righe sotto quello del turno.
-    /// Erano due impostazioni che non si parlavano — le caselle governavano la rotazione,
-    /// l'interruttore delle varianti era acceso-o-spento e basta — e da dentro l'app non c'era
-    /// modo di saperlo: togli una voce da un elenco di esercizi e quella ricompare lì accanto.
-    ///
-    /// Ora una casella tolta è tolta ovunque, **e la via d'uscita verso il gesto più facile si
-    /// riapre rimettendo la casella**: è il posto dove quella scelta si fa già, ed è la soluzione
-    /// che ha indicato il principale.
     public func variants(now: Date) -> [Exercise] {
         guard phase == .breaking, let current = plan else { return [] }
         let factor = settings.rampFactor(now: now)
-        return current.exercise.kind.variants
-            .filter { settings.exercisePool.contains($0) || settings.vigorousPool.contains($0) }
-            .map { Exercise(kind: $0, reps: Ramp.reps(for: $0, factor: factor, sex: settings.sex)) }
+        return current.exercise.kind.variants.map {
+            Exercise(kind: $0, reps: Ramp.reps(for: $0, factor: factor, sex: settings.sex))
+        }
     }
 
     /// Cambia esercizio restando nella stessa pausa. Ammesso solo verso una variante di quello
