@@ -82,15 +82,42 @@ struct BreakView: View {
                 // colonna dell'esercizio, fra l'elenco del circuito e il cronometro, nello stesso
                 // grigio di tutto il resto — settima di dodici cose impilate. Segnalata dal
                 // principale il 2026-07-29 con le parole giuste: «lì sembra persa».
+                // **Le due facce condividono lo scheletro, o cambiare faccia sembra cambiare app.**
+                //
+                // Intestazione in alto, contenuto al centro, comandi in basso — e la parte bassa
+                // ha la **stessa altezza** in tutte e due, perché le fessure che valgono solo per
+                // una (l'istruzione del riposo, il «Perché» dell'esercizio) tengono il loro spazio
+                // anche quando sono vuote. Senza, il cronometro e i pulsanti saltavano di una
+                // trentina di punti nel momento esatto della transizione, ed era la cosa che
+                // rendeva netto un passaggio che deve essere una dissolvenza.
                 VStack(spacing: 0) {
-                    if model.exerciseDone { restHeader(plan) } else { header(plan) }
-                    Spacer()
-                    if model.exerciseDone { restBody } else { exercise(plan) }
-                    Spacer()
+                    ZStack {
+                        if model.exerciseDone { restHeader(plan) } else { header(plan) }
+                    }
+                    // **Lo spazio sopra è limitato, quello sotto no.** Con due molle uguali il
+                    // contenuto si centra, e nel riposo — dove la frase è corta — finiva un terzo
+                    // più in basso del numero grande dell'esercizio: nella dissolvenza il punto
+                    // dove guardi saltava giù di centoventi punti. Bloccando la molla di sopra il
+                    // baricentro delle due facce coincide, e in fase 1 non cambia niente perché
+                    // lì il contenuto è alto e la molla è già schiacciata.
+                    Spacer(minLength: 12).frame(maxHeight: 140)
+                    // Il crossfade: le due facce si scambiano dentro la stessa `ZStack`, quindi
+                    // una sfuma mentre l'altra compare invece di sostituirla di scatto.
+                    ZStack {
+                        if model.exerciseDone {
+                            restBody.transition(.opacity.combined(with: .offset(y: 10)))
+                        } else {
+                            exercise(plan).transition(.opacity.combined(with: .offset(y: -10)))
+                        }
+                    }
+                    Spacer(minLength: 12)
                     controls(plan)
                     footer
                 }
                 .padding(48)
+                // Legata alla sola `exerciseDone`: il cronometro cambia ogni secondo e non deve
+                // trascinarsi dietro nessuna animazione.
+                .animation(.easeInOut(duration: 0.6), value: model.exerciseDone)
             } else {
                 // **Terza rete, e la più semplice: una schermata senza pausa non è nera muta.**
                 //
@@ -417,12 +444,17 @@ struct BreakView: View {
         VStack(spacing: 16) {
             // Sopra il cronometro e non sotto il pulsante: nella fase di riposo è l'istruzione
             // della schermata, e un'istruzione sotto il suo pulsante arriva a cose fatte.
-            if model.exerciseDone && !model.canReturnToWork {
-                Text(L.t("Alzati e guarda lontano. Il resto della pausa è tuo.",
-                         "Stand up and look far away. The rest of the break is yours."))
-                    .font(.system(size: 13, design: .rounded))
-                    .foregroundStyle(Palette.accent.opacity(0.85))
+            // Fessura ad altezza fissa: piena nel riposo, vuota nell'esercizio, alta uguale in
+            // tutte e due — è così che il cronometro qui sotto non si sposta al cambio di faccia.
+            ZStack {
+                if model.exerciseDone && !model.canReturnToWork {
+                    Text(L.t("Alzati e guarda lontano. Il resto della pausa è tuo.",
+                             "Stand up and look far away. The rest of the break is yours."))
+                        .font(.system(size: 13, design: .rounded))
+                        .foregroundStyle(Palette.accent.opacity(0.85))
+                }
             }
+            .frame(height: 17)
 
             Text(clock(model.secondsLeftOfBreak))
                 .font(.system(size: 34, weight: .light, design: .rounded))
@@ -451,7 +483,10 @@ struct BreakView: View {
                         .foregroundStyle(Palette.dim)
                 }
             } else {
-                primary(L.t("\(plan.exercise.label) — ancora \(Int(model.secondsUntilCanFinish.rounded(.up))) s", "\(plan.exercise.label) — \(Int(model.secondsUntilCanFinish.rounded(.up))) s to go"),
+                // Il nome dell'esercizio sta a 44 punti trenta righe più su: ripeterlo qui era
+                // l'unica ragione per cui l'etichetta diventava lunga il doppio del pulsante.
+                primary(L.t("ancora \(Int(model.secondsUntilCanFinish.rounded(.up))) s",
+                            "\(Int(model.secondsUntilCanFinish.rounded(.up))) s to go"),
                         enabled: false) {}
             }
 
@@ -498,7 +533,18 @@ struct BreakView: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 19, weight: .semibold, design: .rounded))
-                .frame(width: 300, height: 54)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                // **Il testo detta la misura, non il contrario.** Con `frame(width:height:)` fisso
+                // un'etichetta lunga andava a capo e usciva dal rettangolo ambra, finendo sopra la
+                // linea del piede: «3 archer push-ups per side — 17 s to go» tagliata a metà,
+                // vista dal principale il 2026-07-30. Il minimo tiene la forma quando l'etichetta
+                // è corta, il resto lo decide il contenuto.
+                .padding(.horizontal, 26)
+                .padding(.vertical, 15)
+                .frame(minWidth: 300, minHeight: 54)
+                .fixedSize(horizontal: false, vertical: true)
                 .foregroundStyle(enabled ? Palette.ink : Palette.dim)
                 .background(
                     RoundedRectangle(cornerRadius: 14)
@@ -524,7 +570,12 @@ struct BreakView: View {
     }
 
     private var footer: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
+            // Aria fra il pulsante grande e la linea del piede. Ne serviva: nello screenshot del
+            // 2026-07-30 il pulsante e la linea si toccavano, e la parte bassa sembrava schiacciata
+            // contro il bordo mentre a metà schermo restava un vuoto grande il doppio.
+            Spacer().frame(height: 10)
+
             Divider().overlay(Color.white.opacity(0.08)).frame(width: 620)
 
             // **Il perché resta, ma su una riga sola, e solo mentre devi muoverti.**
@@ -540,7 +591,12 @@ struct BreakView: View {
             // Qui girano solo le fonti che giustificano qualcosa che sta succedendo. Le due voci
             // «non promesso» sono uscite dal giro della pausa — nel mezzo di un esercizio
             // spiegavano una funzione assente — e vivono nella finestra delle fonti.
-            if !model.exerciseDone {
+            // L'altra fessura ad altezza fissa, gemella di quella dell'istruzione: piena
+            // nell'esercizio, vuota nel riposo, e alta uguale in tutte e due, così le uscite
+            // d'emergenza stanno allo stesso punto dello schermo in tutte e due le facce.
+            ZStack {
+                if !model.exerciseDone {
+                    VStack(spacing: 8) {
                 Text(L.t("Perché: \(model.currentStudy.localizedGoverns) — \(model.currentStudy.shortCitation), \(String(model.currentStudy.year)).",
                          "Why: \(model.currentStudy.localizedGoverns) — \(model.currentStudy.shortCitation), \(String(model.currentStudy.year))."))
                     .font(.system(size: 12))
@@ -557,7 +613,10 @@ struct BreakView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(Palette.dim)
                     .multilineTextAlignment(.center)
+                    }
+                }
             }
+            .frame(height: 38)
 
             HStack(spacing: 14) {
                 if model.canPostpone {
