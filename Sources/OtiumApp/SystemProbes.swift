@@ -193,7 +193,9 @@ public enum PresenceRadar {
                   MediaPlayers.isPlayer(app.bundleIdentifier)
             else { continue }
             let name = app.localizedName ?? app.bundleIdentifier ?? "un player"
-            return PresenceSignal(kind: .media, detail: "audio in riproduzione — \(name)")
+            return PresenceSignal(kind: .media,
+                                  detail: L.t("audio in riproduzione — \(name)",
+                                              "audio playing — \(name)"))
         }
         return nil
     }
@@ -298,7 +300,8 @@ public enum PresenceRadar {
                 .first { !$0.isEmpty && $0.count < 80 }
             return PresenceSignal(
                 kind: .media,
-                detail: title.map { "\($0) — \(name)" } ?? "video in riproduzione — \(name)"
+                detail: title.map { "\($0) — \(name)" }
+                    ?? L.t("video in riproduzione — \(name)", "video playing — \(name)")
             )
         }
         return nil
@@ -315,7 +318,9 @@ public enum PresenceRadar {
         if let document = openDocument(pid: app.processIdentifier) {
             return PresenceSignal(kind: .reading, detail: "\(document) — \(name)")
         }
-        return PresenceSignal(kind: .reading, detail: "documento aperto in \(name)")
+        return PresenceSignal(kind: .reading,
+                              detail: L.t("documento aperto in \(name)",
+                                          "document open in \(name)"))
     }
 
     /// Il documento aperto dall'app in primo piano, chiesto a `lsof`.

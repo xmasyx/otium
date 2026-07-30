@@ -314,7 +314,14 @@ final class LanguageLintTests: XCTestCase {
                        "un'etichetta corta in una variabile sfugge a tutte e due le guardie")
         XCTAssertTrue(Self.scanProsa(#"let label = "Send""#).isEmpty, "boccia un'etichetta inglese")
 
-        // 7 — **la variabile intermedia**, cioè il buco che il lettore delle viste non può
+        // 7 — **la riga che il principale ha visto il 2026-07-30**: metà tradotta e metà no,
+        //     perché la parte italiana nasceva in una sonda e aveva una sola parola comune.
+        XCTAssertEqual(Self.scanProsa(##"detail: "documento aperto in \(name)""##).count, 1,
+                       "non vede la riga mista che il principale ha letto a schermo")
+        XCTAssertEqual(Self.scanProsa(##"detail: "audio in riproduzione — \(name)""##).count, 1,
+                       "non vede «audio in riproduzione»")
+
+        // 8 — **la variabile intermedia**, cioè il buco che il lettore delle viste non può
         //     vedere: la stringa nasce lontano dal costruttore che la disegnerà.
         let intermedia = """
         let messaggio = "Il conto sale solo mentre tocchi la tastiera"
@@ -324,8 +331,23 @@ final class LanguageLintTests: XCTestCase {
                        "una stringa messa prima in una variabile sfugge a tutte e due le guardie")
     }
 
-    /// Le parole che tradiscono l'italiano. Ne servono **due** nella stessa stringa, o un accento:
-    /// con una sola, «per» dentro «Half per leg» basterebbe a far scattare la guardia.
+    /// **Le parole che l'inglese non ha.** Una sola basta: «riproduzione» non compare in nessuna
+    /// frase inglese, quindi non c'è il rischio di falsi positivi che c'è con «per» o «la».
+    ///
+    /// Esistono perché il 2026-07-30 il principale ha visto, dentro la pausa, *«still, on a
+    /// document: documento aperto in Microsoft Word»*: metà riga tradotta e metà no, con la parte
+    /// italiana che arrivava da `SystemProbes`. Il rilevatore chiedeva **due** parole comuni e
+    /// quella frase ne ha una sola — cioè la guardia non l'ha vista, ed è la seconda volta che il
+    /// difetto lo trova l'occhio invece del test.
+    private static let spieForti: Set<String> = [
+        "riproduzione", "documento", "aperto", "aperta", "schermo", "tastiera", "finestra",
+        "ripetizioni", "ripetizione", "pausa", "pause", "esercizio", "giornata", "impostazioni",
+        "preferenze", "registro", "avvio", "preavviso", "cadenza", "movimento", "sedentarietà",
+        "interruzione", "interruzioni", "lavoro", "riposo", "scorciatoia", "attivo", "attiva",
+    ]
+
+    /// Le parole che tradiscono l'italiano ma esistono anche altrove. Ne servono **due** nella
+    /// stessa stringa: con una sola, «per» dentro «Half per leg» farebbe scattare la guardia.
     private static let spieItaliane: Set<String> = [
         "il", "lo", "la", "le", "gli", "un", "una", "del", "della", "dei", "delle", "che", "non",
         "per", "con", "sono", "hai", "pausa", "pause", "esercizio", "minuti", "secondi", "oggi",
@@ -354,6 +376,7 @@ final class LanguageLintTests: XCTestCase {
         if etichetteCorte.contains(nudo) { return true }
         if testo.contains(where: { "àèéìòùÀÈÉÌÒÙ".contains($0) }) { return true }
         let parole = testo.lowercased().split(whereSeparator: { !$0.isLetter }).map(String.init)
+        if parole.contains(where: spieForti.contains) { return true }
         return parole.filter(spieItaliane.contains).count >= 2
     }
 

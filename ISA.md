@@ -966,6 +966,46 @@ composto a pezzi da più variabili — resta **scritto dentro il test** invece c
 vorrebbe dire SwiftSyntax, cioè una dipendenza su un'app che non ne ha nessuna, e quella è una
 decisione del principale.
 
+### Iterazione 18 — quello che avevo verificato non era quello che lui usava (2026-07-30)
+
+> **Nota sulla numerazione, scoperta scrivendo questa iterazione.** Gli identificativi in questo
+> file **non sono unici**: l'intervallo ISC-30…ISC-88 compare due volte, perché il blocco dei
+> criteri iniziali e quello delle iterazioni sono stati numerati ognuno per conto suo. Le due
+> voci qui sotto partono da 90, oltre il massimo vero (89). Anche le ISC-83…86 dell'iterazione 17
+> collidono con la prima serie: non le rinumero, perché sono già citate altrove e cambiarle
+> romperebbe i riferimenti — ma **un ISC non basta a identificare un criterio in questo file**,
+> serve anche l'iterazione.
+
+
+- [x] **ISC-90** Le due fasi arrivano nell'app che gira davvero. — Il 30/07 il principale ha fatto
+      una pausa e ha visto **la schermata vecchia**. Non era un difetto del codice: il codice era
+      giusto. Avevo verificato tutto con `--snapshot` sul **binario di debug**, e non ho mai
+      lanciato `Scripts/build-app.sh`: l'app che lui usa è `dist/Otium.app`, ferma alle 10:54 del
+      29 luglio, cioè a prima di tutto il lavoro. Sondato: `ps` dice quale binario gira, `ls -la`
+      da quando.
+      *La lezione, che è la stessa già scritta due volte in questo file con parole diverse:* **la
+      sonda deve rispondere alla domanda che hai fatto.** «La schermata nuova è disegnata bene?» e
+      «la schermata nuova è quella che vedi tu?» sono due domande, e per un pomeriggio di rese ho
+      risposto solo alla prima. Un binario di debug verde è indistinguibile da un'app aggiornata
+      finché non guardi la data del bundle.
+      *Chiuso:* bundle ricostruito, resa delle due fasi rifatta **dal bundle** e guardata, app
+      chiusa con un `quit` pulito (che passa da `applicationWillTerminate` → `model.stop()`,
+      quindi scarica il tempo attivo invece di perderlo) e riaperta. `--doctor`: undici controlli
+      verdi, istanza unica, avvio automatico che punta a questa copia.
+
+- [x] **ISC-91** Nessuna riga esce mezza in una lingua e mezza nell'altra. — Sempre dal suo
+      screenshot: *«still, on a document: documento aperto in Microsoft Word»*. Il prefisso passava
+      da `L.t`, il seguito no — arrivava da `PresenceClassifier`, e la stessa frase esisteva
+      **due volte**, in `Presence.swift` e in `SystemProbes.swift`. Tradotte entrambe, più «video
+      in riproduzione», «audio in riproduzione» e «pagina web».
+      *Perché la guardia non l'aveva vista, e cosa è cambiato:* il rilevatore di prosa chiedeva
+      **due** parole comuni nella stessa stringa, e «documento aperto in ￼» ne ha una sola. Ora
+      esistono le **spie forti** — parole che l'inglese non ha, come «riproduzione», «documento»,
+      «sedentarietà» — e ne basta una. Rinforzato il rilevatore, sono uscite subito le altre tre
+      righe di `Presence.swift`, un file che non avevo nemmeno guardato.
+      *Falsificatore:* due casi negativi con le righe esatte che il principale ha letto a schermo.
+
+
 ## Test Strategy
 
 Tre strumenti: `swift test` per tutta la logica pura (orologio, motore, rampa, registro), che è

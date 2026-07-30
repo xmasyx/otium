@@ -205,7 +205,7 @@ final class BlockerController {
             windows.append(window)
             if ProcessInfo.processInfo.environment["OTIUM_DEBUG"] != nil {
                 FileHandle.standardError.write(
-                    "schermo \(screen.frame) → finestra \(window.frame)\n".data(using: .utf8)!
+                    "schermo \(screen.frame) → finestra \(window.frame)\n".data(using: .utf8)!   // lingua: ok traccia di debug su stderr (OTIUM_DEBUG)
                 )
             }
         }

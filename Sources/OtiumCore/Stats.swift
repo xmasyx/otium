@@ -260,7 +260,7 @@ public enum Stats {
         let perDay = Double(stats.interruptions) / Double(max(1, stats.days))
 
         out.append(Insight(
-            id: "interruzioni",
+            id: "interruzioni",   // lingua: ok identificativo della scheda, non un testo
             headline: L.t("\(stats.interruptions) \(plural(stats.interruptions, it: "interruzione", "interruzioni", en: "interruption", "interruptions")) della sedentarietà",
                           "\(stats.interruptions) sitting \(plural(stats.interruptions, it: "interruzione", "interruzioni", en: "interruption", "interruptions"))")
                     + (stats.days > 1 ? alGiorno(perDay) : ""),

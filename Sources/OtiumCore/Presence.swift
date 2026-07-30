@@ -137,15 +137,19 @@ public enum PresenceClassifier {
         if ReaderApps.isReader(frontmost) {
             return PresenceSignal(
                 kind: .reading,
-                detail: document.map { "\($0) — \(appName)" } ?? "documento aperto in \(appName)"
+                detail: document.map { "\($0) — \(appName)" }
+                    ?? L.t("documento aperto in \(appName)", "document open in \(appName)")
             )
         }
         if MediaPlayers.isPlayer(frontmost), isPlayingAudio {
-            return PresenceSignal(kind: .media, detail: "video in riproduzione — \(appName)")
+            return PresenceSignal(kind: .media,
+                                  detail: L.t("video in riproduzione — \(appName)",
+                                              "video playing — \(appName)"))
         }
         // Un browser davanti che non suona: stai leggendo una pagina. Tetto stretto.
         if Browsers.isBrowser(frontmost) {
-            return PresenceSignal(kind: .reading, detail: "pagina web — \(appName)")
+            return PresenceSignal(kind: .reading,
+                                  detail: L.t("pagina web — \(appName)", "web page — \(appName)"))
         }
         return nil
     }
