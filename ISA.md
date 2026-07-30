@@ -1006,6 +1006,51 @@ decisione del principale.
       *Falsificatore:* due casi negativi con le righe esatte che il principale ha letto a schermo.
 
 
+### Iterazione 19 — l'armonia fra le due facce, e la dissolvenza (2026-07-30)
+
+- [x] **ISC-92** Il pulsante dice dove ti porta, non che ora è. — Nella fase di riposo il
+      cronometro diceva 2:11 e il pulsante spento sotto «2:11 left»: lo stesso numero due volte a
+      dodici punti di distanza. Segnalato dal principale con la soluzione già dentro la domanda.
+      Ora l'etichetta resta ferma sulla destinazione ed è lo stato spento a dire «non ancora».
+      Nell'esercizio il numero non era un doppione — l'orologio conta la pausa, quello contava il
+      minimo di movimento — quindi è sceso sotto il pulsante e dice anche perché stai aspettando.
+      *Dead end pagato:* il primo pulsante aveva misura fissa, e l'etichetta lunga usciva dal
+      rettangolo finendo sopra la linea del piede. La causa vera era che ripeteva il nome
+      dell'esercizio, che sta a 44 punti trenta righe più su.
+
+- [x] **ISC-93** Le due facce condividono lo scheletro. — Il blocco in basso cambiava altezza fra
+      esercizio e riposo, perché l'istruzione del riposo c'è solo in una e il «Perché» solo
+      nell'altra: cronometro, barra, pulsante e uscite saltavano nell'istante della transizione.
+      Ora quelle righe stanno in **tre fessure ad altezza fissa** che tengono il loro spazio anche
+      da vuote.
+      *Falsificatore misurato:* uno script legge le rese e trova la linea del piede riga per riga
+      nei pixel. Micro-pausa: **0 punti di scarto**. Pausa piena col microcircuito: **7 punti**,
+      perché lì il contenuto eccede l'altezza disponibile e la colonna si assesta più in basso.
+      Resta aperto per scelta: chiuderlo vuol dire togliere qualcosa dal blocco dell'esercizio, e
+      quella è una decisione di contenuto.
+      *Costo pagato due volte:* ogni fessura aggiunta ha riportato la pausa piena oltre gli 804
+      punti disponibili a 1440×900, e ogni volta è servito recuperare spazio da molle e spaziature.
+
+- [x] **ISC-94** Il passaggio all'esercizio fatto è una dissolvenza, non un taglio netto. — Le due
+      facce si scambiano dentro la stessa `ZStack` con `.transition(.opacity)`, 0,6 secondi, con
+      dieci punti di scorrimento in senso opposto. L'animazione è legata alla sola `exerciseDone`,
+      così il cronometro che cambia ogni secondo non si trascina dietro niente.
+      *Verificato dal principale, non da me, ed è l'unico modo che aveva di esserlo:* uno snapshot
+      cattura un fotogramma fermo, quindi io potevo solo controllare che l'animazione fosse
+      cablata sul sottoalbero giusto. Chiuso il 2026-07-30 su sua osservazione diretta —
+      **«la dissolvenza regge»**.
+
+- [x] **ISC-95** Il pool governa il turno, le sostituzioni restano libere. — La regola, con le sue
+      parole: *«l'opzione più semplice può essere proposta come sostituzione, ma se non è nel pool
+      mai come esercizio»*. Il comportamento c'era già; mancava la guardia.
+      *Dead end pagato, e revertito:* avevo filtrato anche le **varianti** col pool, cioè tolto la
+      via d'uscita verso il gesto più facile proprio nel momento in cui serve — dentro una pausa
+      che non riesci a finire — portandomi via per giunta affondi e sit-up, che facili non sono,
+      solo fuori dalla rotazione. Due ruoli diversi per lo stesso elenco, fusi in uno.
+      *Falsificatore, una metà per test:* l'esercizio del turno esce dall'elenco scelto su 24
+      turni, con un controllo che la rotazione giri davvero; e la regressione sulle ginocchia
+      resta offerta come sostituzione anche se non è nell'elenco.
+
 ## Test Strategy
 
 Tre strumenti: `swift test` per tutta la logica pura (orologio, motore, rampa, registro), che è
