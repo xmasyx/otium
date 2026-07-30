@@ -100,7 +100,7 @@ struct BreakView: View {
                     // dove guardi saltava giù di centoventi punti. Bloccando la molla di sopra il
                     // baricentro delle due facce coincide, e in fase 1 non cambia niente perché
                     // lì il contenuto è alto e la molla è già schiacciata.
-                    Spacer(minLength: 12).frame(maxHeight: 140)
+                    Spacer(minLength: 8).frame(maxHeight: 140)
                     // Il crossfade: le due facce si scambiano dentro la stessa `ZStack`, quindi
                     // una sfuma mentre l'altra compare invece di sostituirla di scatto.
                     ZStack {
@@ -110,7 +110,7 @@ struct BreakView: View {
                             exercise(plan).transition(.opacity.combined(with: .offset(y: -10)))
                         }
                     }
-                    Spacer(minLength: 12)
+                    Spacer(minLength: 8)
                     controls(plan)
                     footer
                 }
@@ -441,7 +441,7 @@ struct BreakView: View {
     /// uno solo, va da 90 a 0, e il pulsante si accende quando arriva in fondo.
     @ViewBuilder
     private func controls(_ plan: BreakPlan) -> some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 13) {
             // Sopra il cronometro e non sotto il pulsante: nella fase di riposo è l'istruzione
             // della schermata, e un'istruzione sotto il suo pulsante arriva a cose fatte.
             // Fessura ad altezza fissa: piena nel riposo, vuota nell'esercizio, alta uguale in
@@ -463,32 +463,57 @@ struct BreakView: View {
 
             progressBar(plan)
 
-            if model.canReturnToWork {
-                primary(L.t("Torna al lavoro", "Back to work"), enabled: true) { model.returnToWork() }
-            } else if model.exerciseDone {
-                primary(L.t("ancora \(clock(model.secondsLeftOfBreak))", "\(clock(model.secondsLeftOfBreak)) left"), enabled: false) {}
-            } else if model.canFinishNow {
-                // **Due risposte, non una.** Il registro sa quante ripetizioni ti sono state
-                // chieste, non quante ne hai fatte: senza questa seconda via la progressione
-                // misurerebbe solo le giornate andate bene, e su quelle qualunque progressione
-                // sembra funzionare. Un tap nel caso normale, il numero solo nell'eccezione.
-                primary(model.moreStationsAhead ? L.t("Fatte tutte — avanti", "All done — next")
-                                                : L.t("Fatte tutte", "All done"), enabled: true) {
-                    model.markExerciseDone()
-                }
-                if model.settings.progressBeyondFull {
-                    Button(L.t("Non tutte…", "Almost done…")) { partialSheet = true }
-                        .buttonStyle(.plain)
-                        .font(.system(size: 12))
-                        .foregroundStyle(Palette.dim)
+            // **Il pulsante dice dove ti porta, non che ora è.**
+            //
+            // Nella fase di riposo diceva «ancora 2:11» mentre il cronometro sopra diceva 2:11:
+            // lo stesso numero due volte, a dodici punti di distanza, e nessuno dei due che
+            // spiegasse cosa succede quando arriva a zero. Segnalato dal principale il
+            // 2026-07-30 con la soluzione già dentro la domanda — l'etichetta resta ferma sulla
+            // destinazione, ed è lo stato spento a dire «non ancora». Il tempo lo racconta
+            // l'orologio, che è lì apposta.
+            if model.exerciseDone {
+                primary(L.t("Torna al lavoro", "Back to work"), enabled: model.canReturnToWork) {
+                    model.returnToWork()
                 }
             } else {
-                // Il nome dell'esercizio sta a 44 punti trenta righe più su: ripeterlo qui era
-                // l'unica ragione per cui l'etichetta diventava lunga il doppio del pulsante.
-                primary(L.t("ancora \(Int(model.secondsUntilCanFinish.rounded(.up))) s",
-                            "\(Int(model.secondsUntilCanFinish.rounded(.up))) s to go"),
-                        enabled: false) {}
+                primary(model.moreStationsAhead ? L.t("Fatte tutte — avanti", "All done — next")
+                                                : L.t("Fatte tutte", "All done"),
+                        enabled: model.canFinishNow) {
+                    model.markExerciseDone()
+                }
             }
+
+            // La riga sotto il pulsante: terza fessura ad altezza fissa, e per la stessa ragione
+            // delle altre due. Ci passano tre cose diverse a seconda del momento, e senza uno
+            // spazio riservato il cronometro saltava di quaranta punti appena una di queste
+            // compariva — cioè proprio l'allineamento appena costruito, rotto da una riga.
+            ZStack {
+                if !model.exerciseDone {
+                    if model.canFinishNow {
+                        // **Due risposte, non una.** Il registro sa quante ripetizioni ti sono
+                        // state chieste, non quante ne hai fatte: senza questa seconda via la
+                        // progressione misurerebbe solo le giornate andate bene, e su quelle
+                        // qualunque progressione sembra funzionare.
+                        if model.settings.progressBeyondFull {
+                            Button(L.t("Non tutte…", "Almost done…")) { partialSheet = true }
+                                .buttonStyle(.plain)
+                                .font(.system(size: 12))
+                                .foregroundStyle(Palette.dim)
+                        }
+                    } else {
+                        // Qui il numero **non** era un doppione — l'orologio conta la pausa,
+                        // questo conta il minimo di movimento — quindi non sparisce: scende sotto
+                        // il pulsante, piccolo, e dice anche **perché** stai aspettando. Due
+                        // numeri nudi uno sopra l'altro erano la parte confusa.
+                        Text(L.t("ancora \(Int(model.secondsUntilCanFinish.rounded(.up))) s di movimento",
+                                 "\(Int(model.secondsUntilCanFinish.rounded(.up))) s of movement to go"))
+                            .font(.system(size: 12))
+                            .foregroundStyle(Palette.dim)
+                            .monospacedDigit()
+                    }
+                }
+            }
+            .frame(height: 17)
 
             // Uscire dal circuito resta possibile a metà: le stazioni già confermate restano
             // fatte, e la pausa si chiude con l'esercizio singolo che le toccava.
@@ -574,7 +599,7 @@ struct BreakView: View {
             // Aria fra il pulsante grande e la linea del piede. Ne serviva: nello screenshot del
             // 2026-07-30 il pulsante e la linea si toccavano, e la parte bassa sembrava schiacciata
             // contro il bordo mentre a metà schermo restava un vuoto grande il doppio.
-            Spacer().frame(height: 10)
+            Spacer().frame(height: 6)
 
             Divider().overlay(Color.white.opacity(0.08)).frame(width: 620)
 
