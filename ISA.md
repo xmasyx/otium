@@ -1349,6 +1349,27 @@ piena, l'attribuzione «consenso» non si capisce, e le preferenze sono una list
       *L'interruttore si spegne da sé* se il microcircuito non è proposto: comandare qualcosa che
       non esiste è peggio che non poterlo comandare.
 
+- [x] **ISC-123** Il circuito è una scelta sola con tre valori, non due interruttori. — Difetto
+      **mio**, trovato dall'uso in mezz'ora: *«se tolgo "proponi il microcircuito" non mi permette
+      di fleggare "comincia già in circuito"; se lo fleggo prima, non mi permette di toglierlo»*.
+      Due booleani dipendenti descrivono quattro stati di cui **uno non esiste**, e l'interfaccia
+      era costretta a disabilitarsi per difendersi da sé stessa — cioè a sbarrare la strada a chi
+      voleva proprio quello. La sua frase conteneva già il modello giusto: *«non voglio una
+      proposta di microcircuito, voglio cominciare col microcircuito e la proposta di fare
+      esercizio singolo»*. Sono tre alternative su un asse solo, e su un asse solo l'impossibile
+      non si può nemmeno esprimere — un test lo verifica per ognuno dei tre valori.
+      *Le impostazioni scritte prima non si perdono:* i due booleani vengono letti da un
+      contenitore di chiavi ritirate e tradotti, con lo stato impossibile che ricade sul valore
+      che vieta. Cinque casi di migrazione in un test, file vuoto compreso.
+
+- [x] **ISC-124** Un controllo e la sua nota sono una riga sola. — In un `Form` raggruppato ogni
+      figlio della sezione è una riga, e fra due righe macOS disegna un divisore: interruttore e
+      spiegazione erano due figli, quindi la nota sembrava riferita a quello **sotto**. *«Tra parti
+      dello stesso contesto non deve esserci quella linea.»*
+      *Non si toglie il divisore, si smette di produrlo:* i due stanno in una `VStack`, cioè in un
+      figlio solo, e la linea resta dov'è utile — fra un'impostazione e la prossima. Sei punti in
+      quattro pannelli, trovati col grep e non a occhio.
+
 - **Anti-claim** — il giorno nuovo azzera **solo** il ciclo micro/piena. Non la rotazione degli
   esercizi (che è `breakIndex`, e senza di lei si torna a squat-squat-squat, il difetto del
   26/07), non il conto del tempo attivo, non i mazzi delle frasi.

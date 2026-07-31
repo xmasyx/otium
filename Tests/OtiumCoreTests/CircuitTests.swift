@@ -45,7 +45,7 @@ final class CircuitTests: XCTestCase {
     }
 
     func testTheCircuitCanBeTurnedOffInPreferences() {
-        var s = Settings(offerCircuit: false)
+        var s = Settings(circuitMode: .singolo)
         s.startDate = Date()
         var engine = SessionEngine(settings: s, maxCredibleElapsed: 10_000)
         engine.forceBreakNow(now: Date(), kind: .long)
@@ -355,7 +355,7 @@ final class StartInCircuitTests: XCTestCase {
     private func engine(startInCircuit: Bool) -> SessionEngine {
         var s = Settings()
         s.startDate = Self.ora
-        s.startLongInCircuit = startInCircuit
+        s.circuitMode = startInCircuit ? .subito : .proposto
         return SessionEngine(settings: s, maxCredibleElapsed: 120)
     }
 
@@ -400,5 +400,78 @@ final class StartInCircuitTests: XCTestCase {
         e.forceBreakNow(now: Self.ora, kind: .micro)
         XCTAssertFalse(e.plan?.circuitActive ?? true)
         XCTAssertTrue(e.plan?.circuit.isEmpty ?? false)
+    }
+}
+
+// MARK: - ISC-123 — una scelta sola, tre valori
+
+/// **Due interruttori dipendenti producono stati che non esistono.** «Proponi il microcircuito» e
+/// «comincia già in circuito» erano due caselle, e spenta la prima la seconda comandava una cosa
+/// che non c'era: l'interfaccia doveva disabilitarla per difendersi da sé stessa, e chi voleva
+/// solo il circuito trovava la strada sbarrata in entrambi i sensi.
+final class CircuitModeTests: XCTestCase {
+
+    private static let ora: Date = {
+        var c = DateComponents(); c.year = 2026; c.month = 7; c.day = 31; c.hour = 10
+        return Calendar.current.date(from: c)!
+    }()
+
+    private func pianoLungo(_ modo: CircuitMode) -> BreakPlan? {
+        var s = Settings(); s.startDate = Self.ora; s.circuitMode = modo
+        var e = SessionEngine(settings: s, maxCredibleElapsed: 120)
+        e.forceBreakNow(now: Self.ora, kind: .long)
+        return e.plan
+    }
+
+    func testTheThreeValuesAreThreeDifferentBreaks() {
+        XCTAssertTrue(pianoLungo(.singolo)?.circuit.isEmpty ?? false,
+                      "in singolo il circuito non si costruisce nemmeno")
+        XCTAssertFalse(pianoLungo(.singolo)?.circuitActive ?? true)
+
+        XCTAssertFalse(pianoLungo(.proposto)?.circuit.isEmpty ?? true, "proposto: c'è ma spento")
+        XCTAssertFalse(pianoLungo(.proposto)?.circuitActive ?? true)
+
+        XCTAssertFalse(pianoLungo(.subito)?.circuit.isEmpty ?? true)
+        XCTAssertTrue(pianoLungo(.subito)?.circuitActive ?? false, "subito: c'è e parte acceso")
+    }
+
+    /// **Nessuno stato impossibile, per costruzione.** È il punto di avere un asse solo: qualunque
+    /// valore si scelga, il piano che ne esce è coerente — non esiste più «attivo senza circuito».
+    func testNoImpossibleStateCanBeExpressed() {
+        for modo in CircuitMode.allCases {
+            guard let p = pianoLungo(modo) else { return XCTFail("\(modo): nessuna pausa") }
+            if p.circuitActive {
+                XCTAssertGreaterThanOrEqual(p.circuit.count, 2,
+                                            "\(modo): attivo su un circuito che non c'è")
+                XCTAssertEqual(p.exercise.kind, p.circuit.first?.kind)
+            }
+            XCTAssertFalse(modo.startsActive && !modo.buildsCircuit,
+                           "\(modo): parte acceso senza costruire — la combinazione che l'enum esiste per vietare")
+        }
+    }
+
+    /// **Le impostazioni scritte prima non si perdono.** Un file con i due booleani va letto e
+    /// tradotto: chi aveva spento il circuito non deve ritrovarselo acceso senza sapere perché.
+    func testOldFilesWithTwoBooleansStillLoad() throws {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let casi: [(String, CircuitMode)] = [
+            (#"{"offerCircuit":true,"startLongInCircuit":true}"#, .subito),
+            (#"{"offerCircuit":true,"startLongInCircuit":false}"#, .proposto),
+            (#"{"offerCircuit":false,"startLongInCircuit":false}"#, .singolo),
+            (#"{"offerCircuit":false,"startLongInCircuit":true}"#, .singolo),   // stato impossibile: vince chi vieta
+            (#"{}"#, .proposto),                                                 // file antico: il default
+        ]
+        for (json, atteso) in casi {
+            let s = try decoder.decode(Settings.self, from: Data(json.utf8))
+            XCTAssertEqual(s.circuitMode, atteso, "migrazione di \(json)")
+        }
+    }
+
+    /// E il valore nuovo, quando c'è, batte i vecchi campi rimasti nel file.
+    func testTheNewKeyWinsOverTheOldOnes() throws {
+        let json = #"{"circuitMode":"singolo","offerCircuit":true,"startLongInCircuit":true}"#
+        let s = try JSONDecoder().decode(Settings.self, from: Data(json.utf8))
+        XCTAssertEqual(s.circuitMode, .singolo)
     }
 }

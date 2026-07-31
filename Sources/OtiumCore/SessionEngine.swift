@@ -496,7 +496,7 @@ public struct SessionEngine {
                                                  pushVariant: settings.pushVariant,
                                                  progress: settings.progressBeyondFull ? progress : nil)
         // Il circuito si prepara solo dove ha senso — la pausa piena — e resta una proposta.
-        let circuit = (kind == .long && settings.offerCircuit)
+        let circuit = (kind == .long && settings.circuitMode.buildsCircuit)
             ? settings.planner.circuit(breakIndex: breakIndex, factor: factor, sex: settings.sex,
                                        pushVariant: settings.pushVariant)
             : []
@@ -510,7 +510,7 @@ public struct SessionEngine {
         // **Chi il circuito lo fa sempre non deve dirlo ogni volta.** Il piano nasce già in
         // circuito, e l'esercizio del turno resta da parte: l'uscita dentro la pausa — «basta
         // così, torno all'esercizio singolo» — lo ritrova esattamente dov'era.
-        if settings.startLongInCircuit, circuit.count >= 2 {
+        if settings.circuitMode.startsActive, circuit.count >= 2 {
             piano.circuitActive = true
             piano.exercise = circuit[0]
             singleExercise = exercise

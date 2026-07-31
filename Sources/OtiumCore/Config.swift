@@ -109,6 +109,52 @@ public struct Cadence: Codable, Equatable, Sendable {
     )
 }
 
+/// Cosa succede nelle pause piene: **una scelta sola, tre valori**.
+///
+/// Erano due interruttori — «proponi il microcircuito» e «comincia già in circuito» — e due
+/// interruttori dipendenti producono stati che non esistono: spento il primo, il secondo comanda
+/// una cosa che non c'è, e l'interfaccia doveva disabilitarlo per difendersi da sé stessa. Il
+/// principale ci ha sbattuto contro il 2026-07-31 e ha descritto il modello giusto in una riga:
+/// *«io non voglio una proposta di microcircuito, io voglio cominciare con il microcircuito e la
+/// proposta di fare esercizio singolo»*. Sono tre alternative su un asse solo, e su un asse solo
+/// non si può scegliere l'impossibile.
+public enum CircuitMode: String, Codable, CaseIterable, Sendable {
+    /// Solo l'esercizio del turno. Il circuito non viene nemmeno costruito.
+    case singolo
+    /// Si parte dall'esercizio del turno, il giro completo è lì se lo vuoi.
+    case proposto
+    /// Si parte dal giro completo, l'esercizio singolo è lì se non ce la fai.
+    case subito
+
+    public var localizedName: String {
+        switch self {
+        case .singolo:  return L.t("solo l'esercizio del turno", "just the exercise of the turn")
+        case .proposto: return L.t("proponi il circuito", "offer the circuit")
+        case .subito:   return L.t("comincia in circuito", "start in the circuit")
+        }
+    }
+
+    public var explanation: String {
+        switch self {
+        case .singolo:
+            return L.t("Le pause piene hanno un esercizio solo, come le micro-pause: cambia la durata, non il lavoro.",
+                       "Full breaks have a single exercise, like micro-breaks: what changes is the length, not the work.")
+        case .proposto:
+            return L.t("La pausa piena si apre sull'esercizio del turno, con il giro completo a un clic. Le stazioni valgono i tre quarti delle ripetizioni, o quattro esercizi non stanno in cinque minuti.",
+                       "The full break opens on the exercise of the turn, with the whole circuit one click away. Stations count for three quarters of the reps, or four exercises do not fit in five minutes.")
+        case .subito:
+            return L.t("La pausa piena si apre già sul giro completo — una stazione per famiglia, esplosivo compreso — e dentro la pausa resta «basta così, torno all'esercizio singolo».",
+                       "The full break opens straight into the whole circuit — one station per family, explosive included — and inside the break «that's enough, back to the single exercise» stays there.")
+        }
+    }
+
+    /// Il circuito va costruito? In `singolo` no: preparare quattro stazioni che nessuno vedrà è
+    /// lavoro buttato, e un piano che le porta è un piano che mente su cosa offre.
+    public var buildsCircuit: Bool { self != .singolo }
+    /// Il piano nasce già dentro il giro?
+    public var startsActive: Bool { self == .subito }
+}
+
 public struct Settings: Codable, Equatable, Sendable {
     public var cadence: Cadence
     /// Data della prima esecuzione: da qui parte la rampa.
@@ -176,14 +222,7 @@ public struct Settings: Codable, Equatable, Sendable {
     /// Proponi il microcircuito nelle pause piene: una stazione per famiglia — gambe, spinta,
     /// addome, esplosivo. **Proposta, non imposizione**: dentro la pausa scegli tu se fare il
     /// giro completo o il solo esercizio del turno.
-    public var offerCircuit: Bool
-    /// Le pause piene **cominciano** già in circuito, invece di proporlo.
-    ///
-    /// Facoltativa e spenta di serie, perché il circuito è quattro esercizi in cinque minuti e
-    /// arrivarci senza averlo scelto è il modo di odiarlo al secondo giorno. Chi lo fa sempre,
-    /// però, paga un clic a ogni pausa piena per dire una cosa che aveva già deciso — e l'uscita
-    /// resta dov'era: «basta così, torno all'esercizio singolo», dentro la pausa.
-    public var startLongInCircuit: Bool
+    public var circuitMode: CircuitMode
     /// Otium riparte da sola a ogni accensione. Diventa `false` quando l'avvio automatico viene
     /// rimosso dalle preferenze, così l'app non se lo rimette da sola al riavvio successivo —
     /// una preferenza che si riscrive addosso all'utente è un difetto, non una comodità.
@@ -241,8 +280,7 @@ public struct Settings: Codable, Equatable, Sendable {
         deferWhenMicrophoneActive: Bool = true,
         detectQuietPresence: Bool = true,
         offerVariants: Bool = true,
-        offerCircuit: Bool = true,
-        startLongInCircuit: Bool = false,
+        circuitMode: CircuitMode = .proposto,
         autoStartAtLogin: Bool = true,
         maxAutoDefers: Int = 6,
         autoDeferSeconds: Double = 5 * 60,
@@ -271,8 +309,7 @@ public struct Settings: Codable, Equatable, Sendable {
         self.deferWhenMicrophoneActive = deferWhenMicrophoneActive
         self.detectQuietPresence = detectQuietPresence
         self.offerVariants = offerVariants
-        self.offerCircuit = offerCircuit
-        self.startLongInCircuit = startLongInCircuit
+        self.circuitMode = circuitMode
         self.autoStartAtLogin = autoStartAtLogin
         self.maxAutoDefers = max(0, maxAutoDefers)
         self.autoDeferSeconds = autoDeferSeconds
@@ -332,6 +369,11 @@ public struct Settings: Codable, Equatable, Sendable {
 
     /// Le decodifiche vecchie non devono morire quando aggiungo un campo: ogni chiave assente
     /// ricade sul default del `init`, invece di far fallire l'intero file di configurazione.
+    /// Le chiavi dei file scritti prima del 2026-07-31, tenute in vita solo per leggerle.
+    private enum ChiaviRitirate: String, CodingKey {
+        case offerCircuit, startLongInCircuit
+    }
+
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let d = Settings()
@@ -373,8 +415,19 @@ public struct Settings: Codable, Equatable, Sendable {
         deferWhenMicrophoneActive = (try? c.decode(Bool.self, forKey: .deferWhenMicrophoneActive)) ?? d.deferWhenMicrophoneActive
         detectQuietPresence = (try? c.decode(Bool.self, forKey: .detectQuietPresence)) ?? d.detectQuietPresence
         offerVariants = (try? c.decode(Bool.self, forKey: .offerVariants)) ?? d.offerVariants
-        offerCircuit = (try? c.decode(Bool.self, forKey: .offerCircuit)) ?? d.offerCircuit
-        startLongInCircuit = (try? c.decode(Bool.self, forKey: .startLongInCircuit)) ?? d.startLongInCircuit
+        // **I file scritti prima portano i due booleani, e non si buttano.** Un'impostazione che
+        // sparisce in un aggiornamento è peggio di una che non c'è mai stata: chi aveva spento il
+        // circuito se lo ritroverebbe acceso senza sapere perché.
+        if let modo = try? c.decode(CircuitMode.self, forKey: .circuitMode) {
+            circuitMode = modo
+        } else {
+            // `CodingKeys` è sintetizzato dalle proprietà **di adesso**, quindi le chiavi vecchie
+            // non ci sono più: per leggerle serve un contenitore che le conosca.
+            let vecchio = try? decoder.container(keyedBy: ChiaviRitirate.self)
+            let offriva = (try? vecchio?.decode(Bool.self, forKey: .offerCircuit)) ?? true
+            let subito = (try? vecchio?.decode(Bool.self, forKey: .startLongInCircuit)) ?? false
+            circuitMode = (offriva ?? true) ? ((subito ?? false) ? .subito : .proposto) : .singolo
+        }
         autoStartAtLogin = (try? c.decode(Bool.self, forKey: .autoStartAtLogin)) ?? d.autoStartAtLogin
         maxAutoDefers = (try? c.decode(Int.self, forKey: .maxAutoDefers)) ?? d.maxAutoDefers
         autoDeferSeconds = (try? c.decode(Double.self, forKey: .autoDeferSeconds)) ?? d.autoDeferSeconds

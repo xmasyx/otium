@@ -1354,7 +1354,7 @@ if ProbeMode.active {
     // Senza, la sonda gira coi valori di serie e disegna sempre e solo la proposta.
     if arguments.contains("--circuito-subito") {
         var s = Settings()
-        s.startLongInCircuit = true
+        s.circuitMode = .subito
         SettingsStore.save(s)
     }
 

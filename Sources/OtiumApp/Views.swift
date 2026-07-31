@@ -1247,12 +1247,11 @@ struct PrefsView: View {
         }
 
         SwiftUI.Section(L.t("Ripetizioni", "Reps")) {
-            Toggle(L.t("Fai crescere le ripetizioni oltre il 100%",
-                       "Let the reps grow beyond 100%"), isOn: $draft.progressBeyondFull)
-            Text(L.t("Si sale del 5% dopo due conferme piene di fila (regola 2-for-2 dell'ACSM) e si scende dopo due mancate, mai sotto il 100%. A fine esercizio l'app ti chiede se le hai fatte tutte.",
-                     "It goes up 5% after two full confirmations in a row (ACSM's 2-for-2 rule) and steps back after two shortfalls, never below 100%. At the end of each exercise the app asks whether you did them all."))
-                .font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            conNota(L.t("Si sale del 5% dopo due conferme piene di fila (regola 2-for-2 dell'ACSM) e si scende dopo due mancate, mai sotto il 100%. A fine esercizio l'app ti chiede se le hai fatte tutte.",
+                        "It goes up 5% after two full confirmations in a row (ACSM's 2-for-2 rule) and steps back after two shortfalls, never below 100%. At the end of each exercise the app asks whether you did them all.")) {
+                Toggle(L.t("Fai crescere le ripetizioni oltre il 100%",
+                           "Let the reps grow beyond 100%"), isOn: $draft.progressBeyondFull)
+            }
 
             // «Rampa» era il calco di *ramp*: in italiano è la salita di un garage, non un
             // modo di allenarsi. Segnalato dal principale il 2026-07-28.
@@ -1433,33 +1432,18 @@ struct PrefsView: View {
         }
 
         SwiftUI.Section(L.t("Come vengono proposti", "How they are offered")) {
-            Toggle(L.t("Offri le varianti dentro la pausa", "Offer variants during the break"), isOn: $draft.offerVariants)
-            Text(L.t("Durante una pausa push-up puoi passare a diamond, archer, dip su sedia, "
-               + "pike o inclinati con un clic. Le ripetizioni si adeguano alla difficoltà.",
-                "During a push-up break you can switch to diamond, archer, chair dips, pike or "
-                + "incline with one click. The reps adjust to the difficulty."))
-                .font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Toggle(L.t("Proponi il microcircuito nelle pause piene", "Offer the circuit in full breaks"), isOn: $draft.offerCircuit)
-            Text(L.t("Nella pausa piena puoi scegliere il giro completo, una stazione per "
-               + "famiglia esplosivo compreso, invece del solo esercizio del turno. Resta "
-               + "una proposta: si decide dentro la pausa, e le stazioni valgono i tre quarti "
-               + "delle ripetizioni, o quattro esercizi non stanno in cinque minuti.",
-                "In a full break you can choose the whole circuit — one station per family, "
-                + "explosive included — instead of just the exercise of the turn. It stays a "
-                + "proposal: you decide, inside the break."))
-                .font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            // Dipende dal precedente: senza il circuito proposto, cominciarci dentro non vuol
-            // dire niente. Spento si spegne da sé, invece di restare acceso a comandare nulla.
-            Toggle(L.t("Comincia già in circuito", "Start already in the circuit"),
-                   isOn: $draft.startLongInCircuit)
-                .disabled(!draft.offerCircuit)
-            Text(L.t("Le pause piene partono direttamente dal giro completo, senza chiedertelo. L'uscita resta dov'è: dentro la pausa, «basta così, torno all'esercizio singolo».",
-                     "Full breaks start straight into the whole circuit, without asking. The way out stays where it was: inside the break, «that's enough, back to the single exercise»."))
-                .font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            conNota(L.t("Durante una pausa push-up puoi passare a diamond, archer, dip su sedia, pike o inclinati con un clic. Le ripetizioni si adeguano alla difficoltà.",
+                        "During a push-up break you can switch to diamond, archer, chair dips, pike or incline with one click. The reps adjust to the difficulty.")) {
+                Toggle(L.t("Offri le varianti dentro la pausa", "Offer variants during the break"), isOn: $draft.offerVariants)
+            }
+            // **Una scelta, non due interruttori.** La spiegazione segue la voce scelta: dire
+            // tutte e tre le cose insieme costringeva a leggerne due che non riguardavano te.
+            conNota(draft.circuitMode.explanation) {
+                Picker(L.t("Nelle pause piene", "In full breaks"), selection: $draft.circuitMode) {
+                    ForEach(CircuitMode.allCases, id: \.self) { Text($0.localizedName).tag($0) }
+                }
+                .pickerStyle(.menu)
+            }
         }
     }
 
@@ -1467,15 +1451,10 @@ struct PrefsView: View {
     private var interruzioniSection: some View {
         SwiftUI.Section {
             Toggle(L.t("Rimanda se un microfono è in uso (call)", "Defer while a microphone is in use (a call)"), isOn: $draft.deferWhenMicrophoneActive)
-            Toggle(L.t("Conta anche video e lettura come tempo fermo", "Count video and reading as sitting time too"), isOn: $draft.detectQuietPresence)
-            Text(L.t("Un film o un PDF sono immobilità perfetta, e senza questo guardare Netflix "
-               + "vale come una pausa ben fatta. Tetti senza un solo input: 45 min per un "
-               + "video, 15 per un documento.",
-                "A film or a PDF is perfect stillness: without this, watching Netflix counts as "
-                + "a well-taken break. Caps without a single input: 45 min for a video, 15 for "
-                + "reading."))
-                .font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            conNota(L.t("Un film o un PDF sono immobilità perfetta, e senza questo guardare Netflix vale come una pausa ben fatta. Tetti senza un solo input: 45 min per un video, 15 per un documento.",
+                        "A film or a PDF is perfect stillness: without this, watching Netflix counts as a well-taken break. Caps without a single input: 45 min for a video, 15 for reading.")) {
+                Toggle(L.t("Conta anche video e lettura come tempo fermo", "Count video and reading as sitting time too"), isOn: $draft.detectQuietPresence)
+            }
         }
 
         SwiftUI.Section(L.t("Vie d'uscita", "Ways out")) {
@@ -1488,28 +1467,27 @@ struct PrefsView: View {
         }
 
         SwiftUI.Section {
-            LabeledContent(L.t("Ore attive", "Active hours")) {
-                HStack {
-                    Stepper("\(draft.activeFromHour)", value: $draft.activeFromHour, in: 0...23)
-                    Text("→")
-                    Stepper("\(draft.activeToHour)", value: $draft.activeToHour, in: 0...23)
+            conNota(L.t("Fuori da questa finestra Otium non interrompe.",
+                        "Outside this window Otium does not interrupt.")) {
+                LabeledContent(L.t("Ore attive", "Active hours")) {
+                    HStack {
+                        Stepper("\(draft.activeFromHour)", value: $draft.activeFromHour, in: 0...23)
+                        Text("→")
+                        Stepper("\(draft.activeToHour)", value: $draft.activeToHour, in: 0...23)
+                    }
                 }
             }
-            Text(L.t("Fuori da questa finestra Otium non interrompe.",
-                     "Outside this window Otium does not interrupt."))
-                .font(.caption).foregroundStyle(.secondary)
         }
     }
 
     @ViewBuilder
     private var aspettoSection: some View {
         SwiftUI.Section {
-            Picker(L.t("Livrea", "Theme"), selection: $draft.theme) {
-                ForEach(ThemeName.allCases, id: \.self) { Text($0.palette.name).tag($0) }
+            conNota(draft.theme.palette.description) {
+                Picker(L.t("Livrea", "Theme"), selection: $draft.theme) {
+                    ForEach(ThemeName.allCases, id: \.self) { Text($0.palette.name).tag($0) }
+                }
             }
-            Text(draft.theme.palette.description)
-                .font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
             LabeledContent(L.t("Suono del preavviso", "Warning sound")) {
                 HStack {
                     Picker("", selection: $draft.notificationSound) {
@@ -1591,6 +1569,28 @@ struct PrefsView: View {
                     Button(L.t("Punta a questa", "Point at this one")) { model.installLaunchAgent() }
                 }
             }
+        }
+    }
+
+    /// Un controllo e la sua spiegazione sono **una riga sola**.
+    ///
+    /// In un `Form` raggruppato ogni figlio diretto della `Section` diventa una riga, e fra due
+    /// righe macOS disegna un divisore. Interruttore e nota erano due figli, quindi c'era una
+    /// linea in mezzo: la nota sembrava riferita a quello **sotto** invece che a quello sopra.
+    /// Segnalato dal principale il 2026-07-31 guardando le preferenze — *«tra parti dello stesso
+    /// contesto non deve esserci quella linea»*.
+    ///
+    /// Non si toglie il divisore, si smette di produrlo: i due stanno in una `VStack`, cioè in un
+    /// figlio solo, e la linea resta dov'è utile — fra un'impostazione e la prossima.
+    @ViewBuilder
+    private func conNota<C: View>(_ nota: String, @ViewBuilder _ contenuto: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            contenuto()
+            Text(nota)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
