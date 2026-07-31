@@ -126,11 +126,16 @@ public enum CircuitMode: String, Codable, CaseIterable, Sendable {
     /// Si parte dal giro completo, l'esercizio singolo è lì se non ce la fai.
     case subito
 
+    /// **Le tre voci si leggono in fila, quindi devono essere corte.** Erano frasi — «solo
+    /// l'esercizio del turno», «comincia in circuito» — e in un menu a tendina una frase è
+    /// rumore: il verbo lo dice già il contesto («nelle pause piene»), e quello che cambia fra
+    /// le tre è una parola sola. Accorciate su indicazione del principale il 2026-07-31. Il
+    /// *cosa succede* sta nella riga sotto, che cambia con la voce scelta.
     public var localizedName: String {
         switch self {
-        case .singolo:  return L.t("solo l'esercizio del turno", "just the exercise of the turn")
+        case .singolo:  return L.t("singolo esercizio", "single exercise")
         case .proposto: return L.t("proponi il circuito", "offer the circuit")
-        case .subito:   return L.t("comincia in circuito", "start in the circuit")
+        case .subito:   return L.t("circuito", "circuit")
         }
     }
 
