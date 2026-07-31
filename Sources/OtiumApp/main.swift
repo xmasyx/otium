@@ -29,6 +29,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     func applicationDidFinishLaunching(_ notification: Notification) {
         Paths.ensureDirectory()
 
+        // Le tre voci passate dal menu alle Preferenze restano azioni dell'`AppDelegate`: qui si
+        // dice al modello come chiamarle. Il perché non sono selettori scritti a mano sta su
+        // `AppModel.onShowEvidence`. Prima del menu e della vista, o le Preferenze aperte subito
+        // troverebbero tre pulsanti muti.
+        model.onShowEvidence = { [weak self] in self?.showEvidence() }
+        model.onRevealLedger = { [weak self] in self?.revealLedger() }
+        model.onShowDoctor = { [weak self] in self?.showDoctor() }
+
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
         statusItem.menu = buildMenu()
@@ -280,8 +288,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             size = NSSize(width: 480, height: pace.fittingSize.height)
             host = pace
         case "menu":
-            size = NSSize(width: 280, height: 260)
-            host = NSHostingView(rootView: MenuPanel(model: model).frame(width: size.width))
+            // L'altezza la detta il contenuto, come nel menu vero: un 260 scritto a mano qui
+            // avrebbe **riprodotto** la fascia vuota invece di mostrarla sparita.
+            let menu = NSHostingView(rootView: MenuPanel(model: model).frame(width: 280))
+            size = NSSize(width: 280, height: menu.fittingSize.height)
+            host = menu
         case "declare":
             size = NSSize(width: 420, height: 330)
             host = NSHostingView(rootView: DeclareBreakView(model: model, onDone: {}).frame(width: size.width, height: size.height))
@@ -757,10 +768,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     /// l'app che dice di essere.
     private func runPolicyProbeIfRequested() {
         guard CommandLine.arguments.contains("--policy-probe") else { return }
+        // **Le Preferenze, non le Statistiche.** La sonda apriva la finestra che nessuno lascia
+        // aperta; quella che il principale tiene davanti mentre lavora e' questa, ed e' quella su
+        // cui ha visto l'icona. Una sonda che prova una finestra diversa da quella del difetto
+        // risponde a una domanda piu' debole di quella che le hai fatto.
         let allAvvio = NSApp.activationPolicy()
-        showStats()
+        showPrefs()
         let conFinestra = NSApp.activationPolicy()
-        statsWindow?.close()
+
+        // **Il fuoco si legge dopo, non subito.** `activate` e `makeKeyAndOrderFront` chiedono al
+        // sistema; la risposta arriva al giro dopo. Letto sulla stessa riga, `isKeyWindow` dice
+        // sempre `false` e la sonda accuserebbe il codice di un difetto che e' suo — e' lo stesso
+        // motivo per cui `windowWillClose` decide al giro dopo.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+        let haIlFuoco = self?.prefsWindow?.isKeyWindow ?? false
+        self?.prefsWindow?.close()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             let dopo = NSApp.activationPolicy()
@@ -768,13 +790,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                 p == .regular ? "regular (nel Dock)" : p == .accessory ? "accessory (barra dei menu)" : "prohibited"
             }
             print("all'avvio: \(nome(allAvvio))")
-            print("con la finestra aperta: \(nome(conFinestra))")
-            print("dopo averla chiusa: \(nome(dopo))")
-            let ok = allAvvio == .accessory && conFinestra == .regular && dopo == .accessory
+            print("con le preferenze aperte: \(nome(conFinestra))")
+            print("la finestra prende il fuoco: \(haIlFuoco ? "si" : "NO")")
+            print("dopo averle chiuse: \(nome(dopo))")
+            let ok = allAvvio == .accessory && conFinestra == .accessory && dopo == .accessory && haIlFuoco
             print(ok
-                  ? "RISULTATO: PASS — la finestra la porta nel Dock, chiuderla la riporta nella barra"
-                  : "RISULTATO: FAIL — resta nel Dock per sempre dopo la prima finestra")
+                  ? "RISULTATO: PASS — mai nel Dock, e la finestra si usa lo stesso"
+                  : "RISULTATO: FAIL — l'icona compare nel Dock, o la finestra non prende il fuoco")
             exit(ok ? 0 : 1)
+        }
         }
     }
 
@@ -988,7 +1012,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
         let panel = NSMenuItem()
         let hosting = NSHostingView(rootView: MenuPanel(model: model))
-        hosting.frame = NSRect(x: 0, y: 0, width: 280, height: 260)
+        // **L'altezza la detta il contenuto, non una costante.** Erano 260 punti scritti a mano
+        // contro un pannello che ne occupa una sessantina di meno: sotto «sessioni intense»
+        // restava una fascia vuota grande quanto tre voci di menu, e sembrava che mancasse
+        // qualcosa. Segnalato dal principale il 2026-07-31 guardando il menu aperto. Stessa cura
+        // gia' applicata alla notifica il 28 luglio, e stesso motivo: una costante scritta a mano
+        // scommette sull'altezza del contenuto, e la scommessa si perde al primo cambiamento.
+        hosting.frame = NSRect(origin: .zero,
+                               size: NSSize(width: 280, height: hosting.fittingSize.height))
         panel.view = hosting
         menu.addItem(panel)
 
@@ -1023,11 +1054,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         let stats = NSMenuItem(title: L.t("Statistiche…", "Statistics…"), action: #selector(showStats), keyEquivalent: "s")
         stats.keyEquivalentModifierMask = []
         menu.addItem(stats)
-        menu.addItem(NSMenuItem(title: L.t("Da dove vengono questi numeri…", "Where these numbers come from…"), action: #selector(showEvidence), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: L.t("Apri il registro", "Open the log"), action: #selector(revealLedger), keyEquivalent: ""))
-        // Lo stesso rapporto di `--doctor`, per chi non apre mai un terminale: è la voce da
-        // premere quando «non funziona», e da copiare dentro una segnalazione.
-        menu.addItem(NSMenuItem(title: L.t("Diagnostica…", "Diagnostics…"), action: #selector(showDoctor), keyEquivalent: ""))
+        // **Le fonti, il registro e la diagnostica sono passati nelle Preferenze → Avanzate**
+        // (2026-07-31, sua richiesta). Un menu di barra di stato e' la lista delle cose che fai
+        // spesso: quelle tre si aprono una volta ogni tanto, e in piu' due su tre avevano bisogno
+        // di una riga di spiegazione che in un menu non ci sta. Restano raggiungibili, con
+        // accanto il testo che dice cosa sono.
         let prefs = NSMenuItem(title: L.t("Preferenze…", "Preferences…"), action: #selector(showPrefs), keyEquivalent: ",")
         prefs.keyEquivalentModifierMask = []
         menu.addItem(prefs)
@@ -1234,9 +1265,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         return window
     }
 
+    /// **Aprire una finestra non deve portare l'app nel Dock.**
+    ///
+    /// Qui c'era `setActivationPolicy(.regular)`, e faceva esattamente quello: apri le Preferenze,
+    /// e per tutto il tempo che restano aperte Otium compare nel Dock con la sua icona. Il 28
+    /// luglio avevo curato la meta' peggiore del difetto — ci restava **per sempre** — lasciando
+    /// in piedi la premessa, cioe' che una finestra valga un posto nel Dock. Il principale l'ha
+    /// visto il 2026-07-31 e la sua frase e' la specifica: *«e' ricomparsa l'icona
+    /// dell'applicazione nel dock. Non dovrebbe.»*
+    ///
+    /// Un'app `.accessory` le finestre le mostra e il fuoco lo prende: `activate` +
+    /// `makeKeyAndOrderFront` bastano, e il campo di testo delle Preferenze scrive. Quello che
+    /// perde e' il posto in ⌘Tab e la barra dei menu propria — cioe' esattamente le due cose che
+    /// `LSUIElement` dichiara di non volere.
+    ///
+    /// **Il blocco della pausa resta l'eccezione, e resta com'e'.** Li' `.regular` serve davvero
+    /// (finestra a schermo intero in modalita' chiosco che deve prendersi il controllo) e la
+    /// politica precedente viene salvata e rimessa alla chiusura. E' anche il pezzo che ha
+    /// prodotto lo schermo nero senza uscita: non si tocca per un'icona.
     private func present(_ window: NSWindow?) {
         guard let window else { return }
-        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
     }
@@ -1258,7 +1306,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // Durante una pausa la politica è del blocco, che se la riprende da solo alla chiusura:
         // metterci mano qui vorrebbe dire due padroni per la stessa impostazione.
         guard model.phase != .breaking else { return }
-        let ancoraAperte = [prefsWindow, evidenceWindow, statsWindow, seatedWindow, declareWindow]
+        // **Tutte e nove, non cinque.** Ne mancavano quattro — diagnostica, primo avvio, ritmo,
+        // crescita — e una finestra fuori dall'elenco fa dire «non c'e' piu' niente aperto» a
+        // schermo pieno di roba. Trovato con un grep sulle variabili di finestra il 2026-07-31,
+        // mentre cercavo l'icona nel Dock: non era la causa di quella, era il suo vicino di casa.
+        let ancoraAperte = [prefsWindow, evidenceWindow, statsWindow, seatedWindow, declareWindow,
+                            doctorWindow, onboardingWindow, paceWindow, growthWindow]
             .compactMap { $0 }
             .contains { $0.isVisible }
         guard !ancoraAperte else { return }

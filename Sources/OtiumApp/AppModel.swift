@@ -316,10 +316,19 @@ final class AppModel: ObservableObject {
             blocker.hide()
         case .postponed(let plan):
             blocker.hide()
-            hud.show(title: L.t("Rinviata di 2 minuti", "Postponed by 2 minutes"), subtitle: plan.exercise.label)
+            // **Muto: l'hai premuto tu.** Il suono avvisa di qualcosa che non ti aspetti, e il
+            // rinvio l'hai appena chiesto — la riga che compare basta a dire che e' stato preso.
+            // La regola era gia' scritta per la chiusura della pausa (`announce(silent:)`) e qui
+            // non era stata applicata. Chiesto dal principale il 2026-07-31: *«non mi piace il
+            // suono quando posticipo la pausa. togliamolo»*.
+            hud.show(title: L.t("Rinviata di 2 minuti", "Postponed by 2 minutes"),
+                     subtitle: plan.exercise.label, sound: nil)
         case .autoDeferred(let plan, let reason):
             blocker.hide()
-            hud.show(title: L.t("Pausa rimandata — \(reason)", "Break deferred — \(reason)"), subtitle: plan.exercise.label)
+            // Muto anche questo, e per un motivo in piu': l'auto-rinvio scatta **mentre sei in
+            // call**, cioe' nell'unico momento in cui un suono di sistema non lo senti solo tu.
+            hud.show(title: L.t("Pausa rimandata — \(reason)", "Break deferred — \(reason)"),
+                     subtitle: plan.exercise.label, sound: nil)
         case .naturalBreak:
             // Arriva da due posti diversi. Mentre lavori è solo contabilità — ti sei alzato da
             // solo, e va bene così. Ma arriva **anche** dalla pausa in corso, quando l'assenza
@@ -399,6 +408,19 @@ final class AppModel: ObservableObject {
     func announce(title: String, subtitle: String, silent: Bool = false) {
         hud.show(title: title, subtitle: subtitle, sound: silent ? nil : settings.notificationSound)
     }
+
+    /// Le tre finestre che le Preferenze devono poter aprire: le fonti, il registro nel Finder,
+    /// la diagnostica.
+    ///
+    /// **Closure e non selettori.** Le azioni vivono nell'`AppDelegate`, che una vista SwiftUI non
+    /// conosce; la via corta sarebbe `NSApp.sendAction(Selector(("showEvidence")), …)`, cioè un
+    /// nome di metodo scritto dentro una stringa — che il compilatore non controlla e che si
+    /// rompe in silenzio il giorno che il metodo cambia nome. Queste le assegna l'`AppDelegate`
+    /// all'avvio, e se un giorno non le assegnasse il pulsante non farebbe niente invece di far
+    /// crashare l'app.
+    var onShowEvidence: (() -> Void)?
+    var onRevealLedger: (() -> Void)?
+    var onShowDoctor: (() -> Void)?
 
     /// Fa sentire un suono senza aspettare la prossima pausa: serve a sceglierlo.
     func previewSound(_ name: String) {

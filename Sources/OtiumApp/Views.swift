@@ -1048,6 +1048,9 @@ struct PrefsView: View {
     /// La voce aperta. Si riparte sempre da `profilo`: una finestra che riapre dove l'avevi
     /// lasciata la volta scorsa è comoda finché non ti chiedi perché non vedi più le altre.
     @State private var section: Section = .profilo
+    /// Quale famiglia di esercizi è aperta. Vive qui, accanto alla voce, e non dentro il
+    /// pannello: cambiando voce e tornando indietro deve ritrovarti dov'eri.
+    @State private var famiglia: ExerciseCategory = .gambe
 
     /// `initialSection` esiste per la sonda: `--surface=prefs --voce=cadenza` rende il pannello
     /// che si vuole guardare. Nell'app resta il default, cioè Profilo.
@@ -1065,7 +1068,7 @@ struct PrefsView: View {
     /// scomoda»*. Le voci ricalcano i raggruppamenti che le sezioni avevano già: non è una
     /// tassonomia nuova, è quella di prima resa navigabile.
     enum Section: String, CaseIterable, Identifiable, Hashable {
-        case profilo, cadenza, esercizi, interruzioni, aspetto, sistema
+        case profilo, cadenza, esercizi, interruzioni, aspetto, sistema, avanzate
 
         var id: String { rawValue }
 
@@ -1077,6 +1080,7 @@ struct PrefsView: View {
             case .interruzioni: return L.t("Interruzioni", "Interruptions")
             case .aspetto:      return L.t("Aspetto", "Appearance")
             case .sistema:      return L.t("Sistema", "System")
+            case .avanzate:     return L.t("Avanzate", "Advanced")
             }
         }
 
@@ -1093,6 +1097,7 @@ struct PrefsView: View {
             case .interruzioni: return L.t("call, rinvii, ore attive", "calls, postponements, active hours")
             case .aspetto:      return L.t("livrea, suono", "theme, sound")
             case .sistema:      return L.t("avvio automatico", "start at login")
+            case .avanzate:     return L.t("fonti, registro, diagnostica", "sources, log, diagnostics")
             }
         }
 
@@ -1104,6 +1109,7 @@ struct PrefsView: View {
             case .interruzioni: return "bell.badge"
             case .aspetto:      return "paintpalette"
             case .sistema:      return "gearshape"
+            case .avanzate:     return "wrench.and.screwdriver"
             }
         }
     }
@@ -1142,6 +1148,7 @@ struct PrefsView: View {
                     case .interruzioni: interruzioniSection
                     case .aspetto:      aspettoSection
                     case .sistema:      sistemaSection
+                    case .avanzate:     avanzateSection
                     }
                 }
                 .formStyle(.grouped)
@@ -1339,10 +1346,24 @@ struct PrefsView: View {
 
     @ViewBuilder
     private var eserciziSection: some View {
-        // Una sezione per famiglia invece di venticinque caselle in fila: sono quattro
-        // decisioni, non venticinque, e con gli addominali l'elenco piatto era diventato
-        // illeggibile.
-        ForEach(ExerciseCategory.allCases, id: \.self) { category in
+        // **Una famiglia per volta, scelta in alto.** Erano quattro sezioni impilate in un
+        // pannello che scorreva per tre schermate: per arrivare agli esplosivi passavi davanti a
+        // venticinque caselle che non stavi cercando. Chiesto dal principale il 2026-07-31.
+        //
+        // Il contatore dentro la linguetta — «Gambe 4/5» — e' quello che rende il cambio un
+        // guadagno netto invece di uno scambio: la lista lunga aveva un vantaggio, che si vedeva
+        // tutto insieme, e senza il numero per aprire quattro pannelli servirebbe la memoria.
+        SwiftUI.Section {
+            Picker("", selection: $famiglia) {
+                ForEach(ExerciseCategory.allCases, id: \.self) { c in
+                    Text("\(c.localizedName)  \(attivi(c))/\(totali(c))").tag(c)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+        }
+
+        ForEach(ExerciseCategory.allCases.filter { $0 == famiglia }, id: \.self) { category in
             SwiftUI.Section {
                 ForEach(ExerciseKind.allCases.filter { $0.category == category }, id: \.self) { kind in
                     Toggle(isOn: binding(for: kind)) {
@@ -1459,6 +1480,40 @@ struct PrefsView: View {
         }
     }
 
+    /// Le tre cose che si aprono una volta ogni tanto, con accanto la riga che dice cosa sono.
+    ///
+    /// Stavano nel menu della barra di stato, che è la lista delle cose che fai spesso, e due su
+    /// tre erano nomi senza spiegazione: «Apri il registro» non dice a nessuno cosa ci trova
+    /// dentro. Spostate qui il 2026-07-31 su richiesta del principale.
+    @ViewBuilder
+    private var avanzateSection: some View {
+        SwiftUI.Section(L.t("Le fonti", "The sources")) {
+            Button(L.t("Da dove vengono questi numeri…", "Where these numbers come from…")) {
+                model.onShowEvidence?()
+            }
+            Text(L.t("Ogni parametro di Otium — ogni quanto interrompe, quanto dura la pausa, quante ripetizioni — risponde a uno studio, con autore, rivista e anno. In fondo ci sono anche le cose che l'app NON fa e non promette.",
+                     "Every parameter in Otium — how often it interrupts, how long the break lasts, how many reps — answers to a study, with author, journal and year. At the end there are also the things the app does NOT do and does not promise."))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+
+        SwiftUI.Section(L.t("Il registro", "The log")) {
+            Button(L.t("Apri il registro", "Open the log")) { model.onRevealLedger?() }
+            Text(L.t("Un file di testo dove finisce, riga per riga, tutto quello che è successo: i minuti al Mac, le pause fatte, saltate e spontanee, e ogni esercizio con le sue ripetizioni. È la sola verità da cui l'app ricava le statistiche — non c'è un secondo conto da qualche parte — e non esce mai da questo Mac. Serve a due cose: guardare i tuoi dati con i tuoi strumenti, e portarteli via.",
+                     "A text file where everything that happened is written line by line: the minutes at the Mac, the breaks taken, skipped and spontaneous, and every exercise with its reps. It is the single truth the app derives its statistics from — there is no second tally anywhere — and it never leaves this Mac. It is there for two things: looking at your own data with your own tools, and taking it with you."))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+
+        SwiftUI.Section(L.t("Diagnostica", "Diagnostics")) {
+            Button(L.t("Apri la diagnostica…", "Open diagnostics…")) { model.onShowDoctor?() }
+            Text(L.t("Il controllo di salute dell'app: permessi, avvio automatico, integrità del registro, orologio. È la finestra da aprire quando qualcosa non va, e il testo da copiare dentro una segnalazione.",
+                     "The app's health check: permissions, start at login, log integrity, clock. It is the window to open when something is wrong, and the text to copy into a bug report."))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
     @ViewBuilder
     private var sistemaSection: some View {
         SwiftUI.Section(L.t("Avvio automatico", "Start at login")) {
@@ -1491,6 +1546,16 @@ struct PrefsView: View {
                 }
             }
         }
+    }
+
+    /// Quanti esercizi girano in questa famiglia, e quanti ce ne sono. È il numero nella
+    /// linguetta: senza, aprire un pannello per volta costerebbe la vista d'insieme.
+    private func attivi(_ c: ExerciseCategory) -> Int {
+        ExerciseKind.allCases.filter { $0.category == c }.count { binding(for: $0).wrappedValue }
+    }
+
+    private func totali(_ c: ExerciseCategory) -> Int {
+        ExerciseKind.allCases.count { $0.category == c }
     }
 
     /// «Tutti» e «nessuno» su una famiglia intera. `nessuno` non può svuotare del tutto un pool:

@@ -1114,6 +1114,54 @@ piena, l'attribuzione «consenso» non si capisce, e le preferenze sono una list
       *Falsificatore:* `--registro-finto` semina una giornata già cominciata — il ramo con il
       conto non esiste su un registro vuoto, e senza la semina si guarda sempre lo stesso ramo.
 
+- [x] **ISC-102** Il menu non ha più il buco sotto i numeri. — L'altezza del pannello era una
+      costante scritta a mano, 260 punti contro un contenuto che ne occupa 181: sotto «sessioni
+      intense» restava una fascia vuota grande quanto tre voci, e sembrava che mancasse qualcosa.
+      È la stessa cura della notifica del 28 luglio, e lo stesso difetto: **una costante scritta a
+      mano scommette sull'altezza del contenuto**, e la scommessa si perde al primo cambiamento.
+      *Anche la sonda mentiva allo stesso modo*: `--surface=menu` aveva il suo 260 scritto a mano,
+      quindi avrebbe riprodotto la fascia vuota invece di mostrarla sparita.
+      *Falsificatore:* il menu vero, aperto e fotografato — 181 punti, e la resa concorda.
+
+- [x] **ISC-103** Le fonti, il registro e la diagnostica stanno nelle Preferenze, con la riga che
+      dice cosa sono. — Un menu di barra di stato è la lista delle cose che fai spesso; quelle tre
+      si aprono una volta ogni tanto, e due su tre erano **nomi senza spiegazione** — «Apri il
+      registro» non dice a nessuno cosa ci trova dentro. Ora sono la voce **Avanzate**, ognuna con
+      il suo paragrafo: cos'è, a cosa serve, e per il registro anche che è la sola verità da cui
+      escono le statistiche e che non lascia mai questo Mac.
+      *Come ci arrivano:* tre closure che l'`AppDelegate` assegna al modello all'avvio — non
+      `NSApp.sendAction(Selector(("showEvidence")))`, che è un nome di metodo dentro una stringa,
+      cioè una cosa che il compilatore non controlla e che si rompe in silenzio.
+
+- [x] **ISC-104** Gli esercizi si scelgono per famiglia, non scorrendo. — Quattro sezioni impilate
+      erano tre schermate di scorrimento: per arrivare agli esplosivi passavi davanti a
+      venticinque caselle che non stavi cercando. Ora una linguetta per famiglia.
+      *Il contatore nella linguetta è la parte che conta* — «Gambe 4/5» — perché la lista lunga un
+      vantaggio ce l'aveva, si vedeva tutta insieme, e senza il numero aprire quattro pannelli
+      costerebbe la memoria. I due interruttori su come vengono proposti restano sotto, fuori
+      dalle linguette: valgono per tutte le famiglie.
+
+- [x] **ISC-105** Rinviare non fa rumore. — *«non mi piace il suono quando posticipo la pausa.
+      togliamolo»*. La regola c'era già scritta per la chiusura della pausa: il suono avvisa di
+      qualcosa che non ti aspetti, e quello che hai appena premuto tu non è una sorpresa. Non era
+      stata applicata qui. Muto anche l'auto-rinvio per call, e lì c'è un motivo in più: scatta
+      mentre stai parlando, cioè nell'unico momento in cui un suono di sistema non lo senti solo tu.
+
+- [x] **ISC-106** Aprire una finestra non porta Otium nel Dock. — *«è ricomparsa l'icona
+      dell'applicazione nel dock. Non dovrebbe.»* Il 28 luglio avevo curato la metà peggiore del
+      difetto — ci restava **per sempre** — lasciando in piedi la premessa: che una finestra valga
+      un posto nel Dock. Tolto `.regular` da `present(_:)`: un'app `.accessory` le finestre le
+      mostra e il fuoco lo prende, e quello che perde sono le due cose che `LSUIElement` dichiara
+      di non volere. **Il blocco della pausa resta l'eccezione e resta com'è**: lì `.regular`
+      serve davvero, e è il pezzo che ha prodotto lo schermo nero — non si tocca per un'icona.
+      *La sonda ora chiede la cosa giusta:* apre le **Preferenze**, che è la finestra che il
+      principale tiene aperta, non le Statistiche che non lascia aperte mai; e controlla che la
+      finestra **prenda il fuoco**, perché stare fuori dal Dock non serve a niente se poi nel
+      campo di testo non si scrive. Provata a due poli: rimettendo `.regular` diventa rossa.
+      *Difetto vicino, trovato mentre cercavo questo:* il ripristino della politica guardava
+      **cinque** finestre su nove — mancavano diagnostica, primo avvio, ritmo e crescita, e una
+      finestra fuori dall'elenco fa dire «non c'è più niente aperto» a schermo pieno di roba.
+
 - **Anti-claim** — il giorno nuovo azzera **solo** il ciclo micro/piena. Non la rotazione degli
   esercizi (che è `breakIndex`, e senza di lei si torna a squat-squat-squat, il difetto del
   26/07), non il conto del tempo attivo, non i mazzi delle frasi.
@@ -1316,6 +1364,14 @@ uno che non copre la barra dei menu sono indistinguibili nei test.
 
 ## Changelog
 
+- **2026-07-31 (iterazione 20b)** — Il giro di rifiniture, tutto dall'uso vero. Il menu perde la
+  fascia vuota (l'altezza la detta il contenuto) e tre voci, che passano in **Preferenze →
+  Avanzate** con la riga che dice cosa sono. Gli esercizi si scelgono per famiglia con il conto
+  nella linguetta invece di scorrere. Rinviare non fa più rumore. E **aprire una finestra non
+  porta più Otium nel Dock**: il 28 luglio avevo curato la metà peggiore del difetto lasciando in
+  piedi la premessa. La sonda della politica ora apre le Preferenze e controlla anche il fuoco —
+  senza quella riga avrebbe chiamato verde metà cosa, ed è esattamente quello che ha trovato al
+  primo giro.
 - **2026-07-31 (iterazione 20)** — Tre cose viste all'uso e due chieste a lavoro in corso. Il ciclo
   micro/piena non sapeva che fosse cambiato il giorno, e la prima pausa del 31 luglio è arrivata
   piena: adesso l'istantanea porta la data dell'ultima pausa e la giornata comincia sempre corta.
