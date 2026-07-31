@@ -21,11 +21,12 @@ struct DeclareBreakView: View {
     var body: some View {
         Form {
             Section(L.t("Che pausa era", "Which break it was")) {
-                Picker(L.t("Tipo", "Kind"), selection: $kind) {
-                    Text(L.t("micro-pausa", "micro-break")).tag(BreakKind.micro)
-                    Text(L.t("pausa piena", "full break")).tag(BreakKind.long)
+                LabeledContent(L.t("Tipo", "Kind")) {
+                    SegmentedChoice(
+                        options: [(BreakKind.micro, L.t("micro-pausa", "micro-break")),
+                                  (BreakKind.long, L.t("pausa piena", "full break"))],
+                        selection: $kind)
                 }
-                .pickerStyle(.segmented)
 
                 Picker(L.t("Esercizio", "Exercise"), selection: $exercise) {
                     Text(L.t("non lo ricordo", "I don't remember")).tag(ExerciseKind?.none)
@@ -98,11 +99,10 @@ struct DeclareSeatedView: View {
     var body: some View {
         Form {
             Section(L.t("Il conto per la prossima pausa", "The countdown to the next break")) {
-                Picker("", selection: $mode) {
-                    Text(L.t("in tutto sono", "in total it is")).tag(SessionEngine.SeatedMode.total)
-                    Text(L.t("aggiungine", "add")).tag(SessionEngine.SeatedMode.add)
-                }
-                .pickerStyle(.segmented).labelsHidden()
+                SegmentedChoice(
+                    options: [(SessionEngine.SeatedMode.total, L.t("in tutto sono", "in total it is")),
+                              (SessionEngine.SeatedMode.add, L.t("aggiungine", "add"))],
+                    selection: $mode)
 
                 HStack {
                     TextField("", value: $minutes, format: .number)

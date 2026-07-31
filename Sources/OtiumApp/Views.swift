@@ -1210,6 +1210,58 @@ struct EvidenceView: View {
 
 // MARK: - Preferenze
 
+/// Una scelta fra poche voci in fila, **con i colori nostri**.
+///
+/// Esiste per un difetto visto di notte (2026-07-31): `.pickerStyle(.segmented)` prende dal
+/// `tint` il colore della casella scelta, ma il testo dentro **lo decide lui**, e sceglie il
+/// bianco. Bianco su salvia chiara sta a 1,9:1, cioè sotto qualunque soglia: *«la scritta è
+/// bianca e si vede poco»*. Non è una questione di gusto, è un testo che non si legge.
+///
+/// Non si può curare tingendo meglio, perché il colore che manca è quello che il controllo di
+/// sistema non lascia toccare. Quindi la casella la disegniamo noi, con la stessa coppia che
+/// tutta l'app usa già: `accentOnWindow` sotto, `onAccentOnWindow` sopra — che in chiaro è verde
+/// bosco con testo bianco, e di notte salvia chiara con testo scuro.
+///
+/// Restano **pulsanti veri**, non testo cliccabile: tastiera e VoiceOver non si buttano via per
+/// un colore. È lo stesso disegno del selettore del periodo nelle statistiche, che era già stato
+/// riscritto a mano nel 2026-07-27 per una ragione parente — lì il controllo di sistema restava
+/// blu in tutte e tre le livree.
+struct SegmentedChoice<Value: Hashable>: View {
+    let options: [(value: Value, label: String)]
+    @Binding var selection: Value
+    /// Le linguette delle famiglie riempiono la riga; una scelta fra due sta larga quanto le serve.
+    var fillWidth = false
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(options, id: \.value) { option in
+                let selected = option.value == selection
+                Button { selection = option.value } label: {
+                    Text(option.label)
+                        .font(.system(size: 12, weight: selected ? .semibold : .regular))
+                        .foregroundStyle(selected ? Palette.onAccentOnWindow : Palette.text)
+                        .lineLimit(1)
+                        .frame(maxWidth: fillWidth ? .infinity : nil)
+                        .padding(.horizontal, fillWidth ? 6 : 14)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(selected ? Palette.accentOnWindow : Color.clear)
+                        )
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? [.isSelected] : [])
+            }
+        }
+        .padding(3)
+        .background(
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(Palette.isDarkAppearance ? Color.white.opacity(0.07) : Color.black.opacity(0.05))
+        )
+    }
+}
+
 struct PrefsView: View {
     @ObservedObject var model: AppModel
     /// Qualificato: in un file che importa SwiftUI, `Settings` da solo è ambiguo — SwiftUI ha
@@ -1328,7 +1380,7 @@ struct PrefsView: View {
         .livrea()
     }
 
-    /// La colonna: piena, attaccata ai bordi, con la selezione nella livrea scelta.
+        /// La colonna: piena, attaccata ai bordi, con la selezione nella livrea scelta.
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 3) {
             ForEach(Section.allCases) { voce in
@@ -1408,22 +1460,19 @@ struct PrefsView: View {
         // Le due risposte del primo avvio, dove si possono cambiare. Una scelta fatta una
         // volta sola e mai più modificabile è una trappola, non una configurazione.
         SwiftUI.Section {
-            Picker(L.t("Lingua", "Language"), selection: Binding(
-                get: { draft.language ?? AppLanguage.systemDefault },
-                set: { draft.language = $0 }
-            )) {
-                ForEach(AppLanguage.allCases, id: \.self) { Text($0.nativeName).tag($0) }
+            LabeledContent(L.t("Lingua", "Language")) {
+                SegmentedChoice(
+                    options: AppLanguage.allCases.map { ($0, $0.nativeName) },
+                    selection: Binding(
+                        get: { draft.language ?? AppLanguage.systemDefault },
+                        set: { draft.language = $0 }))
             }
-            .pickerStyle(.segmented)
 
-            Picker(L.t("Sesso", "Sex"), selection: Binding(
-                get: { draft.sex ?? .male },
-                set: { draft.sex = $0 }
-            )) {
-                Text(L.t("Uomo", "Male")).tag(Sex.male)
-                Text(L.t("Donna", "Female")).tag(Sex.female)
+            LabeledContent(L.t("Sesso", "Sex")) {
+                SegmentedChoice(
+                    options: [(Sex.male, L.t("Uomo", "Male")), (Sex.female, L.t("Donna", "Female"))],
+                    selection: Binding(get: { draft.sex ?? .male }, set: { draft.sex = $0 }))
             }
-            .pickerStyle(.segmented)
 
             Text(L.t("Il sesso decide da dove parti, cioè le ripetizioni per gruppo muscolare (Miller 1993) e la versione della spinta, sulle ginocchia invece che a terra. Non cambia la cadenza né nient'altro, e ogni esercizio resta scambiabile dentro la pausa.",
                      "Sex decides where you start: the reps per muscle group (Miller 1993) and the version of the push — on your knees instead of full. It changes nothing else, and every exercise stays swappable inside the break."))
@@ -1510,7 +1559,9 @@ struct PrefsView: View {
         // quanto, quanto dura, ma cosa?»*. La risposta e' una riga in cima, non un nome di
         // preset piu' lungo.
         SwiftUI.Section {
-            Text(L.t("Ogni quanto Otium ti interrompe, e quanto dura l'interruzione.",
+            // Niente virgola prima della «e»: in italiano è l'eccezione, non la regola, e qui i
+            // due membri sono la stessa cosa detta due volte. Segnalato da lui il 2026-07-31.
+            Text(L.t("Ogni quanto Otium ti interrompe e quanto dura l'interruzione.",
                      "How often Otium interrupts you, and how long the interruption lasts."))
                 .font(.system(size: 13, weight: .medium))
                 .fixedSize(horizontal: false, vertical: true)
@@ -1589,13 +1640,12 @@ struct PrefsView: View {
         // guadagno netto invece di uno scambio: la lista lunga aveva un vantaggio, che si vedeva
         // tutto insieme, e senza il numero per aprire quattro pannelli servirebbe la memoria.
         SwiftUI.Section {
-            Picker("", selection: $famiglia) {
-                ForEach(ExerciseCategory.allCases, id: \.self) { c in
-                    Text("\(c.localizedName)  \(attivi(c))/\(totali(c))").tag(c)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+            SegmentedChoice(
+                options: ExerciseCategory.allCases.map {
+                    ($0, "\($0.localizedName)  \(attivi($0))/\(totali($0))")
+                },
+                selection: $famiglia,
+                fillWidth: true)
         }
 
         ForEach(ExerciseCategory.allCases.filter { $0 == famiglia }, id: \.self) { category in

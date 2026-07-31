@@ -153,6 +153,43 @@ final class ContrastTests: XCTestCase {
         }
     }
 
+    /// **Il selettore di sistema a segmenti è bandito, e questo è il guardiano.**
+    ///
+    /// `.pickerStyle(.segmented)` prende dal `tint` il colore della casella scelta ma decide da
+    /// sé il colore del testo, e sceglie il bianco. Con la livrea di notte quel bianco finisce
+    /// sulla salvia chiara: **1,9:1**, cioè un testo che non si legge. Visto dal principale il
+    /// 2026-07-31 sui selettori Lingua e Sesso — *«la scritta è bianca e si vede poco»*.
+    ///
+    /// Non è riparabile tingendo meglio: il colore che manca è quello che il controllo non lascia
+    /// toccare. La cura è `SegmentedChoice`, che disegna la casella e sa che testo metterci. Il
+    /// test guarda il **codice** e non i colori, perché il difetto non sta in una coppia
+    /// sbagliata: sta nell'usare un controllo che la coppia non te la fa scegliere.
+    func testTheSystemSegmentedPickerIsNotUsedAnywhere() throws {
+        let app = Self.packageRoot.appendingPathComponent("Sources/OtiumApp")
+        let files = try FileManager.default.contentsOfDirectory(at: app, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "swift" }
+        XCTAssertGreaterThan(files.count, 5, "non ho letto i sorgenti: il verde non direbbe niente")
+
+        for file in files {
+            let src = try String(contentsOf: file, encoding: .utf8)
+            for (n, riga) in src.components(separatedBy: .newlines).enumerated() {
+                let codice = riga.trimmingCharacters(in: .whitespaces)
+                // I commenti possono nominarlo: è lì che si spiega perché è bandito.
+                guard !codice.hasPrefix("//") else { continue }
+                XCTAssertFalse(
+                    codice.contains(".pickerStyle(.segmented)"),
+                    "\(file.lastPathComponent):\(n + 1) usa il selettore di sistema, che scrive bianco sull'accento — usa SegmentedChoice")
+            }
+        }
+    }
+
+    private static var packageRoot: URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()   // OtiumCoreTests
+            .deletingLastPathComponent()   // Tests
+            .deletingLastPathComponent()   // radice del pacchetto
+    }
+
     /// Nessun testo nel codice usa `dim` con un'opacità sopra. È il guardiano che impedisce al
     /// difetto di tornare: la misura qui sopra dice *quanto* sarebbe sbagliato, questa dice *dove*.
     func testNoSourceFileDimsTheAlreadyDim() throws {
