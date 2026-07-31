@@ -1162,6 +1162,24 @@ piena, l'attribuzione «consenso» non si capisce, e le preferenze sono una list
       **cinque** finestre su nove — mancavano diagnostica, primo avvio, ritmo e crescita, e una
       finestra fuori dall'elenco fa dire «non c'è più niente aperto» a schermo pieno di roba.
 
+- [x] **ISC-107** La pausa rimandata per la call torna quando la call finisce. — *«quando viene
+      posticipata una pausa perché ero con il microfono attivo, deve essere avvisato al momento in
+      cui il microfono viene chiuso che la pausa precedente non è stata fatta»*. Rimandare di
+      cinque minuti era giusto per non piombare addosso mentre parli; ma se la riunione finisce
+      dopo quaranta secondi, quei cinque minuti diventano un'attesa senza più causa, e nel
+      frattempo la pausa arretrata non la sa più nessuno.
+      *Riparte dal preavviso, non dalla pausa:* riattaccare il telefono e trovarsi lo schermo
+      coperto nello stesso istante sarebbe peggio dell'attesa che questo toglie. E l'avviso dice
+      **perché** — «Il microfono si è chiuso · la pausa rimandata riparte fra un minuto» — o il
+      preavviso arriverebbe senza che si capisca da dove.
+      *Vale solo per il rinvio deciso dall'app:* quello chiesto a mano dura quello che dura, o
+      premere «rinvia» a fine riunione non varrebbe niente.
+      *Il rimbalzo è già gestito dalla porta normale:* se la call ricomincia durante i sessanta
+      secondi, `startBreak` rimanda di nuovo da solo — nessuna isteresi in più da mantenere.
+      *Falsificatore, cinque test con due controlli veri:* sabotando la sveglia diventano rossi
+      **tre**, e restano verdi proprio i due controlli — il rinvio a mano e il microfono ancora
+      occupato — che distinguono «funziona» da «l'attesa è stata tolta a tutti».
+
 - **Anti-claim** — il giorno nuovo azzera **solo** il ciclo micro/piena. Non la rotazione degli
   esercizi (che è `breakIndex`, e senza di lei si torna a squat-squat-squat, il difetto del
   26/07), non il conto del tempo attivo, non i mazzi delle frasi.
@@ -1364,6 +1382,9 @@ uno che non copre la barra dei menu sono indistinguibili nei test.
 
 ## Changelog
 
+- **2026-07-31 (iterazione 20c)** — La pausa rimandata per una call torna appena il microfono si
+  libera, con l'avviso che dice perché, invece di aspettare la scadenza dei cinque minuti. **258
+  test verdi**, e i due controlli che restano verdi sotto sabotaggio sono la parte che conta.
 - **2026-07-31 (iterazione 20b)** — Il giro di rifiniture, tutto dall'uso vero. Il menu perde la
   fascia vuota (l'altezza la detta il contenuto) e tre voci, che passano in **Preferenze →
   Avanzate** con la riga che dice cosa sono. Gli esercizi si scelgono per famiglia con il conto

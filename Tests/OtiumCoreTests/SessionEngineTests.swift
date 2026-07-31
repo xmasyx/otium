@@ -722,3 +722,112 @@ final class NewDayCycleTests: XCTestCase {
         XCTAssertEqual(engine.lastBreakAt, Self.at(30, 10))
     }
 }
+
+// MARK: - ISC-107 — la pausa rimandata per la call
+
+/// **Il caso vero: rimandi per una riunione, la riunione finisce, e la pausa arretrata non la sa
+/// più nessuno.** Il rinvio da cinque minuti era la scelta giusta per non piombare addosso mentre
+/// parli; ma se la call dura quaranta secondi, quei cinque minuti sono un'attesa senza causa.
+///
+/// Due controlli tengono onesto il verde: il rinvio **a mano** non deve accorciarsi quando il
+/// microfono si libera, e finché il microfono è occupato non deve succedere niente.
+final class DeferredBreakTests: XCTestCase {
+
+    private static let workingHour = SessionEngineTests.workingHour
+
+    private func makeEngine() -> SessionEngine {
+        var s = Settings()
+        s.startDate = Self.workingHour
+        return SessionEngine(settings: s, maxCredibleElapsed: 120)
+    }
+
+    private func advance(_ engine: inout SessionEngine, seconds: Double, step: Double = 10,
+                         env: EngineEnvironment) -> [EngineEvent] {
+        var events: [EngineEvent] = []
+        var t = 0.0
+        while t < seconds {
+            events += engine.tick(elapsed: step, idle: 0, now: Self.workingHour, environment: env)
+            t += step
+        }
+        return events
+    }
+
+    /// Porta il motore a una pausa rimandata perché il microfono è in uso.
+    private func reachMicrophoneDefer(_ engine: inout SessionEngine) {
+        let inCall = EngineEnvironment(microphoneActive: true)
+        advance(&engine, seconds: engine.settings.cadence.intervalSeconds, env: inCall)
+        advance(&engine, seconds: engine.settings.cadence.warningSeconds + 1, step: 1, env: inCall)
+        XCTAssertEqual(engine.phase, .postponed, "in call la pausa si rimanda, non piomba addosso")
+    }
+
+    func testTheDeferredBreakComesBackWhenTheCallEnds() {
+        var engine = makeEngine()
+        reachMicrophoneDefer(&engine)
+
+        // La call finisce dopo quaranta secondi, non dopo cinque minuti. **Un tick solo**: da qui
+        // in poi il preavviso scende, e misurarlo dopo altri trenta secondi misurerebbe il
+        // conto alla rovescia invece della sua partenza.
+        let events = advance(&engine, seconds: 10, step: 10, env: .quiet)
+
+        guard case .deferredBreakDue(let plan)? = events.first(where: {
+            if case .deferredBreakDue = $0 { return true }; return false
+        }) else {
+            return XCTFail("atteso l'avviso che la pausa rimandata è dovuta, ricevuto \(events)")
+        }
+        XCTAssertEqual(plan.index, engine.plan?.index, "è la stessa pausa di prima, non una nuova")
+        XCTAssertEqual(engine.phase, .warning,
+                       "riparte dal preavviso: riattaccare e trovarsi lo schermo coperto sarebbe peggio")
+        XCTAssertEqual(engine.timer, engine.settings.cadence.warningSeconds, accuracy: 1)
+    }
+
+    /// **Primo controllo.** Il rinvio chiesto a mano non c'entra col microfono e non si accorcia:
+    /// se si accorciasse, premere «rinvia» a fine riunione non varrebbe niente.
+    func testAManualPostponementIsNotCutShortByTheMicrophone() {
+        var engine = makeEngine()
+        advance(&engine, seconds: engine.settings.cadence.intervalSeconds, env: .quiet)
+        advance(&engine, seconds: engine.settings.cadence.warningSeconds + 1, step: 1, env: .quiet)
+        XCTAssertEqual(engine.phase, .breaking)
+        XCTAssertFalse(engine.postpone().isEmpty, "il rinvio a mano è concesso")
+        XCTAssertEqual(engine.phase, .postponed)
+
+        let events = advance(&engine, seconds: 40, step: 10, env: .quiet)
+        XCTAssertFalse(events.contains { if case .deferredBreakDue = $0 { return true }; return false },
+                       "il rinvio a mano dura quello che dura")
+        XCTAssertEqual(engine.phase, .postponed)
+    }
+
+    /// **Secondo controllo.** Finché il microfono è occupato non succede niente: senza questo, il
+    /// verde qui sopra direbbe solo che l'attesa è stata tolta a tutti.
+    func testNothingHappensWhileTheMicrophoneIsStillInUse() {
+        var engine = makeEngine()
+        reachMicrophoneDefer(&engine)
+
+        let events = advance(&engine, seconds: 60, step: 10,
+                             env: EngineEnvironment(microphoneActive: true))
+        XCTAssertFalse(events.contains { if case .deferredBreakDue = $0 { return true }; return false })
+        XCTAssertEqual(engine.phase, .postponed, "la call è ancora in corso")
+    }
+
+    /// Se la call ricomincia durante i sessanta secondi di preavviso, l'app rimanda di nuovo da
+    /// sola: il rimbalzo è gestito dalla porta normale, e non serve nessuna isteresi in più.
+    func testACallStartingAgainDuringTheWarningDefersOnceMore() {
+        var engine = makeEngine()
+        reachMicrophoneDefer(&engine)
+        advance(&engine, seconds: 10, step: 10, env: .quiet)
+        XCTAssertEqual(engine.phase, .warning)
+
+        let events = advance(&engine, seconds: engine.settings.cadence.warningSeconds + 5, step: 5,
+                             env: EngineEnvironment(microphoneActive: true))
+        XCTAssertTrue(events.contains { if case .autoDeferred = $0 { return true }; return false },
+                      "la call ricominciata rimanda di nuovo")
+        XCTAssertEqual(engine.phase, .postponed)
+    }
+
+    /// L'avviso non lascia riga nel registro: il rinvio l'ha già scritto `autoDeferred`, e
+    /// contarlo due volte gonfierebbe le statistiche con l'atto di finirlo.
+    func testTheNoticeLeavesNoLedgerRow() {
+        let plan = BreakPlan(index: 1, kind: .micro, duration: 90,
+                             exercise: Exercise(kind: .squat, reps: 10))
+        XCTAssertNil(Ledger.entry(for: .deferredBreakDue(plan), now: Self.workingHour))
+    }
+}

@@ -286,6 +286,21 @@ final class AppModel: ObservableObject {
                 subtitle: plan.exercise.label,
                 sound: settings.notificationSound
             )
+        case .deferredBreakDue(let plan):
+            // **L'avviso è tutto il punto.** Senza, la pausa arretrata riparte in silenzio e tu
+            // scopri il preavviso senza sapere da dove arriva; con, sai che è quella di prima e
+            // perché era stata rimandata. Il suono qui ci va: questa non l'hai premuta tu — è
+            // proprio il caso che i suoni servono a coprire, qualcosa che comincia mentre stavi
+            // facendo altro.
+            hud.show(
+                title: L.t("Il microfono si è chiuso", "The microphone is free"),
+                subtitle: plan.kind == .long
+                    ? L.t("la pausa piena rimandata riparte fra un minuto — \(plan.exercise.label)",
+                          "the deferred full break resumes in one minute — \(plan.exercise.label)")
+                    : L.t("la pausa rimandata riparte fra un minuto — \(plan.exercise.label)",
+                          "the deferred break resumes in one minute — \(plan.exercise.label)"),
+                sound: settings.notificationSound
+            )
         case .breakStarted(let plan):
             hud.hide()
             escapeText = ""

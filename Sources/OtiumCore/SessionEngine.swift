@@ -95,6 +95,13 @@ public enum EngineEvent: Equatable, Sendable {
     case naturalBreak(seconds: Double, creditedLong: Bool)
     case postponed(BreakPlan)
     case autoDeferred(BreakPlan, reason: String)
+    /// Il microfono si è chiuso e c'era una pausa rimandata per colpa sua: è dovuta adesso.
+    ///
+    /// **Non aspetta la scadenza del rinvio.** Rimandare di cinque minuti era la scelta giusta per
+    /// non piombare addosso durante una riunione, ma se la call finisce dopo quaranta secondi
+    /// quei cinque minuti diventano un'attesa che non serve a nessuno — e nel frattempo la pausa
+    /// arretrata non la sa più nessuno. Chiesto dal principale il 2026-07-31.
+    case deferredBreakDue(BreakPlan)
 }
 
 /// Cosa sta succedendo intorno, nel momento in cui il break vorrebbe partire.
@@ -161,6 +168,12 @@ public struct SessionEngine {
     /// ho riconosciuto, e darmi torto.
     public private(set) var lastPresence: PresenceSignal?
     /// Inattività accumulata **durante** un break: se nessuno è davanti al Mac, il blocco cade.
+    /// Il rinvio in corso è stato deciso **dall'app per via del microfono**, non da te.
+    ///
+    /// I due rinvii si somigliano nella fase e non nel significato: quello a mano l'hai chiesto e
+    /// dura quello che dura; questo è un'attesa che ha una causa fuori dall'app, e quando la causa
+    /// finisce l'attesa non ha più motivo di esistere.
+    private var postponedForMicrophone = false
     private var idleDuringBreak: Double = 0
     /// Da che punto del break conta il tempo minimo dell'esercizio in corso. Cambiando variante
     /// riparte da lì: altrimenti basterebbe aspettare col push-up e passare al più corto un
@@ -344,8 +357,30 @@ public struct SessionEngine {
 
     private mutating func tickPostponed(elapsed: Double, now: Date, environment: EngineEnvironment) -> [EngineEvent] {
         guard let current = plan else { phase = .working; return [] }
+
+        // **La call è finita: l'attesa non ha più causa.** Vale solo per il rinvio deciso
+        // dall'app per il microfono — quello che hai chiesto tu a mano dura quello che dura, o
+        // premere «rinvia» a fine riunione non varrebbe niente.
+        //
+        // Non parte la pausa: parte il **preavviso**, cioè la stessa porta da cui entra ogni
+        // pausa. Riattaccare il telefono e trovarsi lo schermo coperto nello stesso istante
+        // sarebbe peggio dell'attesa che questo codice esiste per togliere. E se la call
+        // ricomincia durante quei sessanta secondi, `startBreak` rimanda di nuovo da solo: il
+        // rimbalzo è già gestito, e non serve nessuna isteresi in più.
+        if postponedForMicrophone, !environment.microphoneActive {
+            postponedForMicrophone = false
+            guard settings.cadence.warningSeconds > 0 else {
+                return [.deferredBreakDue(current)]
+                    + startBreak(current, now: now, environment: environment)
+            }
+            phase = .warning
+            timer = settings.cadence.warningSeconds
+            return [.deferredBreakDue(current)]
+        }
+
         timer -= elapsed
         guard timer <= 0 else { return [] }
+        postponedForMicrophone = false
         return startBreak(current, now: now, environment: environment)
     }
 
@@ -370,6 +405,7 @@ public struct SessionEngine {
            autoDefersUsed < settings.maxAutoDefers {
             autoDefersUsed += 1
             phase = .postponed
+            postponedForMicrophone = true
             timer = settings.autoDeferSeconds
             return [.autoDeferred(current, reason: "microfono in uso")]
         }
@@ -396,6 +432,7 @@ public struct SessionEngine {
         idleDuringBreak = 0
         exerciseBaseline = 0
         singleExercise = nil
+        postponedForMicrophone = false
         return [event]
     }
 

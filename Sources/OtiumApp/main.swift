@@ -252,10 +252,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             let testo = CommandLine.arguments.first { $0.hasPrefix("--testo=") }?
                 .split(separator: "=", maxSplits: 1).last.map(String.init)
                 ?? "prossima pausa fra 30 min di lavoro attivo"
-            let hud = NSHostingView(rootView: HUDView(
-                title: "Otium è già attiva",   // lingua: ok sonda di sviluppo (--surface=hud), non la vede nessun utente
-                subtitle: testo
-            ))
+            // `--titolo=` perche' il pannello ha due righe e la sonda ne sapeva guardare una:
+            // l'avviso della pausa rimandata ha il titolo corto e il sottotitolo lungo, cioe'
+            // esattamente la combinazione che va a capo.
+            let titolo = CommandLine.arguments.first { $0.hasPrefix("--titolo=") }?
+                .split(separator: "=", maxSplits: 1).last.map(String.init)
+                ?? "Otium è già attiva"   // lingua: ok sonda di sviluppo (--surface=hud), non la vede nessun utente
+            let hud = NSHostingView(rootView: HUDView(title: titolo, subtitle: testo))
             size = hud.fittingSize
             host = hud
         case "onboarding":
