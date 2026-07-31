@@ -71,6 +71,88 @@ final class ContrastTests: XCTestCase {
         }
     }
 
+    /// **Le due facce delle finestre normali reggono la soglia.**
+    ///
+    /// Aggiunto il 2026-07-31, quando le finestre sono passate dal grigio di sistema alla carta di
+    /// Kalamos di giorno e all'inchiostro la sera. Un fondo scelto a mano toglie di mezzo la
+    /// garanzia che veniva gratis con i colori di sistema: quelli il contrasto lo tengono loro, e
+    /// una carta crema con sopra un testo scelto da me no. Qui si calcola, invece di guardare una
+    /// resa e dire che si legge bene.
+    func testBothWindowFacesMeetWcag() {
+        for faccia in Surface.both {
+            let coppie: [(String, RGB, RGB, Double)] = [
+                ("testo principale sulla carta", faccia.text, faccia.paper, 4.5),
+                ("testo principale su una scheda", faccia.text, faccia.card, 4.5),
+                ("testo secondario sulla carta", faccia.dim, faccia.paper, 4.5),
+                ("testo secondario su una scheda", faccia.dim, faccia.card, 4.5),
+                ("testo principale sul bordo", faccia.text, faccia.edge, 4.5),
+            ]
+            for (nome, fg, bg, soglia) in coppie {
+                let r = ratio(fg, bg)
+                XCTAssertGreaterThanOrEqual(
+                    r, soglia,
+                    String(format: "%@ · %@: %.2f:1, sotto la soglia %.1f", faccia.name, nome, r, soglia)
+                )
+            }
+        }
+    }
+
+    /// **Il polo che rende una prova il verde qui sopra.**
+    ///
+    /// Le tre misure nuove sono passate al primo colpo, e un cancello che non ha mai detto di no
+    /// è indistinguibile da un cancello che non guarda. Qui si scambiano le due facce — il testo
+    /// avorio della sera messo sulla carta del giorno, e l'inchiostro del giorno sull'inchiostro
+    /// della sera — cioè esattamente lo sbaglio che si fa mettendo un fondo nuovo e dimenticando
+    /// il testo. Devono cadere tutte e due, o la misura sopra non sta misurando niente.
+    func testMixingTheTwoFacesWouldFail() {
+        XCTAssertLessThan(ratio(Surface.sera.text, Surface.giorno.paper), 4.5,
+                          "avorio su carta: se questo passasse, la soglia non discrimina")
+        XCTAssertLessThan(ratio(Surface.giorno.text, Surface.sera.paper), 4.5,
+                          "inchiostro su inchiostro: idem")
+    }
+
+    /// **L'accento della livrea si vede su tutte e due le facce.**
+    ///
+    /// È la coppia che il disegno nuovo poteva rompere in silenzio: la livrea resta quella scelta
+    /// anche nelle finestre, quindi ogni accento finisce sia sulla carta sia sull'inchiostro. Tre
+    /// livree per due facce fanno sei combinazioni, e nessuna di queste è stata guardata a occhio.
+    ///
+    /// Le soglie sono quelle del testo grande e degli elementi d'interfaccia (3:1): l'accento qui
+    /// fa i titoli, le barre e i pulsanti, non i paragrafi.
+    func testEveryLiveryAccentWorksOnBothWindowFaces() {
+        for tema in ThemeName.allCases {
+            let p = tema.palette
+            let giorno = ratio(p.accentOnLight, Surface.giorno.paper)
+            XCTAssertGreaterThanOrEqual(
+                giorno, 4.5,
+                String(format: "%@ · accento sulla carta: %.2f:1", tema.rawValue, giorno)
+            )
+            let sera = ratio(p.accent, Surface.sera.paper)
+            XCTAssertGreaterThanOrEqual(
+                sera, 3.0,
+                String(format: "%@ · accento sull'inchiostro: %.2f:1", tema.rawValue, sera)
+            )
+            // Il testo **sopra** un riempimento d'accento: il pulsante pieno delle finestre.
+            XCTAssertGreaterThanOrEqual(ratio(Surface.giorno.paper, p.accentOnLight), 4.5,
+                                        "\(tema.rawValue): la carta sopra l'accento di giorno")
+            XCTAssertGreaterThanOrEqual(ratio(Surface.sera.paper, p.accent), 4.5,
+                                        "\(tema.rawValue): l'inchiostro sopra l'accento di sera")
+        }
+    }
+
+    /// **Le righe di separazione si vedono, e non gridano.**
+    ///
+    /// Una riga che non si vede non separa niente, e una riga troppo marcata trasforma un modulo
+    /// in una tabella. Il minimo qui non è WCAG — le righe non sono testo — è la soglia sotto la
+    /// quale su questo schermo la riga sparisce.
+    func testRulesAreVisibleOnTheirOwnGround() {
+        for faccia in Surface.both {
+            let r = ratio(faccia.rule, faccia.paper)
+            XCTAssertGreaterThanOrEqual(r, 1.15, "\(faccia.name): la riga sparisce nel fondo")
+            XCTAssertLessThan(r, 4.5, "\(faccia.name): la riga è più forte del testo secondario")
+        }
+    }
+
     /// Nessun testo nel codice usa `dim` con un'opacità sopra. È il guardiano che impedisce al
     /// difetto di tornare: la misura qui sopra dice *quanto* sarebbe sbagliato, questa dice *dove*.
     func testNoSourceFileDimsTheAlreadyDim() throws {

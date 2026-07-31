@@ -29,6 +29,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     func applicationDidFinishLaunching(_ notification: Notification) {
         Paths.ensureDirectory()
 
+        // **`--dark` e `--light` valgono per ogni sonda, non solo per la resa fuori schermo.**
+        //
+        // Stavano dentro `renderSnapshotIfRequested`, quindi `--mostra-prefs --dark` apriva la
+        // finestra vera con l'aspetto del Mac in quel momento e ignorava il flag in silenzio. È
+        // proprio la coppia che serve guardare adesso, perché la resa fuori schermo la barra
+        // laterale non la disegna: la sonda deve poter mostrare la sera anche di giorno.
+        if CommandLine.arguments.contains("--dark") {
+            NSApp.appearance = NSAppearance(named: .darkAqua)
+        } else if CommandLine.arguments.contains("--light") {
+            NSApp.appearance = NSAppearance(named: .aqua)
+        }
+
         // Le tre voci passate dal menu alle Preferenze restano azioni dell'`AppDelegate`: qui si
         // dice al modello come chiamarle. Il perché non sono selettori scritti a mano sta su
         // `AppModel.onShowEvidence`. Prima del menu e della vista, o le Preferenze aperte subito
@@ -97,6 +109,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         runDemoIfRequested()
         runHudDemoIfRequested()
         renderSnapshotIfRequested()
+        captureWindowIfRequested()
         runWindowProbeIfRequested()
         runConfirmProbeIfRequested()
         runFlushProbeIfRequested()
@@ -106,6 +119,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         runHotKeyProbeIfRequested()
         runPolicyProbeIfRequested()
         runCircuitProbeIfRequested()
+        runStatsPeriodProbeIfRequested()
         runPaceDemoIfRequested()
         runGrowthDemoIfRequested()
         runPrefsDemoIfRequested()
@@ -343,7 +357,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             // resterebbe quello del buio.
             let appearance = NSApp.appearance ?? NSApp.effectiveAppearance
             appearance.performAsCurrentDrawingAppearance {
-                host.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+                // **Lo stesso fondo delle finestre vere**, non più il grigio di sistema. Una
+                // sonda che rende un colore che l'app non usa risponde a una domanda che non ho
+                // fatto: qui la resa deve essere la finestra, carta o inchiostro che sia.
+                host.layer?.backgroundColor = Palette.windowPaperNS.cgColor
             }
         }
         host.frame = NSRect(origin: .zero, size: size)
@@ -361,6 +378,68 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                 try? png.write(to: URL(fileURLWithPath: path))
                 print(path)
             }
+            NSApp.terminate(nil)
+        }
+    }
+
+    /// `--stats-probe` — le statistiche riaperte ripartono da oggi?
+    ///
+    /// La riga che lo fa è una assegnazione sola dentro `showStats()`, ed è esattamente il tipo
+    /// di riga che si crede senza guardare. Qui si mette il periodo su «mese», come se l'avessi
+    /// lasciato lì ieri sera, si apre la finestra come la apre il menu, e si stampa cosa mostra.
+    /// Stampa `day` se la riparazione tiene, `month` se qualcuno la toglie fra un anno.
+    private func runStatsPeriodProbeIfRequested() {
+        guard CommandLine.arguments.contains("--stats-probe") else { return }
+        model.statsPeriod = .month
+        let prima = model.statsPeriod.rawValue
+        showStats()
+        print("prima: \(prima) → dopo l'apertura: \(model.statsPeriod.rawValue)")
+        NSApp.terminate(nil)
+    }
+
+    /// `--scatta=<file.png>` — fotografa la **finestra vera**, quella che si è appena aperta.
+    ///
+    /// È la coppia mancante di `--snapshot`. La resa fuori schermo disegna una vista che non ha
+    /// finestra, e lì una barra laterale di sistema non ha né il materiale né la colonna: esce
+    /// bianca e vuota, cioè la sonda non arriva dove serve guardare. Questa aspetta che la
+    /// finestra sia sullo schermo e ne copia il contenuto, quindi vede quello che vedi tu,
+    /// materiali e livrea compresi.
+    ///
+    /// Va in coppia con una delle sonde che aprono una finestra — `--mostra-prefs`,
+    /// `--mostra-crescita`, `--mostra-ritmo`, `--mostra-onboarding` — e con `--dark` o `--light`
+    /// per guardare l'altra faccia senza cambiare le impostazioni del Mac.
+    private func captureWindowIfRequested() {
+        guard let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--scatta=") }),
+              let path = arg.split(separator: "=", maxSplits: 1).last.map(String.init)
+        else { return }
+
+        // Due secondi: la finestra si apre, SwiftUI fa il primo giro di layout, i materiali di
+        // sistema si risolvono. Sotto il secondo la barra laterale esce a metà.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            // **La finestra, non il primo pannello che passa.** `keyWindow` qui è una lotteria:
+            // la frase d'avvio compare dopo sei decimi in un pannello che non prende il fuoco, e
+            // a seconda di come cade la corsa la sonda fotografava quello — quando ci riusciva.
+            // Una finestra con la barra del titolo è l'unica cosa che `--mostra-*` apre.
+            guard let window = NSApp.windows.first(where: {
+                $0.isVisible && $0.styleMask.contains(.titled) && $0.contentView != nil
+            })
+            else {
+                FileHandle.standardError.write("scatta: nessuna finestra da fotografare\n".data(using: .utf8)!)
+                NSApp.terminate(nil); return
+            }
+
+            // **`cacheDisplay` non basta, e il motivo è la ragione per cui questa sonda esiste.**
+            // Copia quello che le viste disegnano da sé; i materiali di sistema — la barra
+            // laterale, i vetri smerigliati — li compone il server delle finestre, non la vista,
+            // quindi da lì escono bianchi e vuoti. È lo stesso buco della resa fuori schermo, un
+            // passo più in là. `screencapture -l` invece fotografa la finestra **sullo schermo**,
+            // cioè l'unica immagine che risponde alla domanda «com'è venuta».
+            let scatto = Process()
+            scatto.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+            scatto.arguments = ["-x", "-o", "-l\(window.windowNumber)", path]
+            try? scatto.run()
+            scatto.waitUntilExit()
+            print(path)
             NSApp.terminate(nil)
         }
     }
@@ -1173,6 +1252,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // Il tempo attivo non ancora scritto va nel registro **adesso**: la finestra lo legge da
         // lì, e deve trovarci anche l'ultimo minuto.
         model.flushForDisplay()
+        // **Si riparte sempre da oggi** (2026-07-31, sua richiesta). Il periodo vive nel modello
+        // proprio per sopravvivere alla chiusura della finestra, ed era una comodità immaginata:
+        // chi riapre le statistiche vuole sapere come va *adesso*, non ritrovare il mese che
+        // stava guardando ieri sera. Il mese resta a un clic; la giornata la ridà la finestra.
+        model.statsPeriod = .day
         // **Contenuto nuovo a ogni apertura.** Una finestra nascosta non ridisegna: riaprendola
         // mostrava per un istante i numeri di quando l'avevi chiusa, e poi si aggiornava sotto
         // gli occhi al primo battito. Segnalato guardandolo succedere il 2026-07-27.
@@ -1269,6 +1353,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             defer: false
         )
         window.title = title
+        // La carta di giorno, l'inchiostro di sera. Il colore è dinamico, quindi la finestra
+        // cambia da sola quando il Mac passa allo scuro: non si legge l'aspetto adesso.
+        window.backgroundColor = Palette.windowPaperNS
+        // Senza questa riga la barra del titolo resta bianca di sistema sopra un corpo di carta,
+        // e si vede la giuntura: una finestra con due fondi diversi non sembra una scelta, sembra
+        // un pezzo non finito. Trasparente, prende il colore della finestra e il foglio è uno solo.
+        window.titlebarAppearsTransparent = true
         window.contentView = content
         window.delegate = self
         window.isReleasedWhenClosed = false

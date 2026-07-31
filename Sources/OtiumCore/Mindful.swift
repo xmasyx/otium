@@ -169,7 +169,6 @@ public enum Mindful {
     // MARK: - Con misura
 
     static let misura: [Phrase] = [
-        v("Se domani non puoi ripeterlo, oggi hai fatto troppo.", "If you can't repeat it tomorrow, you did too much today."),
         v("Il riposo è la parte dell'allenamento in cui succede tutto.", "Rest is the part of training where everything happens."),
         v("Il muscolo cresce mentre dormi, non mentre spingi.", "Muscle grows while you sleep, not while you push."),
         v("Se ti fa paura cominciare, dimezza. Poi dimezza ancora.", "If starting scares you, halve it. Then halve it again."),

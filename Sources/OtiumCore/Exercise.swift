@@ -509,6 +509,33 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     }
 }
 
+/// Come si dispongono le alternative sotto l'esercizio della pausa.
+///
+/// Il push-up ne offre **sette**, e sette pulsanti in una fila sola si leggono come un muro:
+/// segnalato dal principale il 2026-07-31 — *«sono tutti su una linea, risultano appiccicati»*.
+/// La stessa fila con lo squat ne ha quattro e col muro tre, quindi il numero non è mai lo
+/// stesso e una riga scritta a mano non esiste.
+///
+/// Da quattro in su si spezza in due righe **bilanciate** — sette diventa 4+3 — così la seconda
+/// riga è una riga e non un avanzo. Da tre in giù resta una fila sola: un 2+1 lascerebbe un
+/// pulsante spaiato in mezzo allo schermo senza guadagnare aria, che era il difetto da togliere.
+///
+/// Sta nel nucleo e non nella vista perché è aritmetica, e l'aritmetica si prova con un test
+/// invece che guardando uno snapshot.
+public enum VariantLayout {
+    /// Fino a questo numero le alternative restano su una riga sola.
+    public static let singleRowLimit = 3
+
+    public static func rows<T>(_ items: [T]) -> [[T]] {
+        if items.isEmpty { return [] }
+        guard items.count > singleRowLimit else { return [items] }
+        // La riga di sopra prende l'elemento in più quando sono dispari: il peso sta in alto,
+        // come in una colonna di testo giustificata.
+        let prima = (items.count + 1) / 2
+        return [Array(items.prefix(prima)), Array(items.dropFirst(prima))]
+    }
+}
+
 /// Un esercizio con le sue ripetizioni già calcolate per oggi (rampa applicata).
 public struct Exercise: Equatable, Codable, Sendable {
     public let kind: ExerciseKind

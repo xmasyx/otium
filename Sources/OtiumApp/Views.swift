@@ -5,6 +5,25 @@ extension Color {
     init(_ rgb: RGB) { self.init(red: rgb.r, green: rgb.g, blue: rgb.b) }
 }
 
+extension NSColor {
+    convenience init(_ rgb: RGB) {
+        self.init(srgbRed: rgb.r, green: rgb.g, blue: rgb.b, alpha: 1)
+    }
+
+    /// Un colore che **si risolve al momento di disegnare**, non al momento di scriverlo.
+    ///
+    /// È la sola forma che segue l'aspetto di sistema da sola: se scegli il colore adesso,
+    /// leggendo com'è il Mac in questo istante, la finestra resta di quel colore anche quando
+    /// alle otto di sera macOS passa allo scuro da solo. Un colore dinamico invece viene
+    /// richiesto di nuovo a ogni ridisegno, e cambia insieme a tutte le altre finestre.
+    static func dual(_ chiaro: RGB, _ scuro: RGB) -> NSColor {
+        NSColor(name: nil) { aspetto in
+            aspetto.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+                ? NSColor(scuro) : NSColor(chiaro)
+        }
+    }
+}
+
 /// I colori in uso, presi dal tema scelto.
 ///
 /// Statici e non iniettati per una ragione pratica: sono letti da decine di punti, e passarli
@@ -44,6 +63,28 @@ enum Palette {
         NSApp?.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
     }
     static var dim: Color { Color(current.dim) }
+
+    // MARK: - Le finestre normali
+
+    /// La faccia giusta per adesso: carta di giorno, inchiostro di sera.
+    static var surface: SurfacePalette { isDarkAppearance ? Surface.sera : Surface.giorno }
+
+    static var windowPaper: Color { Color(surface.paper) }
+    static var windowEdge: Color { Color(surface.edge) }
+    static var card: Color { Color(surface.card) }
+    static var text: Color { Color(surface.text) }
+    static var textDim: Color { Color(surface.dim) }
+    static var rule: Color { Color(surface.rule) }
+
+    /// La velatura dietro la voce scelta nella colonna. Più marcata di sera, perché il 13% di un
+    /// colore chiaro su un fondo d'inchiostro è un'insinuazione, non una selezione.
+    static var accentWash: Color {
+        isDarkAppearance ? Color(current.accent).opacity(0.22)
+                         : Color(current.accentOnLight).opacity(0.13)
+    }
+
+    /// Lo stesso fondo per AppKit, che le finestre le colora lui.
+    static var windowPaperNS: NSColor { .dual(Surface.giorno.paper, Surface.sera.paper) }
 }
 
 extension View {
@@ -420,6 +461,10 @@ struct BreakView: View {
     /// Le ripetizioni cambiano con la difficoltà — un archer push-up non se ne fanno dieci — e
     /// il cronometro del "fatto" riparte dal cambio, così non si passa al più corto un istante
     /// prima di premere.
+    /// **Due righe, non una fila sola** (2026-07-31, sua richiesta). Quante ne vanno di sopra lo
+    /// decide `VariantLayout`, che è nel nucleo e ha il suo test; qui restano solo gli spazi.
+    /// Fra i pulsanti 12 punti invece di 8, e 10 fra le due righe: la lamentela era che si
+    /// toccavano, e una riga in più senza aria intorno l'avrebbe spostata invece di toglierla.
     @ViewBuilder
     private var variantRow: some View {
         let options = model.variants
@@ -429,31 +474,44 @@ struct BreakView: View {
                     .font(.system(size: 11, weight: .medium, design: .rounded))
                     .tracking(1.5)
                     .foregroundStyle(Palette.dim)
-                HStack(spacing: 8) {
-                    ForEach(options, id: \.kind) { option in
-                        Button { model.swapExercise(to: option.kind) } label: {
-                            VStack(spacing: 2) {
-                                Text(option.kind.localizedName)
-                                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                                Text(option.kind.isPerSide
-                                     ? L.t("\(option.displayReps) per lato", "\(option.displayReps) per side")
-                                     : "\(option.displayReps)")
-                                    .font(.system(size: 11, design: .rounded))
-                                    .foregroundStyle(Palette.accent.opacity(0.85))
-                                    .monospacedDigit()
+                VStack(spacing: 10) {
+                    ForEach(Array(VariantLayout.rows(options).enumerated()), id: \.offset) { riga in
+                        HStack(spacing: 12) {
+                            ForEach(riga.element, id: \.kind) { option in
+                                variantButton(option)
                             }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .foregroundStyle(Palette.paper.opacity(0.8))
-                            .background(RoundedRectangle(cornerRadius: 9).fill(Color.white.opacity(0.06)))
-                            .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.white.opacity(0.14)))
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }
             .padding(.top, 6)
         }
+    }
+
+    /// **Si clicca tutto il rettangolo, non la parola.** Riempimento e sfondo stanno dentro
+    /// l'etichetta e non fuori dal `Button`, e `contentShape` dichiara la forma da colpire:
+    /// senza, i punti trasparenti agli angoli arrotondati non rispondono, e un pulsante che
+    /// risponde a volte sembra un'app rotta.
+    private func variantButton(_ option: Exercise) -> some View {
+        Button { model.swapExercise(to: option.kind) } label: {
+            VStack(spacing: 2) {
+                Text(option.kind.localizedName)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                Text(option.kind.isPerSide
+                     ? L.t("\(option.displayReps) per lato", "\(option.displayReps) per side")
+                     : "\(option.displayReps)")
+                    .font(.system(size: 11, design: .rounded))
+                    .foregroundStyle(Palette.accent.opacity(0.85))
+                    .monospacedDigit()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .foregroundStyle(Palette.paper.opacity(0.8))
+            .background(RoundedRectangle(cornerRadius: 9).fill(Color.white.opacity(0.06)))
+            .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.white.opacity(0.14)))
+            .contentShape(RoundedRectangle(cornerRadius: 9))
+        }
+        .buttonStyle(.plain)
     }
 
     /// Il conto alla rovescia della **pausa intera**, da quando comincia.
@@ -1068,7 +1126,7 @@ struct PrefsView: View {
     /// scomoda»*. Le voci ricalcano i raggruppamenti che le sezioni avevano già: non è una
     /// tassonomia nuova, è quella di prima resa navigabile.
     enum Section: String, CaseIterable, Identifiable, Hashable {
-        case profilo, cadenza, esercizi, interruzioni, aspetto, sistema, avanzate
+        case profilo, cadenza, esercizi, interruzioni, aspetto, avanzate
 
         var id: String { rawValue }
 
@@ -1079,7 +1137,6 @@ struct PrefsView: View {
             case .esercizi:     return L.t("Esercizi", "Exercises")
             case .interruzioni: return L.t("Interruzioni", "Interruptions")
             case .aspetto:      return L.t("Aspetto", "Appearance")
-            case .sistema:      return L.t("Sistema", "System")
             case .avanzate:     return L.t("Avanzate", "Advanced")
             }
         }
@@ -1096,8 +1153,7 @@ struct PrefsView: View {
             case .esercizi:     return L.t("rotazione e varianti", "rotation and variants")
             case .interruzioni: return L.t("call, rinvii, ore attive", "calls, postponements, active hours")
             case .aspetto:      return L.t("livrea, suono", "theme, sound")
-            case .sistema:      return L.t("avvio automatico", "start at login")
-            case .avanzate:     return L.t("fonti, registro, diagnostica", "sources, log, diagnostics")
+            case .avanzate:     return L.t("avvio, fonti, registro", "startup, sources, log")
             }
         }
 
@@ -1108,7 +1164,6 @@ struct PrefsView: View {
             case .esercizi:     return "figure.strengthtraining.functional"
             case .interruzioni: return "bell.badge"
             case .aspetto:      return "paintpalette"
-            case .sistema:      return "gearshape"
             case .avanzate:     return "wrench.and.screwdriver"
             }
         }
@@ -1119,27 +1174,21 @@ struct PrefsView: View {
         // bozza è una sola e attraversa i pannelli, quindi il pulsante non può vivere dentro uno
         // solo. Prima era l'ultima sezione di un modulo lungo, cioè visibile solo se avevi finito
         // di scorrere.
-        VStack(spacing: 0) {
-            NavigationSplitView {
-                List(Section.allCases, selection: $section) { voce in
-                    // L'etichetta sta **dentro** la riga con tutta la sua altezza: una riga di
-                    // lista si clicca tutta, non solo dove c'è scritto. È la stessa regola del
-                    // pulsante della pausa, pagata due volte fra Otium e Kalamos.
-                    Label {
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(voce.title)
-                            Text(voce.subtitle)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 3)
-                    } icon: {
-                        Image(systemName: voce.icon)
-                    }
-                    .tag(voce)
-                }
-                .navigationSplitViewColumnWidth(min: 190, ideal: 205, max: 240)
-            } detail: {
+        // **Niente `NavigationSplitView`, e non è una questione di gusto.**
+        //
+        // La vista divisa di sistema disegna la barra laterale come un pannello che galleggia:
+        // angoli arrotondati, ombra, staccato dal bordo della finestra. Segnalato dal principale
+        // il 2026-07-31 con Kalamos accanto, dove la colonna è piena e arriva ai bordi. E porta
+        // dietro la seconda cosa che non va, cioè la **selezione blu di sistema**: quel blu è
+        // l'accento del Mac, non quello dell'app, e `tint` sulla lista non lo tocca.
+        //
+        // Le due cose hanno la stessa cura, cioè possedere la colonna invece di configurarla:
+        // un `HStack`, una fila di pulsanti, la selezione stesa nell'accento della livrea. È la
+        // struttura di Kalamos, copiata di proposito perché le due app devono leggersi uguali.
+        HStack(spacing: 0) {
+            sidebar
+            Divider()
+            VStack(spacing: 0) {
                 Form {
                     switch section {
                     case .profilo:      profiloSection
@@ -1147,25 +1196,63 @@ struct PrefsView: View {
                     case .esercizi:     eserciziSection
                     case .interruzioni: interruzioniSection
                     case .aspetto:      aspettoSection
-                    case .sistema:      sistemaSection
                     case .avanzate:     avanzateSection
                     }
                 }
                 .formStyle(.grouped)
-                // **Niente `navigationTitle`.** Ne aveva uno con il nome della voce, e quel nome
-                // si prendeva la barra del titolo della finestra: al posto di «Preferenze di
-                // Otium» si leggeva «Profilo», cioè la finestra smetteva di dire cos'è. Dove sei
-                // lo dice già la voce selezionata, che è a due centimetri.
-            }
-            // La barra laterale non si può stringere fino a sparire: una voce a metà è peggio di
-            // nessuna barra.
-            .navigationSplitViewStyle(.balanced)
+                .scrollContentBackground(.hidden)
 
-            Divider()
-            applyBar
+                Divider()
+                // La barra del salvataggio sta a destra della colonna e sotto il modulo: la
+                // bozza è una sola e attraversa i pannelli, ma il pulsante appartiene alla
+                // pagina, non alla colonna che la sceglie.
+                applyBar
+            }
+            .background(Palette.windowPaper)
         }
         .frame(width: 760, height: 580)
+        .background(Palette.windowPaper)
         .livrea()
+    }
+
+    /// La colonna: piena, attaccata ai bordi, con la selezione nella livrea scelta.
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            ForEach(Section.allCases) { voce in
+                Button { section = voce } label: {
+                    HStack(alignment: .top, spacing: 9) {
+                        Image(systemName: voce.icon)
+                            .font(.system(size: 13))
+                            .frame(width: 18)
+                            .padding(.top, 1)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(voce.title)
+                                .font(.system(size: 13, weight: section == voce ? .semibold : .regular))
+                            Text(voce.subtitle)
+                                .font(.system(size: 11))
+                                .foregroundStyle(Palette.textDim)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .multilineTextAlignment(.leading)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .foregroundStyle(section == voce ? Palette.accentOnWindow : Palette.text)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    // Riempimento dentro l'etichetta e forma di collisione esplicita: una riga
+                    // che si accende dove non si può cliccare sembra un'app rotta. Stessa regola
+                    // dei pulsanti della pausa, pagata due volte fra Otium e Kalamos.
+                    .background(RoundedRectangle(cornerRadius: 7)
+                        .fill(section == voce ? Palette.accentWash : .clear))
+                    .contentShape(RoundedRectangle(cornerRadius: 7))
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
+        .padding(12)
+        .frame(width: 232, alignment: .topLeading)
+        .background(Palette.windowEdge)
     }
 
     /// Il piede fisso: lo stato del salvataggio a sinistra, il pulsante a destra, sempre lì.
@@ -1511,6 +1598,12 @@ struct PrefsView: View {
     /// dentro. Spostate qui il 2026-07-31 su richiesta del principale.
     @ViewBuilder
     private var avanzateSection: some View {
+        // **L'avvio automatico stava da solo in una voce sua** e la riempiva per un quarto, con
+        // una riga di stato in mezzo a tanto vuoto. Segnalato dal principale il 2026-07-31: una
+        // voce di menu che contiene una cosa sola è una voce che fa perdere tempo a chi la cerca.
+        // Qui sta con le altre cose di macchina, prima delle fonti perché è l'unica che si tocca.
+        sistemaSection
+
         SwiftUI.Section(L.t("Le fonti", "The sources")) {
             Button(L.t("Da dove vengono questi numeri…", "Where these numbers come from…")) {
                 model.onShowEvidence?()
@@ -1549,8 +1642,12 @@ struct PrefsView: View {
                 }
             case .healthy:
                 HStack {
+                    // Il verde di sistema qui era l'unico colore della finestra che non veniva
+                    // dalla livrea: verde mela accanto al verde alloro, e si vedeva. Segnalato
+                    // dal principale il 2026-07-31. L'arancione degli avvisi qui sotto resta,
+                    // perché quello non è una livrea, è un semaforo.
                     Label(L.t("Attivo e puntato a questa copia", "Active and pointing at this copy"), systemImage: "checkmark.seal")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Palette.accentOnWindow)
                     Spacer()
                     Button(L.t("Rimuovi", "Remove")) { model.removeLaunchAgent() }
                 }
