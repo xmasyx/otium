@@ -10,7 +10,17 @@ public enum BreakKind: String, Codable, Equatable, Sendable {
 /// La cadenza — i numeri che vengono dagli studi, non dal gusto.
 public struct Cadence: Codable, Equatable, Sendable {
     /// Secondi di **tempo attivo** fra un break e l'altro. Duran 2023 → 30 minuti.
-    public var intervalSeconds: Double
+    ///
+    /// **I limiti stanno sul campo, non solo nell'`init`.** È la stessa lezione già pagata su
+    /// `Settings`: un tetto scritto nel costruttore si scavalca assegnando la proprietà dopo, e
+    /// un test l'ha fatto al primo tentativo — `cadence.warningSeconds = 300` su un intervallo da
+    /// 60 secondi, e la pausa scattava al primo secondo di lavoro.
+    public var intervalSeconds: Double {
+        didSet {
+            intervalSeconds = max(1, intervalSeconds)
+            warningSeconds = min(warningSeconds, intervalSeconds / 2)
+        }
+    }
     /// Durata del micro-snack. Albulescu 2022 → ben dentro i 10 minuti.
     public var microDurationSeconds: Double
     /// Durata della pausa piena. Galinsky 2000 → 5 minuti.
@@ -20,7 +30,12 @@ public struct Cadence: Codable, Equatable, Sendable {
     /// Oltre questa inattività l'orologio si ferma e la pausa diventa "naturale".
     public var idleThresholdSeconds: Double
     /// Preavviso prima che lo schermo si copra: serve a chiudere quello che stai facendo.
-    public var warningSeconds: Double
+    ///
+    /// Non può superare metà intervallo: da quando il preavviso sta **dentro** l'intervallo, uno
+    /// più lungo dell'intervallo stesso non sarebbe un avviso, sarebbe l'attesa.
+    public var warningSeconds: Double {
+        didSet { warningSeconds = min(max(0, warningSeconds), max(1, intervalSeconds) / 2) }
+    }
     /// Quanto dura un rinvio.
     public var postponeSeconds: Double
     /// Quanti rinvii per break. Stretchly ne concede uno: è la scelta giusta.
@@ -41,7 +56,13 @@ public struct Cadence: Codable, Equatable, Sendable {
         self.longDurationSeconds = longDurationSeconds
         self.longEveryNBreaks = max(1, longEveryNBreaks)
         self.idleThresholdSeconds = idleThresholdSeconds
-        self.warningSeconds = warningSeconds
+        // **Il preavviso non può mangiarsi l'intervallo.** Da quando sta *dentro* i 30 minuti
+        // (2026-07-31), un preavviso più lungo dell'intervallo farebbe scattare la pausa al primo
+        // secondo di lavoro — e `settings.json` è un file di testo, quindi `warningSeconds: 300`
+        // con intervallo a 60 è scrivibile a mano. Il tetto è metà intervallo: sopra, il
+        // preavviso non sarebbe più un avviso, sarebbe l'attesa. Trovato da un test scritto per
+        // il caso limite, non dall'uso.
+        self.warningSeconds = min(max(0, warningSeconds), max(1, intervalSeconds) / 2)
         self.postponeSeconds = postponeSeconds
         self.postponesAllowed = max(0, postponesAllowed)
     }
@@ -293,7 +314,21 @@ public struct Settings: Codable, Equatable, Sendable {
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let d = Settings()
-        cadence = (try? c.decode(Cadence.self, forKey: .cadence)) ?? d.cadence
+        // **Ricostruita attraverso l'init**, non presa com'è dal file: `Cadence` ha un `Codable`
+        // sintetizzato, che i limiti non li conosce. Senza questo giro, i tetti dell'init
+        // varrebbero solo per i preset scritti nel codice — cioè proprio per i valori che non
+        // hanno bisogno di essere limitati.
+        let letta = (try? c.decode(Cadence.self, forKey: .cadence)) ?? d.cadence
+        cadence = Cadence(
+            intervalSeconds: letta.intervalSeconds,
+            microDurationSeconds: letta.microDurationSeconds,
+            longDurationSeconds: letta.longDurationSeconds,
+            longEveryNBreaks: letta.longEveryNBreaks,
+            idleThresholdSeconds: letta.idleThresholdSeconds,
+            warningSeconds: letta.warningSeconds,
+            postponeSeconds: letta.postponeSeconds,
+            postponesAllowed: letta.postponesAllowed
+        )
         startDate = (try? c.decode(Date.self, forKey: .startDate)) ?? d.startDate
         rampWeeks = max(1, (try? c.decode(Int.self, forKey: .rampWeeks)) ?? d.rampWeeks)
         // I `didSet` non scattano dentro un inizializzatore: qui i limiti si riapplicano a mano,

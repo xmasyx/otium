@@ -17,7 +17,7 @@ enum ProbeMode {
     private static let flags = [
         "--orphan-probe", "--sleep-probe", "--radar-probe", "--menu-probe", "--confirm-probe",
         "--flush-probe", "--window-probe", "--snapshot", "--demo-break", "--demo-hud", "--presence",
-        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo", "--demo-ritmo", "--mostra-crescita", "--demo-crescita", "--lsof-probe", "--mostra-prefs", "--registro-finto",
+        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo", "--demo-ritmo", "--mostra-crescita", "--demo-crescita", "--lsof-probe", "--mostra-prefs", "--registro-finto", "--cadenza-finta",
     ]
 
     static var active: Bool {
@@ -301,6 +301,12 @@ final class AppModel: ObservableObject {
                           "the deferred break resumes in one minute — \(plan.exercise.label)"),
                 sound: settings.notificationSound
             )
+        case .readyToReturn:
+            // **Solo suono, nessun pannello.** Lo schermo è coperto dal blocco, quindi un HUD non
+            // lo vedrebbe nessuno; e se sei dall'altra parte della stanza — che è esattamente
+            // quello che la pausa piena ti chiede — il suono è l'unica cosa che ti arriva. Stesso
+            // suono del preavviso, come chiesto: è la stessa famiglia di avviso, «muoviti».
+            previewSound(settings.notificationSound)
         case .breakStarted(let plan):
             hud.hide()
             escapeText = ""
@@ -727,8 +733,14 @@ final class AppModel: ObservableObject {
         switch engine.phase {
         case .paused: return "⏸"
         case .breaking: return "●"
-        case .warning: return "!"
-        case .postponed, .working: return "\(minutesToNextBreak)"
+        // **L'unità va detta, o il numero mente.** Nel preavviso c'era un `!`, che non dice
+        // niente; e il numero nudo delle altre fasi ha lo stesso difetto al contrario — un `23`
+        // da solo può essere qualunque cosa. Scrivere `60` nel preavviso l'ha scartato il
+        // principale stesso, per il motivo giusto: si legge come sessanta minuti. Con la lettera
+        // attaccata `47s` e `23m` non si confondono, e il salto fra le due scale si legge per
+        // quello che è — il conto è passato ai secondi perché ci siamo.
+        case .warning: return "\(max(0, Int(engine.timer.rounded())))s"
+        case .postponed, .working: return "\(minutesToNextBreak)m"
         }
     }
 

@@ -199,7 +199,7 @@ public final class Ledger: @unchecked Sendable {
         // `deferredBreakDue` non lascia riga per la stessa ragione del preavviso: è un avviso,
         // non un fatto. Il fatto — la pausa rimandata — l'ha già scritto `autoDeferred`, e
         // scriverlo di nuovo gonfierebbe il conto dei rinvii con l'atto di finirli.
-        case .warningStarted, .breakStarted, .deferredBreakDue:
+        case .warningStarted, .breakStarted, .deferredBreakDue, .readyToReturn:
             return nil
         case .exerciseConfirmed(let exercise):
             return LedgerEntry(timestamp: now, type: .exerciseDone,

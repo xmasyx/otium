@@ -1339,6 +1339,15 @@ if ProbeMode.active {
     // e con zero ripetizioni ne esce sempre e solo una. Sta qui, prima del primo `AppModel`,
     // perche il riassunto si legge dal disco: seminarlo dopo vorrebbe dire scriverlo e sperare
     // che qualcuno rilegga. Dentro `ProbeMode`, quindi nella cartella usa e getta.
+    // `--cadenza-finta` porta la cadenza fuori dai preset, che e' l'unico modo di **guardare** la
+    // riga «personalizzata»: con le impostazioni di serie quel ramo non si disegna mai.
+    if arguments.contains("--cadenza-finta") {
+        var s = Settings()
+        s.cadence.warningSeconds = 45
+        s.cadence.postponesAllowed = 3
+        SettingsStore.save(s)
+    }
+
     if arguments.contains("--registro-finto") {
         let ledger = Ledger()
         let ora = Date()

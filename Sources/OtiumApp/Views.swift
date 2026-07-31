@@ -1306,17 +1306,53 @@ struct PrefsView: View {
 
     @ViewBuilder
     private var cadenzaSection: some View {
+        // **Dire di cosa si parla.** «30 min + pausa piena ogni 90» non dice *di che cosa* —
+        // ogni quanto cosa, quanto dura cosa. Segnalato dal principale il 2026-07-31: *«ogni
+        // quanto, quanto dura, ma cosa?»*. La risposta e' una riga in cima, non un nome di
+        // preset piu' lungo.
+        SwiftUI.Section {
+            Text(L.t("Ogni quanto Otium ti interrompe, e quanto dura l'interruzione.",
+                     "How often Otium interrupts you, and how long the interruption lasts."))
+                .font(.system(size: 13, weight: .medium))
+                .fixedSize(horizontal: false, vertical: true)
+            // `Text(.init(...))`, non `Text(...)`: una stringa costruita a runtime non passa dal
+            // markdown, e gli asterischi finiscono **a schermo** — visto nei pixel il 2026-07-31,
+            // ed è lo stesso difetto già pagato sulle frasi in `Facts.swift`. Il grassetto qui
+            // porta il senso della riga, quindi si tiene e si fa funzionare.
+            Text(.init(L.t("Il conto è sul **tempo attivo**: trenta minuti di lavoro vero, non trenta minuti d'orologio. Se ti alzi, il conto si ferma.",
+                           "The count is on **active time**: thirty minutes of real work, not thirty minutes on the clock. If you get up, the count stops.")))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+
         SwiftUI.Section {
             Picker(L.t("Preset", "Preset"), selection: Binding(
                 get: { presetName(draft.cadence) },
                 set: { applyPreset($0) }
             )) {
-                Text(L.t("A — 30 min + pausa piena ogni 90 (consigliata)", "A — 30 min + full break every 90 (recommended)")).tag("A")
-                Text(L.t("B — 5 min ogni 50 (deep work)", "B — 5 min every 50 (deep work)")).tag("B")
-                Text(L.t("C — 5 min ogni 30 (protocollo Duran)", "C — 5 min every 30 (Duran protocol)")).tag("C")
-                Text(L.t("personalizzata", "custom")).tag("X")
+                Text(L.t("A — una pausa breve ogni 30 minuti, una piena ogni 90 (consigliata)",
+                         "A — a short break every 30 minutes, a full one every 90 (recommended)")).tag("A")
+                Text(L.t("B — una pausa piena ogni 50 minuti (deep work)",
+                         "B — a full break every 50 minutes (deep work)")).tag("B")
+                Text(L.t("C — una pausa piena ogni 30 minuti (protocollo Duran)",
+                         "C — a full break every 30 minutes (Duran protocol)")).tag("C")
+                // **«Personalizzata» c'e' solo se lo sei.** Era una voce sempre presente che
+                // selezionandola non faceva niente — `applyPreset` non ha un caso per lei, perche'
+                // non e' una scelta: e' lo stato in cui finisci toccando i valori qui sotto.
+                // Adesso compare solo quando quello stato e' vero, e la riga sotto dice **cosa**
+                // ti ci ha portato.
+                if presetName(draft.cadence) == "X" {
+                    Text(L.t("personalizzata", "custom")).tag("X")
+                }
             }
             .pickerStyle(.menu)
+
+            if presetName(draft.cadence) == "X" {
+                Text(L.t("Hai valori tuoi: \(differenzeDalPresetPiuVicino()). Scegli un preset qui sopra per tornare indietro.",
+                         "You have your own values: \(differenzeDalPresetPiuVicino()). Pick a preset above to go back."))
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
 
         SwiftUI.Section {
@@ -1605,6 +1641,51 @@ struct PrefsView: View {
             .frame(width: 60)
             Text("s").foregroundStyle(.secondary)
         }
+    }
+
+    /// Cosa ti ha portato fuori dai preset, campo per campo.
+    ///
+    /// **Esiste per un caso vero, non per completezza.** Il 2026-07-31 il principale ha trovato
+    /// «personalizzata» senza aver toccato la cadenza: la trappola è che «consenti N rinvii a
+    /// mano» vive nel pannello *Interruzioni* ma è un campo della *cadenza*, quindi cambiarlo
+    /// sposta un preset che sta due voci più in là. Invece di spostare il campo — dove starebbe
+    /// peggio, perché nessuno cerca i rinvii sotto «Cadenza» — l'app dice cos'è successo.
+    private func differenzeDalPresetPiuVicino() -> String {
+        let c = draft.cadence
+
+        func scarti(_ p: Cadence) -> [String] {
+            var out: [String] = []
+            if c.intervalSeconds != p.intervalSeconds {
+                out.append(L.t("intervallo \(Int(c.intervalSeconds / 60)) min", "interval \(Int(c.intervalSeconds / 60)) min"))
+            }
+            if c.microDurationSeconds != p.microDurationSeconds {
+                out.append(L.t("micro-pausa \(Int(c.microDurationSeconds)) s", "micro-break \(Int(c.microDurationSeconds)) s"))
+            }
+            if c.longDurationSeconds != p.longDurationSeconds {
+                out.append(L.t("pausa piena \(Int(c.longDurationSeconds / 60)) min", "full break \(Int(c.longDurationSeconds / 60)) min"))
+            }
+            if c.longEveryNBreaks != p.longEveryNBreaks {
+                out.append(L.t("piena ogni \(c.longEveryNBreaks)", "full every \(c.longEveryNBreaks)"))
+            }
+            if c.warningSeconds != p.warningSeconds {
+                out.append(L.t("preavviso \(Int(c.warningSeconds)) s", "warning \(Int(c.warningSeconds)) s"))
+            }
+            if c.postponesAllowed != p.postponesAllowed {
+                out.append(L.t("\(c.postponesAllowed) rinvii a mano", "\(c.postponesAllowed) manual postponements"))
+            }
+            return out
+        }
+
+        // Il preset più vicino è quello da cui ti scosti di meno: dirti che sei «lontano da A»
+        // quando hai cambiato un campo solo rispetto a B sarebbe una diagnosi peggiore di niente.
+        let migliore = [("A", Cadence.optionA), ("B", .optionB), ("C", .optionC)]
+            .map { ($0.0, scarti($0.1)) }
+            .min { $0.1.count < $1.1.count }
+        guard let migliore, !migliore.1.isEmpty else {
+            return L.t("valori fuori dai preset", "values outside the presets")
+        }
+        return migliore.1.joined(separator: ", ")
+            + L.t(" (invece del preset \(migliore.0))", " (instead of preset \(migliore.0))")
     }
 
     private func presetName(_ c: Cadence) -> String {

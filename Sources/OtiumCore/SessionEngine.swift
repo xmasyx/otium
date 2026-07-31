@@ -102,6 +102,13 @@ public enum EngineEvent: Equatable, Sendable {
     /// quei cinque minuti diventano un'attesa che non serve a nessuno — e nel frattempo la pausa
     /// arretrata non la sa più nessuno. Chiesto dal principale il 2026-07-31.
     case deferredBreakDue(BreakPlan)
+    /// La pausa è finita e il pulsante «torna al lavoro» è diventato premibile.
+    ///
+    /// **Serve perché durante una pausa piena non sei davanti al Mac** — l'app te lo chiede
+    /// espressamente, tre minuti lontano dallo schermo — e da lontano non c'è modo di sapere che
+    /// il tempo è passato. Chiesto dal principale il 2026-07-31. È agganciato al pulsante e non
+    /// alla scadenza del cronometro: se l'esercizio manca ancora, «puoi tornare» sarebbe falso.
+    case readyToReturn(BreakPlan)
 }
 
 /// Cosa sta succedendo intorno, nel momento in cui il break vorrebbe partire.
@@ -174,6 +181,8 @@ public struct SessionEngine {
     /// dura quello che dura; questo è un'attesa che ha una causa fuori dall'app, e quando la causa
     /// finisce l'attesa non ha più motivo di esistere.
     private var postponedForMicrophone = false
+    /// Il richiamo di fine pausa è già partito: una volta sola, non a ogni tick.
+    private var readyToReturnSignalled = false
     private var idleDuringBreak: Double = 0
     /// Da che punto del break conta il tempo minimo dell'esercizio in corso. Cambiando variante
     /// riparte da lì: altrimenti basterebbe aspettare col push-up e passare al più corto un
@@ -273,7 +282,16 @@ public struct SessionEngine {
             break
         }
 
-        guard clock.activeSeconds >= settings.cadence.intervalSeconds else { return events }
+        // **Il preavviso sta DENTRO l'intervallo, non dopo.** Scattava a 30:00 esatti e la pausa
+        // arrivava a 31:00: «prossima fra 30 min» prometteva una cosa e ne consegnava un'altra,
+        // e l'intervallo vero era 31 minuti mentre Duran 2023 dice 30. Segnalato dal principale
+        // il 2026-07-31: *«il warning viene quando sono gia' passati 30 minuti»*.
+        //
+        // Il `max` serve a un preavviso piu' lungo dell'intervallo — configurazione assurda ma
+        // scrivibile a mano nel file: senza, la soglia diventerebbe negativa e la pausa
+        // scatterebbe al primo tick.
+        let sogliaPreavviso = max(1, settings.cadence.intervalSeconds - settings.cadence.warningSeconds)
+        guard clock.activeSeconds >= sogliaPreavviso else { return events }
 
         let newPlan = planNextBreak(now: now)
         plan = newPlan
@@ -338,6 +356,12 @@ public struct SessionEngine {
 
         if timer >= Self.failsafeCeiling {
             return finish(current, event: .breakSkipped(current, .failsafe))
+        }
+
+        // Il richiamo: una volta sola, nell'istante in cui il pulsante si accende.
+        if !readyToReturnSignalled, canReturnToWork {
+            readyToReturnSignalled = true
+            return [.readyToReturn(current)]
         }
 
         // **La pausa dura quanto dichiarato.** La prima versione lasciava finire il micro appena
@@ -415,6 +439,7 @@ public struct SessionEngine {
         exerciseDone = false
         idleDuringBreak = 0
         exerciseBaseline = 0
+        readyToReturnSignalled = false
         return [.breakStarted(current)]
     }
 
@@ -433,6 +458,7 @@ public struct SessionEngine {
         exerciseBaseline = 0
         singleExercise = nil
         postponedForMicrophone = false
+        readyToReturnSignalled = false
         return [event]
     }
 

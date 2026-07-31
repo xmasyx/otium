@@ -14,7 +14,7 @@ public enum ExerciseCategory: String, Codable, CaseIterable, Sendable {
     public var italianName: String {
         switch self {
         case .gambe: return "Gambe"
-        case .spinta: return "Spinta e braccia"
+        case .spinta: return "Spinta"
         case .addome: return "Addome"
         case .vigorosi: return "Vigorosi"
         }
@@ -25,7 +25,7 @@ public enum ExerciseCategory: String, Codable, CaseIterable, Sendable {
     public var englishName: String {
         switch self {
         case .gambe: return "Legs"
-        case .spinta: return "Push and arms"
+        case .spinta: return "Push"
         case .addome: return "Core"
         case .vigorosi: return "Vigorous"
         }

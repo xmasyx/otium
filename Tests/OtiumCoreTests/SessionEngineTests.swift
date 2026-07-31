@@ -44,7 +44,10 @@ final class SessionEngineTests: XCTestCase {
     /// Porta il motore fino allo schermo coperto e restituisce il piano del break.
     @discardableResult
     private func reachBreak(_ engine: inout SessionEngine, env: EngineEnvironment = .quiet) -> BreakPlan? {
-        advance(&engine, seconds: engine.settings.cadence.intervalSeconds, env: env)
+        // Il preavviso sta **dentro** l'intervallo (2026-07-31): si arriva alla soglia del
+        // preavviso, poi lo si consuma. In tutto fa `intervalSeconds`, che e' la promessa.
+        advance(&engine, seconds: engine.settings.cadence.intervalSeconds
+                                - engine.settings.cadence.warningSeconds, env: env)
         // Passo fine sul preavviso: così il break comincia con il cronometro quasi a zero, e i
         // test sul tempo minimo misurano l'esercizio, non l'avanzo del tick.
         advance(&engine, seconds: engine.settings.cadence.warningSeconds + 1, step: 1, env: env)
@@ -66,15 +69,16 @@ final class SessionEngineTests: XCTestCase {
 
     func testNoBreakBeforeTheInterval() {
         var engine = makeEngine()
-        let events = advance(&engine, seconds: 29 * 60)
+        // 28 minuti: il preavviso parte al 29esimo, perche' sta dentro i 30.
+        let events = advance(&engine, seconds: 28 * 60)
         XCTAssertTrue(events.isEmpty)
         XCTAssertEqual(engine.phase, .working)
     }
 
-    /// ISC-7 — prima del blocco arriva il preavviso.
+    /// ISC-7 — prima del blocco arriva il preavviso, **un minuto prima dell'intervallo**.
     func testWarningFiresAtTheInterval() {
         var engine = makeEngine()
-        let events = advance(&engine, seconds: 30 * 60)
+        let events = advance(&engine, seconds: 29 * 60)
         XCTAssertEqual(engine.phase, .warning)
         guard case .warningStarted = events.last else {
             return XCTFail("atteso warningStarted, ricevuto \(String(describing: events.last))")
@@ -84,7 +88,7 @@ final class SessionEngineTests: XCTestCase {
 
     func testBreakStartsAfterTheWarning() {
         var engine = makeEngine()
-        advance(&engine, seconds: 30 * 60)
+        advance(&engine, seconds: 29 * 60)
         let events = advance(&engine, seconds: 70)
         XCTAssertEqual(engine.phase, .breaking)
         XCTAssertTrue(events.contains { if case .breakStarted = $0 { return true }; return false })
@@ -335,7 +339,7 @@ final class SessionEngineTests: XCTestCase {
     func testBreakIsDeferredWhileTheMicrophoneIsInUse() {
         var engine = makeEngine()
         let inCall = EngineEnvironment(microphoneActive: true)
-        advance(&engine, seconds: 30 * 60, env: inCall)
+        advance(&engine, seconds: 29 * 60, env: inCall)     // preavviso: sta dentro i 30
         let events = advance(&engine, seconds: 70, env: inCall)
 
         XCTAssertEqual(engine.phase, .postponed)
@@ -359,7 +363,7 @@ final class SessionEngineTests: XCTestCase {
     /// Fuori dalle ore attive Otium non interrompe.
     func testNoBreakOutsideActiveHours() {
         var engine = makeEngine()
-        advance(&engine, seconds: 30 * 60, now: Self.night)
+        advance(&engine, seconds: 29 * 60, now: Self.night)   // preavviso: sta dentro i 30
         let events = advance(&engine, seconds: 70, now: Self.night)
         XCTAssertEqual(engine.phase, .working)
         XCTAssertTrue(events.contains {
@@ -755,7 +759,8 @@ final class DeferredBreakTests: XCTestCase {
     /// Porta il motore a una pausa rimandata perché il microfono è in uso.
     private func reachMicrophoneDefer(_ engine: inout SessionEngine) {
         let inCall = EngineEnvironment(microphoneActive: true)
-        advance(&engine, seconds: engine.settings.cadence.intervalSeconds, env: inCall)
+        advance(&engine, seconds: engine.settings.cadence.intervalSeconds
+                                - engine.settings.cadence.warningSeconds, env: inCall)
         advance(&engine, seconds: engine.settings.cadence.warningSeconds + 1, step: 1, env: inCall)
         XCTAssertEqual(engine.phase, .postponed, "in call la pausa si rimanda, non piomba addosso")
     }
@@ -784,7 +789,8 @@ final class DeferredBreakTests: XCTestCase {
     /// se si accorciasse, premere «rinvia» a fine riunione non varrebbe niente.
     func testAManualPostponementIsNotCutShortByTheMicrophone() {
         var engine = makeEngine()
-        advance(&engine, seconds: engine.settings.cadence.intervalSeconds, env: .quiet)
+        advance(&engine, seconds: engine.settings.cadence.intervalSeconds
+                                - engine.settings.cadence.warningSeconds, env: .quiet)
         advance(&engine, seconds: engine.settings.cadence.warningSeconds + 1, step: 1, env: .quiet)
         XCTAssertEqual(engine.phase, .breaking)
         XCTAssertFalse(engine.postpone().isEmpty, "il rinvio a mano è concesso")
@@ -829,5 +835,164 @@ final class DeferredBreakTests: XCTestCase {
         let plan = BreakPlan(index: 1, kind: .micro, duration: 90,
                              exercise: Exercise(kind: .squat, reps: 10))
         XCTAssertNil(Ledger.entry(for: .deferredBreakDue(plan), now: Self.workingHour))
+    }
+}
+
+// MARK: - ISC-108 — l'intervallo promesso è quello vissuto
+
+/// **Il numero che l'app dice deve essere il numero che l'app fa.**
+///
+/// Il preavviso scattava *dopo* i 30 minuti e la pausa arrivava a 31: la barra prometteva
+/// «prossima fra 30 min», la letteratura che l'app cita dice 30 (Duran 2023), e l'intervallo vero
+/// era 31. Nessun test lo vedeva perché tutti erano scritti con lo stesso errore dentro — la
+/// classe di difetto che si nasconde meglio, quella dove il test copia l'assunzione del codice.
+final class IntervalPromiseTests: XCTestCase {
+
+    private func makeEngine(_ s: Settings = Settings()) -> SessionEngine {
+        var settings = s
+        settings.startDate = SessionEngineTests.workingHour
+        return SessionEngine(settings: settings, maxCredibleElapsed: 120)
+    }
+
+    /// Un secondo per volta, e si guarda **quando** cambia fase: nessuna finestra di tolleranza in
+    /// cui nascondere un minuto.
+    private func momentOf(_ phase: SessionEngine.Phase, _ engine: inout SessionEngine) -> Double? {
+        for i in 0..<(60 * 60) {
+            engine.tick(elapsed: 1, idle: 0, now: SessionEngineTests.workingHour)
+            if engine.phase == phase { return Double(i + 1) }
+        }
+        return nil
+    }
+
+    func testTheBreakArrivesExactlyAtTheDeclaredInterval() {
+        var engine = makeEngine()
+        let intervallo = engine.settings.cadence.intervalSeconds
+        let preavviso = engine.settings.cadence.warningSeconds
+
+        guard let quandoAvvisa = momentOf(.warning, &engine) else {
+            return XCTFail("il preavviso non è mai arrivato")
+        }
+        XCTAssertEqual(quandoAvvisa, intervallo - preavviso, accuracy: 1,
+                       "l'avviso arriva un minuto PRIMA dei 30, non dopo")
+
+        guard let restanti = momentOf(.breaking, &engine) else {
+            return XCTFail("la pausa non è mai arrivata")
+        }
+        // `momentOf` conta da dove era arrivato: il totale è la somma dei due tratti.
+        XCTAssertEqual(quandoAvvisa + restanti, intervallo, accuracy: 1,
+                       "la pausa arriva ai 30 minuti dichiarati, non a 31")
+    }
+
+    /// Vale per ogni preset, non solo per quello di serie: è il contratto della cadenza, non un
+    /// numero fortunato dell'opzione A.
+    func testEveryPresetKeepsItsPromise() {
+        for (nome, cadenza) in [("A", Cadence.optionA), ("B", .optionB), ("C", .optionC)] {
+            var s = Settings(); s.cadence = cadenza
+            var engine = makeEngine(s)
+            guard let avviso = momentOf(.warning, &engine),
+                  let restanti = momentOf(.breaking, &engine) else {
+                return XCTFail("preset \(nome): la pausa non è mai arrivata")
+            }
+            let quandoBlocca = avviso + restanti
+            XCTAssertEqual(quandoBlocca, cadenza.intervalSeconds, accuracy: 1,
+                           "preset \(nome): promette \(Int(cadenza.intervalSeconds / 60)) minuti")
+        }
+    }
+
+    /// Caso limite scrivibile a mano nel file: preavviso più lungo dell'intervallo. Non deve
+    /// diventare una soglia negativa, cioè una pausa al primo tick.
+    func testAWarningLongerThanTheIntervalDoesNotFireImmediately() {
+        var s = Settings()
+        s.cadence.intervalSeconds = 60
+        s.cadence.warningSeconds = 300
+        var engine = makeEngine(s)
+        engine.tick(elapsed: 1, idle: 0, now: SessionEngineTests.workingHour)
+        XCTAssertEqual(engine.phase, .working, "un solo secondo di lavoro non è una pausa dovuta")
+    }
+}
+
+// MARK: - ISC-109 — il richiamo di fine pausa
+
+/// **La pausa piena ti chiede di stare lontano dallo schermo, e da lontano non si vede niente.**
+/// Il richiamo suona quando il pulsante «torna al lavoro» si accende — non quando scade il
+/// cronometro, perché con l'esercizio ancora da fare «puoi tornare» sarebbe falso.
+final class ReadyToReturnTests: XCTestCase {
+
+    private static let ora = SessionEngineTests.workingHour
+
+    private func makeEngine() -> SessionEngine {
+        var s = Settings(); s.startDate = Self.ora
+        return SessionEngine(settings: s, maxCredibleElapsed: 120)
+    }
+
+    @discardableResult
+    private func advance(_ e: inout SessionEngine, _ seconds: Double, step: Double = 1) -> [EngineEvent] {
+        var out: [EngineEvent] = []
+        var t = 0.0
+        while t < seconds { out += e.tick(elapsed: step, idle: 0, now: Self.ora); t += step }
+        return out
+    }
+
+    private func reachBreak(_ e: inout SessionEngine) {
+        advance(&e, e.settings.cadence.intervalSeconds - e.settings.cadence.warningSeconds, step: 10)
+        advance(&e, e.settings.cadence.warningSeconds + 1)
+    }
+
+    private func richiami(_ events: [EngineEvent]) -> Int {
+        events.filter { if case .readyToReturn = $0 { return true }; return false }.count
+    }
+
+    func testTheChimeFiresWhenTheReturnButtonLightsUp() {
+        var engine = makeEngine()
+        reachBreak(&engine)
+        guard let plan = engine.plan else { return XCTFail("nessuna pausa") }
+
+        advance(&engine, plan.exercise.minimumSeconds + 2)
+        engine.markExerciseDone()
+        // Ancora dentro la durata: il pulsante è spento, e il richiamo non deve partire.
+        let presto = advance(&engine, 5)
+        XCTAssertEqual(richiami(presto), 0, "il tempo della pausa non è ancora passato")
+
+        let dopo = advance(&engine, plan.duration)
+        XCTAssertEqual(richiami(dopo), 1, "il richiamo parte quando il pulsante si accende")
+        XCTAssertTrue(engine.canReturnToWork)
+    }
+
+    /// **Il controllo che conta.** Se il richiamo si agganciasse al cronometro invece che al
+    /// pulsante, qui suonerebbe lo stesso — con l'esercizio mai fatto e il pulsante spento.
+    func testNoChimeWhileTheExerciseIsStillMissing() {
+        var engine = makeEngine()
+        reachBreak(&engine)
+        guard let plan = engine.plan else { return XCTFail("nessuna pausa") }
+
+        let events = advance(&engine, plan.duration + 30, step: 5)
+        XCTAssertEqual(richiami(events), 0, "senza esercizio non si può tornare, quindi non si chiama")
+        XCTAssertFalse(engine.canReturnToWork)
+    }
+
+    /// Una volta sola: un richiamo a ogni secondo sarebbe un allarme, non un avviso.
+    func testTheChimeFiresOnlyOnce() {
+        var engine = makeEngine()
+        reachBreak(&engine)
+        guard let plan = engine.plan else { return XCTFail("nessuna pausa") }
+        advance(&engine, plan.exercise.minimumSeconds + 2)
+        engine.markExerciseDone()
+
+        let events = advance(&engine, plan.duration + 60)
+        XCTAssertEqual(richiami(events), 1)
+    }
+
+    /// E riparte alla pausa dopo: il segnale è per pausa, non per sessione.
+    func testTheChimeComesBackOnTheNextBreak() {
+        var engine = makeEngine()
+        for giro in 1...2 {
+            reachBreak(&engine)
+            guard let plan = engine.plan else { return XCTFail("giro \(giro): nessuna pausa") }
+            advance(&engine, plan.exercise.minimumSeconds + 2)
+            engine.markExerciseDone()
+            let events = advance(&engine, plan.duration + 10)
+            XCTAssertEqual(richiami(events), 1, "giro \(giro)")
+            engine.returnToWork()
+        }
     }
 }

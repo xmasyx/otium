@@ -47,7 +47,8 @@ final class PresenceTests: XCTestCase {
     /// 30 minuti di film senza toccare niente → la pausa **scatta**.
     func testWatchingAVideoStillTriggersABreak() {
         var engine = makeEngine()
-        let events = sitStill(&engine, seconds: 30 * 60, presence: netflix)
+        // 29 minuti: dal 2026-07-31 il preavviso sta dentro l'intervallo, non dopo.
+        let events = sitStill(&engine, seconds: 29 * 60, presence: netflix)
         XCTAssertTrue(events.contains { if case .warningStarted = $0 { return true }; return false },
                       "il tempo davanti a un video deve contare come tempo sedentario")
         XCTAssertEqual(engine.phase, .warning)

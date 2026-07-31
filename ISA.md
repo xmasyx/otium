@@ -1180,6 +1180,51 @@ piena, l'attribuzione «consenso» non si capisce, e le preferenze sono una list
       **tre**, e restano verdi proprio i due controlli — il rinvio a mano e il microfono ancora
       occupato — che distinguono «funziona» da «l'attesa è stata tolta a tutti».
 
+- [x] **ISC-108** L'intervallo promesso è quello vissuto. — Il preavviso scattava **dopo** i 30
+      minuti e la pausa arrivava a 31: la barra prometteva «prossima fra 30 min», Duran 2023 dice
+      30, e l'intervallo vero era 31. *«il warning viene quando sono già passati 30 minuti»*.
+      **Nessun test lo vedeva perché tutti erano scritti con la stessa assunzione dentro** — la
+      classe di difetto che si nasconde meglio, quella dove il test copia l'errore del codice: i
+      dodici rossi dopo la cura erano tutti helper che avanzavano `intervallo + preavviso`.
+      *Difetto trovato dal test nuovo, non dall'uso:* con un preavviso più lungo dell'intervallo
+      la soglia andava a fondo scala e la pausa scattava al primo secondo. Il tetto è metà
+      intervallo, e sta **sul campo** e non solo nell'`init` — perché nell'`init` si scavalca
+      assegnando la proprietà dopo, ed è precisamente quello che il test ha fatto al primo colpo.
+
+- [x] **ISC-109** Il richiamo quando la pausa è finita. — *«magari non essere andata dal laptop e
+      deve tornare»*. La pausa piena chiede di stare tre minuti lontano dallo schermo, e da lontano
+      non c'è modo di sapere che il tempo è passato: adesso suona, con lo stesso suono del
+      preavviso.
+      *Agganciato al pulsante, non al cronometro:* con l'esercizio ancora da fare «puoi tornare»
+      sarebbe falso. La differenza fra le due implementazioni è tutta in un test — sostituendo la
+      condizione col solo cronometro, resta rosso solo quello e gli altri tre passano.
+      *Solo suono, nessun pannello:* lo schermo è coperto dal blocco, e chi è dall'altra parte
+      della stanza un pannello non lo vede comunque.
+
+- [x] **ISC-110** La cadenza dice di cosa parla, e «personalizzata» dice perché. — *«ogni quanto,
+      quanto dura, ma cosa?»*. Intestazione in cima al pannello, preset scritti per esteso («una
+      pausa breve ogni 30 minuti, una piena ogni 90») invece della formula compressa.
+      *«Personalizzata» era una voce fantasma:* sempre presente e senza effetto, perché
+      `applyPreset` non ha un caso per lei — non è una scelta, è lo stato in cui finisci toccando
+      i valori sotto. Ora compare **solo** quando quello stato è vero, e sotto c'è la riga che
+      dice quali campi ti ci hanno portato, confrontati col preset più vicino.
+      *Il caso vivo che l'ha chiesta:* il principale ha trovato «personalizzata» senza aver
+      toccato la cadenza. La trappola è che «consenti N rinvii a mano» vive nel pannello
+      *Interruzioni* ma è un campo della *cadenza*. Spostarlo sarebbe stato peggio — nessuno cerca
+      i rinvii sotto «Cadenza» — quindi l'app lo dice invece di nasconderlo.
+      *Difetto visto nei pixel, non nel codice:* gli asterischi del grassetto uscivano a schermo.
+      `Text(String)` non passa dal markdown, `Text(.init(String))` sì; era la stessa classe già
+      pagata sulle frasi, e il grep ha trovato l'unico altro punto — che era già corretto.
+
+- [x] **ISC-111** Nella barra dei menu il numero dice la sua unità. — C'era un `!` nel preavviso,
+      che non dice niente. Scriverci `60` l'ha scartato il principale stesso, per il motivo
+      giusto: si legge come sessanta minuti. Ora `47s` nel preavviso e `23m` mentre lavori — il
+      numero nudo di prima aveva lo stesso difetto al contrario.
+
+- [x] **ISC-112** «Spinta e braccia» diventa «Spinta». — In italiano il paio corretto è
+      *spinta / trazione*; «e braccia» era un riempitivo che non nomina niente. Il sottotitolo
+      resta quello vero: petto, spalle, tricipiti.
+
 - **Anti-claim** — il giorno nuovo azzera **solo** il ciclo micro/piena. Non la rotazione degli
   esercizi (che è `breakIndex`, e senza di lei si torna a squat-squat-squat, il difetto del
   26/07), non il conto del tempo attivo, non i mazzi delle frasi.
