@@ -100,6 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         runCircuitProbeIfRequested()
         runPaceDemoIfRequested()
         runGrowthDemoIfRequested()
+        runPrefsDemoIfRequested()
         runLsofProbeIfRequested()
         runRadarProbeIfRequested()
 
@@ -292,12 +293,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             size = NSSize(width: 620, height: 1400)
             host = NSHostingView(rootView: StatsView(model: model).frame(width: size.width, height: size.height))
         case "prefs":
-            // **La misura deve essere quella vera della vista** (`.frame(width: 520, height: 620)`).
-            // Con 900 il modulo restava centrato in un host più alto e lo snapshot mostrava una
+            // **La misura deve essere quella vera della vista** (`.frame` in fondo a `PrefsView`).
+            // Con 900 il modulo restava centrato in un host piu alto e lo snapshot mostrava una
             // fascia vuota di ~140 punti in cima: sembrava un difetto di layout dell'app, ed era
-            // un difetto della sonda. Sondato il 2026-07-28.
-            size = NSSize(width: 520, height: 620)
-            host = NSHostingView(rootView: PrefsView(model: model).frame(width: size.width, height: size.height))
+            // un difetto della sonda. Sondato il 2026-07-28, e riallineato il 2026-07-31 quando
+            // le preferenze sono passate alla barra laterale (760x580).
+            //
+            // `--voce=<nome>` sceglie quale pannello rendere: con sei voci, una sonda che sa
+            // guardarne una sola guarda un sesto dell'interfaccia e chiama verde il resto.
+            let voce = CommandLine.arguments.first { $0.hasPrefix("--voce=") }?
+                .split(separator: "=", maxSplits: 1).last
+                .flatMap { PrefsView.Section(rawValue: String($0)) } ?? .profilo
+            size = NSSize(width: 760, height: 580)
+            host = NSHostingView(rootView: PrefsView(model: model, initialSection: voce)
+                                    .frame(width: size.width, height: size.height))
         default:
             size = NSSize(width: 1440, height: 900)
             host = NSHostingView(rootView: BreakView(model: model).frame(width: size.width, height: size.height))
@@ -1164,6 +1173,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         present(evidenceWindow)
     }
 
+    /// `--mostra-prefs` — le preferenze **nella finestra vera**, non nella resa fuori schermo.
+    ///
+    /// Esiste per un difetto della sonda scoperto il 2026-07-31: `--surface=prefs` disegna in un
+    /// `NSHostingView` senza finestra, e li una barra laterale di sistema non ha ne il materiale
+    /// ne la colonna — usciva bianca e vuota. Una resa che non sa disegnare la vista non puo
+    /// dire se la vista e giusta: dice solo che la sonda non arriva. Questa apre la finestra come
+    /// la apre il menu, dentro `ProbeMode`, quindi lo screenshot e quello che vedrebbe chiunque.
+    private func runPrefsDemoIfRequested() {
+        guard CommandLine.arguments.contains("--mostra-prefs") else { return }
+        // `--voce=<nome>`: apre gia sul pannello da guardare, o si guarda un sesto
+        // dell'interfaccia e si chiama verde il resto.
+        let voce = CommandLine.arguments.first { $0.hasPrefix("--voce=") }?
+            .split(separator: "=", maxSplits: 1).last
+            .flatMap { PrefsView.Section(rawValue: String($0)) } ?? .profilo
+        prefsWindow = makeWindow(title: L.t("Preferenze di Otium", "Otium Preferences"),
+                                 content: NSHostingView(rootView: PrefsView(model: model, initialSection: voce)))
+        present(prefsWindow)
+    }
+
     @objc private func showPrefs() {
         if prefsWindow == nil {
             prefsWindow = makeWindow(title: L.t("Preferenze di Otium", "Otium Preferences"), content: NSHostingView(rootView: PrefsView(model: model)))
@@ -1249,6 +1277,22 @@ if ProbeMode.active {
     Paths.overrideDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent("otium-sonda-\(UUID().uuidString)", isDirectory: true)
     Paths.ensureDirectory()
+
+    // `--registro-finto` semina una giornata gia cominciata, e serve a **guardare** i rami che
+    // il registro vuoto non fa mai vedere. Il caso vivo: la riga in alto a destra ha due forme,
+    // e con zero ripetizioni ne esce sempre e solo una. Sta qui, prima del primo `AppModel`,
+    // perche il riassunto si legge dal disco: seminarlo dopo vorrebbe dire scriverlo e sperare
+    // che qualcuno rilegga. Dentro `ProbeMode`, quindi nella cartella usa e getta.
+    if arguments.contains("--registro-finto") {
+        let ledger = Ledger()
+        let ora = Date()
+        for (kind, reps) in [(ExerciseKind.crunch, 15), (.squat, 12), (.crunch, 11), (.pushUp, 8)] {
+            _ = ledger.append(LedgerEntry(timestamp: ora.addingTimeInterval(-3600),
+                                          type: .exerciseDone, exercise: kind, reps: reps))
+        }
+        _ = ledger.append(LedgerEntry(timestamp: ora.addingTimeInterval(-3500),
+                                      type: .completed, breakKind: .micro))
+    }
 }
 
 if arguments.contains("--presence"), let watchArg = arguments.first(where: { $0.hasPrefix("--watch") }) {

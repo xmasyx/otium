@@ -225,13 +225,7 @@ struct BreakView: View {
                     .tracking(2)
                     .foregroundStyle(Palette.accent)
                 Spacer()
-                // **Due numeri accanto devono parlare dello stesso periodo.** Qui c'era
-                // `plan.index`, che è il contatore di sempre — serve alla rotazione degli
-                // esercizi, non a te — messo accanto alle ripetizioni **di oggi**: si leggeva
-                // «sessanta pause oggi», e non erano sessanta. Segnalato dal principale il
-                // 2026-07-28, quando il numero era 60 e le pause della giornata due.
-                Text(L.t("oggi: \(model.summary.completed + model.summary.natural + 1)ª pausa · \(model.summary.totalReps) ripetizioni",
-                     "today: break #\(model.summary.completed + model.summary.natural + 1) · \(model.summary.totalReps) reps"))
+                Text(todayBadge(plan))
                     .font(.system(size: 13, design: .rounded))
                     .foregroundStyle(Palette.dim)
             }
@@ -359,8 +353,7 @@ struct BreakView: View {
             }
             .foregroundStyle(Palette.accent)
             Spacer()
-            Text(L.t("oggi: \(model.summary.completed + model.summary.natural + 1)ª pausa · \(model.summary.totalReps) ripetizioni",
-                     "today: break #\(model.summary.completed + model.summary.natural + 1) · \(model.summary.totalReps) reps"))
+            Text(todayBadge(plan))
                 .font(.system(size: 13, design: .rounded))
                 .foregroundStyle(Palette.dim)
         }
@@ -369,6 +362,35 @@ struct BreakView: View {
     /// **Sul circuito il piano tiene l'esercizio *corrente*, che alla fine è l'ultimo.** Dirlo qui
     /// nominerebbe un quarto del lavoro fatto: è lo stesso difetto già corretto nella notifica di
     /// fine pausa il 2026-07-28, e questa riga nasce dopo, quindi non ha scuse per ripeterlo.
+    /// La riga in alto a destra: dove sei nella giornata.
+    ///
+    /// **Due numeri accanto devono parlare dello stesso periodo.** Qui c'era `plan.index`, che è
+    /// il contatore di sempre — serve alla rotazione degli esercizi, non a te — messo accanto
+    /// alle ripetizioni **di oggi**: si leggeva «sessanta pause oggi», e non erano sessanta.
+    /// Segnalato dal principale il 2026-07-28, quando il numero era 60 e le pause della giornata
+    /// due.
+    ///
+    /// **Il conto dell'esercizio in corso sta davanti al totale** (2026-07-31, sua richiesta).
+    /// «112 ripetizioni» è il volume della giornata e non risponde alla domanda che ti fai mentre
+    /// sei lì: *quanti squat ho fatto oggi?* Il totale resta, ma dopo — e non e' il numero grande
+    /// al centro dello schermo, che sono le ripetizioni **di adesso**: quello sarebbe lo stesso
+    /// numero due volte, cioè il difetto chiuso a luglio col pulsante che diceva l'orario.
+    ///
+    /// Quando l'esercizio non è ancora uscito oggi, il pezzo di mezzo sparisce invece di dire
+    /// «0 squat»: uno zero occupa lo spazio di un'informazione senza esserlo.
+    private func todayBadge(_ plan: BreakPlan) -> String {
+        let pausa = model.summary.completed + model.summary.natural + 1
+        let kind = plan.exercise.kind
+        let suoi = model.summary.repsByExercise[kind] ?? 0
+        let totale = model.summary.totalReps
+        guard suoi > 0 else {
+            return L.t("oggi: \(pausa)ª pausa · \(totale) ripetizioni",
+                       "today: break #\(pausa) · \(totale) reps")
+        }
+        return L.t("oggi: \(pausa)ª pausa · \(suoi) \(kind.localizedName) · \(totale) in tutto",
+                   "today: break #\(pausa) · \(suoi) \(kind.localizedName) · \(totale) in all")
+    }
+
     private func doneLabel(_ plan: BreakPlan) -> String {
         if plan.circuitActive, plan.circuit.count > 1 {
             return L.t("Circuito completo — \(plan.circuit.count) esercizi",
@@ -1023,264 +1045,452 @@ struct PrefsView: View {
     /// una sua `Settings` (la scena delle preferenze).
     @State private var draft: OtiumCore.Settings
     @State private var applied = false
+    /// La voce aperta. Si riparte sempre da `profilo`: una finestra che riapre dove l'avevi
+    /// lasciata la volta scorsa è comoda finché non ti chiedi perché non vedi più le altre.
+    @State private var section: Section = .profilo
 
-    init(model: AppModel) {
+    /// `initialSection` esiste per la sonda: `--surface=prefs --voce=cadenza` rende il pannello
+    /// che si vuole guardare. Nell'app resta il default, cioè Profilo.
+    init(model: AppModel, initialSection: Section = .profilo) {
         self.model = model
         _draft = State(initialValue: model.settings)
+        _section = State(initialValue: initialSection)
+    }
+
+    /// Le voci della barra laterale.
+    ///
+    /// **Sei, non una lista sola.** Le preferenze erano un modulo unico da scorrere: cambiavi la
+    /// cadenza, scendevi agli esercizi, e il pulsante che salva era già uscito dallo schermo.
+    /// Segnalato dal principale il 2026-07-31 — *«la lista unica da scorrere è brutta e
+    /// scomoda»*. Le voci ricalcano i raggruppamenti che le sezioni avevano già: non è una
+    /// tassonomia nuova, è quella di prima resa navigabile.
+    enum Section: String, CaseIterable, Identifiable, Hashable {
+        case profilo, cadenza, esercizi, interruzioni, aspetto, sistema
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .profilo:      return L.t("Profilo", "Profile")
+            case .cadenza:      return L.t("Cadenza", "Cadence")
+            case .esercizi:     return L.t("Esercizi", "Exercises")
+            case .interruzioni: return L.t("Interruzioni", "Interruptions")
+            case .aspetto:      return L.t("Aspetto", "Appearance")
+            case .sistema:      return L.t("Sistema", "System")
+            }
+        }
+
+        /// Il sottotitolo dice **cosa ci trovi**, che è l'unica cosa che rende una barra laterale
+        /// meglio di una lista: senza, per trovare un interruttore devi aprirle tutte.
+        var subtitle: String {
+            switch self {
+            case .profilo:      return L.t("lingua, ripetizioni, partenza", "language, reps, ramp-up")
+            case .cadenza:      return L.t("ogni quanto, quanto dura", "how often, how long")
+            // Corto perché la colonna è stretta: «quali girano, come vengono proposti» finiva in
+            // «come vengono…», che è un sottotitolo che non dice niente. Visto nella finestra
+            // vera il 2026-07-31, non nella resa.
+            case .esercizi:     return L.t("rotazione e varianti", "rotation and variants")
+            case .interruzioni: return L.t("call, rinvii, ore attive", "calls, postponements, active hours")
+            case .aspetto:      return L.t("livrea, suono", "theme, sound")
+            case .sistema:      return L.t("avvio automatico", "start at login")
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .profilo:      return "person.crop.circle"
+            case .cadenza:      return "metronome"
+            case .esercizi:     return "figure.strengthtraining.functional"
+            case .interruzioni: return "bell.badge"
+            case .aspetto:      return "paintpalette"
+            case .sistema:      return "gearshape"
+            }
+        }
     }
 
     var body: some View {
-        Form {
-            // Le due risposte del primo avvio, dove si possono cambiare. Una scelta fatta una
-            // volta sola e mai più modificabile è una trappola, non una configurazione.
-            Section(L.t("Profilo", "Profile")) {
-                Picker(L.t("Lingua", "Language"), selection: Binding(
-                    get: { draft.language ?? AppLanguage.systemDefault },
-                    set: { draft.language = $0 }
-                )) {
-                    ForEach(AppLanguage.allCases, id: \.self) { Text($0.nativeName).tag($0) }
-                }
-                .pickerStyle(.segmented)
-
-                Picker(L.t("Sesso", "Sex"), selection: Binding(
-                    get: { draft.sex ?? .male },
-                    set: { draft.sex = $0 }
-                )) {
-                    Text(L.t("Uomo", "Male")).tag(Sex.male)
-                    Text(L.t("Donna", "Female")).tag(Sex.female)
-                }
-                .pickerStyle(.segmented)
-
-                Text(L.t("Il sesso decide da dove parti, cioè le ripetizioni per gruppo muscolare (Miller 1993) e la versione della spinta, sulle ginocchia invece che a terra. Non cambia la cadenza né nient'altro, e ogni esercizio resta scambiabile dentro la pausa.",
-                         "Sex decides where you start: the reps per muscle group (Miller 1993) and the version of the push — on your knees instead of full. It changes nothing else, and every exercise stays swappable inside the break."))
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Toggle(L.t("Fai crescere le ripetizioni oltre il 100%",
-                           "Let the reps grow beyond 100%"), isOn: $draft.progressBeyondFull)
-                Text(L.t("Si sale del 5% dopo due conferme piene di fila (regola 2-for-2 dell'ACSM) e si scende dopo due mancate, mai sotto il 100%. A fine esercizio l'app ti chiede se le hai fatte tutte.",
-                         "It goes up 5% after two full confirmations in a row (ACSM's 2-for-2 rule) and steps back after two shortfalls, never below 100%. At the end of each exercise the app asks whether you did them all."))
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                // Una scelta fatta al primo avvio e mai più modificabile è una trappola: la terza
-                // volta che la incontro in questo file, e la terza volta che la chiudo.
-                Picker(L.t("Livello per i push-up", "Push-up level"), selection: Binding(
-                    get: { draft.pushVariant },
-                    set: { draft.pushVariant = $0 }
-                )) {
-                    Text(L.t("automatica", "automatic")).tag(ExerciseKind?.none)
-                    Text(L.t("al muro", "wall")).tag(ExerciseKind?.some(.wallPushUp))
-                    Text(L.t("sulle ginocchia", "knees")).tag(ExerciseKind?.some(.kneePushUp))
-                    Text(L.t("su rialzo", "elevated")).tag(ExerciseKind?.some(.inclinePushUp))
-                    Text(L.t("a terra", "floor")).tag(ExerciseKind?.some(.pushUp))
-                }
-                .pickerStyle(.menu)
-
-                // «Rampa» era il calco di *ramp*: in italiano è la salita di un garage, non un
-                // modo di allenarsi. Segnalato dal principale il 2026-07-28.
-                Stepper(L.t("Partenza graduale: \(draft.rampWeeks) settimane",
-                            "Gradual start: \(draft.rampWeeks) weeks"),
-                        value: $draft.rampWeeks, in: 1...12)
-                // **La percentuale di partenza si tocca.** Il 55% viene da un default, non da una
-                // misura su di te: chi riprende dopo un infortunio vuole meno, chi si allena già
-                // vuole di più, e senza questo cursore l'unica alternativa era «tutto o niente».
-                Stepper(L.t("Si parte \(ItalianNumber.al(Int(draft.rampStartFactor * 100)))% delle ripetizioni",
-                            "Start at \(Int(draft.rampStartFactor * 100))% of the reps"),
-                        value: Binding(
-                            get: { Int((draft.rampStartFactor * 100).rounded()) },
-                            set: { draft.rampStartFactor = Double($0) / 100 }
-                        ), in: 20...100, step: 5)
-                Text(L.t("Le ripetizioni partono ridotte e salgono un pochino ogni giorno, fino al 100%. Oggi sei \(ItalianNumber.al(Int(draft.rampFactor(now: Date()) * 100)))%.",
-                         "The reps start reduced and go up a little every day, until 100%. Today you are at \(Int(draft.rampFactor(now: Date()) * 100))%."))
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Section(L.t("Cadenza", "Cadence")) {
-                Picker(L.t("Preset", "Preset"), selection: Binding(
-                    get: { presetName(draft.cadence) },
-                    set: { applyPreset($0) }
-                )) {
-                    Text(L.t("A — 30 min + pausa piena ogni 90 (consigliata)", "A — 30 min + full break every 90 (recommended)")).tag("A")
-                    Text(L.t("B — 5 min ogni 50 (deep work)", "B — 5 min every 50 (deep work)")).tag("B")
-                    Text(L.t("C — 5 min ogni 30 (protocollo Duran)", "C — 5 min every 30 (Duran protocol)")).tag("C")
-                    Text(L.t("personalizzata", "custom")).tag("X")
-                }
-                .pickerStyle(.menu)
-
-                LabeledContent(L.t("Intervallo", "Interval")) {
-                    minuteField($draft.cadence.intervalSeconds)
-                }
-                LabeledContent(L.t("Durata micro-pausa", "Micro-break length")) {
-                    secondField($draft.cadence.microDurationSeconds)
-                }
-                LabeledContent(L.t("Durata pausa piena", "Full break length")) {
-                    minuteField($draft.cadence.longDurationSeconds)
-                }
-                Stepper(L.t("Pausa piena ogni \(draft.cadence.longEveryNBreaks) micro-pause", "Full break every \(draft.cadence.longEveryNBreaks) micro-breaks"),
-                        value: $draft.cadence.longEveryNBreaks, in: 1...8)
-                LabeledContent(L.t("Preavviso", "Warning")) {
-                    secondField($draft.cadence.warningSeconds)
-                }
-            }
-
-            // Una sezione per famiglia invece di venticinque caselle in fila: sono quattro
-            // decisioni, non venticinque, e con gli addominali l'elenco piatto era diventato
-            // illeggibile.
-            ForEach(ExerciseCategory.allCases, id: \.self) { category in
-                Section {
-                    ForEach(ExerciseKind.allCases.filter { $0.category == category }, id: \.self) { kind in
-                        Toggle(isOn: binding(for: kind)) {
-                            HStack {
-                                Text(kind.localizedName)
-                                Text(kind.isTimed
-                                     ? L.t("\(kind.baseReps) s · tenuta", "\(kind.baseReps) s · hold")
-                                     : L.t("\(kind.baseReps) rip. · \(kind.localizedMuscleGroup)", "\(kind.baseReps) reps · \(kind.localizedMuscleGroup)"))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                } header: {
-                    HStack {
+        // La barra del salvataggio sta **fuori** dalla vista divisa, e questo è il punto: la
+        // bozza è una sola e attraversa i pannelli, quindi il pulsante non può vivere dentro uno
+        // solo. Prima era l'ultima sezione di un modulo lungo, cioè visibile solo se avevi finito
+        // di scorrere.
+        VStack(spacing: 0) {
+            NavigationSplitView {
+                List(Section.allCases, selection: $section) { voce in
+                    // L'etichetta sta **dentro** la riga con tutta la sua altezza: una riga di
+                    // lista si clicca tutta, non solo dove c'è scritto. È la stessa regola del
+                    // pulsante della pausa, pagata due volte fra Otium e Kalamos.
+                    Label {
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(category.localizedName)
-                            Text(category.subtitle).font(.caption).foregroundStyle(.secondary)
+                            Text(voce.title)
+                            Text(voce.subtitle)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
-                        Spacer()
-                        // `.buttonStyle(.link)` si dipinge da sé con l'accento **di sistema** e
-                        // non ascolta il `tint` dell'ambiente: qui il colore va detto a mano, o
-                        // restano gli unici due blu di una finestra verde.
-                        Button(L.t("tutti", "all")) { setAll(category, on: true) }
-                            .buttonStyle(.link).font(.caption)
-                            .foregroundStyle(Palette.accentOnWindow)
-                        Button(L.t("nessuno", "none")) { setAll(category, on: false) }
-                            .buttonStyle(.link).font(.caption)
-                            .foregroundStyle(Palette.accentOnWindow)
+                        .padding(.vertical, 3)
+                    } icon: {
+                        Image(systemName: voce.icon)
+                    }
+                    .tag(voce)
+                }
+                .navigationSplitViewColumnWidth(min: 190, ideal: 205, max: 240)
+            } detail: {
+                Form {
+                    switch section {
+                    case .profilo:      profiloSection
+                    case .cadenza:      cadenzaSection
+                    case .esercizi:     eserciziSection
+                    case .interruzioni: interruzioniSection
+                    case .aspetto:      aspettoSection
+                    case .sistema:      sistemaSection
                     }
                 }
+                .formStyle(.grouped)
+                // **Niente `navigationTitle`.** Ne aveva uno con il nome della voce, e quel nome
+                // si prendeva la barra del titolo della finestra: al posto di «Preferenze di
+                // Otium» si leggeva «Profilo», cioè la finestra smetteva di dire cos'è. Dove sei
+                // lo dice già la voce selezionata, che è a due centimetri.
             }
+            // La barra laterale non si può stringere fino a sparire: una voce a metà è peggio di
+            // nessuna barra.
+            .navigationSplitViewStyle(.balanced)
 
-            Section(L.t("Come vengono proposti", "How they are offered")) {
-                Toggle(L.t("Offri le varianti dentro la pausa", "Offer variants during the break"), isOn: $draft.offerVariants)
-                Text(L.t("Durante una pausa push-up puoi passare a diamond, archer, dip su sedia, "
-                   + "pike o inclinati con un clic. Le ripetizioni si adeguano alla difficoltà.",
-                    "During a push-up break you can switch to diamond, archer, chair dips, pike or "
-                    + "incline with one click. The reps adjust to the difficulty."))
-                    .font(.caption).foregroundStyle(.secondary)
-                Toggle(L.t("Proponi il microcircuito nelle pause piene", "Offer the circuit in full breaks"), isOn: $draft.offerCircuit)
-                Text(L.t("Nella pausa piena puoi scegliere il giro completo, una stazione per "
-                   + "famiglia esplosivo compreso, invece del solo esercizio del turno. Resta "
-                   + "una proposta: si decide dentro la pausa, e le stazioni valgono i tre quarti "
-                   + "delle ripetizioni, o quattro esercizi non stanno in cinque minuti.",
-                    "In a full break you can choose the whole circuit — one station per family, "
-                    + "explosive included — instead of just the exercise of the turn. It stays a "
-                    + "proposal: you decide, inside the break."))
-                    .font(.caption).foregroundStyle(.secondary)
+            Divider()
+            applyBar
+        }
+        .frame(width: 760, height: 580)
+        .livrea()
+    }
+
+    /// Il piede fisso: lo stato del salvataggio a sinistra, il pulsante a destra, sempre lì.
+    private var applyBar: some View {
+        HStack {
+            // Un pulsante che non risponde è indistinguibile da un pulsante rotto: prima
+            // "Applica" salvava in silenzio, e l'unico modo di sapere se aveva funzionato
+            // era riaprire la finestra.
+            if applied {
+                Label(L.t("Preferenze aggiornate", "Preferences updated"), systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(Palette.accentOnWindow)
+                    .font(.system(size: 13, weight: .medium))
+                    .transition(.opacity)
+            } else if draft != model.settings {
+                // Il pendente si dice, perché cambiando pannello non si vede più cosa hai
+                // toccato: senza questa riga, «Applica» acceso è l'unico indizio.
+                Text(L.t("Modifiche non applicate", "Unapplied changes"))
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
             }
-
-            Section(L.t("Comportamento", "Behaviour")) {
-                Picker(L.t("Livrea", "Theme"), selection: $draft.theme) {
-                    ForEach(ThemeName.allCases, id: \.self) { Text($0.palette.name).tag($0) }
+            Spacer()
+            Button(L.t("Applica", "Apply")) {
+                model.update(settings: draft)
+                withAnimation { applied = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    withAnimation { applied = false }
                 }
-                Text(draft.theme.palette.description)
-                    .font(.caption).foregroundStyle(.secondary)
-                LabeledContent(L.t("Suono del preavviso", "Warning sound")) {
-                    HStack {
-                        Picker("", selection: $draft.notificationSound) {
-                            Text(L.t("nessuno", "none")).tag(NotificationSounds.silent)
-                            ForEach(NotificationSounds.names, id: \.self) { Text($0).tag($0) }
+            }
+            .keyboardShortcut(.defaultAction)
+            .disabled(draft == model.settings)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+    }
+
+    // MARK: - I pannelli
+
+    @ViewBuilder
+    private var profiloSection: some View {
+        // Le due risposte del primo avvio, dove si possono cambiare. Una scelta fatta una
+        // volta sola e mai più modificabile è una trappola, non una configurazione.
+        SwiftUI.Section {
+            Picker(L.t("Lingua", "Language"), selection: Binding(
+                get: { draft.language ?? AppLanguage.systemDefault },
+                set: { draft.language = $0 }
+            )) {
+                ForEach(AppLanguage.allCases, id: \.self) { Text($0.nativeName).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            Picker(L.t("Sesso", "Sex"), selection: Binding(
+                get: { draft.sex ?? .male },
+                set: { draft.sex = $0 }
+            )) {
+                Text(L.t("Uomo", "Male")).tag(Sex.male)
+                Text(L.t("Donna", "Female")).tag(Sex.female)
+            }
+            .pickerStyle(.segmented)
+
+            Text(L.t("Il sesso decide da dove parti, cioè le ripetizioni per gruppo muscolare (Miller 1993) e la versione della spinta, sulle ginocchia invece che a terra. Non cambia la cadenza né nient'altro, e ogni esercizio resta scambiabile dentro la pausa.",
+                     "Sex decides where you start: the reps per muscle group (Miller 1993) and the version of the push — on your knees instead of full. It changes nothing else, and every exercise stays swappable inside the break."))
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // Una scelta fatta al primo avvio e mai più modificabile è una trappola: la terza
+            // volta che la incontro in questo file, e la terza volta che la chiudo.
+            Picker(L.t("Livello per i push-up", "Push-up level"), selection: Binding(
+                get: { draft.pushVariant },
+                set: { draft.pushVariant = $0 }
+            )) {
+                Text(L.t("automatica", "automatic")).tag(ExerciseKind?.none)
+                Text(L.t("al muro", "wall")).tag(ExerciseKind?.some(.wallPushUp))
+                Text(L.t("sulle ginocchia", "knees")).tag(ExerciseKind?.some(.kneePushUp))
+                Text(L.t("su rialzo", "elevated")).tag(ExerciseKind?.some(.inclinePushUp))
+                Text(L.t("a terra", "floor")).tag(ExerciseKind?.some(.pushUp))
+            }
+            .pickerStyle(.menu)
+        }
+
+        SwiftUI.Section(L.t("Ripetizioni", "Reps")) {
+            Toggle(L.t("Fai crescere le ripetizioni oltre il 100%",
+                       "Let the reps grow beyond 100%"), isOn: $draft.progressBeyondFull)
+            Text(L.t("Si sale del 5% dopo due conferme piene di fila (regola 2-for-2 dell'ACSM) e si scende dopo due mancate, mai sotto il 100%. A fine esercizio l'app ti chiede se le hai fatte tutte.",
+                     "It goes up 5% after two full confirmations in a row (ACSM's 2-for-2 rule) and steps back after two shortfalls, never below 100%. At the end of each exercise the app asks whether you did them all."))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // «Rampa» era il calco di *ramp*: in italiano è la salita di un garage, non un
+            // modo di allenarsi. Segnalato dal principale il 2026-07-28.
+            Stepper(L.t("Partenza graduale: \(draft.rampWeeks) settimane",
+                        "Gradual start: \(draft.rampWeeks) weeks"),
+                    value: $draft.rampWeeks, in: 1...12)
+            // **La percentuale di partenza si tocca.** Il 55% viene da un default, non da una
+            // misura su di te: chi riprende dopo un infortunio vuole meno, chi si allena già
+            // vuole di più, e senza questo cursore l'unica alternativa era «tutto o niente».
+            Stepper(L.t("Si parte \(ItalianNumber.al(Int(draft.rampStartFactor * 100)))% delle ripetizioni",
+                        "Start at \(Int(draft.rampStartFactor * 100))% of the reps"),
+                    value: Binding(
+                        get: { Int((draft.rampStartFactor * 100).rounded()) },
+                        set: { nuovo in
+                            draft.rampStartFactor = Double(nuovo) / 100
+                            // Scendendo sotto il pieno, la data del pieno non ha più senso: se
+                            // restasse, la domanda sulla crescita oltre il 100% arriverebbe a
+                            // qualcuno che al 100% non c'è.
+                            if nuovo < 100 { draft.fullReachedAt = nil }
                         }
-                        .labelsHidden()
-                        .frame(width: 150)
-                        // Sceglierlo senza sentirlo è come scegliere un colore al buio.
-                        Button(L.t("ascolta", "play")) { model.previewSound(draft.notificationSound) }
-                            .disabled(draft.notificationSound.isEmpty)
-                    }
+                    ), in: 20...100, step: 5)
+            Text(L.t("Le ripetizioni partono ridotte e salgono un pochino ogni giorno, fino al 100%. Oggi sei \(ItalianNumber.al(Int(draft.rampFactor(now: Date()) * 100)))%.",
+                     "The reps start reduced and go up a little every day, until 100%. Today you are at \(Int(draft.rampFactor(now: Date()) * 100))%."))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // **Il pieno si sceglie, non si aspetta.** Lo stepper arrivava già a 100, ma dice
+            // «si parte al…» — parla di com'è cominciata, non di adesso — e chi vuole il numero
+            // pieno oggi non ha motivo di leggerlo come la risposta alla sua domanda. L'unica
+            // altra via era la finestra che l'app propone da sé dopo una settimana: una domanda
+            // che arriva quando decide lei. Chiesto dal principale il 2026-07-31.
+            if draft.rampFactor(now: Date()) < 1.0 {
+                Button(L.t("Passa subito al 100%", "Go to 100% now")) {
+                    draft.rampStartFactor = 1.0
+                    draft.fullReachedAt = Date()
+                    // La domanda delle due settimane non ha più niente da chiedere.
+                    draft.fullPaceAnswered = true
                 }
-                Toggle(L.t("Rimanda se un microfono è in uso (call)", "Defer while a microphone is in use (a call)"), isOn: $draft.deferWhenMicrophoneActive)
-                Toggle(L.t("Conta anche video e lettura come tempo fermo", "Count video and reading as sitting time too"), isOn: $draft.detectQuietPresence)
-                Text(L.t("Un film o un PDF sono immobilità perfetta, e senza questo guardare Netflix "
-                   + "vale come una pausa ben fatta. Tetti senza un solo input: 45 min per un "
-                   + "video, 15 per un documento.",
-                    "A film or a PDF is perfect stillness: without this, watching Netflix counts as "
-                    + "a well-taken break. Caps without a single input: 45 min for a video, 15 for "
-                    + "reading."))
+                Text(L.t("Salta la partenza graduale: da adesso le ripetizioni sono quelle piene. Si torna indietro riabbassando la percentuale qui sopra.",
+                         "Skip the gradual start: from now on the reps are the full ones. You can go back by lowering the percentage above."))
                     .font(.caption).foregroundStyle(.secondary)
-                Stepper(L.t("Consenti \(draft.cadence.postponesAllowed) rinvio/i a mano",
-                            "Allow \(draft.cadence.postponesAllowed) manual postponement(s)"),
-                        value: $draft.cadence.postponesAllowed, in: 0...3)
-                LabeledContent(L.t("Frase per saltare", "Skip phrase")) {
-                    TextField("", text: $draft.escapePhrase).frame(width: 180)
-                }
-                LabeledContent(L.t("Ore attive", "Active hours")) {
-                    HStack {
-                        Stepper("\(draft.activeFromHour)", value: $draft.activeFromHour, in: 0...23)
-                        Text("→")
-                        Stepper("\(draft.activeToHour)", value: $draft.activeToHour, in: 0...23)
-                    }
-                }
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Label(L.t("Sei al numero pieno.", "You are on the full count."),
+                      systemImage: "checkmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(Palette.accentOnWindow)
             }
+        }
+    }
 
-            Section(L.t("Avvio automatico", "Start at login")) {
-                switch model.launchAgentState {
-                case .notInstalled:
-                    HStack {
-                        Text(L.t("Otium non riparte da sola.", "Otium does not restart on its own.")).foregroundStyle(.secondary)
-                        Button(L.t("Installa", "Install")) { model.installLaunchAgent() }
-                    }
-                case .healthy:
-                    HStack {
-                        Label(L.t("Attivo e puntato a questa copia", "Active and pointing at this copy"), systemImage: "checkmark.seal")
-                            .foregroundStyle(.green)
-                        Spacer()
-                        Button(L.t("Rimuovi", "Remove")) { model.removeLaunchAgent() }
-                    }
-                case .danglingTarget(let path):
-                    VStack(alignment: .leading) {
-                        Label(L.t("L'avvio automatico punta a un file che non esiste più", "Start at login points at a file that no longer exists"),
-                              systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
-                        Text(path).font(.caption).foregroundStyle(.secondary)
-                        Button(L.t("Ripara", "Repair")) { model.installLaunchAgent() }
-                    }
-                case .pointsElsewhere(let path):
-                    VStack(alignment: .leading) {
-                        Label(L.t("L'avvio automatico punta a un'altra copia di Otium", "Start at login points at another copy of Otium"),
-                              systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
-                        Text(path).font(.caption).foregroundStyle(.secondary)
-                        Button(L.t("Punta a questa", "Point at this one")) { model.installLaunchAgent() }
+    @ViewBuilder
+    private var cadenzaSection: some View {
+        SwiftUI.Section {
+            Picker(L.t("Preset", "Preset"), selection: Binding(
+                get: { presetName(draft.cadence) },
+                set: { applyPreset($0) }
+            )) {
+                Text(L.t("A — 30 min + pausa piena ogni 90 (consigliata)", "A — 30 min + full break every 90 (recommended)")).tag("A")
+                Text(L.t("B — 5 min ogni 50 (deep work)", "B — 5 min every 50 (deep work)")).tag("B")
+                Text(L.t("C — 5 min ogni 30 (protocollo Duran)", "C — 5 min every 30 (Duran protocol)")).tag("C")
+                Text(L.t("personalizzata", "custom")).tag("X")
+            }
+            .pickerStyle(.menu)
+        }
+
+        SwiftUI.Section {
+            LabeledContent(L.t("Intervallo", "Interval")) {
+                minuteField($draft.cadence.intervalSeconds)
+            }
+            LabeledContent(L.t("Durata micro-pausa", "Micro-break length")) {
+                secondField($draft.cadence.microDurationSeconds)
+            }
+            LabeledContent(L.t("Durata pausa piena", "Full break length")) {
+                minuteField($draft.cadence.longDurationSeconds)
+            }
+            Stepper(L.t("Pausa piena ogni \(draft.cadence.longEveryNBreaks) micro-pause", "Full break every \(draft.cadence.longEveryNBreaks) micro-breaks"),
+                    value: $draft.cadence.longEveryNBreaks, in: 1...8)
+            // Detto qui perché è la domanda che il principale ha fatto guardando lo schermo: la
+            // prima pausa di oggi era piena, e la ragione stava in un contatore che non sapeva
+            // che fosse cambiato il giorno.
+            Text(L.t("Il conto riparte ogni giorno: la prima pausa della giornata è sempre breve.",
+                     "The count restarts every day: the first break of the day is always a short one."))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            LabeledContent(L.t("Preavviso", "Warning")) {
+                secondField($draft.cadence.warningSeconds)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var eserciziSection: some View {
+        // Una sezione per famiglia invece di venticinque caselle in fila: sono quattro
+        // decisioni, non venticinque, e con gli addominali l'elenco piatto era diventato
+        // illeggibile.
+        ForEach(ExerciseCategory.allCases, id: \.self) { category in
+            SwiftUI.Section {
+                ForEach(ExerciseKind.allCases.filter { $0.category == category }, id: \.self) { kind in
+                    Toggle(isOn: binding(for: kind)) {
+                        HStack {
+                            Text(kind.localizedName)
+                            Text(kind.isTimed
+                                 ? L.t("\(kind.baseReps) s · tenuta", "\(kind.baseReps) s · hold")
+                                 : L.t("\(kind.baseReps) rip. · \(kind.localizedMuscleGroup)", "\(kind.baseReps) reps · \(kind.localizedMuscleGroup)"))
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
-            }
-
-            Section {
+            } header: {
                 HStack {
-                    // Un pulsante che non risponde è indistinguibile da un pulsante rotto: prima
-                    // "Applica" salvava in silenzio, e l'unico modo di sapere se aveva funzionato
-                    // era riaprire la finestra.
-                    if applied {
-                        Label(L.t("Preferenze aggiornate", "Preferences updated"), systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(Palette.accentOnWindow)
-                            .font(.system(size: 13, weight: .medium))
-                            .transition(.opacity)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(category.localizedName)
+                        Text(category.subtitle).font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button(L.t("Applica", "Apply")) {
-                        model.update(settings: draft)
-                        withAnimation { applied = true }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                            withAnimation { applied = false }
-                        }
-                    }
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(draft == model.settings)
+                    // `.buttonStyle(.link)` si dipinge da sé con l'accento **di sistema** e
+                    // non ascolta il `tint` dell'ambiente: qui il colore va detto a mano, o
+                    // restano gli unici due blu di una finestra verde.
+                    Button(L.t("tutti", "all")) { setAll(category, on: true) }
+                        .buttonStyle(.link).font(.caption)
+                        .foregroundStyle(Palette.accentOnWindow)
+                    Button(L.t("nessuno", "none")) { setAll(category, on: false) }
+                        .buttonStyle(.link).font(.caption)
+                        .foregroundStyle(Palette.accentOnWindow)
                 }
             }
         }
-        .formStyle(.grouped)
-        .frame(width: 520, height: 620)
-        .livrea()
+
+        SwiftUI.Section(L.t("Come vengono proposti", "How they are offered")) {
+            Toggle(L.t("Offri le varianti dentro la pausa", "Offer variants during the break"), isOn: $draft.offerVariants)
+            Text(L.t("Durante una pausa push-up puoi passare a diamond, archer, dip su sedia, "
+               + "pike o inclinati con un clic. Le ripetizioni si adeguano alla difficoltà.",
+                "During a push-up break you can switch to diamond, archer, chair dips, pike or "
+                + "incline with one click. The reps adjust to the difficulty."))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Toggle(L.t("Proponi il microcircuito nelle pause piene", "Offer the circuit in full breaks"), isOn: $draft.offerCircuit)
+            Text(L.t("Nella pausa piena puoi scegliere il giro completo, una stazione per "
+               + "famiglia esplosivo compreso, invece del solo esercizio del turno. Resta "
+               + "una proposta: si decide dentro la pausa, e le stazioni valgono i tre quarti "
+               + "delle ripetizioni, o quattro esercizi non stanno in cinque minuti.",
+                "In a full break you can choose the whole circuit — one station per family, "
+                + "explosive included — instead of just the exercise of the turn. It stays a "
+                + "proposal: you decide, inside the break."))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    @ViewBuilder
+    private var interruzioniSection: some View {
+        SwiftUI.Section {
+            Toggle(L.t("Rimanda se un microfono è in uso (call)", "Defer while a microphone is in use (a call)"), isOn: $draft.deferWhenMicrophoneActive)
+            Toggle(L.t("Conta anche video e lettura come tempo fermo", "Count video and reading as sitting time too"), isOn: $draft.detectQuietPresence)
+            Text(L.t("Un film o un PDF sono immobilità perfetta, e senza questo guardare Netflix "
+               + "vale come una pausa ben fatta. Tetti senza un solo input: 45 min per un "
+               + "video, 15 per un documento.",
+                "A film or a PDF is perfect stillness: without this, watching Netflix counts as "
+                + "a well-taken break. Caps without a single input: 45 min for a video, 15 for "
+                + "reading."))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+
+        SwiftUI.Section(L.t("Vie d'uscita", "Ways out")) {
+            Stepper(L.t("Consenti \(draft.cadence.postponesAllowed) rinvio/i a mano",
+                        "Allow \(draft.cadence.postponesAllowed) manual postponement(s)"),
+                    value: $draft.cadence.postponesAllowed, in: 0...3)
+            LabeledContent(L.t("Frase per saltare", "Skip phrase")) {
+                TextField("", text: $draft.escapePhrase).frame(width: 180)
+            }
+        }
+
+        SwiftUI.Section {
+            LabeledContent(L.t("Ore attive", "Active hours")) {
+                HStack {
+                    Stepper("\(draft.activeFromHour)", value: $draft.activeFromHour, in: 0...23)
+                    Text("→")
+                    Stepper("\(draft.activeToHour)", value: $draft.activeToHour, in: 0...23)
+                }
+            }
+            Text(L.t("Fuori da questa finestra Otium non interrompe.",
+                     "Outside this window Otium does not interrupt."))
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private var aspettoSection: some View {
+        SwiftUI.Section {
+            Picker(L.t("Livrea", "Theme"), selection: $draft.theme) {
+                ForEach(ThemeName.allCases, id: \.self) { Text($0.palette.name).tag($0) }
+            }
+            Text(draft.theme.palette.description)
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            LabeledContent(L.t("Suono del preavviso", "Warning sound")) {
+                HStack {
+                    Picker("", selection: $draft.notificationSound) {
+                        Text(L.t("nessuno", "none")).tag(NotificationSounds.silent)
+                        ForEach(NotificationSounds.names, id: \.self) { Text($0).tag($0) }
+                    }
+                    .labelsHidden()
+                    .frame(width: 150)
+                    // Sceglierlo senza sentirlo è come scegliere un colore al buio.
+                    Button(L.t("ascolta", "play")) { model.previewSound(draft.notificationSound) }
+                        .disabled(draft.notificationSound.isEmpty)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var sistemaSection: some View {
+        SwiftUI.Section(L.t("Avvio automatico", "Start at login")) {
+            switch model.launchAgentState {
+            case .notInstalled:
+                HStack {
+                    Text(L.t("Otium non riparte da sola.", "Otium does not restart on its own.")).foregroundStyle(.secondary)
+                    Button(L.t("Installa", "Install")) { model.installLaunchAgent() }
+                }
+            case .healthy:
+                HStack {
+                    Label(L.t("Attivo e puntato a questa copia", "Active and pointing at this copy"), systemImage: "checkmark.seal")
+                        .foregroundStyle(.green)
+                    Spacer()
+                    Button(L.t("Rimuovi", "Remove")) { model.removeLaunchAgent() }
+                }
+            case .danglingTarget(let path):
+                VStack(alignment: .leading) {
+                    Label(L.t("L'avvio automatico punta a un file che non esiste più", "Start at login points at a file that no longer exists"),
+                          systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+                    Text(path).font(.caption).foregroundStyle(.secondary)
+                    Button(L.t("Ripara", "Repair")) { model.installLaunchAgent() }
+                }
+            case .pointsElsewhere(let path):
+                VStack(alignment: .leading) {
+                    Label(L.t("L'avvio automatico punta a un'altra copia di Otium", "Start at login points at another copy of Otium"),
+                          systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+                    Text(path).font(.caption).foregroundStyle(.secondary)
+                    Button(L.t("Punta a questa", "Point at this one")) { model.installLaunchAgent() }
+                }
+            }
+        }
     }
 
     /// «Tutti» e «nessuno» su una famiglia intera. `nessuno` non può svuotare del tutto un pool:

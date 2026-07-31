@@ -5,7 +5,10 @@ import Foundation
 /// **La regola che governa questo file, e che va letta prima di aggiungerci una riga.** Una fonte
 /// precisa — autore, rivista, anno — si scrive **solo** quando è davvero quella. Dove il fatto è
 /// consolidato ma la citazione puntuale non la conosco con certezza, l'attribuzione dice cos'è:
-/// «consenso di fisiologia dell'esercizio», «linee guida OMS». Una citazione inventata bene è più
+/// «fisiologia dell'esercizio, consenso scientifico», «linee guida OMS». **«Consenso» da solo non
+/// basta:** in italiano è la parola dei moduli della privacy, e il 2026-07-31 il principale ha
+/// dovuto chiedere cosa volesse dire. La forma è `<campo>, consenso scientifico`, sempre in
+/// quest'ordine. Una citazione inventata bene è più
 /// dannosa di nessuna citazione: è esattamente il difetto che l'app rimprovera ai concorrenti che
 /// si dichiarano *science-backed* senza uno studio.
 ///
@@ -51,7 +54,7 @@ public enum Facts {
         // Trovato guardando il provino il 2026-07-29; il cancello delle citazioni non poteva
         // vederlo, perché cerca il testo nella fonte e non sa com'è fatto lo schermo.
         f("Non è quanto stai seduto in totale, è quanto a lungo lo stai di fila.",
-          "consenso della ricerca sul comportamento sedentario",
+          "ricerca sul comportamento sedentario, consenso scientifico",
           "It is not how long you sit in total, it is how long you sit without a break.",
           "consensus in sedentary behaviour research"),
         f("Restare seduti a lungo riduce l'attività della lipoproteina lipasi, l'enzima che ripulisce i grassi dal sangue.",
@@ -59,11 +62,11 @@ public enum Facts {
           "Sitting for long stretches reduces lipoprotein lipase activity, the enzyme that clears fat from the blood.",
           "physiology of inactivity, established literature"),
         f("Un muscolo inattivo smette di catturare glucosio anche quando l'insulina c'è: è la resistenza da immobilità.",
-          "consenso di fisiologia dell'esercizio",
+          "fisiologia dell'esercizio, consenso scientifico",
           "An inactive muscle stops taking up glucose even when insulin is present: that is immobility-driven resistance.",
           "exercise physiology consensus"),
         f("Le pause in piedi contano poco se resti fermo: è la contrazione muscolare a fare il lavoro, non la posizione.",
-          "consenso di fisiologia dell'esercizio",
+          "fisiologia dell'esercizio, consenso scientifico",
           "Standing breaks count for little if you stay still: it is muscle contraction that does the work, not the position.",
           "exercise physiology consensus"),
         f("La scrivania in piedi da sola non basta: cambia il carico, non l'immobilità.",
@@ -75,7 +78,7 @@ public enum Facts {
           "Blood returns from the legs thanks to the calf muscle pump: without contractions, it pools.",
           "cardiovascular physiology, basic knowledge"),
         f("Ore di immobilità aumentano il rischio di trombosi venosa: è lo stesso meccanismo della sindrome da classe economica.",
-          "medicina vascolare, consenso",
+          "medicina vascolare, consenso scientifico",
           "Hours of immobility raise the risk of venous thrombosis: it is the same mechanism as economy class syndrome.",
           "vascular medicine consensus"),
         f("Anche due minuti di camminata ogni mezz'ora migliorano la risposta glicemica rispetto al restare seduti.",
@@ -104,7 +107,7 @@ public enum Facts {
           "You do not need to train in the strict sense to get cardiovascular benefit: you need hard moments, short and repeated.",
           "Stamatakis et al., Nature Medicine, 2022"),
         f("Salire le scale è uno degli esercizi più intensi che si possano fare senza attrezzatura né spogliatoio.",
-          "consenso di fisiologia dell'esercizio",
+          "fisiologia dell'esercizio, consenso scientifico",
           "Climbing stairs is one of the most intense exercises you can do with no equipment and no changing room.",
           "exercise physiology consensus"),
         f("Il beneficio maggiore, in termini di rischio, si ha passando da zero movimento a poco movimento — non da molto a moltissimo.",
@@ -136,7 +139,7 @@ public enum Facts {
           "Grip strength is one of the simplest and most robust predictors of mortality there is.",
           "prospective studies on grip strength and mortality"),
         f("La massa muscolare persa dopo i trent'anni si riprende a qualunque età con il sovraccarico: il muscolo risponde sempre.",
-          "consenso su sarcopenia e allenamento di forza",
+          "sarcopenia e allenamento di forza, consenso scientifico",
           "Muscle mass lost after thirty comes back at any age with overload: muscle always responds.",
           "consensus on sarcopenia and strength training"),
         f("L'osso si costruisce dove viene caricato: senza carico si disfa, con carico si ispessisce.",
@@ -197,7 +200,7 @@ public enum Facts {
           "Looking at something natural — even just out of the window — restores attention better than looking at another screen.",
           "attention restoration theory, Kaplan"),
         f("La memoria di lavoro ha una capacità piccolissima: è il collo di bottiglia di quasi tutto quello che chiami \"concentrazione\"."
-          , "psicologia cognitiva, consenso",
+          , "psicologia cognitiva, consenso scientifico",
           "Working memory has a tiny capacity: it is the bottleneck of almost everything you call «concentration».",
           "cognitive psychology consensus"),
         f("Cambiare compito costa un tempo di riorientamento che non si recupera: il multitasking è un cambio rapido, non un parallelismo.",
@@ -209,7 +212,7 @@ public enum Facts {
           "After an interruption, getting back to your previous level of concentration takes several minutes.",
           "research on interruptions in office work"),
         f("Il sonno consolida quello che hai imparato durante il giorno: studiare di più togliendo ore di sonno è un cattivo affare.",
-          "neuroscienze del sonno, consenso",
+          "neuroscienze del sonno, consenso scientifico",
           "Sleep consolidates what you learned during the day: studying more by cutting sleep is a bad trade.",
           "sleep neuroscience consensus"),
         f("La privazione di sonno peggiora i tempi di reazione in modo paragonabile a un tasso alcolico rilevante.",
@@ -225,7 +228,7 @@ public enum Facts {
           "That ninety seconds of squats make you sharper right afterwards is not established: Otium interrupts for metabolic reasons, not cognitive promises.",
           "reviews on acute exercise and executive function, inconclusive"),
         f("La sensazione di essere concentrati e l'esserlo davvero si scollano quando sei stanco: la prima resiste, la seconda no.",
-          "psicologia della metacognizione, consenso",
+          "psicologia della metacognizione, consenso scientifico",
           "The feeling of being focused and actually being focused come apart when you are tired: the first survives, the second does not.",
           "metacognition psychology consensus"),
     ]
@@ -234,7 +237,7 @@ public enum Facts {
 
     static let posturaFatti: [Phrase] = [
         f("Non esiste una postura giusta: esiste il cambio di postura. Il carico statico è il problema, non l'angolo.",
-          "ergonomia occupazionale, consenso",
+          "ergonomia occupazionale, consenso scientifico",
           "There is no correct posture: there is changing posture. Static load is the problem, not the angle.",
           "occupational ergonomics consensus"),
         f("Il disco intervertebrale si nutre per diffusione, e la diffusione dipende dal movimento.",
@@ -253,7 +256,7 @@ public enum Facts {
           "Pressure on the lumbar discs is higher seated than standing.",
           "spinal biomechanics, Nachemson's classic measurements"),
         f("Il dolore lombare cronico correla più con l'immobilità e la paura del movimento che con i reperti radiologici.",
-          "medicina muscoloscheletrica, consenso",
+          "medicina muscoloscheletrica, consenso scientifico",
           "Chronic low back pain correlates more with immobility and fear of movement than with radiological findings.",
           "musculoskeletal medicine consensus"),
         f("Molte alterazioni viste in risonanza — protrusioni, degenerazione — sono comuni anche in chi non ha alcun dolore.",
@@ -269,7 +272,7 @@ public enum Facts {
           "Breathing with the diaphragm lowers heart rate; breathing high and short raises it.",
           "respiratory physiology, basic knowledge"),
         f("Un'espirazione più lunga dell'inspirazione attiva la risposta parasimpatica: è il modo più rapido di calmarsi.",
-          "fisiologia autonomica, consenso",
+          "fisiologia autonomica, consenso scientifico",
           "An exhale longer than the inhale activates the parasympathetic response: it is the fastest way to calm down.",
           "autonomic physiology consensus"),
         f("Molte persone davanti allo schermo trattengono il respiro senza accorgersene, soprattutto mentre leggono email.",
@@ -277,7 +280,7 @@ public enum Facts {
           "Many people at a screen hold their breath without noticing, especially while reading email.",
           "documented as «screen apnoea», popular literature"),
         f("Il pavimento pelvico e il diaframma lavorano insieme: respirare male irrigidisce entrambi.",
-          "fisioterapia, consenso",
+          "fisioterapia, consenso scientifico",
           "The pelvic floor and the diaphragm work together: breathing badly stiffens both.",
           "physiotherapy consensus"),
     ]
@@ -302,7 +305,7 @@ public enum Facts {
           "Writing down when and where you will do something greatly raises the chance you actually will.",
           "implementation intentions literature, Gollwitzer"),
         f("Rendere un comportamento più facile da iniziare conta più che aumentare la motivazione.",
-          "scienze comportamentali applicate, consenso",
+          "scienze comportamentali applicate, consenso scientifico",
           "Making a behaviour easier to start matters more than raising motivation.",
           "applied behavioural science consensus"),
         f("Gli avvisi che arrivano al momento giusto funzionano; quelli che arrivano sempre diventano rumore e si ignorano.",
@@ -310,7 +313,7 @@ public enum Facts {
           "Alerts that arrive at the right moment work; alerts that always arrive become noise and get ignored.",
           "research on notifications and alarm fatigue"),
         f("Un obiettivo troppo grande produce meno azione di uno ridicolmente piccolo.",
-          "scienze comportamentali applicate, consenso",
+          "scienze comportamentali applicate, consenso scientifico",
           "A goal that is too big produces less action than a ridiculously small one.",
           "applied behavioural science consensus"),
         f("Misurare un comportamento tende a cambiarlo, anche senza altri interventi.",
@@ -335,15 +338,15 @@ public enum Facts {
           "Mild dehydration is enough to worsen mood and attention, well before you feel thirsty.",
           "literature on hydration and cognitive performance"),
         f("La sete è un segnale tardivo: quando arriva, il calo è già cominciato.",
-          "fisiologia dei fluidi, consenso",
+          "fisiologia dei fluidi, consenso scientifico",
           "Thirst is a late signal: by the time it arrives, the decline has already started.",
           "fluid physiology consensus"),
         f("Il picco di temperatura corporea nel pomeriggio coincide con il momento in cui la forza è massima.",
-          "cronobiologia dell'esercizio, consenso",
+          "cronobiologia dell'esercizio, consenso scientifico",
           "The afternoon peak in body temperature coincides with the moment strength is highest.",
           "exercise chronobiology consensus"),
         f("La luce del mattino negli occhi è il segnale più forte per regolare l'orologio biologico.",
-          "cronobiologia, consenso",
+          "cronobiologia, consenso scientifico",
           "Morning light in your eyes is the strongest signal for setting your body clock.",
           "chronobiology consensus"),
         f("Guardare uno schermo luminoso a tarda sera ritarda l'inizio del sonno.",
@@ -355,7 +358,7 @@ public enum Facts {
           "Coffee has a half-life of several hours: the four o'clock one is still in you at midnight.",
           "caffeine pharmacology, basic knowledge"),
         f("L'attività fisica regolare è uno dei pochi interventi con effetto documentato su sonno, umore e metabolismo insieme.",
-          "medicina preventiva, consenso",
+          "medicina preventiva, consenso scientifico",
           "Regular physical activity is one of the few interventions with a documented effect on sleep, mood and metabolism together.",
           "preventive medicine consensus"),
         f("Camminare dopo il pasto abbassa la glicemia postprandiale più che camminare a digiuno.",
@@ -367,7 +370,7 @@ public enum Facts {
           "Even two minutes of walking after eating have a measurable effect on blood glucose.",
           "meta-analyses on short postprandial walks"),
         f("Il freddo e il caldo si adattano; l'immobilità no: il corpo non impara mai a starci bene.",
-          "fisiologia dell'adattamento, consenso",
+          "fisiologia dell'adattamento, consenso scientifico",
           "You adapt to cold and heat; you never adapt to stillness: the body never learns to be fine with it.",
           "adaptation physiology consensus"),
         f("Il respiro è l'unica funzione autonoma che puoi guidare a piacere: è la porta di servizio del sistema nervoso.",
@@ -379,7 +382,7 @@ public enum Facts {
           "Standing up immediately changes blood distribution and heart rate.",
           "cardiovascular physiology, basic knowledge"),
         f("Il corpo umano è fatto per stare in piedi, camminare e accovacciarsi: la sedia ha meno di duecento anni di storia diffusa.",
-          "antropologia della postura, consenso",
+          "antropologia della postura, consenso scientifico",
           "The human body is built to stand, walk and squat: the chair has less than two hundred years of widespread history.",
           "anthropology of posture, consensus"),
         f("Accovacciarsi profondamente è un movimento naturale che si perde con il disuso, non con l'età.",

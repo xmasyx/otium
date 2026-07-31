@@ -749,11 +749,11 @@ final class DeclaredBreaksTests: XCTestCase {
         var engine = makeEngine()
         engine.recordCompletedBreak(kind: .micro)
         engine.recordCompletedBreak(kind: .micro)
-        XCTAssertEqual(engine.nextBreakKind, .long, "dopo due micro tocca la piena")
+        XCTAssertEqual(engine.nextBreakKind(), .long, "dopo due micro tocca la piena")
 
         engine.recordCompletedBreak(kind: .long)
         XCTAssertEqual(engine.microsSinceLong, 0)
-        XCTAssertEqual(engine.nextBreakKind, .micro, "riparte il ciclo")
+        XCTAssertEqual(engine.nextBreakKind(), .micro, "riparte il ciclo")
     }
 
     /// Affondo e split squat **non** sono lo stesso esercizio, ma sono parenti stretti: uno solo
@@ -810,11 +810,11 @@ final class StatsTests: XCTestCase {
         engine.recordCompletedBreak(kind: .micro)
         engine.recordCompletedBreak(kind: .micro)
         XCTAssertEqual(engine.breakIndex, 2)
-        XCTAssertEqual(engine.nextBreakKind, .long)
+        XCTAssertEqual(engine.nextBreakKind(), .long)
 
         XCTAssertTrue(engine.undoDeclaredBreak(kind: .micro))
         XCTAssertEqual(engine.breakIndex, 1)
-        XCTAssertEqual(engine.nextBreakKind, .micro, "il ciclo torna indietro con lui")
+        XCTAssertEqual(engine.nextBreakKind(), .micro, "il ciclo torna indietro con lui")
         XCTAssertTrue(engine.undoDeclaredBreak(kind: .micro))
         XCTAssertFalse(engine.undoDeclaredBreak(kind: .micro), "sotto zero non si va")
     }

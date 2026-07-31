@@ -560,3 +560,165 @@ final class SessionEngineTests: XCTestCase {
         XCTAssertNotEqual(engine.phase, .breaking, "lo schermo resterebbe coperto")
     }
 }
+
+// MARK: - ISC-96 — la prima pausa della giornata
+
+/// **Il caso vero del 31 luglio 2026.** Il principale apre il Mac, lavora mezz'ora, e la prima
+/// pausa della giornata è quella piena da cinque minuti. Il ciclo micro/micro/piena viveva solo in
+/// `rotation.json` e non sapeva che fosse cambiato il giorno: il 30 luglio si era chiuso con due
+/// micro alle spalle (14:51 e 15:25, lette dal registro vero), quindi la pausa dopo — la prima del
+/// giorno nuovo — è arrivata piena.
+///
+/// Ogni test qui ha il suo **polo di controllo nello stesso giorno**: se il ciclo si azzerasse
+/// sempre, o non si azzerasse mai, una delle due metà diventerebbe rossa.
+final class NewDayCycleTests: XCTestCase {
+
+    private static func at(_ day: Int, _ hour: Int, _ minute: Int = 0) -> Date {
+        var c = DateComponents()
+        c.year = 2026; c.month = 7; c.day = day; c.hour = hour; c.minute = minute
+        return Calendar.current.date(from: c)!
+    }
+
+    private func makeEngine() -> SessionEngine {
+        var s = Settings()
+        s.startDate = Self.at(1, 10)          // rampa finita: le ripetizioni non c'entrano qui
+        return SessionEngine(settings: s, maxCredibleElapsed: 120)
+    }
+
+    /// Riporta il motore com'era alla chiusura del 30 luglio: due micro fatte, ultima alle 17.
+    private func engineClosedYesterdayWithTwoMicros() -> SessionEngine {
+        var engine = makeEngine()
+        engine.restore(EngineSnapshot(breakIndex: 82, microsSinceLong: 2, launchCount: 146,
+                                      activeSeconds: 0,
+                                      lastBreakAt: Self.at(30, 17),
+                                      savedAt: Self.at(30, 17, 30)),
+                       now: Self.at(31, 11))
+        return engine
+    }
+
+    /// Il polo verde: giorno nuovo, la prima è breve.
+    func testFirstBreakOfANewDayIsMicro() {
+        var engine = engineClosedYesterdayWithTwoMicros()
+        XCTAssertEqual(engine.microsSinceLong, 2, "il ciclo di ieri è stato ripreso davvero")
+
+        let events = engine.forceBreakNow(now: Self.at(31, 11))
+        XCTAssertFalse(events.isEmpty)
+        XCTAssertEqual(engine.plan?.kind, .micro,
+                       "la prima pausa della giornata è breve, non cinque minuti")
+    }
+
+    /// **Il polo rosso, ed è quello che rende il test una prova.** Stesso stato identico, unica
+    /// differenza il giorno di `now`: restando dentro il 30 luglio la pausa piena deve arrivare,
+    /// o il "verde" qui sopra vorrebbe dire soltanto che il ciclo non funziona più.
+    func testSameDayTheCycleStillDeliversTheLongBreak() {
+        var engine = makeEngine()
+        engine.restore(EngineSnapshot(breakIndex: 82, microsSinceLong: 2, launchCount: 146,
+                                      activeSeconds: 0,
+                                      lastBreakAt: Self.at(30, 15, 25),
+                                      savedAt: Self.at(30, 15, 30)),
+                       now: Self.at(30, 16))
+
+        engine.forceBreakNow(now: Self.at(30, 16))
+        XCTAssertEqual(engine.plan?.kind, .long,
+                       "nello stesso giorno dopo due micro tocca la piena")
+    }
+
+    /// L'annuncio dell'interfaccia e la pausa che arriva devono dire la stessa cosa: se
+    /// `nextBreakKind` non guardasse il giorno, il menu prometterebbe cinque minuti e ne
+    /// arriverebbero novanta secondi.
+    func testTheAnnouncedKindMatchesWhatArrives() {
+        var engine = engineClosedYesterdayWithTwoMicros()
+        let announced = engine.nextBreakKind(now: Self.at(31, 11))
+        engine.forceBreakNow(now: Self.at(31, 11))
+        XCTAssertEqual(announced, engine.plan?.kind)
+        XCTAssertEqual(announced, .micro)
+    }
+
+    /// **Anti-claim.** Il giorno nuovo azzera il ciclo micro/piena e **nient'altro**: la rotazione
+    /// degli esercizi va avanti. Senza questa, si tornerebbe a squat-squat-squat ogni mattina —
+    /// il difetto del 26 luglio, rientrato dalla finestra.
+    func testANewDayDoesNotResetTheExerciseRotation() {
+        var engine = engineClosedYesterdayWithTwoMicros()
+        engine.forceBreakNow(now: Self.at(31, 11))
+        XCTAssertEqual(engine.breakIndex, 83, "la rotazione riprende da dov'era, non da zero")
+        XCTAssertEqual(engine.plan?.index, 83)
+    }
+
+    /// Una giornata intera, e la sua forma: breve, breve, piena — e il giorno dopo si ricomincia
+    /// da breve invece di continuare il conto di ieri.
+    func testTwoDaysInARowEachStartShort() {
+        var engine = makeEngine()
+        var kinds: [BreakKind] = []
+        for hour in [9, 10, 11, 12] {
+            engine.forceBreakNow(now: Self.at(30, hour))
+            kinds.append(engine.plan!.kind)
+            engine.emergencyExit()
+        }
+        XCTAssertEqual(kinds, [.micro, .micro, .long, .micro], "il 30 luglio")
+
+        kinds = []
+        for hour in [9, 10, 11] {
+            engine.forceBreakNow(now: Self.at(31, hour))
+            kinds.append(engine.plan!.kind)
+            engine.emergencyExit()
+        }
+        XCTAssertEqual(kinds, [.micro, .micro, .long],
+                       "il 31 riparte da capo: la quarta micro di ieri non si trascina")
+    }
+
+    /// Le pause spontanee datano la giornata come quelle imposte. Senza, tre alzate stamattina
+    /// resterebbero appese a ieri e la prima pausa imposta le butterebbe via azzerando il ciclo.
+    func testNaturalBreaksAlsoStampTheDay() {
+        var engine = makeEngine()
+        engine.restore(EngineSnapshot(breakIndex: 10, microsSinceLong: 0, launchCount: 1,
+                                      activeSeconds: 0,
+                                      lastBreakAt: Self.at(30, 18),
+                                      savedAt: Self.at(30, 18)),
+                       now: Self.at(31, 9))
+
+        // Mezz'ora di lavoro vero, poi due assenze da micro-pausa: oggi, non ieri.
+        for _ in 0..<40 { engine.tick(elapsed: 10, idle: 0, now: Self.at(31, 9)) }
+        engine.tick(elapsed: 10, idle: 100, now: Self.at(31, 9))
+        engine.tick(elapsed: 10, idle: 0.5, now: Self.at(31, 9))
+        XCTAssertEqual(engine.microsSinceLong, 1, "una micro spontanea, contata oggi")
+
+        for _ in 0..<40 { engine.tick(elapsed: 10, idle: 0, now: Self.at(31, 10)) }
+        engine.tick(elapsed: 10, idle: 100, now: Self.at(31, 10))
+        engine.tick(elapsed: 10, idle: 0.5, now: Self.at(31, 10))
+        XCTAssertEqual(engine.microsSinceLong, 2, "due")
+
+        // La terza pausa della giornata è la piena, perché le prime due sono di oggi e restano.
+        engine.forceBreakNow(now: Self.at(31, 11))
+        XCTAssertEqual(engine.plan?.kind, .long,
+                       "le pause spontanee di oggi non vengono buttate via dal cambio di giorno")
+    }
+
+    /// Il file scritto dalla versione precedente non ha il campo: deve valere «l'ultima pausa
+    /// risale al salvataggio», non «non c'è mai stata una pausa». Altrimenti il difetto
+    /// sopravvivrebbe a se stesso per tutta la prima giornata dopo l'aggiornamento.
+    func testAnOldRotationFileFallsBackToItsSaveDate() throws {
+        let json = #"{"breakIndex":83,"microsSinceLong":2,"launchCount":147,"activeSeconds":98,"savedAt":"2026-07-30T15:30:00Z"}"#
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let snapshot = try decoder.decode(EngineSnapshot.self, from: Data(json.utf8))
+        XCTAssertEqual(snapshot.lastBreakAt, snapshot.savedAt)
+
+        var engine = makeEngine()
+        engine.restore(snapshot, now: Self.at(31, 11))
+        engine.forceBreakNow(now: Self.at(31, 11))
+        XCTAssertEqual(engine.plan?.kind, .micro,
+                       "aggiornare l'app non deve costare una giornata di ciclo sbagliato")
+    }
+
+    /// Un orologio spostato indietro non deve congelare la giornata per sempre: una data futura
+    /// vale «adesso», così il giorno cambia comunque alla mezzanotte successiva.
+    func testAFutureLastBreakIsClampedToNow() {
+        var engine = makeEngine()
+        engine.restore(EngineSnapshot(breakIndex: 5, microsSinceLong: 2, launchCount: 1,
+                                      activeSeconds: 0,
+                                      lastBreakAt: Self.at(31, 23),
+                                      savedAt: Self.at(31, 23)),
+                       now: Self.at(30, 10))
+        XCTAssertEqual(engine.lastBreakAt, Self.at(30, 10))
+    }
+}

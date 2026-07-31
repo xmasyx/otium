@@ -50,14 +50,18 @@ public struct EngineSnapshot: Codable, Equatable, Sendable {
     /// Il tempo attivo accumulato al momento del salvataggio: se l'app riparte subito, riprende
     /// da qui invece di buttare via mezz'ora di lavoro per un riavvio.
     public var activeSeconds: Double
+    /// Quando è stata presa l'ultima pausa. Serve a una cosa sola: sapere se la prossima è la
+    /// **prima della giornata**, e in quel caso far ripartire il ciclo micro/piena da capo.
+    public var lastBreakAt: Date?
     public var savedAt: Date
 
     public init(breakIndex: Int, microsSinceLong: Int, launchCount: Int = 0,
-                activeSeconds: Double = 0, savedAt: Date = Date()) {
+                activeSeconds: Double = 0, lastBreakAt: Date? = nil, savedAt: Date = Date()) {
         self.breakIndex = breakIndex
         self.microsSinceLong = microsSinceLong
         self.launchCount = launchCount
         self.activeSeconds = activeSeconds
+        self.lastBreakAt = lastBreakAt
         self.savedAt = savedAt
     }
 
@@ -70,6 +74,12 @@ public struct EngineSnapshot: Codable, Equatable, Sendable {
         launchCount = (try? c.decode(Int.self, forKey: .launchCount)) ?? 0
         activeSeconds = (try? c.decode(Double.self, forKey: .activeSeconds)) ?? 0
         savedAt = (try? c.decode(Date.self, forKey: .savedAt)) ?? Date()
+        // **Il file scritto prima di questo campo non deve valere "mai nessuna pausa".** Se
+        // valesse nil, il primo giorno dopo l'aggiornamento il ciclo non si azzererebbe, e il
+        // difetto che questo campo cura sopravvivrebbe a se stesso per una giornata. Il
+        // salvataggio è l'ultimo momento in cui l'app era viva: come data dell'ultima pausa è
+        // approssimata per eccesso, ed è l'errore giusto — al massimo azzera un ciclo di troppo.
+        lastBreakAt = (try? c.decode(Date.self, forKey: .lastBreakAt)) ?? savedAt
     }
 }
 
@@ -139,6 +149,10 @@ public struct SessionEngine {
     public private(set) var timer: Double = 0
     public private(set) var breakIndex: Int = 0
     public private(set) var microsSinceLong: Int = 0
+    /// Quando è stata presa l'ultima pausa, per riconoscere la prima della giornata. `nil` finché
+    /// non ce n'è stata nessuna: la primissima pausa in assoluto è breve perché il conto parte da
+    /// zero, non perché il giorno sia cambiato.
+    public private(set) var lastBreakAt: Date?
     public private(set) var postponesUsed: Int = 0
     public private(set) var autoDefersUsed: Int = 0
     public private(set) var exerciseDone: Bool = false
@@ -236,12 +250,12 @@ public struct SessionEngine {
         case .naturalBreak(let seconds):
             // Time Out fa una cosa giusta che nessun altro fa: la pausa spontanea vale.
             // Alzarsi da soli È il comportamento desiderato, non un modo di imbrogliare.
-            events.append(contentsOf: creditNatural(seconds: seconds, alwaysReset: false))
+            events.append(contentsOf: creditNatural(seconds: seconds, now: now, alwaysReset: false))
         case .suspended(let gap):
             // Il Mac si è sospeso. Il contatore verso la prossima pausa riparte comunque, perché
             // il tempo passato lontano dallo schermo è tempo lontano dallo schermo; ma
             // l'interruzione si scrive solo se prima c'era del lavoro da interrompere.
-            events.append(contentsOf: creditNatural(seconds: gap, alwaysReset: true))
+            events.append(contentsOf: creditNatural(seconds: gap, now: now, alwaysReset: true))
         case .accumulating, .quietPresence, .idling:
             break
         }
@@ -271,13 +285,19 @@ public struct SessionEngine {
     /// micro-pausa, o ogni volta che ti giri a parlare con qualcuno diventerebbe una pausa. E
     /// prima dell'assenza dev'esserci stata della sedentarietà vera, o il numero conta assenze
     /// di nessuno da nessun posto.
-    private mutating func creditNatural(seconds: Double, alwaysReset: Bool) -> [EngineEvent] {
+    private mutating func creditNatural(seconds: Double, now: Date, alwaysReset: Bool) -> [EngineEvent] {
         let longEnough = seconds >= settings.cadence.microDurationSeconds
         let earned = clock.activeSeconds >= Self.minimumSedentaryBeforeCredit
         var events: [EngineEvent] = []
         if longEnough && earned {
+            // **Anche questa è una pausa, e quindi data la giornata.** Se qui non si scrivesse
+            // `lastBreakAt`, tre pause spontanee prese stamattina resterebbero appese a ieri, e
+            // la prima pausa imposta della giornata le butterebbe via azzerando il ciclo — cioè
+            // il difetto del 31 luglio al contrario, e più difficile da vedere.
+            if crossedIntoNewDay(now: now) { microsSinceLong = 0 }
             let creditedLong = seconds >= settings.cadence.longDurationSeconds
             if creditedLong { microsSinceLong = 0 } else { microsSinceLong += 1 }
+            lastBreakAt = now
             events.append(.naturalBreak(seconds: seconds, creditedLong: creditedLong))
         }
         if alwaysReset || longEnough { clock.reset() }
@@ -380,6 +400,21 @@ public struct SessionEngine {
     }
 
     private mutating func planNextBreak(now: Date, forcedKind: BreakKind? = nil) -> BreakPlan {
+        // **Giorno nuovo, ciclo nuovo.** Il conto delle micro viveva solo in `rotation.json` e
+        // non sapeva che fosse cambiato il giorno: chiudendo il 30 luglio con due micro alle
+        // spalle, la prima pausa del 31 è arrivata piena — cinque minuti come primo gesto della
+        // giornata. Segnalato dal principale guardando lo schermo, e ricostruito dal registro.
+        //
+        // La lettura scelta è **il giorno di calendario**, non lo stacco vero: con la finestra di
+        // grazia a cinque minuti, ogni caffè varrebbe uno stacco e la pausa piena non arriverebbe
+        // mai. Il prezzo, dichiarato: in una giornata corta — meno di 90 minuti di lavoro attivo —
+        // di pause piene non ne arriva nessuna.
+        //
+        // **Si azzera solo questo.** Non `breakIndex`, che è la rotazione degli esercizi: senza,
+        // si torna a squat-squat-squat, il difetto del 26 luglio. Non l'orologio, non i mazzi.
+        if crossedIntoNewDay(now: now) { microsSinceLong = 0 }
+        lastBreakAt = now
+
         let kind: BreakKind = forcedKind
             ?? ((microsSinceLong + 1 >= settings.cadence.longEveryNBreaks) ? .long : .micro)
         breakIndex += 1
@@ -400,6 +435,19 @@ public struct SessionEngine {
             exercise: exercise,
             circuit: circuit
         )
+    }
+
+    /// Fra l'ultima pausa e adesso è cambiato il giorno?
+    ///
+    /// Senza pause alle spalle risponde `false`, e non è un caso limite dimenticato: il conto è
+    /// già a zero, non c'è niente da azzerare. La primissima pausa in assoluto è breve perché il
+    /// ciclo parte da zero, non perché sia scattata la mezzanotte.
+    ///
+    /// **`Calendar.current`, non un fuso scritto a mano.** Il principale viaggia: il giorno è
+    /// quello del suo orologio adesso, e cambiando fuso cambia con lui.
+    private func crossedIntoNewDay(now: Date) -> Bool {
+        guard let last = lastBreakAt else { return false }
+        return !Calendar.current.isDate(last, inSameDayAs: now)
     }
 
     private func isWithinActiveHours(_ now: Date) -> Bool {
@@ -636,7 +684,8 @@ public struct SessionEngine {
 
     public var snapshot: EngineSnapshot {
         EngineSnapshot(breakIndex: breakIndex, microsSinceLong: microsSinceLong,
-                       launchCount: launchCount, activeSeconds: clock.activeSeconds)
+                       launchCount: launchCount, activeSeconds: clock.activeSeconds,
+                       lastBreakAt: lastBreakAt)
     }
 
     /// Un avvio in più. Le frasi non dipendono più da questo numero — le estrae il mazzo, che è
@@ -688,8 +737,12 @@ public struct SessionEngine {
     /// **Non** accredita ripetizioni: quante ne hai fatte davvero non lo so, e un registro che se
     /// lo inventa non serve a niente.
     public mutating func recordCompletedBreak(kind: BreakKind, now: Date = Date()) {
+        // Il giorno va guardato **prima** di sommare, o una pausa dichiarata stamattina si
+        // sommerebbe a quelle di ieri invece di aprire la giornata.
+        if crossedIntoNewDay(now: now) { microsSinceLong = 0 }
         breakIndex += 1
         if kind == .long { microsSinceLong = 0 } else { microsSinceLong += 1 }
+        lastBreakAt = now
     }
 
     /// «Quella pausa l'avevo segnata a mano, ma poi è arrivata davvero.»
@@ -727,6 +780,11 @@ public struct SessionEngine {
         breakIndex = max(0, snapshot.breakIndex)
         microsSinceLong = max(0, snapshot.microsSinceLong) % max(1, settings.cadence.longEveryNBreaks)
         launchCount = max(0, snapshot.launchCount)
+        // **Non si azzera qui.** Riaprire l'app a mezzanotte e un minuto non è prendersi una
+        // pausa: il ciclo riparte quando la pausa arriva davvero, cioè in `planNextBreak`. Qui si
+        // riporta solo la data, e una data nel futuro — orologio spostato indietro — vale come
+        // "adesso", o resterebbe futura per sempre e la giornata non cambierebbe mai.
+        lastBreakAt = snapshot.lastBreakAt.map { min($0, now) }
 
         let gap = max(0, now.timeIntervalSince(snapshot.savedAt))
         guard gap <= settings.resumeGraceSeconds, snapshot.activeSeconds > 0 else {
@@ -759,8 +817,15 @@ public struct SessionEngine {
     // MARK: - Lettura per l'interfaccia
 
     /// Che tipo sarà il prossimo break, senza pianificarlo.
-    public var nextBreakKind: BreakKind {
-        (microsSinceLong + 1 >= settings.cadence.longEveryNBreaks) ? .long : .micro
+    ///
+    /// **Prende `now` perché la risposta dipende dal giorno**, e un motore che legge `Date()` da
+    /// sé non si può provare — è la stessa regola di tutto il resto della macchina a stati. Se
+    /// nel frattempo è scattata la mezzanotte, questa dice `.micro` esattamente come dirà
+    /// `planNextBreak`: le due risposte devono coincidere, o l'interfaccia annuncerebbe una pausa
+    /// diversa da quella che arriva.
+    public func nextBreakKind(now: Date = Date()) -> BreakKind {
+        let micros = crossedIntoNewDay(now: now) ? 0 : microsSinceLong
+        return (micros + 1 >= settings.cadence.longEveryNBreaks) ? .long : .micro
     }
 
     public var secondsUntilNextBreak: Double {

@@ -1051,6 +1051,76 @@ decisione del principale.
       turni, con un controllo che la rotazione giri davvero; e la regressione sulle ginocchia
       resta offerta come sostituzione anche se non è nell'elenco.
 
+### Iterazione 20 — la giornata ricomincia, e le preferenze smettono di essere una lista (2026-07-31)
+
+Tre cose viste all'uso, tutte e tre dal principale in un turno solo: la prima pausa di oggi era
+piena, l'attribuzione «consenso» non si capisce, e le preferenze sono una lista unica da scorrere.
+
+- [x] **ISC-96** La prima pausa di ogni giornata è breve. — Il ciclo micro/micro/piena viveva in
+      `rotation.json` e non sapeva che fosse cambiato il giorno: chiudendo il 30/07 con due micro,
+      la prima pausa del 31/07 è arrivata piena. Ora l'istantanea porta anche **la data
+      dell'ultima pausa**, e al momento di decidere il tipo un giorno diverso vale zero micro
+      alle spalle. Scelta del principale fra le due letture di «turno di lavoro»: **giorno di
+      calendario**, non stacco vero — con la grazia di 5 minuti ogni caffè avrebbe azzerato il
+      ciclo e la pausa piena non sarebbe arrivata mai.
+      *Falsificatore:* due test sul motore, uno per polo — stessa istantanea, un `now` di ieri
+      dà `.long` e un `now` di oggi dà `.micro` — più il caso reale del 30→31 luglio ricostruito
+      dal registro vero.
+
+- [x] **ISC-97** L'attribuzione dice cos'è, in italiano leggibile. — «cronobiologia
+      dell'esercizio, consenso» ha fatto chiedere al principale cosa volesse dire: da solo
+      «consenso» in italiano sembra quello della privacy. Diventa **«consenso scientifico»**, e la
+      forma girata («consenso di fisiologia dell'esercizio») si allinea allo stesso schema
+      `<campo>, consenso scientifico`. Resta intatta la dichiarazione di consenso di Buckley 2015,
+      che è il nome proprio di un documento con autori e anno; e resta intatto l'inglese, dove
+      `consensus` non è ambiguo.
+      *Falsificatore:* un grep che pretende zero occorrenze della forma nuda, più il lint delle
+      due lingue.
+
+- [x] **ISC-98** Le preferenze si navigano, non si scorrono. — `NavigationSplitView`: sei voci a
+      sinistra — Profilo, Cadenza, Esercizi, Interruzioni, Aspetto, Sistema — e a destra solo il
+      pannello scelto. Nessuna impostazione persa nel passaggio.
+      *Falsificatore:* l'elenco dei controlli prima e dopo, campo per campo, più la schermata
+      catturata e **guardata**.
+
+- [x] **ISC-99** Il pulsante che salva non scorre via. — Oggi «Applica» è l'ultima sezione di un
+      modulo lungo: cambi la cadenza, scendi agli esercizi, e non lo vedi più. Esce dal pannello e
+      diventa una barra fissa in basso, sotto il contenuto e comune a tutte le voci — la bozza è
+      una sola e attraversa i pannelli, quindi il pulsante non può vivere dentro uno solo.
+      *Falsificatore:* schermata di due voci diverse con la barra visibile in entrambe, e la prova
+      che una modifica fatta in un pannello sopravvive al passaggio a un altro.
+
+- [x] **ISC-100** Il numero pieno si sceglie, non si aspetta. — Chiesto a metà lavoro: *«devo
+      avere la possibilità anche di mettere il 100% dalle impostazioni»*. Lo stepper arrivava già
+      a 100, ma dice «si parte al…» — parla di com'è cominciata, non di adesso — e l'unica altra
+      via era la finestra che l'app propone da sé dopo una settimana, cioè una domanda che arriva
+      quando decide lei. Ora in Profilo → Ripetizioni c'è **«Passa subito al 100%»**, che scrive
+      anche la data del pieno (da lì partono i sette giorni della domanda sulla crescita) e
+      spegne la domanda delle due settimane. Chi c'è già legge «Sei al numero pieno».
+      *Reversibile per costruzione:* riabbassando la percentuale la data del pieno si cancella, o
+      la domanda sulla crescita oltre il 100% arriverebbe a chi al 100% non è.
+      *Falsificatore:* la finestra vera, guardata — il pulsante c'è sotto i 100 e sparisce sopra.
+
+- [x] **ISC-101** In alto a destra, il conto dell'esercizio che stai facendo. — Sua richiesta a
+      metà lavoro, con la domanda giusta attaccata (*«o pensi che sia sbagliato?»*). Non è
+      sbagliato **se** vuol dire *quanti ne ho fatti oggi di questo*, che è la domanda che ti fai
+      mentre sei lì; sarebbe sbagliato se volesse dire *le ripetizioni di questa pausa*, perché
+      quelle sono già il numero grande al centro dello schermo — lo stesso numero due volte, il
+      difetto chiuso con ISC-92. Ora la riga è `oggi: 2ª pausa · 12 squat · 46 in tutto`:
+      l'esercizio davanti perché è la domanda, il totale dopo perché è il volume della giornata,
+      quello che gli studi misurano. Nel microcircuito segue la stazione in corso.
+      *Niente zeri:* al primo di quell'esercizio il pezzo di mezzo sparisce invece di dire «0
+      squat». Le due copie della riga sono diventate una funzione sola.
+      *Falsificatore:* `--registro-finto` semina una giornata già cominciata — il ramo con il
+      conto non esiste su un registro vuoto, e senza la semina si guarda sempre lo stesso ramo.
+
+- **Anti-claim** — il giorno nuovo azzera **solo** il ciclo micro/piena. Non la rotazione degli
+  esercizi (che è `breakIndex`, e senza di lei si torna a squat-squat-squat, il difetto del
+  26/07), non il conto del tempo attivo, non i mazzi delle frasi.
+
+- **Anti-claim** — la barra laterale non deve nascondere niente. Sei voci che coprono tutti i
+  controlli di oggi: una preferenza che esiste ma non si trova più è peggio di una lista lunga.
+
 ## Test Strategy
 
 Tre strumenti: `swift test` per tutta la logica pura (orologio, motore, rampa, registro), che è
@@ -1245,6 +1315,19 @@ uno che non copre la barra dei menu sono indistinguibili nei test.
   scritto uno.*
 
 ## Changelog
+
+- **2026-07-31 (iterazione 20)** — Tre cose viste all'uso e due chieste a lavoro in corso. Il ciclo
+  micro/piena non sapeva che fosse cambiato il giorno, e la prima pausa del 31 luglio è arrivata
+  piena: adesso l'istantanea porta la data dell'ultima pausa e la giornata comincia sempre corta.
+  «Consenso» da solo diventa «consenso scientifico» in ventuno attribuzioni. Le preferenze passano
+  dalla lista unica a **sei voci con barra laterale**, con «Applica» in una barra fissa che non
+  scorre più via. Poi il numero pieno si sceglie da solo dalle impostazioni, e in alto a destra
+  nella pausa compare il conto dell'esercizio in corso prima del totale.
+  **253 test verdi** (da 243), quattro nuovi resi rossi di proposito sabotando la cura.
+  *Lezione sulla sonda:* `--surface=prefs` disegna fuori da una finestra, e lì una barra laterale
+  di sistema esce **bianca e vuota** — una resa che non sa disegnare la vista dice solo che la
+  sonda non ci arriva. Da qui `--mostra-prefs`, che apre la finestra vera, e la cattura per **id
+  di finestra** invece che per regione, perché una regione fotografa qualunque cosa ci sia sopra.
 
 - **2026-07-28 (iterazione 13)** — ⌃S diventa una scorciatoia vera, che apre le statistiche da
   qualunque app senza chiedere permessi (Carbon, non il monitor globale che pretende il

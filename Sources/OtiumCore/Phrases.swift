@@ -13,7 +13,7 @@ public struct Phrase: Equatable, Sendable, Identifiable {
         case citazione
         /// Pensiero mindful, filosofia orientale, sviluppo personale. Può essere anonimo.
         case mindful
-        /// Un fatto, con la sua fonte o dichiarato come consenso.
+        /// Un fatto, con la sua fonte o dichiarato come consenso scientifico.
         case fatto
         /// **La voce dell'app.** Righe scritte per Otium, non citazioni di nessuno.
         ///
