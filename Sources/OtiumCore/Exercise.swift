@@ -9,6 +9,14 @@ public enum ExerciseCategory: String, Codable, CaseIterable, Sendable {
     case gambe
     case spinta
     case addome
+    /// **Aggiunta il 2026-07-31**, su richiesta del principale: *«peccato che non ci sia niente
+    /// da fare per il dorso»*. A corpo libero e senza barra la trazione vera non c'è — e le
+    /// alternative che circolano (rematore allo stipite, auto-resistenza) hanno tutte lo stesso
+    /// difetto: il carico dipende da quanto tiri, quindi non è misurabile, quindi non è
+    /// verificabile. Scartate insieme a lui. Quello che resta è reale e vale: i muscoli che
+    /// tengono le scapole indietro e la schiena estesa, cioè i primi a spegnersi davanti a uno
+    /// schermo.
+    case posturali
     case vigorosi
 
     public var italianName: String {
@@ -16,6 +24,7 @@ public enum ExerciseCategory: String, Codable, CaseIterable, Sendable {
         case .gambe: return "Gambe"
         case .spinta: return "Spinta"
         case .addome: return "Addome"
+        case .posturali: return "Posturali"
         case .vigorosi: return "Vigorosi"
         }
     }
@@ -27,6 +36,7 @@ public enum ExerciseCategory: String, Codable, CaseIterable, Sendable {
         case .gambe: return "Legs"
         case .spinta: return "Push"
         case .addome: return "Core"
+        case .posturali: return "Posture"
         case .vigorosi: return "Vigorous"
         }
     }
@@ -40,6 +50,8 @@ public enum ExerciseCategory: String, Codable, CaseIterable, Sendable {
         case .spinta: return L.t("petto, spalle, tricipiti", "chest, shoulders, triceps")
         case .addome: return L.t("il core, che stando seduti non lavora mai",
                                  "the core, which never works while you sit")
+        case .posturali: return L.t("la schiena alta e le scapole, i primi a spegnersi allo schermo",
+                                    "upper back and shoulder blades, the first to switch off at a screen")
         case .vigorosi: return L.t("il fiatone, contano verso le 3 sessioni intense del giorno",
                                    "the breathless ones: they count towards the 3 vigorous bouts a day")
         }
@@ -77,6 +89,9 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     case plank
     case sidePlank
     case hollowHold
+    // Posturali — aggiunti il 2026-07-31: la schiena alta era l'unica zona senza niente.
+    case superman
+    case ytw
     // Vigorosi — sono questi che contano verso i 3 sessione intensa VILPA al giorno
     case burpee
     case jumpingJack
@@ -111,6 +126,10 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .plank: return 45
         case .sidePlank: return 40
         case .hollowHold: return 30
+        case .superman: return 12
+        // Una ripetizione è **un ciclo intero**: Y, poi T, poi W. Contare le lettere separate
+        // darebbe un numero tre volte più alto per lo stesso lavoro.
+        case .ytw: return 8
         case .burpee: return 8
         case .jumpingJack: return 25
         case .jumpSquat: return 10
@@ -156,6 +175,8 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .deadBug: return 2.5
         case .russianTwist: return 1.2
         case .plank, .sidePlank, .hollowHold: return 1.0   // un "rep" è un secondo di tenuta
+        case .superman: return 3.5      // due secondi di tenuta più la discesa controllata
+        case .ytw: return 6.0           // tre lettere, due secondi l'una: il ciclo è lungo
         case .burpee: return 4.5
         case .jumpingJack: return 1.2
         case .jumpSquat: return 2.2
@@ -189,6 +210,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .benchDip: return "tricipiti"
         case .crunch, .sitUp, .legRaise, .bicycleCrunch, .deadBug, .russianTwist,
              .plank, .sidePlank, .hollowHold: return "addome"
+        case .superman, .ytw: return "dorso"
         case .burpee, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return "total body"
         }
     }
@@ -239,6 +261,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
              .kneePushUp, .wallPushUp: return .spinta
         case .crunch, .sitUp, .legRaise, .bicycleCrunch, .deadBug, .russianTwist,
              .plank, .sidePlank, .hollowHold: return .addome
+        case .superman, .ytw: return .posturali
         case .burpee, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return .vigorosi
         }
     }
@@ -267,6 +290,8 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .plank: return "plank"
         case .sidePlank: return "plank laterale"
         case .hollowHold: return "hollow hold"
+        case .superman: return "superman"
+        case .ytw: return "Y-T-W"
         case .burpee: return "burpee"
         case .jumpingJack: return "jumping jack"
         case .jumpSquat: return "jump squat"
@@ -299,6 +324,8 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .plank: return "plank"
         case .sidePlank: return "side plank"
         case .hollowHold: return "hollow hold"
+        case .superman: return "superman"
+        case .ytw: return "Y-T-W"
         case .burpee: return "burpees"
         case .jumpingJack: return "jumping jacks"
         case .jumpSquat: return "jump squats"
@@ -380,9 +407,21 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .hollowHold:
             return L.t("Schiena a terra e ben aderente, braccia e gambe sollevate. Se la lombare si stacca, alza le gambe.",
                        "Back flat and pressed to the floor, arms and legs lifted. If your lower back lifts, raise your legs.")
+        // **Il piegamento mancava, ed è il pezzo che rende il burpee un burpee.** Diceva «squat,
+        // gambe indietro, torna su, salto», che è lo *squat thrust*: il burpee senza push-up,
+        // cioè un esercizio diverso e più facile. Segnalato dal principale il 2026-07-31
+        // raccontando come lo fa lui — *«squat, piegamento di push up, salto»*. Scritta per
+        // intero perché è il gesto più complesso che l'app propone, e saltarne un passaggio
+        // significa farne un altro senza accorgersene.
+        case .superman:
+            return L.t("A pancia in giù, braccia avanti. Stacca da terra petto, braccia e gambe insieme, tieni due secondi, scendi piano. Guarda il pavimento, non avanti.",
+                       "Face down, arms forward. Lift chest, arms and legs together, hold two seconds, lower slowly. Look at the floor, not ahead.")
+        case .ytw:
+            return L.t("A pancia in giù, fronte a terra. Braccia a Y in alto, poi a T di lato, poi a W coi gomiti stretti: due secondi ciascuna, staccando le mani da terra. Un giro delle tre lettere è una ripetizione.",
+                       "Face down, forehead on the floor. Arms in a Y overhead, then a T out to the sides, then a W with elbows tucked: two seconds each, hands off the floor. One round of the three letters is one rep.")
         case .burpee:
-            return L.t("Squat, gambe indietro, torna su, salto. Il pezzo duro della giornata, 60-90 secondi.",
-                       "Squat, legs back, come up, jump. The hard part of the day: 60-90 seconds.")
+            return L.t("Squat, mani a terra, gambe indietro. Un piegamento a terra, gambe avanti, e salta in alto.",
+                       "Squat, hands down, legs back. One push-up on the floor, legs forward, and jump up.")
         case .jumpingJack:
             return L.t("Ritmo continuo, atterra morbido sull'avampiede.",
                        "Steady rhythm, land softly on the balls of your feet.")
@@ -437,6 +476,10 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         // mestiere dell'esercizio, non la sua difficoltà.
         case .plank, .sidePlank, .hollowHold:
             return [.plank, .sidePlank, .hollowHold, .deadBug].filter { $0 != self }
+        // Fra loro: sono due modi di fare la stessa cosa, uno più facile da tenere e uno più
+        // preciso sulle scapole.
+        case .superman, .ytw:
+            return [.superman, .ytw].filter { $0 != self }
         case .burpee:
             return [.jumpSquat, .mountainClimber, .highKnees, .jumpingJack]
         case .jumpingJack, .jumpSquat, .mountainClimber, .highKnees:

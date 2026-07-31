@@ -1225,6 +1225,38 @@ piena, l'attribuzione «consenso» non si capisce, e le preferenze sono una list
       *spinta / trazione*; «e braccia» era un riempitivo che non nomina niente. Il sottotitolo
       resta quello vero: petto, spalle, tricipiti.
 
+- [x] **ISC-113** I posturali, la famiglia che mancava. — *«peccato che non ci sia niente da fare
+      per il dorso»*. A corpo libero e senza barra la trazione vera non esiste, e le alternative
+      che circolano — rematore allo stipite, auto-resistenza mano contro mano — hanno tutte lo
+      stesso difetto, che il principale ha visto per primo: *«credo sia minima veramente la forza
+      necessaria»*. Il carico dipende da quanto tiri, quindi non è misurabile, quindi non è
+      verificabile: scartate. **Sui bicipiti non c'è soluzione e resta scritto così**, invece di
+      metterci un esercizio finto.
+      Restano due cose vere: **Y-T-W** (trapezio inferiore e romboidi, tre angoli) e **superman**
+      (erettori spinali). Famiglia «Posturali», nome scelto da lui.
+      *In rotazione ne va uno solo:* sono entrambi «dorso», e nel pool di serie finivano uno
+      dietro l'altro — il test che vieta due gruppi uguali di fila l'ha visto al primo giro. Gira
+      il Y-T-W, più mirato; il superman resta spuntabile e **resta offerto come sostituzione
+      dentro la pausa anche da spento**, che è la regola dell'ISC-95.
+      *Le istruzioni sono il prodotto, qui più che altrove:* «Y-T-W» non lo conosceva nemmeno chi
+      l'ha chiesto, e un esercizio che non sai eseguire è un esercizio che salti. Un test pretende
+      che le tre lettere siano nominate e che la riga sia lunga abbastanza da insegnare il gesto.
+      *Coefficiente per sesso dichiarato stima, non misura*, come già per l'addome: Miller non
+      misura la schiena alta, e qui non si sposta un carico esterno.
+
+- [x] **ISC-114** Il burpee dice il piegamento. — La descrizione era «squat, gambe indietro, torna
+      su, salto»: quello è lo **squat thrust**, cioè il burpee senza push-up — un esercizio
+      diverso e più facile. Trovato dal principale raccontando come lo fa lui. Ora la sequenza è
+      scritta per intero, ed è il gesto più complesso che l'app propone: saltarne un passaggio
+      significa farne un altro senza accorgersene.
+
+- [x] **ISC-115** Il richiamo dice «la pausa è finita», non «puoi tornare». — Correzione della mia
+      prima versione, che l'aveva agganciato al pulsante e quindi taceva finché l'esercizio non
+      era confermato. *«Non chiude la pagina, ma ti dice: la pausa è finita. Poi sta alla persona
+      se ha fatto meno l'esercizio.»* Il tempo scade comunque, e cosa farne è una decisione della
+      persona: l'app annuncia un fatto, non concede un permesso.
+      *Nei test il controllo è diventato il claim e viceversa* — la stessa coppia, girata.
+
 - **Anti-claim** — il giorno nuovo azzera **solo** il ciclo micro/piena. Non la rotazione degli
   esercizi (che è `breakIndex`, e senza di lei si torna a squat-squat-squat, il difetto del
   26/07), non il conto del tempo attivo, non i mazzi delle frasi.

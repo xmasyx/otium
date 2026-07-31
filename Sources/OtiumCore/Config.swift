@@ -207,7 +207,19 @@ public struct Settings: Codable, Equatable, Sendable {
         rampWeeks: Int = 3,
         rampStartFactor: Double = 0.55,
         exercisePool: [ExerciseKind] = [.squat, .pushUp, .crunch, .lunge, .benchDip, .plank,
-                                        .calfRaise, .gluteBridge, .legRaise],   // split squat non c'è: è una variante dell'affondo, non un esercizio a sé in rotazione
+                                        .calfRaise, .gluteBridge, .legRaise,
+                                        // **Solo Y-T-W in rotazione, non tutti e due.** Sono
+                                        // entrambi «dorso», e nel pool di serie finivano uno
+                                        // dietro l'altro: il test che vieta due volte lo stesso
+                                        // gruppo di fila l'ha visto subito. Fra i due gira il
+                                        // più mirato — tre angoli invece di uno, ed è la
+                                        // postura da schermo che serve qui. Il superman resta
+                                        // nell'elenco, spuntabile, e **resta offerto come
+                                        // sostituzione dentro la pausa** anche da spento: è la
+                                        // regola dell'ISC-95, il pool governa il turno e non le
+                                        // vie d'uscita. Stessa scelta già fatta per lo split
+                                        // squat.
+                                        .ytw],   // split squat non c'è: è una variante dell'affondo, non un esercizio a sé in rotazione
         vigorousPool: [ExerciseKind] = [.burpee, .jumpingJack, .mountainClimber, .highKnees],
         vigorousDailyTarget: Int = 3,
         escapePhrase: String = "salto la pausa",   // lingua: ok valore di serie; l'onboarding lo mette in inglese se scegli English

@@ -171,6 +171,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // guardarlo. Un `if let` senza `else` non si vede leggendo il codice: si vede nei pixel.
         if !CommandLine.arguments.contains("--orfana") {
             model.forceBreakNow(long: long)
+            // `--esercizio=<nome>` rende la pausa con l'esercizio che si vuole **guardare**.
+            // Senza, la resa mostra sempre quello che tocca alla rotazione, e un esercizio nuovo
+            // — le cui istruzioni sono il prodotto, perche' nessuno sa cosa sia un Y-T-W — si
+            // vedrebbe solo per caso, dopo aver lanciato la sonda finche' non esce.
+            if let nome = CommandLine.arguments.first(where: { $0.hasPrefix("--esercizio=") })?
+                .split(separator: "=", maxSplits: 1).last.map(String.init),
+               let kind = ExerciseKind(rawValue: nome) {
+                model.swapExercise(to: kind, force: true)
+            }
             // `--fatto` fotografa la **seconda faccia** della pausa: esercizio confermato, la
             // frase che prende la pagina, il conto che scende. Senza, la resa mostra sempre e
             // solo il primo minuto e mezzo, cioè metà della schermata che l'app disegna.

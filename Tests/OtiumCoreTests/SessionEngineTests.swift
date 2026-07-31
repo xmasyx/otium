@@ -914,9 +914,14 @@ final class IntervalPromiseTests: XCTestCase {
 // MARK: - ISC-109 — il richiamo di fine pausa
 
 /// **La pausa piena ti chiede di stare lontano dallo schermo, e da lontano non si vede niente.**
-/// Il richiamo suona quando il pulsante «torna al lavoro» si accende — non quando scade il
-/// cronometro, perché con l'esercizio ancora da fare «puoi tornare» sarebbe falso.
-final class ReadyToReturnTests: XCTestCase {
+/// Il richiamo suona quando **scade il cronometro**, e dice che la pausa è finita — non che puoi
+/// tornare. Sono due fatti diversi: il tempo è passato comunque, e se l'esercizio manca ancora, è
+/// una decisione della persona cosa farne.
+///
+/// *La prima versione lo agganciava al pulsante* — cioè taceva finché l'esercizio non era
+/// confermato — e i test qui sotto asserivano quello. Corretti su indicazione del principale il
+/// 2026-07-31: **il test che era il controllo è diventato il claim**, e viceversa.
+final class BreakTimeOverTests: XCTestCase {
 
     private static let ora = SessionEngineTests.workingHour
 
@@ -939,35 +944,36 @@ final class ReadyToReturnTests: XCTestCase {
     }
 
     private func richiami(_ events: [EngineEvent]) -> Int {
-        events.filter { if case .readyToReturn = $0 { return true }; return false }.count
+        events.filter { if case .breakTimeOver = $0 { return true }; return false }.count
     }
 
-    func testTheChimeFiresWhenTheReturnButtonLightsUp() {
+    func testTheChimeFiresWhenTheClockRunsOut() {
         var engine = makeEngine()
         reachBreak(&engine)
         guard let plan = engine.plan else { return XCTFail("nessuna pausa") }
 
         advance(&engine, plan.exercise.minimumSeconds + 2)
         engine.markExerciseDone()
-        // Ancora dentro la durata: il pulsante è spento, e il richiamo non deve partire.
+        // Ancora dentro la durata: il tempo non è finito, quindi non si dice che è finito.
         let presto = advance(&engine, 5)
         XCTAssertEqual(richiami(presto), 0, "il tempo della pausa non è ancora passato")
 
         let dopo = advance(&engine, plan.duration)
-        XCTAssertEqual(richiami(dopo), 1, "il richiamo parte quando il pulsante si accende")
-        XCTAssertTrue(engine.canReturnToWork)
+        XCTAssertEqual(richiami(dopo), 1, "il richiamo parte quando scade il cronometro")
     }
 
-    /// **Il controllo che conta.** Se il richiamo si agganciasse al cronometro invece che al
-    /// pulsante, qui suonerebbe lo stesso — con l'esercizio mai fatto e il pulsante spento.
-    func testNoChimeWhileTheExerciseIsStillMissing() {
+    /// **Il claim vero, e prima era il suo contrario.** Il tempo scade anche se l'esercizio non
+    /// l'hai fatto, e il richiamo lo dice lo stesso: annuncia un fatto — la pausa è finita — non
+    /// un permesso. Cosa farne è tuo.
+    func testTheChimeFiresEvenWithTheExerciseStillMissing() {
         var engine = makeEngine()
         reachBreak(&engine)
         guard let plan = engine.plan else { return XCTFail("nessuna pausa") }
 
         let events = advance(&engine, plan.duration + 30, step: 5)
-        XCTAssertEqual(richiami(events), 0, "senza esercizio non si può tornare, quindi non si chiama")
-        XCTAssertFalse(engine.canReturnToWork)
+        XCTAssertEqual(richiami(events), 1, "il tempo è passato, e questo è il fatto che annuncia")
+        XCTAssertFalse(engine.canReturnToWork, "ma il pulsante resta spento: l'esercizio manca")
+        XCTAssertEqual(engine.phase, .breaking, "e la pausa non si chiude da sola")
     }
 
     /// Una volta sola: un richiamo a ogni secondo sarebbe un allarme, non un avviso.
@@ -994,5 +1000,59 @@ final class ReadyToReturnTests: XCTestCase {
             XCTAssertEqual(richiami(events), 1, "giro \(giro)")
             engine.returnToWork()
         }
+    }
+}
+
+// MARK: - ISC-113 — i posturali
+
+/// La famiglia che mancava: la schiena alta, l'unica zona senza niente.
+final class PosturalTests: XCTestCase {
+
+    func testTheTwoPosturalExercisesAreFullyDescribed() {
+        for kind in [ExerciseKind.superman, .ytw] {
+            XCTAssertEqual(kind.category, .posturali)
+            XCTAssertEqual(kind.muscleGroup, "dorso")
+            XCTAssertFalse(kind.isVigorous, "non fanno fiatone, non contano come sessione intensa")
+            XCTAssertFalse(kind.italianName.isEmpty)
+            XCTAssertFalse(kind.englishName.isEmpty)
+            XCTAssertGreaterThan(kind.baseReps, 0)
+            XCTAssertGreaterThan(kind.secondsPerRep, 0)
+        }
+    }
+
+    /// **Le istruzioni sono il prodotto, per questi due più che per tutti.** Squat e push-up li
+    /// sa fare chiunque; «Y-T-W» non lo conosceva nemmeno il principale quando l'ha chiesto, e un
+    /// esercizio che non sai eseguire è un esercizio che salti.
+    func testTheInstructionsActuallyExplainTheMovement() {
+        let ytw = ExerciseKind.ytw.cue
+        for pezzo in ["Y", "T", "W"] {
+            XCTAssertTrue(ytw.contains(pezzo), "le istruzioni devono nominare la lettera \(pezzo)")
+        }
+        XCTAssertTrue(ytw.count > 80, "una riga sola non basta a insegnare un gesto nuovo")
+        XCTAssertTrue(ExerciseKind.superman.cue.count > 60)
+    }
+
+    /// Si sostituiscono a vicenda dentro la pausa: chi non regge il Y-T-W ha dove andare.
+    func testTheyAreEachOthersVariant() {
+        XCTAssertEqual(ExerciseKind.superman.variants, [.ytw])
+        XCTAssertEqual(ExerciseKind.ytw.variants, [.superman])
+    }
+
+    /// **Il superman è fuori dalla rotazione di serie ma resta raggiungibile.** È la regola
+    /// dell'ISC-95: il pool governa il turno, le sostituzioni no — e senza questa, spegnere un
+    /// esercizio significherebbe anche togliere la via d'uscita a chi non ce la fa.
+    func testSupermanStaysReachableEvenWhenNotInTheRotation() {
+        let settings = Settings()
+        XCTAssertTrue(settings.exercisePool.contains(.ytw), "in rotazione va il più mirato")
+        XCTAssertFalse(settings.exercisePool.contains(.superman), "due «dorso» di fila no")
+        XCTAssertTrue(ExerciseKind.ytw.variants.contains(.superman),
+                      "ma dalla pausa ci si arriva lo stesso")
+    }
+
+    /// Il burpee dice il piegamento: era la parte che mancava, e senza è un altro esercizio.
+    func testTheBurpeeDescribesThePushUp() {
+        let t = ExerciseKind.burpee.cue.lowercased()
+        XCTAssertTrue(t.contains("piegamento") || t.contains("push-up"),
+                      "senza il piegamento è uno squat thrust, non un burpee")
     }
 }

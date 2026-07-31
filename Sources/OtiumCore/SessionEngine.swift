@@ -102,13 +102,18 @@ public enum EngineEvent: Equatable, Sendable {
     /// quei cinque minuti diventano un'attesa che non serve a nessuno — e nel frattempo la pausa
     /// arretrata non la sa più nessuno. Chiesto dal principale il 2026-07-31.
     case deferredBreakDue(BreakPlan)
-    /// La pausa è finita e il pulsante «torna al lavoro» è diventato premibile.
+    /// Il tempo della pausa è passato.
     ///
     /// **Serve perché durante una pausa piena non sei davanti al Mac** — l'app te lo chiede
     /// espressamente, tre minuti lontano dallo schermo — e da lontano non c'è modo di sapere che
-    /// il tempo è passato. Chiesto dal principale il 2026-07-31. È agganciato al pulsante e non
-    /// alla scadenza del cronometro: se l'esercizio manca ancora, «puoi tornare» sarebbe falso.
-    case readyToReturn(BreakPlan)
+    /// il tempo è finito. Chiesto dal principale il 2026-07-31.
+    ///
+    /// **Dice «la pausa è finita», non «puoi tornare»**, e la differenza non è di parole: la
+    /// prima versione lo agganciava al pulsante, cioè taceva se l'esercizio non era ancora fatto.
+    /// Ma il tempo è passato comunque, e cosa farne — tornare o finire l'esercizio — è una
+    /// decisione della persona, non dell'app. Corretto su sua indicazione: *«non chiude la
+    /// pagina, ma ti dice: la pausa è finita»*.
+    case breakTimeOver(BreakPlan)
 }
 
 /// Cosa sta succedendo intorno, nel momento in cui il break vorrebbe partire.
@@ -182,7 +187,7 @@ public struct SessionEngine {
     /// finisce l'attesa non ha più motivo di esistere.
     private var postponedForMicrophone = false
     /// Il richiamo di fine pausa è già partito: una volta sola, non a ogni tick.
-    private var readyToReturnSignalled = false
+    private var timeOverSignalled = false
     private var idleDuringBreak: Double = 0
     /// Da che punto del break conta il tempo minimo dell'esercizio in corso. Cambiando variante
     /// riparte da lì: altrimenti basterebbe aspettare col push-up e passare al più corto un
@@ -358,10 +363,14 @@ public struct SessionEngine {
             return finish(current, event: .breakSkipped(current, .failsafe))
         }
 
-        // Il richiamo: una volta sola, nell'istante in cui il pulsante si accende.
-        if !readyToReturnSignalled, canReturnToWork {
-            readyToReturnSignalled = true
-            return [.readyToReturn(current)]
+        // **Il richiamo è legato al cronometro, non al pulsante** (2026-07-31, sua decisione dopo
+        // che gliel'avevo agganciato al pulsante). Non dice «puoi tornare», dice «la pausa è
+        // finita»: sono due fatti diversi, e il secondo è vero anche se l'esercizio manca. Se sei
+        // dall'altra parte della stanza il tempo è comunque passato, e cosa farne — tornare, o
+        // finire l'esercizio — è una decisione tua, non dell'app.
+        if !timeOverSignalled, timer >= current.duration {
+            timeOverSignalled = true
+            return [.breakTimeOver(current)]
         }
 
         // **La pausa dura quanto dichiarato.** La prima versione lasciava finire il micro appena
@@ -439,7 +448,7 @@ public struct SessionEngine {
         exerciseDone = false
         idleDuringBreak = 0
         exerciseBaseline = 0
-        readyToReturnSignalled = false
+        timeOverSignalled = false
         return [.breakStarted(current)]
     }
 
@@ -458,7 +467,7 @@ public struct SessionEngine {
         exerciseBaseline = 0
         singleExercise = nil
         postponedForMicrophone = false
-        readyToReturnSignalled = false
+        timeOverSignalled = false
         return [event]
     }
 

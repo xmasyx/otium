@@ -62,6 +62,11 @@ public enum SexCalibration {
         case "petto", "spalle", "tricipiti": return 0.55     // Miller 1993, parte alta
         case "gambe", "glutei", "polpacci": return 0.70      // Miller 1993, parte bassa
         case "addome": return 0.85                            // stima, non misura
+        // **Anche questa è una stima dichiarata.** Miller non misura la schiena alta, e questi
+        // due esercizi non spostano un carico esterno: si solleva il peso delle braccia e del
+        // tronco, dove il divario fra i sessi si stringe come sull'endurance del core. Segnato
+        // come stima invece di essere spacciato per un dato, come già per l'addome.
+        case "dorso": return 0.85                             // stima, non misura
         case "total body": return 0.70                        // movimenti misti: si segue la parte bassa
         default: return 0.80
         }

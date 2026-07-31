@@ -301,11 +301,12 @@ final class AppModel: ObservableObject {
                           "the deferred break resumes in one minute — \(plan.exercise.label)"),
                 sound: settings.notificationSound
             )
-        case .readyToReturn:
-            // **Solo suono, nessun pannello.** Lo schermo è coperto dal blocco, quindi un HUD non
-            // lo vedrebbe nessuno; e se sei dall'altra parte della stanza — che è esattamente
-            // quello che la pausa piena ti chiede — il suono è l'unica cosa che ti arriva. Stesso
-            // suono del preavviso, come chiesto: è la stessa famiglia di avviso, «muoviti».
+        case .breakTimeOver:
+            // **Solo suono, nessun pannello, e niente si chiude.** Lo schermo è coperto dal
+            // blocco, quindi un HUD non lo vedrebbe nessuno; e se sei dall'altra parte della
+            // stanza — che è esattamente quello che la pausa piena ti chiede — il suono è l'unica
+            // cosa che ti arriva. Stesso suono del preavviso, come chiesto. Dice che il tempo è
+            // finito: se l'esercizio manca ancora, la schermata lo dice già da sé.
             previewSound(settings.notificationSound)
         case .breakStarted(let plan):
             hud.hide()
@@ -523,8 +524,11 @@ final class AppModel: ObservableObject {
         settings.offerVariants ? engine.variants(now: Date()) : []
     }
 
-    func swapExercise(to kind: ExerciseKind) {
-        engine.swapExercise(to: kind, now: Date())
+    /// `force` serve alla sola resa: il motore rifiuta una sostituzione fuori dalle varianti
+    /// dell'esercizio in corso — ed è giusto così, dentro una pausa vera — ma la sonda deve poter
+    /// disegnare **qualunque** esercizio per guardarselo.
+    func swapExercise(to kind: ExerciseKind, force: Bool = false) {
+        engine.swapExercise(to: kind, now: Date(), force: force)
         objectWillChange.send()
     }
 
