@@ -474,4 +474,27 @@ final class CircuitModeTests: XCTestCase {
         let s = try JSONDecoder().decode(Settings.self, from: Data(json.utf8))
         XCTAssertEqual(s.circuitMode, .singolo)
     }
+
+    /// **Il file vero del principale**, com'era sul disco il 2026-07-31 dopo che gli avevo acceso
+    /// l'impostazione vecchia: trenta chiavi, i due booleani, e nessun `circuitMode`. Un test sul
+    /// JSON minimo prova la funzione; questo prova il **caso che sta davvero succedendo**.
+    func testHisActualSettingsFileMigratesToStartingInTheCircuit() throws {
+        let json = """
+        {"activeFromHour":7,"activeToHour":23,"autoDeferSeconds":300,"autoStartAtLogin":true,\
+        "cadence":{"idleThresholdSeconds":60,"intervalSeconds":1800,"longDurationSeconds":300,\
+        "longEveryNBreaks":3,"microDurationSeconds":90,"postponeSeconds":120,"postponesAllowed":1,\
+        "warningSeconds":60},"deferWhenMicrophoneActive":true,"detectQuietPresence":true,\
+        "escapePhrase":"salto la pausa","fullPaceAnswered":false,"growthAnswered":false,\
+        "language":"italian","maxAutoDefers":6,"notificationSound":"Tink","offerCircuit":true,\
+        "offerVariants":true,"progressBeyondFull":false,"rampStartFactor":0.55,"rampWeeks":3,\
+        "resumeGraceSeconds":300,"sex":"male","startLongInCircuit":true,"theme":"alloro",\
+        "vigorousDailyTarget":3}
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let s = try decoder.decode(Settings.self, from: Data(json.utf8))
+        XCTAssertEqual(s.circuitMode, .subito, "l'impostazione che gli ho acceso non deve perdersi")
+        XCTAssertEqual(s.cadence, .optionA, "e il resto del file arriva intero")
+        XCTAssertTrue(s.offerVariants)
+    }
 }
