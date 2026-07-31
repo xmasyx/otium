@@ -1220,6 +1220,15 @@ uno che non copre la barra dei menu sono indistinguibili nei test.
 
 ## Decisions
 
+- **2026-07-31 — installare non è `open`, se l'app è già viva.** Ricostruito il bundle, `open
+  Otium.app` **non rilancia niente**: trova l'app in esecuzione e la porta davanti, e basta. Il
+  processo continua col binario vecchio, mappato in memoria, mentre sul disco c'è quello nuovo —
+  e tutto sembra a posto: nessun errore, l'app risponde, la versione del file è aggiornata. La
+  prima volta non me n'ero accorto per un caso fortunato, cioè che il build aveva fatto morire
+  l'istanza da sé. **La sonda è il pid**: se non cambia, non hai installato niente. Chiudere
+  prima, riaprire dopo, e confrontare i due numeri.
+
+
 - **2026-07-28 — una sonda si isola per costruzione, non per disciplina.** Le prime sonde di questa
   giornata scrivevano nei dati veri, e ci si compensava con un backup prima e un ripristino dopo,
   cioè con l'attenzione di chi lancia il comando. Ha ceduto: le sonde hanno riscritto l'avvio
