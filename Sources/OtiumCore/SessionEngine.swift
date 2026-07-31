@@ -500,13 +500,22 @@ public struct SessionEngine {
             ? settings.planner.circuit(breakIndex: breakIndex, factor: factor, sex: settings.sex,
                                        pushVariant: settings.pushVariant)
             : []
-        return BreakPlan(
+        var piano = BreakPlan(
             index: breakIndex,
             kind: kind,
             duration: settings.cadence.duration(for: kind),
             exercise: exercise,
             circuit: circuit
         )
+        // **Chi il circuito lo fa sempre non deve dirlo ogni volta.** Il piano nasce già in
+        // circuito, e l'esercizio del turno resta da parte: l'uscita dentro la pausa — «basta
+        // così, torno all'esercizio singolo» — lo ritrova esattamente dov'era.
+        if settings.startLongInCircuit, circuit.count >= 2 {
+            piano.circuitActive = true
+            piano.exercise = circuit[0]
+            singleExercise = exercise
+        }
+        return piano
     }
 
     /// Fra l'ultima pausa e adesso è cambiato il giorno?

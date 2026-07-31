@@ -1335,6 +1335,20 @@ piena, l'attribuzione «consenso» non si capisce, e le preferenze sono una list
       *Polo di controllo:* con il vecchio algoritmo e il pool vero del principale le adiacenze
       ci sono; col nuovo sono zero.
 
+- [x] **ISC-122** Le pause piene possono cominciare già in circuito. — Facoltativa e spenta di
+      serie — il circuito è quattro esercizi in cinque minuti, e arrivarci senza averlo scelto è
+      il modo di odiarlo al secondo giorno — ma chi lo fa sempre pagava un clic a ogni pausa per
+      dire una cosa che aveva già deciso. **Accesa nel profilo del principale su sua richiesta**,
+      con copia di sicurezza delle impostazioni precedenti e ad app ferma: scriverle mentre gira
+      significa vederle sovrascritte all'uscita.
+      *L'uscita era già lì e resta vera:* «basta così, torno all'esercizio singolo». Perché resti
+      vera, l'esercizio del turno viene messo da parte **al momento del piano** e non
+      all'ingresso nel circuito — altrimenti uscire lascerebbe a schermo la stazione, cioè
+      un'uscita che non riporta da nessuna parte. È il claim che un test tiene fermo, confrontando
+      con quello che sarebbe uscito a impostazione spenta.
+      *L'interruttore si spegne da sé* se il microcircuito non è proposto: comandare qualcosa che
+      non esiste è peggio che non poterlo comandare.
+
 - **Anti-claim** — il giorno nuovo azzera **solo** il ciclo micro/piena. Non la rotazione degli
   esercizi (che è `breakIndex`, e senza di lei si torna a squat-squat-squat, il difetto del
   26/07), non il conto del tempo attivo, non i mazzi delle frasi.

@@ -339,3 +339,66 @@ final class CircuitTests: XCTestCase {
         }
     }
 }
+
+// MARK: - ISC-122 — le pause piene già in circuito
+
+/// **Chi il circuito lo fa sempre non deve dirlo ogni volta.** Facoltativa e spenta di serie: il
+/// circuito è quattro esercizi in cinque minuti, e arrivarci senza averlo scelto è il modo di
+/// odiarlo al secondo giorno.
+final class StartInCircuitTests: XCTestCase {
+
+    private static let ora: Date = {
+        var c = DateComponents(); c.year = 2026; c.month = 7; c.day = 31; c.hour = 10
+        return Calendar.current.date(from: c)!
+    }()
+
+    private func engine(startInCircuit: Bool) -> SessionEngine {
+        var s = Settings()
+        s.startDate = Self.ora
+        s.startLongInCircuit = startInCircuit
+        return SessionEngine(settings: s, maxCredibleElapsed: 120)
+    }
+
+    func testTheFullBreakOpensAlreadyInTheCircuit() {
+        var e = engine(startInCircuit: true)
+        e.forceBreakNow(now: Self.ora, kind: .long)
+        guard let plan = e.plan else { return XCTFail("nessuna pausa") }
+        XCTAssertTrue(plan.circuitActive, "parte dentro il giro")
+        XCTAssertEqual(plan.stationIndex, 0)
+        XCTAssertEqual(plan.exercise.kind, plan.circuit.first?.kind, "e mostra la prima stazione")
+        XCTAssertFalse(e.canStartCircuit, "non si propone quello che è già in corso")
+    }
+
+    /// Il controllo: spenta, la pausa piena si apre come sempre — con la proposta, non col giro.
+    func testWithTheSettingOffNothingChanges() {
+        var e = engine(startInCircuit: false)
+        e.forceBreakNow(now: Self.ora, kind: .long)
+        guard let plan = e.plan else { return XCTFail("nessuna pausa") }
+        XCTAssertFalse(plan.circuitActive)
+        XCTAssertTrue(e.canStartCircuit, "il circuito resta una proposta")
+    }
+
+    /// **L'uscita deve restare vera anche entrando dal giro.** Se `singleExercise` non fosse
+    /// stato messo da parte al momento del piano, uscire dal circuito lascerebbe a schermo la
+    /// stazione invece dell'esercizio del turno — cioè l'uscita non riporterebbe da nessuna parte.
+    func testLeavingTheCircuitGivesBackTheExerciseOfTheTurn() {
+        var normale = engine(startInCircuit: false)
+        normale.forceBreakNow(now: Self.ora, kind: .long)
+        let esercizioDelTurno = normale.plan?.exercise.kind
+
+        var e = engine(startInCircuit: true)
+        e.forceBreakNow(now: Self.ora, kind: .long)
+        XCTAssertTrue(e.leaveCircuit(), "l'uscita c'è")
+        XCTAssertFalse(e.plan?.circuitActive ?? true)
+        XCTAssertEqual(e.plan?.exercise.kind, esercizioDelTurno,
+                       "e riporta all'esercizio che sarebbe toccato, non alla stazione")
+    }
+
+    /// Le micro-pause non c'entrano: il circuito vive solo nelle piene.
+    func testMicroBreaksAreUntouched() {
+        var e = engine(startInCircuit: true)
+        e.forceBreakNow(now: Self.ora, kind: .micro)
+        XCTAssertFalse(e.plan?.circuitActive ?? true)
+        XCTAssertTrue(e.plan?.circuit.isEmpty ?? false)
+    }
+}

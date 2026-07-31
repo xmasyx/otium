@@ -1350,6 +1350,14 @@ if ProbeMode.active {
     // che qualcuno rilegga. Dentro `ProbeMode`, quindi nella cartella usa e getta.
     // `--cadenza-finta` porta la cadenza fuori dai preset, che e' l'unico modo di **guardare** la
     // riga «personalizzata»: con le impostazioni di serie quel ramo non si disegna mai.
+    // `--circuito-subito`: rende la pausa piena **come la vede chi ha acceso l'impostazione**.
+    // Senza, la sonda gira coi valori di serie e disegna sempre e solo la proposta.
+    if arguments.contains("--circuito-subito") {
+        var s = Settings()
+        s.startLongInCircuit = true
+        SettingsStore.save(s)
+    }
+
     if arguments.contains("--cadenza-finta") {
         var s = Settings()
         s.cadence.warningSeconds = 45

@@ -177,6 +177,13 @@ public struct Settings: Codable, Equatable, Sendable {
     /// addome, esplosivo. **Proposta, non imposizione**: dentro la pausa scegli tu se fare il
     /// giro completo o il solo esercizio del turno.
     public var offerCircuit: Bool
+    /// Le pause piene **cominciano** già in circuito, invece di proporlo.
+    ///
+    /// Facoltativa e spenta di serie, perché il circuito è quattro esercizi in cinque minuti e
+    /// arrivarci senza averlo scelto è il modo di odiarlo al secondo giorno. Chi lo fa sempre,
+    /// però, paga un clic a ogni pausa piena per dire una cosa che aveva già deciso — e l'uscita
+    /// resta dov'era: «basta così, torno all'esercizio singolo», dentro la pausa.
+    public var startLongInCircuit: Bool
     /// Otium riparte da sola a ogni accensione. Diventa `false` quando l'avvio automatico viene
     /// rimosso dalle preferenze, così l'app non se lo rimette da sola al riavvio successivo —
     /// una preferenza che si riscrive addosso all'utente è un difetto, non una comodità.
@@ -235,6 +242,7 @@ public struct Settings: Codable, Equatable, Sendable {
         detectQuietPresence: Bool = true,
         offerVariants: Bool = true,
         offerCircuit: Bool = true,
+        startLongInCircuit: Bool = false,
         autoStartAtLogin: Bool = true,
         maxAutoDefers: Int = 6,
         autoDeferSeconds: Double = 5 * 60,
@@ -264,6 +272,7 @@ public struct Settings: Codable, Equatable, Sendable {
         self.detectQuietPresence = detectQuietPresence
         self.offerVariants = offerVariants
         self.offerCircuit = offerCircuit
+        self.startLongInCircuit = startLongInCircuit
         self.autoStartAtLogin = autoStartAtLogin
         self.maxAutoDefers = max(0, maxAutoDefers)
         self.autoDeferSeconds = autoDeferSeconds
@@ -365,6 +374,7 @@ public struct Settings: Codable, Equatable, Sendable {
         detectQuietPresence = (try? c.decode(Bool.self, forKey: .detectQuietPresence)) ?? d.detectQuietPresence
         offerVariants = (try? c.decode(Bool.self, forKey: .offerVariants)) ?? d.offerVariants
         offerCircuit = (try? c.decode(Bool.self, forKey: .offerCircuit)) ?? d.offerCircuit
+        startLongInCircuit = (try? c.decode(Bool.self, forKey: .startLongInCircuit)) ?? d.startLongInCircuit
         autoStartAtLogin = (try? c.decode(Bool.self, forKey: .autoStartAtLogin)) ?? d.autoStartAtLogin
         maxAutoDefers = (try? c.decode(Int.self, forKey: .maxAutoDefers)) ?? d.maxAutoDefers
         autoDeferSeconds = (try? c.decode(Double.self, forKey: .autoDeferSeconds)) ?? d.autoDeferSeconds

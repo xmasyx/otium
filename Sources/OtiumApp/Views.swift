@@ -1450,6 +1450,16 @@ struct PrefsView: View {
                 + "proposal: you decide, inside the break."))
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            // Dipende dal precedente: senza il circuito proposto, cominciarci dentro non vuol
+            // dire niente. Spento si spegne da sé, invece di restare acceso a comandare nulla.
+            Toggle(L.t("Comincia già in circuito", "Start already in the circuit"),
+                   isOn: $draft.startLongInCircuit)
+                .disabled(!draft.offerCircuit)
+            Text(L.t("Le pause piene partono direttamente dal giro completo, senza chiedertelo. L'uscita resta dov'è: dentro la pausa, «basta così, torno all'esercizio singolo».",
+                     "Full breaks start straight into the whole circuit, without asking. The way out stays where it was: inside the break, «that's enough, back to the single exercise»."))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
