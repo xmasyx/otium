@@ -1056,3 +1056,39 @@ final class PosturalTests: XCTestCase {
                       "senza il piegamento è uno squat thrust, non un burpee")
     }
 }
+
+// MARK: - ISC-116 — lo squat thrust
+
+/// Il burpee senza il piegamento: un esercizio suo, non una descrizione approssimativa dell'altro.
+final class SquatThrustTests: XCTestCase {
+
+    func testItIsAVigorousExerciseInItsOwnRight() {
+        XCTAssertEqual(ExerciseKind.squatThrust.category, .vigorosi)
+        XCTAssertTrue(ExerciseKind.squatThrust.isVigorous, "conta verso le sessioni intense")
+        XCTAssertGreaterThan(ExerciseKind.squatThrust.baseReps, ExerciseKind.burpee.baseReps,
+                             "senza il piegamento se ne fanno di più")
+        XCTAssertLessThan(ExerciseKind.squatThrust.secondsPerRep, ExerciseKind.burpee.secondsPerRep,
+                          "e ognuno dura meno")
+    }
+
+    /// **La regressione scala il movimento, non il numero.** È la stessa regola dei push-up: a
+    /// una donna il burpee arriva come squat thrust, non come «quattro burpee».
+    func testItIsTheBurpeeRegression() {
+        XCTAssertEqual(SexCalibration.regression(for: .burpee, sex: .female), .squatThrust)
+        XCTAssertEqual(SexCalibration.regression(for: .burpee, sex: .male), .burpee,
+                       "e per tutti gli altri il burpee resta il burpee")
+    }
+
+    /// Resta la prima via d'uscita dentro la pausa, per chiunque: il piegamento a terra è il
+    /// pezzo che salta per primo quando la giornata è storta.
+    func testItIsTheFirstWayOutOfABurpee() {
+        XCTAssertEqual(ExerciseKind.burpee.variants.first, .squatThrust)
+        XCTAssertTrue(ExerciseKind.squatThrust.variants.contains(.burpee), "e si torna su")
+    }
+
+    /// I due non si confondono: uno nomina il piegamento, l'altro dice che non c'è.
+    func testTheTwoDescriptionsCannotBeMixedUp() {
+        XCTAssertTrue(ExerciseKind.squatThrust.cue.lowercased().contains("senza il piegamento"))
+        XCTAssertFalse(ExerciseKind.squatThrust.cue.lowercased().contains("salta in alto"))
+    }
+}

@@ -1257,6 +1257,41 @@ piena, l'attribuzione «consenso» non si capisce, e le preferenze sono una list
       persona: l'app annuncia un fatto, non concede un permesso.
       *Nei test il controllo è diventato il claim e viceversa* — la stessa coppia, girata.
 
+- [x] **ISC-116** Lo squat thrust esiste, e ha un nome suo. — *«lo squat thrust lo teniamo per le
+      donne o comunque come variante più facile»*. È il burpee senza il piegamento, ed è
+      esattamente quello che la descrizione del burpee diceva fino a stamattina: adesso che sono
+      distinti, il primo può fare il mestiere di regressione invece di confondersi con l'altro.
+      Regressione del burpee in `SexCalibration`, prima variante nella pausa per chiunque, e
+      dodici ripetizioni contro otto perché senza il piegamento il ciclo è più corto.
+
+- [x] **ISC-117** Il mazzo delle frasi non dà due tipi uguali di fila. — *«secondo me non sono
+      random ma sono in fila»*. **Sul meccanismo aveva torto e su quello che vedeva aveva
+      ragione**: sondato il file vivo, le dodici successive erano `q m q q t f m f q q m q`, cioè
+      mescolate davvero. Ma un mescolamento uniforme fa grappoli, e quattro fatti consecutivi —
+      normalissimi su 480 estrazioni — uno se li vive tutti nella stessa mattina.
+      Ora se il tipo ripete si porta avanti la prima frase di tipo diverso. **Uno scambio, non un
+      rimescolamento:** la garanzia grossa — nessuna frase due volte in 480 pause — resta intatta,
+      e un test lo verifica svuotando il mazzo.
+      *La promessa è dichiarata per quello che è:* vale nei primi tre quarti del mazzo. In fondo
+      possono restare solo frasi dello stesso tipo, e lì esce quella che c'è — meglio un tipo
+      ripetuto che uno schermo vuoto. **Il primo test che avevo scritto asseriva di più**, e
+      falliva: l'ho corretto invece di indebolire il codice.
+      *Il polo di controllo misura il fenomeno:* senza la regola, gli stessi venti semi producono
+      oltre cento grappoli. Se fossero zero, il test verde non proverebbe niente.
+
+- [x] **ISC-118** Le frasi rilette, e dieci riscritte. — *«la frase nello screenshot è scritta
+      male»*: «Non è quanto stai seduto in totale, è quanto a lungo **lo stai di fila**» — che in
+      italiano non vuol dire niente. Non era una traduzione sbagliata: era l'originale italiano
+      scritto con la sintassi dell'abstract inglese, ed è la stessa causa degli altri nove.
+      Corretti i calchi da abstract («si associa a girovita migliori»), «vigore» lasciato da
+      *vigour*, «agitarsi» per *fidgeting*, «in termini di», e **le virgolette invertite** — i
+      caporali stavano nella frase inglese e le doppie dritte in quella italiana.
+      *Un difetto lo ha trovato il grep e non l'occhio:* «Il maestro nella pentola non fa bollire
+      due volte lo stesso brodo», dove l'inglese diceva *a good cook*.
+      **Dichiarato non fatto:** le 337 righe di `Quotes.swift` — le citazioni d'autore — sono
+      passate solo dai controlli automatici, non rilette una per una. Meritano una passata
+      dedicata, con la regola del principale: preferire una traduzione pubblicata a una mia.
+
 - **Anti-claim** — il giorno nuovo azzera **solo** il ciclo micro/piena. Non la rotazione degli
   esercizi (che è `breakIndex`, e senza di lei si torna a squat-squat-squat, il difetto del
   26/07), non il conto del tempo attivo, non i mazzi delle frasi.

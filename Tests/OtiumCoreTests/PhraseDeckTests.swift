@@ -167,3 +167,93 @@ final class PhraseDeckTests: XCTestCase {
         XCTAssertEqual(PhraseLibrary.userPhrases(at: url).count, 0)
     }
 }
+
+// MARK: - ISC-117 — mai due dello stesso tipo di fila
+
+/// **Il mazzo era già mescolato, e la lamentela era comunque giusta.**
+///
+/// Sondato sul file vivo il 2026-07-31, le dodici estrazioni successive erano `q m q q t f m f q
+/// q m q`: casuale davvero. Ma il caso fa grappoli, e quattro fatti consecutivi — normalissimi in
+/// 480 estrazioni — uno se li vive tutti nella stessa mattina e conclude che l'app dia solo studi.
+final class PhraseKindSpreadTests: XCTestCase {
+
+    /// Le proporzioni **vere**, contate sul mazzo vivo del principale il 2026-07-31:
+    /// 87 citazioni, 67 fatti, 35 mindful, 18 voce.
+    private func poolFinto() -> [Phrase] {
+        var out: [Phrase] = []
+        for i in 0..<87 { out.append(Phrase(id: "q:\(i)", kind: .citazione, text: "cit \(i)")) }
+        for i in 0..<67 { out.append(Phrase(id: "f:\(i)", kind: .fatto, text: "fatto \(i)")) }
+        for i in 0..<35 { out.append(Phrase(id: "m:\(i)", kind: .mindful, text: "mind \(i)")) }
+        for i in 0..<18 { out.append(Phrase(id: "t:\(i)", kind: .voce, text: "voce \(i)")) }
+        return out
+    }
+
+    /// **La regola vale dove si vive, e il primo test che ho scritto asseriva di più.**
+    ///
+    /// Pretendeva zero ripetizioni su tutto il mazzo, con un pool inventato di 40 fatti su 56:
+    /// verso il fondo restano per forza solo fatti, e nessuno scambio può inventare un tipo che
+    /// non c'è più — è scritto anche nel codice, ed è la scelta giusta (meglio un tipo ripetuto
+    /// che uno schermo vuoto). Qui la promessa è quella vera: **nei primi tre quarti del mazzo**,
+    /// cioè oltre trecento pause, due dello stesso tipo di fila non escono. Il fondo del mazzo
+    /// resta un caso limite dichiarato, non una garanzia.
+    func testNeverTwoOfTheSameKindInARowWhileItMatters() {
+        let pool = poolFinto()
+        let quante = pool.count * 3 / 4
+        for seme in UInt64(1)...20 {
+            var rng = SeededGenerator(seed: seme)
+            var deck = PhraseDeck()
+            var tipi: [Phrase.Kind] = []
+            for _ in 0..<quante {
+                guard let p = deck.draw(from: pool, using: &rng) else { break }
+                tipi.append(p.kind)
+            }
+            for (a, b) in zip(tipi, tipi.dropFirst()) {
+                XCTAssertNotEqual(a, b, "seme \(seme): due \(a) di fila")
+            }
+        }
+    }
+
+    /// **Il polo che rende il test una prova.** Senza la regola, con lo stesso pool e gli stessi
+    /// venti semi, i grappoli ci sono eccome: è la misura di quanto il caso puro sembri non
+    /// casuale, ed è la ragione per cui il principale se n'è accorto.
+    func testWithoutTheRuleTheClustersAreThere() {
+        let pool = poolFinto()
+        var grappoli = 0
+        for seme in UInt64(1)...20 {
+            var rng = SeededGenerator(seed: seme)
+            var ids = pool.map(\.id).shuffled(using: &rng)
+            let byID = Dictionary(uniqueKeysWithValues: pool.map { ($0.id, $0) })
+            ids = Array(ids.prefix(pool.count * 3 / 4))
+            let tipi = ids.compactMap { byID[$0]?.kind }
+            grappoli += zip(tipi, tipi.dropFirst()).filter { $0 == $1 }.count
+        }
+        XCTAssertGreaterThan(grappoli, 100,
+                             "un mescolamento uniforme fa grappoli: se qui fossero zero, il test sopra non proverebbe niente")
+    }
+
+    /// **Lo scambio non deve costare la garanzia grossa**, che è quella per cui non rivedi la
+    /// stessa frase per centinaia di pause. Portare avanti una carta non è rimescolare il mazzo.
+    func testTheSwapDoesNotCauseRepeats() {
+        let pool = poolFinto()
+        var rng = SeededGenerator(seed: 7)
+        var deck = PhraseDeck()
+        var viste: [String] = []
+        for _ in 0..<pool.count {
+            guard let p = deck.draw(from: pool, using: &rng) else { break }
+            viste.append(p.id)
+        }
+        XCTAssertEqual(Set(viste).count, viste.count, "nessuna frase due volte prima del rimescolo")
+        XCTAssertEqual(viste.count, pool.count, "e il mazzo si svuota tutto")
+    }
+
+    /// Il caso limite onesto: se restano solo frasi dello stesso tipo, esce quella che c'è. Meglio
+    /// un tipo ripetuto che una pausa senza niente a schermo.
+    func testASingleKindPoolStillDraws() {
+        let pool = (0..<5).map { Phrase(id: "f:\($0)", kind: .fatto, text: "solo fatti \($0)") }
+        var rng = SeededGenerator(seed: 3)
+        var deck = PhraseDeck()
+        for _ in 0..<5 {
+            XCTAssertNotNil(deck.draw(from: pool, using: &rng))
+        }
+    }
+}

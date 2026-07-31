@@ -101,7 +101,7 @@ public enum Mindful {
         t("La visione senza azione è un sogno a occhi aperti; l'azione senza visione è un incubo.", "Vision without action is a daydream; action without vision is a nightmare.", "proverbio giapponese", "Japanese proverb"),
         t("Il momento migliore per piantare un albero era vent'anni fa. Il secondo migliore è adesso.", "The best time to plant a tree was twenty years ago. The second best is now.", "proverbio cinese", "Chinese proverb"),
         t("Non temere di andare piano, temi solo di fermarti.", "Do not fear going slowly: fear only standing still.", "proverbio cinese", "Chinese proverb"),
-        t("Il maestro nella pentola non fa bollire due volte lo stesso brodo.", "A good cook does not boil the same broth twice.", "proverbio cinese", "Chinese proverb"),
+        t("Un buon cuoco non fa bollire due volte lo stesso brodo.", "A good cook does not boil the same broth twice.", "proverbio cinese", "Chinese proverb"),
         t("L'acqua che scorre non marcisce.", "Running water never goes stale.", "proverbio cinese", "Chinese proverb"),
         t("Un centimetro di tempo è un centimetro d'oro, ma un centimetro d'oro non compra un centimetro di tempo.", "An inch of time is an inch of gold, but an inch of gold will not buy an inch of time.", "proverbio cinese", "Chinese proverb"),
         t("Chi chiede è sciocco per cinque minuti; chi non chiede resta sciocco per sempre.", "He who asks is a fool for five minutes; he who never asks stays a fool forever.", "proverbio cinese", "Chinese proverb"),

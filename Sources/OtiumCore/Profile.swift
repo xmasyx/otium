@@ -94,6 +94,11 @@ public enum SexCalibration {
         case .pushUp: return .kneePushUp
         case .diamondPushUp: return .kneePushUp
         case .archerPushUp: return .inclinePushUp
+        // **Il burpee scala come i push-up, e per la stessa ragione.** Dentro c'è un piegamento a
+        // terra, cioè il gesto su cui il divario di Miller è più largo: lo squat thrust è lo
+        // stesso ciclo senza quel pezzo. Si scala il movimento, non il numero — e resta
+        // scambiabile in su dentro la pausa, come tutte le altre regressioni.
+        case .burpee: return .squatThrust
         default: return kind
         }
     }

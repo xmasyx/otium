@@ -100,10 +100,14 @@ public extension Quote {
 public struct PhraseDeck: Codable, Equatable, Sendable {
     public private(set) var remaining: [String]
     public private(set) var lastDrawn: String?
+    /// Il tipo dell'ultima uscita, per non darne due uguali di fila. Assente nei mazzi salvati
+    /// prima del 2026-07-31: vale `nil`, e la regola comincia a valere dall'estrazione dopo.
+    public private(set) var lastKind: Phrase.Kind?
 
-    public init(remaining: [String] = [], lastDrawn: String? = nil) {
+    public init(remaining: [String] = [], lastDrawn: String? = nil, lastKind: Phrase.Kind? = nil) {
         self.remaining = remaining
         self.lastDrawn = lastDrawn
+        self.lastKind = lastKind
     }
 
     /// Quante ne restano prima di rimescolare: è il numero che dice «non vedrai una ripetizione
@@ -119,7 +123,32 @@ public struct PhraseDeck: Codable, Equatable, Sendable {
         if remaining.isEmpty { reshuffle(pool: pool, using: &generator) }
 
         guard let id = remaining.popLast(), let phrase = byID[id] else { return nil }
+
+        // **Mai due dello stesso tipo di fila.**
+        //
+        // Il mazzo era già mescolato davvero — sondato il 2026-07-31 sul file vivo, le dodici
+        // successive erano `q m q q t f m f q q m q` — ma un mescolamento uniforme produce
+        // grappoli, ed è così che nasce l'impressione che l'app «dia solo studi»: quattro fatti
+        // consecutivi sono normalissimi in 480 estrazioni, e li vivi tutti in una mattina.
+        // Segnalato dal principale, che aveva torto sul meccanismo e ragione su quello che
+        // vedeva.
+        //
+        // Qui il grappolo si rompe: se il tipo è lo stesso dell'ultima uscita, si cerca più giù
+        // la prima di tipo diverso e la si porta avanti. **Solo uno scambio, non un
+        // rimescolamento**: l'ordine resta quello estratto a caso, e la garanzia di non ripetersi
+        // per 480 pause resta intatta. Se in fondo al mazzo restano solo frasi dello stesso tipo,
+        // esce quella che c'è — meglio un tipo ripetuto che una pausa senza niente.
+        if let precedente = lastKind, phrase.kind == precedente,
+           let scambio = remaining.lastIndex(where: { byID[$0]?.kind != precedente }) {
+            remaining.append(id)
+            let diverso = remaining.remove(at: scambio)
+            lastDrawn = diverso
+            lastKind = byID[diverso]?.kind
+            return byID[diverso]
+        }
+
         lastDrawn = id
+        lastKind = phrase.kind
         return phrase
     }
 

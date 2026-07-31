@@ -41,11 +41,11 @@ public enum Facts {
           "Ekelund et al., The Lancet, 2016",
           "Sitting more than eight hours a day without physical activity carries a mortality risk comparable to smoking and obesity.",
           "Ekelund et al., The Lancet, 2016"),
-        f("Sessanta-settantacinque minuti di attività moderata al giorno annullano l'eccesso di rischio dovuto a molte ore da seduti.",
+        f("Da sessanta a settantacinque minuti di attività moderata al giorno annullano il rischio in più di chi passa molte ore seduto.",
           "Ekelund et al., The Lancet, 2016",
           "Sixty to seventy-five minutes of moderate activity a day cancel the excess risk from many hours of sitting.",
           "Ekelund et al., The Lancet, 2016"),
-        f("Interrompere spesso il tempo seduto si associa a girovita e trigliceridi migliori, a parità di ore totali sedute.",
+        f("Chi si alza spesso ha girovita e trigliceridi migliori di chi resta fermo, a parità di ore passate sedute.",
           "Healy et al., Diabetes Care, 2008",
           "Breaking up sitting time often is associated with better waist circumference and triglycerides, at the same total hours seated.",
           "Healy et al., Diabetes Care, 2008"),
@@ -53,7 +53,7 @@ public enum Facts {
         // `Text` riceve la frase interpolata, e un valore interpolato non passa dal markdown.
         // Trovato guardando il provino il 2026-07-29; il cancello delle citazioni non poteva
         // vederlo, perché cerca il testo nella fonte e non sa com'è fatto lo schermo.
-        f("Non è quanto stai seduto in totale, è quanto a lungo lo stai di fila.",
+        f("Non conta quanto stai seduto in tutto: conta quanto a lungo resti seduto senza mai alzarti.",
           "ricerca sul comportamento sedentario, consenso scientifico",
           "It is not how long you sit in total, it is how long you sit without a break.",
           "consensus in sedentary behaviour research"),
@@ -89,7 +89,7 @@ public enum Facts {
           "Levine, ricerca sulla termogenesi non da esercizio (NEAT)",
           "Someone who moves often without training can spend more energy than someone who trains and then sits all day.",
           "Levine, research on non-exercise activity thermogenesis (NEAT)"),
-        f("Piccoli movimenti frequenti — alzarsi, camminare, agitarsi — spiegano differenze di centinaia di calorie al giorno fra persone simili.",
+        f("I piccoli movimenti di tutti i giorni — alzarsi, camminare, non star fermo sulla sedia — spiegano differenze di centinaia di calorie al giorno fra persone simili.",
           "Levine, ricerca sulla termogenesi non da esercizio (NEAT)",
           "Small frequent movements — standing, walking, fidgeting — explain differences of hundreds of calories a day between similar people.",
           "Levine, research on non-exercise activity thermogenesis (NEAT)"),
@@ -98,7 +98,7 @@ public enum Facts {
     // MARK: - Muoversi poco e spesso
 
     static let movimento: [Phrase] = [
-        f("Tre sessioni quotidiane di 1-2 minuti di attività vigorosa nella vita normale si associano a circa il 40% di mortalità in meno.",
+        f("Tre momenti al giorno di uno o due minuti di attività intensa, dentro la vita di tutti i giorni, si accompagnano a un rischio di morte più basso di circa il 40%.",
           "Stamatakis et al., Nature Medicine, 2022",
           "Three daily 1-2 minute bouts of vigorous activity in ordinary life are associated with about 40% lower mortality.",
           "Stamatakis et al., Nature Medicine, 2022"),
@@ -110,7 +110,7 @@ public enum Facts {
           "fisiologia dell'esercizio, consenso scientifico",
           "Climbing stairs is one of the most intense exercises you can do with no equipment and no changing room.",
           "exercise physiology consensus"),
-        f("Il beneficio maggiore, in termini di rischio, si ha passando da zero movimento a poco movimento — non da molto a moltissimo.",
+        f("Il guadagno più grande si ha passando da zero movimento a poco, non da molto a moltissimo.",
           "curve dose-risposta dell'attività fisica, letteratura consolidata",
           "The largest benefit in terms of risk comes from going from no movement to a little — not from a lot to very much.",
           "dose-response curves for physical activity, established literature"),
@@ -171,7 +171,7 @@ public enum Facts {
           "Ariga & Lleras, Cognition, 2011",
           "The drop in attention after an hour on the same task disappears if you briefly interrupt it with a different activity.",
           "Ariga & Lleras, Cognition, 2011"),
-        f("Le micro-pause sotto i dieci minuti riducono la fatica e alzano il vigore, ma dopo lavoro cognitivo intenso non bastano a recuperare la prestazione.",
+        f("Le micro-pause sotto i dieci minuti stancano meno e fanno sentire più in forze, ma dopo un lavoro mentale pesante non bastano a far tornare la prestazione.",
           "Albulescu et al., PLOS ONE, 2022",
           "Micro-breaks under ten minutes reduce fatigue and raise vigour, but after intense cognitive work they are not enough to recover performance.",
           "Albulescu et al., PLOS ONE, 2022"),
@@ -199,9 +199,9 @@ public enum Facts {
           "teoria del ripristino dell'attenzione, Kaplan",
           "Looking at something natural — even just out of the window — restores attention better than looking at another screen.",
           "attention restoration theory, Kaplan"),
-        f("La memoria di lavoro ha una capacità piccolissima: è il collo di bottiglia di quasi tutto quello che chiami \"concentrazione\"."
-          , "psicologia cognitiva, consenso scientifico",
-          "Working memory has a tiny capacity: it is the bottleneck of almost everything you call «concentration».",
+        f("La memoria di lavoro ha una capacità piccolissima: è il collo di bottiglia di quasi tutto quello che chiami «concentrazione».",
+          "psicologia cognitiva, consenso scientifico",
+          "Working memory has a tiny capacity: it is the bottleneck of almost everything you call \"concentration\".",
           "cognitive psychology consensus"),
         f("Cambiare compito costa un tempo di riorientamento che non si recupera: il multitasking è un cambio rapido, non un parallelismo.",
           "psicologia cognitiva, letteratura sul task switching",

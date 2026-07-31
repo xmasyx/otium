@@ -94,6 +94,15 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     case ytw
     // Vigorosi — sono questi che contano verso i 3 sessione intensa VILPA al giorno
     case burpee
+    /// Il burpee **senza il piegamento**: squat, gambe indietro, gambe avanti, in piedi.
+    ///
+    /// Aggiunto il 2026-07-31, e per due ruoli insieme. È la regressione del burpee per chi
+    /// parte più in basso sulla parte alta — la stessa logica dei push-up sulle ginocchia, dove
+    /// si scala il **movimento** e non il numero — ed è la via d'uscita dentro la pausa per
+    /// chiunque, quel giorno lì, il piegamento a terra non ce l'abbia. Ha un nome suo perché è
+    /// un esercizio suo: fino a stamattina la descrizione del burpee descriveva *questo*, ed è
+    /// esattamente per non confonderli più che adesso esistono separati.
+    case squatThrust
     case jumpingJack
     case jumpSquat
     case mountainClimber
@@ -131,6 +140,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         // darebbe un numero tre volte più alto per lo stesso lavoro.
         case .ytw: return 8
         case .burpee: return 8
+        case .squatThrust: return 12
         case .jumpingJack: return 25
         case .jumpSquat: return 10
         case .mountainClimber: return 24
@@ -178,6 +188,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .superman: return 3.5      // due secondi di tenuta più la discesa controllata
         case .ytw: return 6.0           // tre lettere, due secondi l'una: il ciclo è lungo
         case .burpee: return 4.5
+        case .squatThrust: return 3.0   // senza il piegamento il ciclo è più corto
         case .jumpingJack: return 1.2
         case .jumpSquat: return 2.2
         case .mountainClimber: return 0.8
@@ -188,7 +199,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     /// Vigoroso nel senso di Stamatakis 2022: alza la frequenza cardiaca in 60-90 secondi.
     public var isVigorous: Bool {
         switch self {
-        case .burpee, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return true
+        case .burpee, .squatThrust, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return true
         default: return false
         }
     }
@@ -211,7 +222,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .crunch, .sitUp, .legRaise, .bicycleCrunch, .deadBug, .russianTwist,
              .plank, .sidePlank, .hollowHold: return "addome"
         case .superman, .ytw: return "dorso"
-        case .burpee, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return "total body"
+        case .burpee, .squatThrust, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return "total body"
         }
     }
 
@@ -262,7 +273,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .crunch, .sitUp, .legRaise, .bicycleCrunch, .deadBug, .russianTwist,
              .plank, .sidePlank, .hollowHold: return .addome
         case .superman, .ytw: return .posturali
-        case .burpee, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return .vigorosi
+        case .burpee, .squatThrust, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return .vigorosi
         }
     }
 
@@ -293,6 +304,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .superman: return "superman"
         case .ytw: return "Y-T-W"
         case .burpee: return "burpee"
+        case .squatThrust: return "squat thrust"
         case .jumpingJack: return "jumping jack"
         case .jumpSquat: return "jump squat"
         case .mountainClimber: return "mountain climber"
@@ -327,6 +339,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .superman: return "superman"
         case .ytw: return "Y-T-W"
         case .burpee: return "burpees"
+        case .squatThrust: return "squat thrust"
         case .jumpingJack: return "jumping jacks"
         case .jumpSquat: return "jump squats"
         case .mountainClimber: return "mountain climbers"
@@ -422,6 +435,9 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .burpee:
             return L.t("Squat, mani a terra, gambe indietro. Un piegamento a terra, gambe avanti, e salta in alto.",
                        "Squat, hands down, legs back. One push-up on the floor, legs forward, and jump up.")
+        case .squatThrust:
+            return L.t("Come il burpee, senza il piegamento: squat, mani a terra, gambe indietro, gambe avanti, in piedi. Ritmo continuo.",
+                       "Like a burpee without the push-up: squat, hands down, legs back, legs forward, stand up. Keep a steady rhythm.")
         case .jumpingJack:
             return L.t("Ritmo continuo, atterra morbido sull'avampiede.",
                        "Steady rhythm, land softly on the balls of your feet.")
@@ -480,10 +496,14 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         // preciso sulle scapole.
         case .superman, .ytw:
             return [.superman, .ytw].filter { $0 != self }
+        // Lo squat thrust **per primo**: è lo stesso gesto con un pezzo in meno, quindi è la
+        // sostituzione che chiedi quando il piegamento a terra oggi non c'è.
         case .burpee:
-            return [.jumpSquat, .mountainClimber, .highKnees, .jumpingJack]
+            return [.squatThrust, .jumpSquat, .mountainClimber, .highKnees]
+        case .squatThrust:
+            return [.burpee, .jumpSquat, .mountainClimber, .highKnees]
         case .jumpingJack, .jumpSquat, .mountainClimber, .highKnees:
-            return [.burpee, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees]
+            return [.burpee, .squatThrust, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees]
                 .filter { $0 != self }
         }
     }
