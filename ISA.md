@@ -1308,6 +1308,33 @@ piena, l'attribuzione «consenso» non si capisce, e le preferenze sono una list
       sempre. Corretto il test, non il corpus: sondato, di citazioni senza riferimento in quei
       quattro autori non ce n'è **nessuna**.
 
+- [x] **ISC-120** La rotazione distanzia i gruppi anche sul pool che componi tu. — *«i Posturali
+      li ho accesi io nel profilo»* — **tutti e due**, che è il suo diritto e che il pool di serie
+      evitava. Andato a sondare il suo pool vero: il difetto c'era, e **non era il dorso**. Con
+      **sette esercizi d'addome su diciotto** uscivano `russian twist → plank laterale → hollow
+      hold → sit-up`, quattro addominali di fila.
+      *Causa:* il riordino era greedy sul **primo** disponibile, quindi il gruppo dominante non
+      veniva speso finché c'era altro e i suoi si ammucchiavano in coda. Ora si prende sempre dal
+      gruppo più numeroso rimasto, che è il greedy classico per distanziare i ripetuti e riesce
+      ogni volta che l'aritmetica lo consente.
+      *Il pool di serie non lo mostrava*, perché è abbastanza equilibrato: un test scritto sul
+      solo pool di serie provava la configurazione che ho scelto io, non quella che vive lui.
+
+- [x] **ISC-121** La distanza fra gruppi è una proprietà, non un caso fortunato. — 300 pool
+      casuali per giro: il riordino non perde né inventa esercizi, e le adiacenze sono **zero
+      ogni volta che l'aritmetica lo consente**. Il limite è dichiarato nel test: in un **cerchio**
+      la soglia è `n/2`, non `ceil(n/2)` — con tre elementi ognuno confina con gli altri due.
+      *Due errori miei, trovati dai test e corretti nei test:* avevo usato la soglia lineare per
+      un caso ciclico, e avevo scelto un pool di controllo (sette addome su dieci) dove le
+      adiacenze sono aritmetica pura e nessun algoritmo può toglierle.
+      *Un errore vero, trovato dalla proprietà:* la riparazione della giuntura del giro aveva
+      quattro condizioni in fila e una confrontava un elemento **con sé stesso** — non scattava
+      mai nei casi che doveva curare. Riscritta per misura: si costruisce il candidato, gli si
+      contano le adiacenze, e si tiene solo se migliora. Su venti elementi costa niente, e non si
+      può sbagliare la condizione perché non c'è una condizione da scrivere.
+      *Polo di controllo:* con il vecchio algoritmo e il pool vero del principale le adiacenze
+      ci sono; col nuovo sono zero.
+
 - **Anti-claim** — il giorno nuovo azzera **solo** il ciclo micro/piena. Non la rotazione degli
   esercizi (che è `breakIndex`, e senza di lei si torna a squat-squat-squat, il difetto del
   26/07), non il conto del tempo attivo, non i mazzi delle frasi.

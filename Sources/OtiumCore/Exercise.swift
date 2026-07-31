@@ -648,21 +648,74 @@ public struct ExercisePlanner: Sendable {
     ///
     /// Senza questo, un pool come [squat, push-up, affondi] fa gambe → spinta → gambe → gambe
     /// al giro successivo: le cosce si prendono due turni di fila e la rotazione serve a metà.
-    /// Greedy: a ogni passo prendo il primo esercizio con un gruppo diverso dal precedente; se
-    /// non esiste — perché il pool ha meno gruppi che elementi — prendo comunque il primo
-    /// rimasto, invece di ciclare a vuoto.
+    ///
+    /// **Si prende sempre dal gruppo più numeroso rimasto**, purché diverso dal precedente. La
+    /// prima versione prendeva il *primo* disponibile, e su un pool sbilanciato falliva in modo
+    /// prevedibile: il gruppo dominante non veniva speso finché c'era altro, e i suoi si
+    /// ammucchiavano tutti in coda. Trovato il 2026-07-31 sul pool **vero** del principale —
+    /// diciotto esercizi di cui **sette d'addome** — dove uscivano `russian twist → plank
+    /// laterale → hollow hold → sit-up`, quattro addominali di fila. Il pool di serie non lo
+    /// mostrava: è abbastanza equilibrato da non far emergere il difetto, ed è esattamente il
+    /// motivo per cui un test sul solo pool di serie non bastava.
+    ///
+    /// È il greedy classico per distanziare elementi ripetuti, e riesce **ogni volta che è
+    /// possibile**: cioè quando il gruppo più numeroso non supera la metà del pool arrotondata
+    /// per eccesso. Oltre, le adiacenze sono aritmetica e non si possono togliere — sette addome
+    /// su otto esercizi si toccheranno, qualunque ordine si scelga.
+    ///
+    /// **Il pool è ciclico**, quindi anche l'ultimo confina col primo: senza l'ultimo passo, la
+    /// giuntura del giro sarebbe l'unico punto scoperto — e sarebbe scoperto per sempre, perché
+    /// `breakIndex` ci passa a ogni ricircolo.
     static func spreadByMuscleGroup(_ kinds: [ExerciseKind]) -> [ExerciseKind] {
         var remaining = kinds
         var ordered: [ExerciseKind] = []
         var previousGroup: String?
 
         while !remaining.isEmpty {
-            let index = remaining.firstIndex { $0.muscleGroup != previousGroup } ?? 0
+            var conteggio: [String: Int] = [:]
+            for k in remaining { conteggio[k.muscleGroup, default: 0] += 1 }
+
+            // Il più numeroso fra quelli ammessi; a parità, il primo che si incontra — così
+            // l'ordine resta stabile e il risultato non dipende dall'ordine dei dizionari.
+            let index = remaining.indices
+                .filter { remaining[$0].muscleGroup != previousGroup }
+                .max { (conteggio[remaining[$0].muscleGroup] ?? 0, $1) < (conteggio[remaining[$1].muscleGroup] ?? 0, $0) }
+                ?? 0
+
             let chosen = remaining.remove(at: index)
             ordered.append(chosen)
             previousGroup = chosen.muscleGroup
         }
+
+        // La giuntura del giro: l'ultimo confina col primo, e il greedy può lasciarci due dello
+        // stesso gruppo — succede quando il gruppo dominante finisce in coda.
+        //
+        // **Si prova e si conta, invece di indovinare la condizione.** La prima versione cercava
+        // il punto giusto con quattro confronti in fila, e uno di quelli confrontava un elemento
+        // con sé stesso: la riparazione non scattava mai proprio nei casi che doveva curare.
+        // Costruire il candidato e contargli le adiacenze costa niente su un pool di venti
+        // elementi, non si può sbagliare, e si tiene solo se **migliora davvero**.
+        if ordered.count > 2, adjacencies(ordered) > 0 {
+            let ultimo = ordered.removeLast()
+            var migliore = ordered + [ultimo]
+            var punteggio = adjacencies(migliore)
+            for i in 1..<ordered.count where punteggio > 0 {
+                var candidato = ordered
+                candidato.insert(ultimo, at: i)
+                let suo = adjacencies(candidato)
+                if suo < punteggio { migliore = candidato; punteggio = suo }
+            }
+            ordered = migliore
+        }
         return ordered
+    }
+
+    /// Quante coppie di gruppo uguale si toccano, **contando anche la giuntura del giro**.
+    static func adjacencies(_ ordered: [ExerciseKind]) -> Int {
+        guard ordered.count > 1 else { return 0 }
+        var n = zip(ordered, ordered.dropFirst()).filter { $0.muscleGroup == $1.muscleGroup }.count
+        if ordered.count > 2, ordered[0].muscleGroup == ordered[ordered.count - 1].muscleGroup { n += 1 }
+        return n
     }
 
     /// `breakIndex` è 1-based e cresce per tutta la vita dell'app: la rotazione non riparte

@@ -1068,3 +1068,117 @@ final class SeatedTimeTests: XCTestCase {
         XCTAssertEqual(s.activeSeconds, 7200, accuracy: 1, "tre ore meno una: due")
     }
 }
+
+// MARK: - ISC-120 — la rotazione regge anche sul pool del principale
+
+/// **Il pool di serie ne tiene uno, ma tu puoi accenderli tutti e due — e infatti lui l'ha
+/// fatto.** Il 2026-07-31 avevo tolto il superman dalla rotazione di serie perché due «dorso»
+/// finivano di fila; mezz'ora dopo il principale li ha accesi entrambi dalle preferenze, che è
+/// esattamente il suo diritto. Quindi la garanzia non può dipendere da quale pool ho scelto io.
+final class RealPoolSpreadTests: XCTestCase {
+
+    /// Il pool vero letto dalle sue impostazioni il 2026-07-31: diciotto esercizi, **due
+    /// posturali accesi insieme**.
+    private let suo: [ExerciseKind] = [
+        .squat, .pushUp, .calfRaise, .gluteBridge, .diamondPushUp, .archerPushUp,
+        .pikePushUp, .benchDip, .crunch, .legRaise, .plank, .splitSquat,
+        .russianTwist, .sidePlank, .hollowHold, .sitUp, .superman, .ytw,
+    ]
+
+    func testHisOwnPoolNeverRepeatsAMuscleGroupBackToBack() {
+        var s = Settings(); s.exercisePool = suo
+        let planner = s.planner
+        let kinds = (1...60).map { planner.exercise(breakIndex: $0, kind: .micro, factor: 1.0).kind }
+        for (a, b) in zip(kinds, kinds.dropFirst()) {
+            XCTAssertNotEqual(a.muscleGroup, b.muscleGroup,
+                              "\(a.italianName) → \(b.italianName): stesso gruppo di fila")
+        }
+        XCTAssertTrue(kinds.contains(.ytw) && kinds.contains(.superman),
+                      "e in sessanta turni escono entrambi, o accenderli non sarebbe servito")
+    }
+
+    /// La stessa proprietà, ma senza fidarsi di **un** pool: due esercizi di ogni famiglia accesi
+    /// insieme, che è il caso peggiore che l'interfaccia permette di costruire.
+    func testAnyPoolWithTwoPerGroupStillSpreads() {
+        var s = Settings()
+        s.exercisePool = [.squat, .lunge, .pushUp, .diamondPushUp, .crunch, .sitUp, .superman, .ytw]
+        let kinds = (1...40).map { s.planner.exercise(breakIndex: $0, kind: .micro, factor: 1.0).kind }
+        for (a, b) in zip(kinds, kinds.dropFirst()) {
+            XCTAssertNotEqual(a.muscleGroup, b.muscleGroup,
+                              "\(a.italianName) → \(b.italianName)")
+        }
+    }
+}
+
+// MARK: - ISC-121 — la distanza fra gruppi è una proprietà, non un caso fortunato
+
+/// **Il pool lo componi tu, quindi la garanzia non può valere solo per il pool che ho scelto io.**
+/// Le preferenze permettono qualunque combinazione di caselle: qui si prova che la rotazione
+/// regge su tutte quelle che l'aritmetica consente.
+final class SpreadPropertyTests: XCTestCase {
+
+    private func adiacenzeCicliche(_ ordered: [ExerciseKind]) -> Int {
+        guard ordered.count > 1 else { return 0 }
+        var coppie = zip(ordered, ordered.dropFirst()).filter { $0.muscleGroup == $1.muscleGroup }.count
+        if ordered.count > 2, ordered.first?.muscleGroup == ordered.last?.muscleGroup { coppie += 1 }
+        return coppie
+    }
+
+    /// Il limite è aritmetico e va detto: se un gruppo supera la metà del pool arrotondata per
+    /// eccesso, le adiacenze **non si possono** togliere. Sotto quella soglia, devono essere zero.
+    func testZeroAdjacenciesWheneverArithmeticAllowsIt() {
+        var rng = SystemRandomNumberGenerator()
+        let tutti = ExerciseKind.allCases.filter { !$0.isVigorous }
+        for giro in 1...300 {
+            let quanti = Int.random(in: 3...tutti.count, using: &rng)
+            let pool = Array(tutti.shuffled(using: &rng).prefix(quanti))
+            let ordered = ExercisePlanner.spreadByMuscleGroup(pool)
+
+            XCTAssertEqual(Set(ordered), Set(pool), "giro \(giro): il riordino non perde né inventa")
+            XCTAssertEqual(ordered.count, pool.count, "giro \(giro): nessun duplicato")
+
+            var conteggio: [String: Int] = [:]
+            for k in pool { conteggio[k.muscleGroup, default: 0] += 1 }
+            let dominante = conteggio.values.max() ?? 0
+            // **La soglia di un cerchio è più stretta di quella di una fila.** In fila bastano
+            // `ceil(n/2)`; in cerchio l'ultimo confina col primo, e il limite scende a `n/2`.
+            // La prima versione di questo test usava la formula lineare e bocciava
+            // `[sit-up, squat, plank]` — dove due addome su tre in cerchio si toccano per
+            // forza, qualunque ordine si scelga. Errore del test, non del codice.
+            if dominante <= pool.count / 2 {
+                XCTAssertEqual(adiacenzeCicliche(ordered), 0,
+                               "giro \(giro): \(pool.map(\.italianName)) → \(ordered.map(\.muscleGroup))")
+            }
+        }
+    }
+
+    /// **Il polo che rende il test una prova.** Con l'algoritmo di prima — il primo disponibile
+    /// invece del più numeroso — su un pool sbilanciato le adiacenze ci sono. Se qui fossero zero,
+    /// il verde qui sopra non direbbe niente.
+    func testTheOldGreedyWouldHaveFailedOnAnUnbalancedPool() {
+        // Sbilanciato **ma risolvibile**: sei addome su tredici, cioè sotto la metà. È il caso del
+        // pool vero del principale, dove il vecchio algoritmo impilava e il nuovo distanzia. Con
+        // sette addome su dieci — la prima versione di questo test — le adiacenze sono aritmetica
+        // e nessun algoritmo può toglierle: pretenderlo era un errore mio, non un difetto.
+        // **Il pool vero del principale**, quello su cui il difetto è uscito: sette addome su
+        // diciotto, cioè sotto la metà e quindi risolvibile. È il caso che ha aperto la caccia.
+        let sbilanciato: [ExerciseKind] = [
+            .squat, .pushUp, .calfRaise, .gluteBridge, .diamondPushUp, .archerPushUp,
+            .pikePushUp, .benchDip, .crunch, .legRaise, .plank, .splitSquat,
+            .russianTwist, .sidePlank, .hollowHold, .sitUp, .superman, .ytw,
+        ]
+        // Il vecchio algoritmo, riprodotto qui per il confronto.
+        var remaining = sbilanciato
+        var vecchio: [ExerciseKind] = []
+        var precedente: String?
+        while !remaining.isEmpty {
+            let i = remaining.firstIndex { $0.muscleGroup != precedente } ?? 0
+            let scelto = remaining.remove(at: i)
+            vecchio.append(scelto)
+            precedente = scelto.muscleGroup
+        }
+        XCTAssertGreaterThan(adiacenzeCicliche(vecchio), 0, "il vecchio impilava il gruppo dominante in coda")
+        XCTAssertEqual(adiacenzeCicliche(ExercisePlanner.spreadByMuscleGroup(sbilanciato)), 0,
+                       "il nuovo no")
+    }
+}
