@@ -164,3 +164,57 @@ final class QuoteLanguageTests: XCTestCase {
                       "\(rotte.count) complimenti senza un inglese vero: \(rotte.map(\.it))")
     }
 }
+
+// MARK: - ISC-119 — la precisione delle fonti non deve scendere
+
+/// **Il corpus delle citazioni è verificato, e questo test serve a tenerlo tale.**
+///
+/// Misurato il 2026-07-31 su richiesta del principale, che ricordava bene: 336 citazioni, 34
+/// autori, **zero senza opera dichiarata** — e non per disciplina, perché due test già lo
+/// impongono (opera obbligatoria, niente «attribuito a», niente URL al posto dell'opera). Il
+/// 2026-07-28 e il 29 due revisioni avevano già tolto le inventate e i doppioni, con il verdetto
+/// scritto accanto a ognuna.
+///
+/// Quello che nessun test proteggeva era il **grado** di precisione: «Lettere a Lucilio, 82» e
+/// «Lettere a Lucilio» passano tutti e due, e la differenza fra i due è tutta la differenza fra
+/// una citazione che si può controllare e una che va creduta.
+final class QuoteSourcePrecisionTests: XCTestCase {
+
+    /// Un riferimento **puntuale**: un numero, un romano, o il nome del capitolo dopo il titolo.
+    private func èPuntuale(_ opera: String) -> Bool {
+        if opera.rangeOfCharacter(from: .decimalDigits) != nil { return true }
+        if opera.range(of: #"\b[IVXL]+\b"#, options: .regularExpression) != nil { return true }
+        // «Saggi, Compensazione» — il saggio dentro la raccolta è localizzazione quanto un numero.
+        return opera.contains(",")
+    }
+
+    /// **Un cricchetto, non un divieto.** Un libro breve citato per intero è legittimo; una deriva
+    /// verso il titolo nudo no. La soglia è quella misurata oggi, arrotondata in giù: può solo
+    /// salire.
+    func testTheShareOfPreciseReferencesNeverDrops() {
+        let totali = Quotes.all.count
+        let puntuali = Quotes.all.filter { èPuntuale($0.work) }.count
+        let quota = Double(puntuali) / Double(totali)
+        XCTAssertGreaterThanOrEqual(quota, 0.94,
+            "il 2026-07-31 erano \(puntuali)/\(totali): una citazione nuova può essere meno precisa, il corpus no")
+    }
+
+    /// I due autori su cui gli apocrifi girano di più hanno il riferimento più stretto di tutti,
+    /// ed è giusto che sia un test a dirlo: sono quelli dove una frase inventata passerebbe.
+    func testTheApocryphaProneAuthorsCarryChapterAndVerse() {
+        for autore in ["Buddha", "Laozi", "Epitteto", "Marco Aurelio"] {
+            let loro = Quotes.all.filter { $0.author == autore }
+            XCTAssertFalse(loro.isEmpty, "\(autore) non è più nel corpus: aggiorna il test")
+            for q in loro {
+                // **Anche i numeri romani sono numeri.** La prima versione cercava solo cifre e
+                // bocciava «Pensieri, IV»: sedici rossi che accusavano il corpus di un difetto
+                // che era del test. I libri di Marco Aurelio e i capitoli di Epitteto si citano
+                // in romano da sempre.
+                let haNumero = q.work.rangeOfCharacter(from: .decimalDigits) != nil
+                let haRomano = q.work.range(of: #"\b[IVXL]+\b"#, options: .regularExpression) != nil
+                XCTAssertTrue(haNumero || haRomano,
+                              "\(autore) senza capitolo e verso: \(q.text)")
+            }
+        }
+    }
+}

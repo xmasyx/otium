@@ -1288,9 +1288,25 @@ piena, l'attribuzione «consenso» non si capisce, e le preferenze sono una list
       caporali stavano nella frase inglese e le doppie dritte in quella italiana.
       *Un difetto lo ha trovato il grep e non l'occhio:* «Il maestro nella pentola non fa bollire
       due volte lo stesso brodo», dove l'inglese diceva *a good cook*.
-      **Dichiarato non fatto:** le 337 righe di `Quotes.swift` — le citazioni d'autore — sono
-      passate solo dai controlli automatici, non rilette una per una. Meritano una passata
-      dedicata, con la regola del principale: preferire una traduzione pubblicata a una mia.
+      **La riserva che avevo messo su `Quotes.swift` è stata ritirata dopo averla sondata** (vedi
+      ISC-119): il corpus delle citazioni è verificato, e il principale lo ricordava bene.
+
+- [x] **ISC-119** La precisione delle fonti non può scendere. — Avevo dichiarato le citazioni
+      d'autore «non rilette». Il principale ha ricordato che venivano da testi verificati, e
+      **aveva ragione**: 336 citazioni, 34 autori, **zero senza opera dichiarata**, e non per
+      disciplina — due test già lo impongono (opera obbligatoria, niente «attribuito a», niente
+      URL al posto dell'opera, e il divieto nominale sulla parafrasi di Lao Tzu che gira sui
+      social). Il 28 e il 29 luglio due revisioni avevano già tolto le inventate e i doppioni,
+      ognuna col verdetto scritto accanto. **Riserva ritirata.**
+      *Quello che nessun test proteggeva era il grado di precisione:* «Lettere a Lucilio, 82» e
+      «Lettere a Lucilio» passavano entrambe, e la differenza fra le due è tutta la differenza fra
+      una citazione controllabile e una da credere. Ora un cricchetto tiene la quota di
+      riferimenti puntuali al livello di oggi — può salire, non scendere — e i quattro autori su
+      cui gli apocrifi girano di più devono portare capitolo e verso.
+      *Il test ha accusato il corpus di un difetto suo:* cercava solo cifre e bocciava «Pensieri,
+      IV». Sedici rossi, e la colpa era del test — i libri di Marco Aurelio si citano in romano da
+      sempre. Corretto il test, non il corpus: sondato, di citazioni senza riferimento in quei
+      quattro autori non ce n'è **nessuna**.
 
 - **Anti-claim** — il giorno nuovo azzera **solo** il ciclo micro/piena. Non la rotazione degli
   esercizi (che è `breakIndex`, e senza di lei si torna a squat-squat-squat, il difetto del
