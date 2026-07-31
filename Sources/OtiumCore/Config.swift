@@ -245,6 +245,12 @@ public struct Settings: Codable, Equatable, Sendable {
     public var theme: ThemeName
     /// Il suono del preavviso. Nome di un suono di sistema macOS; stringa vuota = nessun suono.
     public var notificationSound: String
+    /// Il suono che chiude una **tenuta** — plank, plank laterale, hollow hold.
+    ///
+    /// Separato dal preavviso di proposito, ed è la richiesta che l'ha fatto nascere: *«un suono
+    /// quando è finito, un suono diverso però»*. Mentre sei sotto sforzo non guardi lo schermo,
+    /// quindi la fine te la dice l'orecchio, e un orecchio distingue due suoni solo se sono due.
+    public var holdEndSound: String
     /// Riaprendo l'app entro questo tempo, il conto riprende da dov'era. Di serie vale quanto
     /// una pausa piena (5 min): sotto è un riavvio, sopra è già una pausa vera.
     public var resumeGraceSeconds: Double
@@ -291,6 +297,7 @@ public struct Settings: Codable, Equatable, Sendable {
         autoDeferSeconds: Double = 5 * 60,
         theme: ThemeName = .alloro,
         notificationSound: String = "Tink",
+        holdEndSound: String = "Glass",
         resumeGraceSeconds: Double = 5 * 60,
         activeFromHour: Int = 7,
         activeToHour: Int = 23
@@ -320,6 +327,7 @@ public struct Settings: Codable, Equatable, Sendable {
         self.autoDeferSeconds = autoDeferSeconds
         self.theme = theme
         self.notificationSound = notificationSound
+        self.holdEndSound = holdEndSound
         self.resumeGraceSeconds = max(0, resumeGraceSeconds)
         self.activeFromHour = activeFromHour
         self.activeToHour = activeToHour
@@ -438,6 +446,7 @@ public struct Settings: Codable, Equatable, Sendable {
         autoDeferSeconds = (try? c.decode(Double.self, forKey: .autoDeferSeconds)) ?? d.autoDeferSeconds
         theme = (try? c.decode(ThemeName.self, forKey: .theme)) ?? d.theme
         notificationSound = (try? c.decode(String.self, forKey: .notificationSound)) ?? d.notificationSound
+        holdEndSound = (try? c.decode(String.self, forKey: .holdEndSound)) ?? d.holdEndSound
         resumeGraceSeconds = (try? c.decode(Double.self, forKey: .resumeGraceSeconds)) ?? d.resumeGraceSeconds
         activeFromHour = (try? c.decode(Int.self, forKey: .activeFromHour)) ?? d.activeFromHour
         activeToHour = (try? c.decode(Int.self, forKey: .activeToHour)) ?? d.activeToHour

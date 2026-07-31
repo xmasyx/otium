@@ -262,7 +262,14 @@ final class AppModel: ObservableObject {
     /// copri» resterebbe la stessa fragilità al contrario, ed è compito di `.breakStarted`.
     private func reconcileBlocker() {
         guard !headless, SafetyNets.modelReconcile else { return }
-        if engine.phase != .breaking { blocker.hide() }
+        if engine.phase != .breaking {
+            blocker.hide()
+            // **Fuori dalla pausa non esiste una tenuta in corso.** Un conto che sopravvive alla
+            // schermata che lo mostrava suonerebbe «finito» a qualcuno tornato a lavorare dieci
+            // secondi prima. Sta qui e non nei sei punti che chiudono una pausa, perché una rete
+            // sola in fondo regge anche la via d'uscita che qualcuno aggiungerà domani.
+            stopHold()
+        }
     }
 
     private func handle(_ event: EngineEvent, now: Date) {
@@ -450,6 +457,88 @@ final class AppModel: ObservableObject {
         NSSound(named: name)?.play()
     }
 
+    // MARK: - La tenuta a tempo
+
+    /// Il conto in corso di una tenuta, se ce n'è uno. `nil` prima di «Pronto» e dopo la fine.
+    @Published private(set) var hold: Hold?
+    /// L'istante dell'ultimo battito: i suoni si decidono sull'**intervallo** fra due battiti, non
+    /// sull'istante, o un battito perso perderebbe il suo suono per sempre.
+    private var lastHoldTick: Date?
+    private var holdTimer: Timer?
+
+    /// Vero quando l'esercizio di adesso è una tenuta, cioè quando il numero grande è un tempo.
+    var exerciseIsTimed: Bool { plan?.exercise.kind.isTimed ?? false }
+
+    /// «Pronto»: parte la preparazione, e da lì in poi non tocchi più niente.
+    ///
+    /// Il battito è a dieci al secondo e non a uno: un conto alla rovescia mostrato da un timer da
+    /// un secondo salta un numero ogni tanto, perché i battiti scivolano rispetto ai secondi veri.
+    /// Il numero però non viene dal battito — viene dall'orologio — quindi il battito serve solo a
+    /// ridisegnare abbastanza spesso da non far vedere lo scarto.
+    func startHold() {
+        guard let plan, plan.exercise.kind.isTimed, hold == nil else { return }
+        let now = Date()
+        hold = Hold(total: Double(plan.exercise.reps),
+                    perSide: plan.exercise.kind.isPerSide,
+                    startedAt: now)
+        lastHoldTick = now
+        let t = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in self?.holdTick() }
+        RunLoop.main.add(t, forMode: .common)
+        holdTimer = t
+        objectWillChange.send()
+    }
+
+    /// **Solo per le rese**: una tenuta cominciata `secondsAgo` secondi fa.
+    ///
+    /// Serve a fotografare le facce che nella vita si attraversano una volta e durano tre secondi
+    /// — la preparazione, l'avviso del cambio lato — senza stare quaranta secondi in plank davanti
+    /// alla macchina fotografica. Non fa partire nessun battito: la fase la decide l'orologio, e
+    /// per una resa ferma è esattamente quello che serve.
+    func seedHoldForSnapshot(secondsAgo: Double) {
+        guard let plan, plan.exercise.kind.isTimed else { return }
+        hold = Hold(total: Double(plan.exercise.reps),
+                    perSide: plan.exercise.kind.isPerSide,
+                    startedAt: Date().addingTimeInterval(-secondsAgo))
+        objectWillChange.send()
+    }
+
+    private func holdTick() {
+        guard let hold, let previous = lastHoldTick else { return }
+        let now = Date()
+        lastHoldTick = now
+        for cue in hold.cues(from: previous, to: now) { play(cue) }
+        if hold.phase(at: now) == .done {
+            stopHold()
+            // **Finita la tenuta, l'esercizio è fatto.** Non c'è un pulsante da premere, ed è il
+            // punto di tutta questa storia: quando il tempo scade sei ancora a terra.
+            markExerciseDone()
+        } else {
+            objectWillChange.send()
+        }
+    }
+
+    private func play(_ cue: Hold.Cue) {
+        switch cue {
+        // Il via e il cambio sono due tocchi secchi: devono dire «adesso», non farsi ascoltare.
+        case .start, .switchSide: NSSound(named: "Pop")?.play()   // lingua: ok nome di un suono di sistema
+        case .switchWarning:      NSSound(named: "Morse")?.play() // lingua: ok nome di un suono di sistema
+        // La fine è l'unico suono che scegli tu, ed è l'unico che devi riconoscere da un'altra
+        // stanza mentale: sei sotto sforzo e stai contando i tuoi secondi, non i miei.
+        case .end:                previewSound(settings.holdEndSound)
+        }
+    }
+
+    /// Ferma il conto senza segnare niente. Serve a chi esce dalla pausa a metà tenuta: un timer
+    /// che continua a battere dentro un'app che ha cambiato schermata è il modo di far suonare
+    /// «finito» a qualcuno che è già tornato a lavorare.
+    func stopHold() {
+        holdTimer?.invalidate()
+        holdTimer = nil
+        lastHoldTick = nil
+        hold = nil
+        objectWillChange.send()
+    }
+
     /// La frase dell'avvio, in alto a destra come tutto il resto.
     func showLaunchQuote() {
         guard let launchPhrase else { return }
@@ -528,6 +617,9 @@ final class AppModel: ObservableObject {
     /// dell'esercizio in corso — ed è giusto così, dentro una pausa vera — ma la sonda deve poter
     /// disegnare **qualunque** esercizio per guardarselo.
     func swapExercise(to kind: ExerciseKind, force: Bool = false) {
+        // Cambiare esercizio azzera la tenuta: i secondi di un plank non valgono su un hollow
+        // hold, e un conto che continua dopo il cambio conta la cosa sbagliata.
+        stopHold()
         engine.swapExercise(to: kind, now: Date(), force: force)
         objectWillChange.send()
     }

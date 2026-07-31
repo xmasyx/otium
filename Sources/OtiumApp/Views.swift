@@ -292,11 +292,16 @@ struct BreakView: View {
         VStack(spacing: 20) {
             if plan.circuitActive { circuitTrack(plan) }
             // Il numero grande è quello **da eseguire adesso**: per gli esercizi a lati alterni è
-            // il per lato, non il totale.
-            Text("\(plan.exercise.displayReps)")
-                .font(.system(size: 140, weight: .bold, design: .rounded))
-                .foregroundStyle(Palette.paper)
-                .monospacedDigit()
+            // il per lato, non il totale. Su una tenuta invece il numero grande **scende**, e chi
+            // lo fa scendere è `holdFace`.
+            if plan.exercise.kind.isTimed {
+                holdFace(plan)
+            } else {
+                Text("\(plan.exercise.displayReps)")
+                    .font(.system(size: 140, weight: .bold, design: .rounded))
+                    .foregroundStyle(Palette.paper)
+                    .monospacedDigit()
+            }
             // Per una tenuta il numero grande è in secondi: senza l'unità, «45 plank» si legge
             // come quarantacinque plank.
             Text(plan.exercise.title)
@@ -312,8 +317,92 @@ struct BreakView: View {
                 // a metà parola: il testo deve poter crescere in altezza, non accorciarsi.
                 .fixedSize(horizontal: false, vertical: true)
 
-            variantRow
-            circuitOffer(plan)
+            // **Il cambio di lato si dice PRIMA**, non quando arriva: è la correzione che ha
+            // chiesto lui, e in plank laterale è la sola cosa che non puoi scoprire dopo, perché
+            // quando arriva sei sotto e non guardi niente.
+            if plan.exercise.kind.isTimed, model.hold == nil {
+                Text(plan.exercise.kind.isPerSide
+                     ? L.t("\(plan.exercise.displayReps) s per lato. Due tocchi ti avvisano \(Int(Hold.switchWarningSeconds)) s prima del cambio, e un suono diverso chiude.",
+                           "\(plan.exercise.displayReps) s per side. Two taps warn you \(Int(Hold.switchWarningSeconds)) s before the switch, a different sound ends it.")
+                     : L.t("Il tempo scende da solo e un suono chiude: non devi guardare lo schermo.",
+                           "The time counts down on its own and a sound ends it: you do not have to watch the screen."))
+                    .font(.system(size: 14))
+                    .foregroundStyle(Palette.accent.opacity(0.85))
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 560)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            // Mentre il conto gira le alternative spariscono: sei a terra, non stai scegliendo.
+            if model.hold == nil {
+                variantRow
+                circuitOffer(plan)
+            }
+        }
+    }
+
+    /// **Il numero grande di una tenuta, che scende.**
+    ///
+    /// Nasce da una frase sua del 2026-07-31: *«45 secondi di plank, vorrei che il tempo vada
+    /// all'indietro così so quanto devo tenere. Non lo posso far partire perché sono già giù»*.
+    /// Da lì i tre stati: prima premi, poi hai cinque secondi per scendere, poi conta da solo e
+    /// alla fine si segna da solo.
+    ///
+    /// Il numero non arriva da un contatore che scala: arriva dall'orologio, a ogni ridisegno.
+    /// Vedi `Hold`, che è il posto dove questa cosa è provata.
+    @ViewBuilder
+    private func holdFace(_ plan: BreakPlan) -> some View {
+        let now = Date()
+        switch model.hold?.phase(at: now) {
+        case .none:
+            // Fermo: il numero è la promessa, e sotto continua a leggersi «secondi di plank». Il
+            // pulsante sta in fondo, dove stanno tutti i pulsanti grandi: messo qui spezzava la
+            // frase in due, e si leggeva «25 — Pronto — secondi di plank».
+            Text("\(plan.exercise.displayReps)")
+                .font(.system(size: 140, weight: .bold, design: .rounded))
+                .foregroundStyle(Palette.paper)
+                .monospacedDigit()
+
+        case .preparing(let left):
+            VStack(spacing: 10) {
+                Text("\(left)")
+                    .font(.system(size: 140, weight: .bold, design: .rounded))
+                    .foregroundStyle(Palette.accent)
+                    .monospacedDigit()
+                Text(L.t("preparati", "get ready"))
+                    .font(.system(size: 20, weight: .medium, design: .rounded))
+                    .foregroundStyle(Palette.dim)
+                    .tracking(2)
+            }
+
+        case .holding(let side, _):
+            // Il numero è quello del **lato in corso**: il totale che scende da 40 non dice
+            // quando girarti, e girarsi è la cosa che devi sapere.
+            let left = model.hold?.secondsLeftOnCurrentSide(at: now) ?? 0
+            let mancaPoco = plan.exercise.kind.isPerSide && side == 1
+                && Double(left) <= Hold.switchWarningSeconds
+            VStack(spacing: 10) {
+                Text("\(left)")
+                    .font(.system(size: 140, weight: .bold, design: .rounded))
+                    .foregroundStyle(mancaPoco ? Palette.accent : Palette.paper)
+                    .monospacedDigit()
+                if plan.exercise.kind.isPerSide {
+                    Text(mancaPoco
+                         ? L.t("cambia lato fra \(left)", "switch sides in \(left)")
+                         : L.t("lato \(side) di 2 — tieni la posizione", "side \(side) of 2 — hold"))
+                        .font(.system(size: 20, weight: .medium, design: .rounded))
+                        .foregroundStyle(mancaPoco ? Palette.accent : Palette.dim)
+                } else {
+                    Text(L.t("tieni la posizione", "hold"))
+                        .font(.system(size: 20, weight: .medium, design: .rounded))
+                        .foregroundStyle(Palette.dim)
+                        .tracking(2)
+                }
+            }
+
+        case .done:
+            // Stato di passaggio: il battito che vede la fine segna l'esercizio e cambia faccia.
+            EmptyView()
         }
     }
 
@@ -555,6 +644,26 @@ struct BreakView: View {
                 primary(L.t("Torna al lavoro", "Back to work"), enabled: model.canReturnToWork) {
                     model.returnToWork()
                 }
+            } else if model.exerciseIsTimed, model.hold == nil {
+                // **Su una tenuta il pulsante grande fa partire il tempo, non lo chiude.**
+                // «Fatte tutte» qui non ha senso: la tenuta finisce quando finisce il tempo, e a
+                // quel punto non c'è nessuno che possa premere, perché sei a terra.
+                primary(L.t("Pronto — poi \(Int(Hold.prepareSeconds)) s per scendere",
+                            "Ready — then \(Int(Hold.prepareSeconds)) s to get down"),
+                        enabled: true) { model.startHold() }
+            } else if model.hold != nil {
+                // **Mentre il conto gira il pulsante non serve, e una via d'uscita sì.**
+                //
+                // «Fatte tutte» qui sarebbe una bugia in due modi: il tempo non è finito, e alla
+                // fine si segna da solo. Al suo posto c'è il modo di mollare senza uscire dalla
+                // pausa — perché una tenuta si può sbagliare, e l'unica alternativa sarebbe il
+                // doppio Esc, che è l'uscita d'emergenza e va contata come tale.
+                Button(L.t("Interrompi il conto", "Stop the count")) { model.stopHold() }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Palette.dim)
+                    .padding(.vertical, 14)
+                    .contentShape(Rectangle())
             } else {
                 primary(model.moreStationsAhead ? L.t("Fatte tutte — avanti", "All done — next")
                                                 : L.t("Fatte tutte", "All done"),
@@ -568,7 +677,11 @@ struct BreakView: View {
             // spazio riservato il cronometro saltava di quaranta punti appena una di queste
             // compariva — cioè proprio l'allineamento appena costruito, rotto da una riga.
             ZStack {
-                if !model.exerciseDone {
+                // **Su una tenuta questa riga non ha più un mestiere.** Diceva quanto manca al
+                // minimo di movimento, cioè al momento in cui «Fatte tutte» si accende; su una
+                // tenuta il minimo *è* il tempo, e il tempo è già il numero grande al centro
+                // dello schermo. Lasciarla vorrebbe dire scrivere lo stesso numero due volte.
+                if !model.exerciseDone, !model.exerciseIsTimed {
                     if model.canFinishNow {
                         // **Due risposte, non una.** Il registro sa quante ripetizioni ti sono
                         // state chieste, non quante ne hai fatte: senza questa seconda via la
@@ -1586,6 +1699,25 @@ struct PrefsView: View {
                     // Sceglierlo senza sentirlo è come scegliere un colore al buio.
                     Button(L.t("ascolta", "play")) { model.previewSound(draft.notificationSound) }
                         .disabled(draft.notificationSound.isEmpty)
+                }
+            }
+            // **Un secondo suono, perché sono due momenti diversi.** Il preavviso arriva mentre
+            // lavori e lo puoi ignorare; questo chiude una tenuta, e ti arriva mentre sei a terra
+            // con gli occhi sul pavimento. Se fossero lo stesso suono, l'unico modo di sapere
+            // quale dei due è suonato sarebbe alzare la testa.
+            conNota(L.t("Chiude plank, plank laterale e hollow hold. Durante la tenuta due tocchi brevi ti avvisano del cambio di lato.",
+                        "Ends plank, side plank and hollow hold. During the hold two short taps warn you about the side switch.")) {
+                LabeledContent(L.t("Suono di fine tenuta", "Hold end sound")) {
+                    HStack {
+                        Picker("", selection: $draft.holdEndSound) {
+                            Text(L.t("nessuno", "none")).tag(NotificationSounds.silent)
+                            ForEach(NotificationSounds.names, id: \.self) { Text($0).tag($0) }
+                        }
+                        .labelsHidden()
+                        .frame(width: 150)
+                        Button(L.t("ascolta", "play")) { model.previewSound(draft.holdEndSound) }
+                            .disabled(draft.holdEndSound.isEmpty)
+                    }
                 }
             }
         }

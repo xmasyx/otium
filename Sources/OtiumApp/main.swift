@@ -198,6 +198,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             // frase che prende la pagina, il conto che scende. Senza, la resa mostra sempre e
             // solo il primo minuto e mezzo, cioè metà della schermata che l'app disegna.
             if CommandLine.arguments.contains("--fatto") { model.fastForwardToRest() }
+            // `--tenuta-da=<secondi>` rende una tenuta **gia' cominciata**: e' l'unico modo di
+            // guardare la preparazione e l'avviso del cambio lato, che durano tre secondi e nella
+            // vita passano mentre hai la faccia sul pavimento.
+            if let secondi = CommandLine.arguments.first(where: { $0.hasPrefix("--tenuta-da=") })?
+                .split(separator: "=", maxSplits: 1).last.flatMap({ Double($0) }) {
+                model.seedHoldForSnapshot(secondsAgo: secondi)
+            }
         }
 
         // Quale schermata rendere: la pausa di default, ma anche le due superfici che finora
