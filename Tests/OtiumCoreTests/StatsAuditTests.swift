@@ -55,23 +55,94 @@ final class StatsAuditTests: XCTestCase {
         XCTAssertEqual(s.vigorousBouts, 0, "e la sessione intensa che si portava dietro")
     }
 
+    /// Un calendario **fisso**, con la settimana che comincia di lunedì come in Italia.
+    ///
+    /// I test qui sotto parlano di giorni consecutivi e di confini di settimana: con
+    /// `Calendar.current` e `Date()` misurerebbero anche il giorno in cui girano, ed è
+    /// esattamente com'è nato il difetto qui sotto — un test rosso il lunedì e verde negli altri
+    /// sei giorni, che per mesi è sembrato rumore.
+    private var calendarioFisso: Calendar {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Europe/Rome")!
+        cal.firstWeekday = 2
+        return cal
+    }
+
+    /// Le 10:00 di un giorno preciso, in quel calendario.
+    private func giorno(_ anno: Int, _ mese: Int, _ giorno: Int, ora: Int = 10) -> Date {
+        calendarioFisso.date(from: DateComponents(year: anno, month: mese, day: giorno, hour: ora))!
+    }
+
     /// **La serie di giorni deve usare la stessa definizione di «pausa» del resto dell'app.**
     ///
     /// L'app dichiara che le interruzioni sono `completed + natural`: alzarsi da soli conta, ed
     /// è scritto in `interruptions`. La serie però guardava solo le `completed`, quindi un giorno
     /// passato ad alzarsi spontaneamente spezzava la serie — cioè l'app puniva esattamente il
     /// comportamento che dice di voler premiare.
+    ///
+    /// **Il lunedì è la data apposta**: lunedì 3 agosto 2026, con la pausa di ieri che cade nella
+    /// settimana precedente. È il giorno in cui questo test era rosso.
     func testStreakUsesTheSameDefinitionOfBreakAsTheRestOfTheApp() {
-        let cal = Calendar.current
-        let oggi = cal.startOfDay(for: Date()).addingTimeInterval(10 * 3600)
-        let ieri = cal.date(byAdding: .day, value: -1, to: oggi)!
+        let lunedi = giorno(2026, 8, 3)
+        let domenica = giorno(2026, 8, 2)
         let righe = [
-            LedgerEntry(timestamp: ieri, type: .completed, breakKind: .micro, exercise: .squat),
-            LedgerEntry(timestamp: oggi, type: .natural, breakKind: .micro, seconds: 200),
+            LedgerEntry(timestamp: domenica, type: .completed, breakKind: .micro, exercise: .squat),
+            LedgerEntry(timestamp: lunedi, type: .natural, breakKind: .micro, seconds: 200),
         ]
-        let s = Stats.compute(entries: righe, period: .week, now: oggi.addingTimeInterval(3600))
+        let s = Stats.compute(entries: righe, period: .week,
+                              now: lunedi.addingTimeInterval(3600), calendar: calendarioFisso)
         XCTAssertEqual(s.streakDays, 2,
                        "ieri una pausa fatta, oggi una naturale: la serie è di due giorni")
+    }
+
+    /// **La serie non è una proprietà della finestra che stai guardando.**
+    ///
+    /// Il difetto che il test qui sopra rendeva visibile un giorno su sette: `streakDays` si
+    /// leggeva sui soli `moments`, cioè su ciò che il periodo aveva già filtrato. Con «Oggi»
+    /// davanti la serie non poteva superare **1** per costruzione — e la medaglia «giorni di
+    /// fila» compare solo sopra 1, quindi su quella scheda non è mai comparsa. Con «Settimana»
+    /// si accorciava al confine del lunedì: trenta giorni di fila letti come uno.
+    func testStreakIgnoresTheSelectedPeriodBecauseItIsAPropertyOfHistory() {
+        let righe = [
+            LedgerEntry(timestamp: giorno(2026, 8, 1), type: .completed, breakKind: .micro, exercise: .squat),
+            LedgerEntry(timestamp: giorno(2026, 8, 2), type: .completed, breakKind: .micro, exercise: .squat),
+            LedgerEntry(timestamp: giorno(2026, 8, 3), type: .completed, breakKind: .micro, exercise: .squat),
+        ]
+        let oggi = giorno(2026, 8, 3, ora: 18)
+        for periodo in [StatsPeriod.day, .week, .month] {
+            let s = Stats.compute(entries: righe, period: periodo, now: oggi, calendar: calendarioFisso)
+            XCTAssertEqual(s.streakDays, 3,
+                           "tre giorni di fila restano tre anche guardando il periodo «\(periodo.rawValue)»")
+        }
+    }
+
+    /// Il polo negativo: un buco spezza davvero la serie, o il numero direbbe sempre di sì.
+    func testAGapBreaksTheStreak() {
+        let righe = [
+            LedgerEntry(timestamp: giorno(2026, 8, 1), type: .completed, breakKind: .micro, exercise: .squat),
+            // 2 agosto: niente.
+            LedgerEntry(timestamp: giorno(2026, 8, 3), type: .completed, breakKind: .micro, exercise: .squat),
+        ]
+        let s = Stats.compute(entries: righe, period: .month,
+                              now: giorno(2026, 8, 3, ora: 18), calendar: calendarioFisso)
+        XCTAssertEqual(s.streakDays, 1, "fra le due c'è un giorno vuoto: la serie riparte da oggi")
+    }
+
+    /// Una pausa dichiarata e poi **tolta** non tiene in piedi la sua giornata.
+    ///
+    /// È la stessa regola che vale per i conti e per le ripetizioni: correggere all'ingiù è metà
+    /// del motivo per cui l'`undo` esiste. Leggendo la serie dal registro grezzo invece che dai
+    /// `moments` questa regola andava riscritta a mano — senza, una pausa cancellata avrebbe
+    /// continuato a puntellare la serie.
+    func testAnUndoneBreakDoesNotHoldUpItsDay() {
+        let righe = [
+            LedgerEntry(timestamp: giorno(2026, 8, 2), type: .completed, breakKind: .micro, exercise: .squat),
+            LedgerEntry(timestamp: giorno(2026, 8, 3, ora: 9), type: .completed, breakKind: .micro, exercise: .squat),
+            LedgerEntry(timestamp: giorno(2026, 8, 3, ora: 11), type: .undo, breakKind: .micro, reason: "tolta a mano"),
+        ]
+        let s = Stats.compute(entries: righe, period: .month,
+                              now: giorno(2026, 8, 3, ora: 18), calendar: calendarioFisso)
+        XCTAssertEqual(s.streakDays, 0, "l'unica pausa di oggi è stata tolta: oggi non conta")
     }
 
     /// La finestra del periodo esclude ciò che sta fuori, e include gli estremi.

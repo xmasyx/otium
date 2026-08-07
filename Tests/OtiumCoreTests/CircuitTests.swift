@@ -4,6 +4,16 @@ import XCTest
 /// Il microcircuito della pausa piena, e gli esercizi che si misurano in secondi.
 final class CircuitTests: XCTestCase {
 
+    /// **La lingua si dichiara, non si eredita.** Questi test guardano etichette in italiano e
+    /// `L.language` è globale: dichiararla qui li rende indipendenti dall'ordine di esecuzione.
+    /// (Il fallimento che me l'ha fatta scrivere era mio: avevo messo il plurale inglese dentro
+    /// `italianName`. Il difetto era il plurale nel posto sbagliato, non l'ordine dei test.)
+    override func setUp() {
+        super.setUp()
+        L.language = .italian
+    }
+
+
     private func engineInLongBreak() -> SessionEngine {
         var s = Settings()
         s.startDate = Date(timeIntervalSinceNow: -400 * 24 * 3600)   // rampa completata
@@ -53,13 +63,19 @@ final class CircuitTests: XCTestCase {
         XCTAssertFalse(engine.canStartCircuit)
     }
 
-    /// Le stazioni pesano meno dell'esercizio singolo: quattro al volume pieno non stanno in
-    /// cinque minuti, e chi ci prova non lo rifà una seconda volta.
-    func testStationsAreLighterThanTheSameExerciseAlone() {
+    /// **Una stazione vale quanto l'esercizio da solo** (2026-08-04).
+    ///
+    /// Questo test diceva l'opposto — «la stazione deve costare meno» — con la motivazione che
+    /// quattro esercizi al volume pieno non stanno in cinque minuti. Il principale l'ha ribaltata
+    /// con un argomento migliore: *«quegli esercizi sono singoli per ogni gruppo muscolare»*. Le
+    /// quattro stazioni sono gambe, spinta, addome ed esplosivo, quindi non si sommano sullo
+    /// stesso muscolo e non c'è nessun affaticamento da ripartire.
+    func testStationsCarryTheSameLoadAsTheExerciseAlone() {
         let engine = engineInLongBreak()
         guard let plan = engine.plan, let station = plan.circuit.first else { return XCTFail() }
         let alone = Ramp.reps(for: station.kind, factor: 1.0)
-        XCTAssertLessThan(station.reps, alone, "la stazione deve costare meno dell'esercizio da solo")
+        XCTAssertEqual(station.reps, alone, "la stazione vale quanto l'esercizio da solo")
+        XCTAssertEqual(ExercisePlanner.circuitFactor, 1.0)
     }
 
     // MARK: - Il percorso
@@ -244,8 +260,8 @@ final class CircuitTests: XCTestCase {
     func testAlternatingExercisesShowRepsPerSide() {
         let archer = Exercise(kind: .archerPushUp, reps: 6)
         XCTAssertEqual(archer.displayReps, 3)
-        XCTAssertEqual(archer.label, "3 archer push-up per lato")
-        XCTAssertEqual(archer.title, "archer push-up per lato")
+        XCTAssertEqual(archer.label, "3 archer push-ups per lato")
+        XCTAssertEqual(archer.title, "archer push-ups per lato")
         XCTAssertEqual(archer.reps, 6, "il totale non cambia: è quello che va nel registro")
         XCTAssertEqual(archer.minimumSeconds, 6 * ExerciseKind.archerPushUp.secondsPerRep, accuracy: 0.001,
                        "il cancello anti-bluff conta il totale, o mostrare metà scontererebbe il tempo")
@@ -272,8 +288,8 @@ final class CircuitTests: XCTestCase {
 
     /// Gli esercizi che **non** alternano restano com'erano: nessuna dicitura di troppo.
     func testNonAlternatingExercisesAreUnchanged() {
-        XCTAssertEqual(Exercise(kind: .squat, reps: 15).label, "15 squat")
-        XCTAssertEqual(Exercise(kind: .pushUp, reps: 10).title, "push-up")
+        XCTAssertEqual(Exercise(kind: .squat, reps: 15).label, "15 squats")
+        XCTAssertEqual(Exercise(kind: .pushUp, reps: 10).title, "push-ups")
         XCTAssertFalse(ExerciseKind.pushUp.isPerSide)
     }
 
@@ -292,8 +308,8 @@ final class CircuitTests: XCTestCase {
 
     func testRepetitionExercisesKeepTheirOldLabel() {
         let squat = Exercise(kind: .squat, reps: 15)
-        XCTAssertEqual(squat.label, "15 squat")
-        XCTAssertEqual(squat.title, "squat")
+        XCTAssertEqual(squat.label, "15 squats")
+        XCTAssertEqual(squat.title, "squats")
     }
 
     /// Gli addominali esistono davvero e sono selezionabili come gli altri.
@@ -481,7 +497,7 @@ final class CircuitModeTests: XCTestCase {
     func testHisActualSettingsFileMigratesToStartingInTheCircuit() throws {
         let json = """
         {"activeFromHour":7,"activeToHour":23,"autoDeferSeconds":300,"autoStartAtLogin":true,\
-        "cadence":{"idleThresholdSeconds":60,"intervalSeconds":1800,"longDurationSeconds":300,\
+        "cadence":{"idleThresholdSeconds":90,"intervalSeconds":1800,"longDurationSeconds":300,\
         "longEveryNBreaks":3,"microDurationSeconds":90,"postponeSeconds":120,"postponesAllowed":1,\
         "warningSeconds":60},"deferWhenMicrophoneActive":true,"detectQuietPresence":true,\
         "escapePhrase":"salto la pausa","fullPaceAnswered":false,"growthAnswered":false,\

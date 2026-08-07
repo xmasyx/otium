@@ -53,15 +53,30 @@ public struct EngineSnapshot: Codable, Equatable, Sendable {
     /// Quando è stata presa l'ultima pausa. Serve a una cosa sola: sapere se la prossima è la
     /// **prima della giornata**, e in quel caso far ripartire il ciclo micro/piena da capo.
     public var lastBreakAt: Date?
+    /// **La pausa che era dovuta e non è stata fatta.** `nil` quando l'app è stata chiusa mentre
+    /// lavoravi, cioè quasi sempre.
+    ///
+    /// Esiste perché il tipo della pausa in attesa non si può ricalcolare dopo: dipende
+    /// dall'orologio del momento in cui è stata scritta, e chiudere l'app quell'orologio lo
+    /// riporta indietro. Il caso vero, dal registro del principale il 2026-08-04: pausa **piena**
+    /// rinviata alle 18:20:28, app chiusa e riaperta, e alle 18:22:26 è tornata una **micro**.
+    /// La piena non era stata fatta e non è più arrivata.
+    ///
+    /// Si salva **solo il tipo**, non il piano. Le ripetizioni si ricalcolano su oggi — rampa,
+    /// crescita, sesso — e un piano scritto ieri le porterebbe stantie; la rotazione degli
+    /// esercizi la tiene già `breakIndex`.
+    public var pendingKind: BreakKind?
     public var savedAt: Date
 
     public init(breakIndex: Int, microsSinceLong: Int, launchCount: Int = 0,
-                activeSeconds: Double = 0, lastBreakAt: Date? = nil, savedAt: Date = Date()) {
+                activeSeconds: Double = 0, lastBreakAt: Date? = nil,
+                pendingKind: BreakKind? = nil, savedAt: Date = Date()) {
         self.breakIndex = breakIndex
         self.microsSinceLong = microsSinceLong
         self.launchCount = launchCount
         self.activeSeconds = activeSeconds
         self.lastBreakAt = lastBreakAt
+        self.pendingKind = pendingKind
         self.savedAt = savedAt
     }
 
@@ -80,6 +95,9 @@ public struct EngineSnapshot: Codable, Equatable, Sendable {
         // salvataggio è l'ultimo momento in cui l'app era viva: come data dell'ultima pausa è
         // approssimata per eccesso, ed è l'errore giusto — al massimo azzera un ciclo di troppo.
         lastBreakAt = (try? c.decode(Date.self, forKey: .lastBreakAt)) ?? savedAt
+        // Assente vuol dire «nessuna pausa in sospeso», che è lo stato normale: un file scritto
+        // dalla versione precedente non deve inventarsene una.
+        pendingKind = try? c.decode(BreakKind.self, forKey: .pendingKind)
     }
 }
 
@@ -114,6 +132,9 @@ public enum EngineEvent: Equatable, Sendable {
     /// decisione della persona, non dell'app. Corretto su sua indicazione: *«non chiude la
     /// pagina, ma ti dice: la pausa è finita»*.
     case breakTimeOver(BreakPlan)
+    /// Un microfono è acceso da ore senza un solo tocco: probabilmente non sei in riunione, e
+    /// probabilmente non sei nemmeno lì. L'app non blocca comunque — te lo dice, e basta.
+    case callWatchdog(seconds: Double)
 }
 
 /// Cosa sta succedendo intorno, nel momento in cui il break vorrebbe partire.
@@ -186,6 +207,9 @@ public struct SessionEngine {
     /// dura quello che dura; questo è un'attesa che ha una causa fuori dall'app, e quando la causa
     /// finisce l'attesa non ha più motivo di esistere.
     private var postponedForMicrophone = false
+    /// Da quanto un microfono è acceso senza che tu abbia toccato niente. Vedi `callWatchdog`.
+    private var callSilentSeconds: Double = 0
+    private var callWatchdogSignalled = false
     /// Il richiamo di fine pausa è già partito: una volta sola, non a ogni tick.
     private var timeOverSignalled = false
     private var idleDuringBreak: Double = 0
@@ -195,6 +219,9 @@ public struct SessionEngine {
     private var exerciseBaseline: Double = 0
     /// L'esercizio singolo messo da parte quando entri nel circuito, per poterci tornare.
     private var singleExercise: Exercise?
+    /// La pausa che l'esecuzione precedente ti doveva, riportata dal ripristino. La consuma la
+    /// prossima pianificazione, e una volta sola. Vedi `EngineSnapshot.pendingKind`.
+    private var pendingKind: BreakKind?
 
     /// Quando l'assenza durante un blocco significa "se n'è andato davvero".
     ///
@@ -243,14 +270,50 @@ public struct SessionEngine {
             return []
         case .working:
             lastPresence = environment.presence
-            return tickWorking(elapsed: elapsed, idle: idle, now: now, environment: environment)
+            return callWatchdog(elapsed: elapsed, idle: idle, environment: environment)
+                + tickWorking(elapsed: elapsed, idle: idle, now: now, environment: environment)
         case .warning:
             return tickWarning(elapsed: elapsed, now: now, environment: environment)
         case .breaking:
             return tickBreaking(elapsed: elapsed, idle: idle)
         case .postponed:
-            return tickPostponed(elapsed: elapsed, now: now, environment: environment)
+            return callWatchdog(elapsed: elapsed, idle: idle, environment: environment)
+                + tickPostponed(elapsed: elapsed, idle: idle, now: now, environment: environment)
         }
+    }
+
+    /// Oltre questo, un microfono acceso senza un solo tocco non è più una riunione.
+    ///
+    /// **È l'unica rete rimasta al posto del tetto sulla presenza.** Da quando la call non scade
+    /// (`PresenceCap.call = ∞`) e il rinvio per microfono non ha più un limite, un'app che si
+    /// tenesse il microfono aperto renderebbe Otium incapace di bloccare **in silenzio**, e nel
+    /// frattempo accumulerebbe come sedentarietà ore in cui non sei nemmeno in casa. Nessun test
+    /// lo prenderebbe, perché non c'è niente di rotto: c'è solo un'app che non interrompe più.
+    ///
+    /// Quello che fa questo richiamo è **dirlo**, non ripararlo. Bloccare lo schermo qui
+    /// riaprirebbe la porta che il principale ha chiesto di chiudere a chiave.
+    public static let callWatchdogSeconds: Double = 4 * 60 * 60
+
+    private mutating func callWatchdog(
+        elapsed: Double,
+        idle: Double,
+        environment: EngineEnvironment
+    ) -> [EngineEvent] {
+        guard environment.microphoneActive || environment.presence?.kind == .call else {
+            callSilentSeconds = 0
+            callWatchdogSignalled = false
+            return []
+        }
+        // Un solo tocco azzera il sospetto: se stai usando il Mac, la call è una call.
+        guard idle >= settings.cadence.idleThresholdSeconds else {
+            callSilentSeconds = 0
+            callWatchdogSignalled = false
+            return []
+        }
+        callSilentSeconds += max(0, elapsed)
+        guard !callWatchdogSignalled, callSilentSeconds >= Self.callWatchdogSeconds else { return [] }
+        callWatchdogSignalled = true
+        return [.callWatchdog(seconds: callSilentSeconds)]
     }
 
     /// Il segnale vale finché non supera il proprio tetto: oltre, sei uscito e hai lasciato il
@@ -334,6 +397,8 @@ public struct SessionEngine {
             let creditedLong = seconds >= settings.cadence.longDurationSeconds
             if creditedLong { microsSinceLong = 0 } else { microsSinceLong += 1 }
             lastBreakAt = now
+            // La pausa che ti dovevo l'hai appena fatta camminando via: non te la ripropongo.
+            pendingKind = nil
             events.append(.naturalBreak(seconds: seconds, creditedLong: creditedLong))
         }
         if alwaysReset || longEnough { clock.reset() }
@@ -388,8 +453,40 @@ public struct SessionEngine {
         return []
     }
 
-    private mutating func tickPostponed(elapsed: Double, now: Date, environment: EngineEnvironment) -> [EngineEvent] {
+    private mutating func tickPostponed(
+        elapsed: Double,
+        idle: Double,
+        now: Date,
+        environment: EngineEnvironment
+    ) -> [EngineEvent] {
         guard let current = plan else { phase = .working; return [] }
+
+        // **Rinviata non vuol dire ferma.** Fino al 2026-08-04 l'orologio si fermava per tutta la
+        // durata del rinvio: una riunione di due ore rinviava la pausa e nel frattempo quelle due
+        // ore non venivano contate da nessuno, quindi al rientro il conto diceva mezz'ora. È la
+        // metà nascosta del difetto segnalato dal principale — la prima metà era la call che non
+        // faceva presenza, questa è il rinvio che congelava tutto. Adesso il tempo cammina, ed è
+        // ciò che permette alla pausa arretrata di arrivare **lunga** invece che da 90 secondi.
+        let clockEvent = clock.tick(
+            elapsed: elapsed,
+            idle: idle,
+            presenceHolds: presenceHolds(environment.presence, idle: idle)
+        )
+        switch clockEvent {
+        case .naturalBreak(let seconds):
+            // Te ne sei andato abbastanza a lungo da valere come pausa: quella rinviata non ha
+            // più ragione di esistere. Cancellarla è la lettura onesta — la pausa l'hai fatta.
+            let events = creditNatural(seconds: seconds, now: now, alwaysReset: false)
+            if !events.isEmpty { return cancelPendingBreak() + events }
+        case .suspended(let gap):
+            // Il Mac era chiuso. Se prima c'era sedentarietà vera l'assenza si accredita, come
+            // già fa la fase di lavoro; in ogni caso la pausa in attesa appartiene a un contatore
+            // che non esiste più.
+            let events = creditNatural(seconds: gap, now: now, alwaysReset: true)
+            return cancelPendingBreak() + events
+        case .accumulating, .quietPresence, .idling:
+            break
+        }
 
         // **La call è finita: l'attesa non ha più causa.** Vale solo per il rinvio deciso
         // dall'app per il microfono — quello che hai chiesto tu a mano dura quello che dura, o
@@ -402,13 +499,20 @@ public struct SessionEngine {
         // rimbalzo è già gestito, e non serve nessuna isteresi in più.
         if postponedForMicrophone, !environment.microphoneActive {
             postponedForMicrophone = false
+            // **Il preavviso deve annunciare la pausa che poi arriva.** Dopo due ore di call il
+            // piano scritto al preavviso dice ancora «micro, 90 secondi», e `startBreak` lo
+            // promuoverebbe comunque a pausa piena: senza questa riga il preavviso prometterebbe
+            // novanta secondi e lo schermo si coprirebbe per cinque minuti. Promosso qui, il
+            // conto alla rovescia dice la verità dal primo istante.
+            let dovuta = overdueUpgrade(current, now: now)
+            plan = dovuta
             guard settings.cadence.warningSeconds > 0 else {
-                return [.deferredBreakDue(current)]
-                    + startBreak(current, now: now, environment: environment)
+                return [.deferredBreakDue(dovuta)]
+                    + startBreak(dovuta, now: now, environment: environment)
             }
             phase = .warning
             timer = settings.cadence.warningSeconds
-            return [.deferredBreakDue(current)]
+            return [.deferredBreakDue(dovuta)]
         }
 
         timer -= elapsed
@@ -432,10 +536,21 @@ public struct SessionEngine {
 
         // In call: si rimanda e lo si dichiara. Un blocco a schermo intero durante una riunione
         // è un difetto, per quanto ben motivato sia l'esercizio.
+        //
+        // **Il rinvio per microfono non ha più un tetto, ed è una decisione, non una svista**
+        // (principale, 2026-08-04: *«finché il microfono è attivo non può bloccarsi lo schermo»*).
+        // Prima la condizione portava anche `autoDefersUsed < settings.maxAutoDefers`, cioè sei
+        // rinvii da cinque minuti: dopo mezz'ora di riunione la schermata partiva **in piena
+        // call**, che è esattamente il caso che questo ramo esiste per impedire. Un limite ai
+        // rinvii ha senso quando il rinvio è una scusa; qui la causa è fuori dall'app, è
+        // osservabile, e finisce da sola. `autoDefersUsed` resta contato — serve al registro e
+        // alle statistiche — ma non decide più niente.
+        //
+        // Il prezzo, dichiarato: un'app che tenesse il microfono aperto per sempre renderebbe
+        // Otium incapace di bloccare, in silenzio. È il motivo per cui esiste `callWatchdog`.
         if !forced,
            environment.microphoneActive,
-           settings.deferWhenMicrophoneActive,
-           autoDefersUsed < settings.maxAutoDefers {
+           settings.deferWhenMicrophoneActive {
             autoDefersUsed += 1
             phase = .postponed
             postponedForMicrophone = true
@@ -443,13 +558,33 @@ public struct SessionEngine {
             return [.autoDeferred(current, reason: "microfono in uso")]
         }
 
+        // **Ultimo cancello sulla gravità.** Il piano nasce al preavviso, ma fra il preavviso e
+        // qui possono passare ore — una call che rinvia, un rinvio chiesto a mano — e in quelle
+        // ore il contatore cammina. Il tipo di pausa va deciso su quanto tempo hai davvero
+        // accumulato **adesso**, non su quanto ne avevi quando il piano è stato scritto.
+        let piano = overdueUpgrade(current, now: now)
+        plan = piano
         phase = .breaking
         timer = 0
         exerciseDone = false
         idleDuringBreak = 0
         exerciseBaseline = 0
         timeOverSignalled = false
-        return [.breakStarted(current)]
+        return [.breakStarted(piano)]
+    }
+
+    /// Butta via la pausa in attesa e torna a lavorare. **Non passa da `finish`**, e la
+    /// differenza conta: `finish` fa avanzare il conto delle micro verso la pausa piena, cioè
+    /// segna che una pausa c'è stata. Qui la pausa non c'è stata — o l'ha già scritta
+    /// `creditNatural` come pausa spontanea, e scriverla due volte falserebbe la rotazione.
+    private mutating func cancelPendingBreak() -> [EngineEvent] {
+        phase = .working
+        timer = 0
+        plan = nil
+        postponedForMicrophone = false
+        exerciseDone = false
+        idleDuringBreak = 0
+        return []
     }
 
     private mutating func finish(_ current: BreakPlan, event: EngineEvent) -> [EngineEvent] {
@@ -487,21 +622,58 @@ public struct SessionEngine {
         if crossedIntoNewDay(now: now) { microsSinceLong = 0 }
         lastBreakAt = now
 
+        // **La pausa che ti dovevo batte quella che tocca adesso.** Il tipo arrivato dal
+        // ripristino vale una volta sola e poi sparisce: se resta, ogni pausa della giornata
+        // eredita il tipo di quella persa.
+        let dovuta = pendingKind
+        pendingKind = nil
+
         let kind: BreakKind = forcedKind
+            ?? (isOverdue ? .long : nil)
+            ?? dovuta
             ?? ((microsSinceLong + 1 >= settings.cadence.longEveryNBreaks) ? .long : .micro)
         breakIndex += 1
+        return buildPlan(index: breakIndex, kind: kind, now: now)
+    }
+
+    /// **Quanto sei in ritardo conta più di che turno è.** La rotazione micro-micro-lunga presume
+    /// che le pause arrivino tutte: se ne salti una intera — perché eri in call, perché hai
+    /// rinviato — arrivare con novanta secondi dopo un'ora seduto è la risposta sbagliata alla
+    /// domanda giusta. Chiesto dal principale il 2026-08-04: *«quando c'è troppo tempo senza
+    /// pause, la pausa è subito una pausa lunga invece di essere una pausa da 90 secondi»*.
+    ///
+    /// La soglia è **il doppio dell'intervallo**, cioè un ciclo intero saltato, e sta in una
+    /// costante sola perché è l'unico numero qui dentro che è una scelta e non una misura.
+    public static let overdueLongFactor: Double = 2
+
+    /// Il tempo attivo accumulato ha superato il doppio dell'intervallo.
+    public var isOverdue: Bool {
+        clock.activeSeconds >= Self.overdueLongFactor * settings.cadence.intervalSeconds
+    }
+
+    /// Promuove a pausa piena un piano micro che arriva troppo tardi. Rifà anche l'esercizio,
+    /// perché una pausa lunga col carico di una micro sarebbe lunga solo nel nome.
+    private mutating func overdueUpgrade(_ piano: BreakPlan, now: Date) -> BreakPlan {
+        guard piano.kind == .micro, isOverdue else { return piano }
+        return buildPlan(index: piano.index, kind: .long, now: now)
+    }
+
+    /// Costruisce il piano dato indice e tipo. Separato dal conteggio dei turni perché la
+    /// promozione per ritardo deve poter **ricostruire** un piano già assegnato senza far
+    /// avanzare la rotazione degli esercizi né riscrivere l'ora dell'ultima pausa.
+    private mutating func buildPlan(index: Int, kind: BreakKind, now: Date) -> BreakPlan {
         let factor = settings.rampFactor(now: now)
-        let exercise = settings.planner.exercise(breakIndex: breakIndex, kind: kind,
+        let exercise = settings.planner.exercise(breakIndex: index, kind: kind,
                                                  factor: factor, sex: settings.sex,
                                                  pushVariant: settings.pushVariant,
                                                  progress: settings.progressBeyondFull ? progress : nil)
         // Il circuito si prepara solo dove ha senso — la pausa piena — e resta una proposta.
         let circuit = (kind == .long && settings.circuitMode.buildsCircuit)
-            ? settings.planner.circuit(breakIndex: breakIndex, factor: factor, sex: settings.sex,
+            ? settings.planner.circuit(breakIndex: index, factor: factor, sex: settings.sex,
                                        pushVariant: settings.pushVariant)
             : []
         var piano = BreakPlan(
-            index: breakIndex,
+            index: index,
             kind: kind,
             duration: settings.cadence.duration(for: kind),
             exercise: exercise,
@@ -532,6 +704,7 @@ public struct SessionEngine {
     }
 
     private func isWithinActiveHours(_ now: Date) -> Bool {
+        if settings.activeHoursAlwaysOn { return true }
         let hour = Calendar.current.component(.hour, from: now)
         let from = settings.activeFromHour
         let to = settings.activeToHour
@@ -747,13 +920,35 @@ public struct SessionEngine {
 
     /// Pausa a richiesta, dal menu. Salta l'attesa dell'intervallo, l'orario e il radar delle
     /// call: l'hai chiesta tu, e una richiesta esplicita batte ogni euristica.
+    ///
+    /// **Anche l'attesa la scavalca, ed è il punto** (principale, 2026-08-04: *«il microfono si è
+    /// chiuso e devo aspettare che passi il minuto»*). Prima il cancello era `phase == .working`,
+    /// quindi durante il preavviso e durante un rinvio — a mano o per microfono — la voce del menu
+    /// non faceva **niente**, in silenzio: cliccavi e restavi a guardare il minuto scorrere. Ma
+    /// preavviso e rinvio sono proprio le due condizioni in cui uno chiede la pausa adesso, perché
+    /// sono le uniche in cui l'app te ne ha appena promessa una. L'unica fase che resta esclusa è
+    /// `breaking`, dove la pausa c'è già, e `paused`, che l'app riprende prima di chiamare qui.
     @discardableResult
     public mutating func forceBreakNow(now: Date, kind: BreakKind? = nil) -> [EngineEvent] {
-        guard phase == .working else { return [] }
-        let newPlan = planNextBreak(now: now, forcedKind: kind)
+        guard phase == .working || phase == .warning || phase == .postponed else { return [] }
+
+        // **Un'attesa in corso ha già il suo piano, e va usato quello.** Ripianificare farebbe
+        // avanzare la rotazione degli esercizi di un turno per una pausa che il turno l'aveva già
+        // preso: chiedere «adesso» invece di aspettare sessanta secondi salterebbe un esercizio.
+        // `overdueUpgrade` resta perché la promozione a pausa piena dipende da quanto tempo hai
+        // accumulato **ora**, ed è lo stesso passaggio che fa `startBreak`.
+        let newPlan: BreakPlan
+        if let pending = plan, phase == .warning || phase == .postponed {
+            newPlan = kind.map { buildPlan(index: pending.index, kind: $0, now: now) }
+                ?? overdueUpgrade(pending, now: now)
+        } else {
+            newPlan = planNextBreak(now: now, forcedKind: kind)
+        }
         plan = newPlan
         postponesUsed = 0
         autoDefersUsed = 0
+        // La causa del rinvio non esiste più: la pausa la stai facendo partire tu.
+        postponedForMicrophone = false
         exerciseDone = false
         idleDuringBreak = 0
         return startBreak(newPlan, now: now, environment: .quiet, forced: true)
@@ -763,10 +958,22 @@ public struct SessionEngine {
 
     public private(set) var launchCount: Int = 0
 
+    /// Il tipo della pausa dovuta e non fatta, da riportare alla riapertura. Vedi
+    /// `EngineSnapshot.pendingKind`.
+    ///
+    /// Sono le due fasi in cui una pausa **esiste già** e non è ancora cominciata: il preavviso e
+    /// il rinvio. La fase `breaking` resta fuori di proposito: lì lo schermo era coperto, e
+    /// riaprire l'app trovando una pausa piena in attesa dopo averla quasi finita punirebbe
+    /// proprio chi la stava facendo.
+    private var pendingKindForSnapshot: BreakKind? {
+        guard phase == .warning || phase == .postponed else { return nil }
+        return plan?.kind
+    }
+
     public var snapshot: EngineSnapshot {
         EngineSnapshot(breakIndex: breakIndex, microsSinceLong: microsSinceLong,
                        launchCount: launchCount, activeSeconds: clock.activeSeconds,
-                       lastBreakAt: lastBreakAt)
+                       lastBreakAt: lastBreakAt, pendingKind: pendingKindForSnapshot)
     }
 
     /// Un avvio in più. Le frasi non dipendono più da questo numero — le estrae il mazzo, che è
@@ -824,6 +1031,9 @@ public struct SessionEngine {
         breakIndex += 1
         if kind == .long { microsSinceLong = 0 } else { microsSinceLong += 1 }
         lastBreakAt = now
+        // Dichiarare una pausa fatta chiude anche quella che il ripristino teneva in sospeso: è
+        // la stessa pausa, raccontata a mano.
+        pendingKind = nil
     }
 
     /// «Quella pausa l'avevo segnata a mano, ma poi è arrivata davvero.»
@@ -868,6 +1078,12 @@ public struct SessionEngine {
         lastBreakAt = snapshot.lastBreakAt.map { min($0, now) }
 
         let gap = max(0, now.timeIntervalSince(snapshot.savedAt))
+        // **La pausa dovuta si riprende solo entro la finestra di grazia**, e per la stessa
+        // ragione per cui l'orologio si riprende solo lì: oltre quella soglia sei stato via
+        // quanto una pausa piena, e quella pausa l'hai fatta camminando. Riproporla sarebbe
+        // chiederti due volte la stessa cosa.
+        pendingKind = gap <= settings.resumeGraceSeconds ? snapshot.pendingKind : nil
+
         guard gap <= settings.resumeGraceSeconds, snapshot.activeSeconds > 0 else {
             return .restarted(afterGap: gap)
         }

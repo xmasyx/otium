@@ -2,8 +2,8 @@
 slug: otium
 title: Otium — pause forzate con allenamento integrato per macOS
 phase: complete
-progress: true
-iteration: 1
+progress: 229/233
+iteration: 26
 context_sufficient: true
 interview_invoked: false
 principal_stated_goal: "voglio creare qualcosa che sia in grado di monitorare il tempo reale che spendo davanti al computer mentre uso lifeos o altri tipi di lavori e che dopo un tempo determinato, che dobbiamo valutare insieme quale sia il miglior tempo scientificamente e con studi, obbligare a fare una pausa di un tempo altrettanto studiato e che durante questa pausa mi obblighi a fare un tot numero di squat, pushups, burpees, jumpingjacks o quello che è meglio così da integrare allenamento all'interno delle sessioni di lavoro. e che se non vengono eseguite lo schermo rimane bloccato o qualcosa del genere. non serve la telecamera, già il richiamo permette di essere in condizione di scelta"
@@ -161,8 +161,34 @@ Rampa: settimana 1 al 55% delle ripetizioni, +15% a settimana fino al 100% in se
       l'effetto è visivo e la cattura schermo su questa macchina non è disponibile (vedi
       Verification).
 - [x] **ISC-13** La finestra di blocco è visibile su tutte le Spaces e sopra le app a schermo
-      intero. — livello misurato `2147483628` = `CGShieldingWindowLevel()`, sopra ogni finestra
-      normale; `collectionBehavior` con `.canJoinAllSpaces` e `.fullScreenAuxiliary`.
+      intero. — **riaperto e richiuso il 2026-08-03, perché la chiusura precedente era falsa.**
+      Era chiuso su ispezione del codice — livello `2147483628` e `collectionBehavior` giusto —
+      e il codice non bastava. Il principale lavorava in iTerm a schermo intero nativo, non ha
+      visto partire nessuna pausa, e si è visto bloccare la scrittura ogni due secondi.
+      *Misurato sul suo Mac (macOS 26, iTerm proprietario di uno Space di tipo 4):* la vecchia
+      `NSWindow`, alzata dopo `setActivationPolicy(.regular)` + `activate(ignoringOtherApps:)`,
+      **non entrava in quello Space** — assente dalla lista on-screen del server grafico, `0.0%`
+      di pixel — mentre l'app si prendeva comunque il primo piano senza attivarsi davvero
+      (`isActive == false`, nessuna finestra key), e il battito da 2 s ripeteva la rapina ogni
+      due secondi. Il registro conferma l'ora: alle 20:44 una micro-pausa chiusa
+      `skipped/emergency`, cioè i due Esc premuti al buio.
+      **Sette combinazioni di livello e `collectionBehavior` provate, tutte a zero pixel**
+      (`screenSaver`, `floating`, `.canJoinAllSpaces` da solo, `.fullScreenAuxiliary` da solo,
+      `.moveToActiveSpace`, finestra normale, e quella di allora): il colpevole non erano i flag
+      della finestra, era la coppia politica+attivazione.
+      **Cura:** `NSPanel` con `.nonactivatingPanel`, `hidesOnDeactivate = false`, nessun cambio
+      di politica di attivazione e nessun `activate` — né all'apertura né nel battito, che ora
+      si limita a rimettere davanti la finestra e a riprendere lo stato di key se l'ha perso.
+      *Falsificatore:* sonda in bundle `.app` firmato che riproduce la sequenza esatta
+      (`.accessory` a riposo → `.regular` + `activate` → scudo → chiosco), con cattura a pixel e
+      lettura di `CGWindowListCopyWindowInfo`. **Rosso sul codice di prima** (`NELLO SPACE: no`,
+      0% di pixel), verde su questo (100% dello schermo, `isActive == true`, key sì, chiosco 490).
+      **Verde sull'app installata**, sopra iTerm a schermo intero *e* su desktop normale, con un
+      Esc mandato dall'esterno che accende «Premi Esc di nuovo per uscire subito» — cioè i tasti
+      arrivano allo scudo e non all'app sotto.
+      **La lezione che vale oltre Otium: una sonda non impacchettata non è un'app.** La prima
+      versione di questa misura era un binario nudo, e falliva *tutte* le varianti, comprese
+      quelle sane: misurava l'attivazione negata a un processo senza bundle, non lo Space.
 - [x] **ISC-14** `Anti:` il blocco non richiede **nessun** permesso TCC — l'app non compare in
       Accessibilità, Registrazione schermo o Telecamera. — grep su `Sources/` per
       `AVCaptureDevice|CGWindowListCreateImage|AXIsProcessTrusted|CGEventTap|UNUserNotificationCenter|SCStream`:
@@ -509,12 +535,32 @@ Rampa: settimana 1 al 55% delle ripetizioni, +15% a settimana fino al 100% in se
 
 - [x] **ISC-25** `Scripts/build-app.sh` produce `Otium.app` avviabile con doppio clic, firmata
       ad-hoc. — script eseguito, bundle aperto e in esecuzione più volte.
-- [x] **ISC-26** Un LaunchAgent con `KeepAlive` riavvia l'app se viene uccisa. —
-      `--install-agent` → `launchctl print` riporta `state = running` e `program =` il bundle;
-      l'app risulta viva dopo l'installazione. Poi **rimosso**: il Mac è stato lasciato com'era.
-- [x] **ISC-27** L'app verifica che il LaunchAgent punti al proprio bundle e lo segnala se il
-      bersaglio non esiste più. — provato su tre stati reali: `notInstalled`, `danglingTarget(…)`
-      con un percorso inesistente, `pointsElsewhere("/bin/echo")`.
+- [~] **ISC-26** ~~Un LaunchAgent con `KeepAlive` riavvia l'app se viene uccisa.~~
+      **SUPERATO il 2026-08-03** (vedi D-2026-08-03). Il `KeepAlive` è caduto con il passaggio a
+      `SMAppService`: sprangava la finestra sul retro lasciando aperta la porta, perché «Esci da
+      Otium» è un'uscita pulita che non lo faceva scattare. La rete che resta è il ripristino a
+      caldo di `SessionEngine.restore()`.
+- [~] **ISC-27** ~~L'app verifica che il LaunchAgent punti al proprio bundle.~~ **SUPERATO il
+      2026-08-03**: non c'è più un percorso da verificare. `SMAppService` registra il bundle,
+      quindi `danglingTarget` e `pointsElsewhere` sono stati che non possono più esistere.
+- [x] **ISC-151** L'avvio automatico è registrato con `SMAppService`, non con un plist a mano, e
+      macOS lo cataloga come applicazione. — `sfltool dumpbtm` dopo la migrazione: un solo record
+      Otium, `Type: app (0x2)`, `Flags: [ ]`, `URL: file:///Applications/Otium.app/`,
+      `Bundle Identifier: app.otium.mac`. Prima era `Type: legacy agent (0x10008)`,
+      `Flags: [ legacy ]`, `Parent Identifier: Unknown Developer`.
+      *Falsificatore, ai due poli:* prima della migrazione il record diceva `legacy agent`, e la
+      stessa sonda su Kalamos (che già usava questa API) diceva `app` — cioè la sonda distingue,
+      non risponde sempre la stessa cosa.
+- [x] **ISC-152** Il vecchio LaunchAgent viene tolto, e non ne restano due. —
+      `--remove-legacy-agent` → il plist non esiste più e
+      `launchctl print gui/501/app.otium.mac` risponde *«Could not find service»*. `--doctor`
+      dice «nessun residuo». La migrazione gira anche da sola al primo avvio.
+- [ ] **ISC-153** `Anti:` Otium compare fra le app di «Apri al login» in Impostazioni di Sistema.
+      **APERTO, verifica differita**: è un criterio di *aspetto* e si chiude solo su una
+      fotografia della finestra vera, che non sono riuscito a scattare — il collegamento diretto
+      al pannello atterra su «Generali» e il principale stava usando il Mac, quindi ho smesso di
+      rubargli il fuoco invece di insistere. L'indizio forte c'è (il record BTM è identico a
+      quello di Kalamos, che nella lista compare), ma un indizio non è la fotografia.
 - [ ] **ISC-28** `Antecedent:` l'interruzione è accettabile perché breve, prevedibile e motivata.
       **Aperto per costruzione**: è il criterio esperienziale, e si chiude solo con qualche
       giorno d'uso vero. Il falsificatore è semplice — se dopo una settimana il registro mostra
@@ -1377,6 +1423,101 @@ piena, l'attribuzione «consenso» non si capisce, e le preferenze sono una list
 - **Anti-claim** — la barra laterale non deve nascondere niente. Sei voci che coprono tutti i
   controlli di oggi: una preferenza che esiste ma non si trova più è peggio di una lista lunga.
 
+### Iterazione 21 — l'italiano del corpus, e le 215 che tornano (2026-08-01)
+
+Il principale ha compilato le note sulle 40 frasi della voce e ha aggiunto la regola che le
+governa tutte: *«i due punti vanno usati solamente in situazioni specifiche e invece tu ne abusi
+parecchio»*. Poi ha detto la cosa che riapre il lavoro grosso: le 215 frasi anonime che il 28
+luglio mi aveva fatto togliere **non le aveva lette**, e molte sono buone. Tornano, ma passate
+per le regole.
+
+- [x] **ISC-125** Le correzioni del principale sulle frasi della voce sono nel codice, parola per
+      parola. — Dieci note in `RISPOSTE.txt`, di cui due «togli» e una che lascia il testo com'è.
+      La 20 è arrivata in due versioni nello stesso giro: vale l'ultima, col **punto** al posto
+      dei due punti. L'inglese segue ogni italiano che cambia, perché non ha più un valore di
+      ripiego e una frase monca non compila.
+      *Falsificatore:* un grep per ognuno dei dieci testi nuovi, più `swift test` sulla lunghezza
+      e sui doppioni fra i pool.
+      *Chiuso:* le sei del blocco «Il corpo, adesso» **guardate a schermo** col provino
+      (`--da=336 --quante=9`), senza caporali e senza attribuzione, che è la veste giusta per la
+      voce. La 22 e la 27 tolte con la nota accanto nel sorgente. La 17 è l'unica dove ho toccato
+      le sue parole: *«Difficile dire che ti fermerai»* → *«Difficile che ti fermi lì»*, perché in
+      italiano «difficile dire che» vuol dire «è azzardato affermare», non «è improbabile», e la
+      sua glossa diceva la seconda. Detto a lui invece che fatto di nascosto.
+
+- [x] **ISC-126** I due punti retorici sono spariti dal corpus, e i quattro usi legittimi sono
+      rimasti. — Misurati **74 su 486 frasi**, una ogni 6,6. Non è una pulizia a tappeto: elenco,
+      spiegazione, conseguenza e discorso diretto restano dove sono. Cade lo stacco a effetto,
+      soprattutto dentro l'antitesi «non X**:** Y». La domanda del principale — *«le frasi di
+      Seneca erano prese da un libro e la punteggiatura era già la sua?»* — ha risposta negativa
+      e verificata: `Scripts/citazioni/README.md` dice che **le rese italiane sono nostre**, fatte
+      sull'originale, quindi la punteggiatura di `Quotes.swift` è mia e si tocca.
+      *Falsificatore:* il conteggio prima/dopo, e per ogni riga toccata di un autore il confronto
+      con l'originale sul disco in `Scripts/citazioni/fonti/`, perché si tocca la virgola e mai la
+      resa.
+      *Chiuso:* **74 → 59** sulle 485 frasi, e in `Mindful` **12 → 3**, cioè restano solo i tre
+      legittimi (l'elenco zen, la conseguenza del chiodo, la domanda introdotta). Sulle due righe
+      d'autore toccate la resa è stata riverificata sul primario: Seneca 62 dice *«Rebus enim me
+      non trado sed commodo»*, trovato alla lettera in `seneca-epistulae-la.txt`, e la nuova resa
+      *«Alle cose non mi consegno, mi presto soltanto»* tiene il `non … sed` che prima i due punti
+      schiacciavano. **Spazzata la classe, non solo il pool**: la stessa forma viveva anche in
+      `Praise` (due complimenti di fine esercizio) e in due stringhe delle viste, trovate con una
+      sonda su tutte le 796 stringhe italiane di `Sources`, non a occhio.
+
+- [ ] **ISC-127** Nessuna frase della voce dell'app è la parafrasi di una citazione che ha un
+      padrone. — Rileggendo le 215 ne sono uscite alcune che non sono mie: la goccia che scava la
+      pietra è di **Ovidio**, la strada che si fa camminando di **Machado**, la perfezione quando
+      non c'è più niente da togliere di **Saint-Exupéry**. Firmarle «voce dell'app» sarebbe peggio
+      che chiamarle anonime: sarebbe un plagio silenzioso. O vanno in `Quotes` con l'opera, o non
+      entrano.
+      *Falsificatore:* ognuna cercata alla lettera nel testo primario col cancello
+      `verifica-citazioni.ts`, che è fail-closed; quelle che non si trovano non entrano da nessuna
+      parte.
+      *Aperta di proposito:* le otto sono state **identificate e tenute fuori** dal rientro, ed è
+      la metà che conta. Il recupero delle quattro che hanno un'opera vera (Ovidio, Machado,
+      Saint-Exupéry, Laozi 11) aspetta la sua risposta nella domanda 1 di `RISPOSTE.txt`: sono
+      citazioni firmate, e una citazione non entra perché mi pare, entra se il cancello la trova
+      nel primario.
+
+- [x] **ISC-128** La prossima frase con i due punti retorici non arriva davanti al principale. —
+      `ItalianStyle.ts` gira su PDF, docx ed email e **non su un sorgente Swift**: è per questo che
+      74 sono entrati senza che nessuno fiatasse. Il controllo va dentro `LanguageLintTests.swift`,
+      dove i test italiani già vivono.
+      *Falsificatore:* i due poli — il lint boccia «Non stai perdendo tempo: stai restituendo
+      sangue alle gambe» e lascia passare «Delle cose del corpo prendi solo quanto basta all'uso:
+      cibo, bevanda, vestito, casa», che è un elenco.
+      *Chiuso:* tre test nuovi, **319 verdi** contro i 316 di prima. La prima versione del lettore
+      bocciava qualunque negazione prima dei due punti e faceva **quattro falsi positivi su
+      cinque**: l'ho stretta alla firma vera, cioè il verbo negato che torna affermativo dopo. E il
+      test negativo l'ho provato davvero — girato contro i file a `HEAD` trova tre difetti che a
+      HEAD c'erano, quindi non è un'asserzione travestita da verifica. Accanto c'è un tetto sulla
+      **densità** (sotto il 13%, oggi 12,2%): ogni singolo caso può essere corretto e l'insieme
+      suonare lo stesso tradotto, e quello il lint sul caso singolo non lo vede.
+
+- [x] **ISC-129** Le 215 tolte tornano leggibili, riscritte, con la loro numerazione di prima. —
+      Un documento che il principale legge senza il terminale accanto e su cui decide cosa tenere.
+      I numeri restano quelli di `FRASI-ANONIME.md` perché le sue note del 27 luglio ci puntano.
+      Rientrano come **`voce`**, non come anonime: sono righe che ho scritto io, e il tipo `voce`
+      esiste dal 29 luglio proprio per non farle uscire vestite da massima di autore ignoto.
+      *Falsificatore:* `PdfText.ts --check` contro il sorgente, più le pagine guardate a immagine.
+      *Chiuso:* `Decisioni/20260801-frasi-rientro/`, 10 pagine, zero parole perse e zero inventate,
+      pagine 1, 2 e 5 guardate a immagine (la prima passata rendeva l'esempio della regola 1
+      schiacciato su una riga: rifatto a tabella). **191 nell'elenco, non 196**: il primo conto era
+      sbagliato perché quattro le avevo tagliate di mia iniziativa senza dichiararlo — trovate
+      contando i numeri nel documento contro la mappa invece che fidandomi della somma, e adesso
+      hanno una sezione loro con il motivo. Le ventitré fuori sono elencate una per una: otto con
+      un autore, due con un'attribuzione che non regge, cinque doppioni di roba già in corpus con
+      la fonte, una che contraddice un fatto sorgente dell'app, due idee-firma di James Clear,
+      una già tolta da lui il 31/07, e le quattro mie.
+
+- **Anti-claim** — si tocca la lingua, non il senso. È l'errore del 29 luglio, costato undici
+  frasi riscritte di nascosto dentro una correzione di stile. Dove il concetto non regge lo dico e
+  mi fermo, non lo aggiusto in silenzio.
+
+- **Anti-claim** — nessuna frase rientra perché «era bella». Chi ha un autore va da lui, chi
+  ripete un fatto già in `Facts.swift` con la fonte esce, e chi contraddice un fatto sorgente del
+  corpus esce comunque.
+
 ## Test Strategy
 
 Tre strumenti: `swift test` per tutta la logica pura (orologio, motore, rampa, registro), che è
@@ -1409,6 +1550,36 @@ uno che non copre la barra dei menu sono indistinguibili nei test.
 | F4 | Impacchettamento — `build-app.sh`, icona, LaunchAgent, README con le fonti | da fare |
 
 ## Decisions
+
+### D-2026-08-03 — L'avvio automatico passa a `SMAppService`, e il `KeepAlive` cade
+
+**La domanda.** Perché l'avviso «Attività app in background» torna a ogni ricostruzione, e perché
+Otium non si può scegliere fra le app di «Apri al login» mentre Kalamos sì?
+
+**La risposta, misurata.** Non era la firma. `sfltool dumpbtm` mostrava Otium come
+`Type: legacy agent (0x10008)`, flag `[ legacy ]`, `Parent Identifier: Unknown Developer`, perché
+l'avvio automatico era un plist scritto a mano in `~/Library/LaunchAgents`. Un elemento legacy
+finisce per forza nella sezione «Consenti in background» e non fra le app di «Apri al login».
+Kalamos, **firmata allo stesso modo** — ad-hoc, `TeamIdentifier: not set`,
+`Developer Name: (null)` — esce `Type: app (0x2)` perché usa `SMAppService.mainApp`. È l'API a
+decidere la categoria, non il certificato. Il commento in `Scripts/build-app.sh` che dava la colpa
+alla firma ad-hoc era falso ed è stato corretto.
+
+**La scelta, sua, dopo aver visto le due opzioni.** A) `SMAppService.mainApp`, che compare in
+«Apri al login» ma perde il `KeepAlive`. B) `SMAppService.agent` con il plist dentro il bundle,
+che tiene il `KeepAlive` ma resta nella sezione di sotto. **Scelta A**, con due fatti sul tavolo:
+l'anti-imbroglio non copriva la via facile («Esci da Otium» è un'uscita pulita, e il `KeepAlive`
+era `SuccessfulExit: false`), e i rapporti di crash erano **zero**. Quindi si pagavano novanta
+righe e una notifica di sistema per un guasto mai visto, sbarrando una finestra con la porta
+aperta accanto.
+
+**Cosa è caduto con la decisione:** il plist a mano, `launchctl bootstrap/bootout`, i quattro
+stati di `LaunchAgent.state()` e la logica che si reinstallava da sola puntando altrove. Restano
+`legacyPlistURL` e `removeLegacyAgent()`, per togliere il vecchio agent dai Mac che ce l'hanno.
+
+**Conseguenza operativa:** la destinazione dell'app è `/Applications`, non `dist/`. `SMAppService`
+registra il bundle installato, e la build che si ferma in `dist/` non ha consegnato niente — la
+stessa lezione già pagata il 30 e il 31 luglio.
 
 - **2026-07-31 — installare non è `open`, se l'app è già viva.** Ricostruito il bundle, `open
   Otium.app` **non rilancia niente**: trova l'app in esecuzione e la porta davanti, e basta. Il
@@ -1707,12 +1878,440 @@ citazione Gao 2024) e pausa piena (4 burpee, citazione Stamatakis/Nature Medicin
 non degeneri: ~120 colori distinti campionati, contro l'unico colore delle catture nere.
 
 **Dichiarato, non nascosto — quello che NON è stato verificato:**
-- **Nessuna cattura a pixel del blocco a schermo intero.** `screencapture` da questa sessione
-  restituisce immagini nere: manca il permesso Registrazione schermo, che solo il principale può
-  concedere. La copertura è provata per geometria e livello, l'aspetto è provato sul render
-  offscreen, ma le due prove non si sono mai toccate in un'unica immagine. `[DEFERRED-VERIFY]`
+- ~~**Nessuna cattura a pixel del blocco a schermo intero.**~~ **Sciolto il 2026-08-03**: il
+  permesso Registrazione schermo adesso c'è, `screencapture` restituisce immagini vere, e la
+  schermata di blocco è stata fotografata a schermo pieno — sopra iTerm a schermo intero e su
+  desktop normale. Geometria, livello e aspetto si toccano finalmente nella stessa immagine.
+  **E la prima cosa che quella cattura ha trovato è stato un difetto vero**, invisibile per due
+  settimane a ogni prova fatta senza pixel: vedi ISC-13.
 - **ISC-12 (Dock, barra dei menu, ⌘-Tab) chiuso su ispezione del codice**, non su un probe
   indipendente: è un effetto visivo, e vale il limite qui sopra.
 - **Secondo schermo mai provato**: la macchina ne ha uno solo.
 - **Notarizzazione**: impossibile oggi, non esiste un Developer ID su questa macchina — solo un
   certificato self-signed. Serve per la pubblicazione, non per l'uso locale.
+
+### D-2026-08-03 — La serie di giorni si legge sulla cronologia, non sulla finestra
+
+- [x] **ISC-154** La medaglia «giorni di fila» dice la stessa cosa qualunque periodo sia
+      selezionato. — `streakDays` si calcolava sui soli `moments`, cioè su ciò che il periodo
+      aveva **già filtrato**, e con `Date()` e `Calendar.current` presi di nascosto invece dei
+      valori iniettati. Due conseguenze, entrambe silenziose: con «Oggi» davanti la serie non
+      poteva superare **1** per costruzione — e la medaglia compare solo sopra 1, quindi su
+      quella scheda non è mai apparsa; con «Settimana» si accorciava al confine del lunedì, e
+      trenta giorni di fila si leggevano come uno. Ora si conta per giorno su tutto il registro,
+      con `now` e `calendar` iniettati, e l'`undo` scala la sua giornata come scala gli altri
+      conti. *Falsificatore:* quattro test su calendario fisso (Europe/Rome, settimana da lunedì)
+      — confine di settimana, i tre periodi che devono dare lo stesso numero, il buco che spezza
+      la serie, la pausa tolta che non tiene in piedi la sua giornata. **Rosso sul codice di
+      prima** (`1` invece di `3` con «Oggi» e con «Settimana», `1` invece di `2` sul confine),
+      verde su questo. 322 test verdi in tutto.
+- **Come è stato trovato, e vale più del difetto**: c'era un test **rosso un giorno su sette**.
+      Era scritto con `Date()` vero, quindi passava dal martedì alla domenica e diventava rosso
+      il lunedì — e il lunedì è il giorno in cui la finestra della settimana taglia via ieri.
+      Un test che fallisce a intermittenza col calendario non è rumore da zittire: è la spia che
+      il codice sotto dipende dal giorno in cui gira.
+
+## Iterazione 22 — la call è tempo seduto (2026-08-04)
+
+> Nata da un'osservazione del principale: *«essendo stato al telefono per qualche minuto e non
+> toccavo, Otium ha smesso di monitorare il tempo che ero davanti allo schermo … finché il
+> microfono è attivo non può bloccarsi lo schermo … e magari quando c'è troppo tempo senza pause,
+> la pausa è subito una pausa lunga invece di essere una pausa da 90 secondi»*.
+>
+> Il buco: la presenza silenziosa copriva video e lettura, **non la call**. Una riunione senza
+> toccare nulla era indistinguibile dall'assenza, quindi il contatore si fermava. E il rinvio per
+> microfono aveva un contatore (`maxAutoDefers`, 6), quindi dopo sei rinvii la schermata partiva
+> **in piena call**.
+
+- [x] **ISC-155** Finché un microfono è in uso la schermata di blocco non compare **mai**: nessun
+      limite di rinvii, nessun limite di durata. *Falsificatore:* un test che tiene il microfono
+      acceso per un tempo molto oltre `maxAutoDefers × autoDeferSeconds` e pretende che la fase
+      non sia mai `breaking`, col polo negativo a microfono spento.
+      *Prova:* `testTheScreenNeverLocksWhileTheMicrophoneIsInUse` (tre ore di call, `.breaking` mai) + polo negativo `testWithoutTheMicrophoneTheSameWaitEndsInABreak`. **Provato rosso** rimettendo `autoDefersUsed < maxAutoDefers`: 110 fallimenti.
+
+- [x] **ISC-156** Il tempo in call è tempo seduto e **non ha tetto**: due ore di call senza un solo
+      input accumulano due ore di tempo attivo. *Falsificatore:* un test che fa passare due ore
+      con presenza `.call` e idle sempre oltre soglia, e pretende `activeSeconds ≈ 7200`; il polo
+      negativo è la stessa immobilità senza segnale, dove il contatore resta a zero.
+      *Prova:* `testTwoHoursOfCallCountAsTwoHoursOfSittingTime` (7080 s su 7200) + polo negativo `testTheSameStillnessWithoutACallStaysAbsence` (< 60 s). **Provato rosso** con `PresenceCap.call = 45 min`: activeSeconds 0.
+
+- [x] **ISC-157** Il contatore cammina anche mentre la pausa è **rinviata**, che il rinvio sia
+      della call o tuo. *Falsificatore:* un test che entra in `postponed` e verifica che
+      `activeSeconds` cresca; polo negativo sul codice precedente, dove restava fermo.
+      *Prova:* `testTheClockKeepsRunningWhileTheBreakIsPostponed`. **Provato rosso** sostituendo il tick con `.idling`: crescita 0 su 540 s attesi.
+
+- [x] **ISC-158** La telecamera in uso si rileva **senza alcun permesso**, come già il microfono.
+      *Falsificatore:* sonda a due poli su `kCMIODevicePropertyDeviceIsRunningSomewhere` — camera
+      accesa da un'app vera → `IN USO`, camera spenta → `libera`, e nessun prompt di sistema.
+      *Prova:* sonda a due poli sul binario vero — Photo Booth aperto → `telecamera in uso: sì`, chiuso → `no`; nessun prompt di sistema in nessuna delle due corse.
+
+- [x] **ISC-159** La call ha la **precedenza** su video e lettura nella classificazione della
+      presenza. *Falsificatore:* `classify` con browser in primo piano e microfono attivo deve
+      dare `.call` (tetto infinito) e non `.reading` (tetto 15′).
+      *Prova:* `testACallOutranksReadingAndMedia` (Chrome che suona e PDF davanti danno entrambi `.call`) + `testTheCameraWinsOverTheMicrophone`; polo negativo nello stesso test.
+
+- [x] **ISC-160** Quando il tempo attivo accumulato supera **il doppio dell'intervallo**, la pausa
+      che scatta è **lunga**, non il micro da 90 secondi. *Falsificatore:* un test che accumula
+      oltre `2 × intervalSeconds` e pretende `kind == .long` con la durata piena, anche quando la
+      rotazione micro-micro-lunga direbbe `.micro`.
+      *Prova:* `testABreakOverdueByAFullCycleComesBackLong` + polo negativo `testAShortCallStillEndsInAMicroBreak` (35 minuti restano micro). **Provato rosso** con `overdueLongFactor = 9999`.
+
+- [x] **ISC-161** Il preavviso annuncia il tipo **giusto**: se la pausa è stata promossa a lunga,
+      lo dice prima di coprire lo schermo, non dopo. *Falsificatore:* un test sul rientro dal
+      rinvio per microfono, che confronta il piano dentro `deferredBreakDue` con quello che parte.
+      *Prova:* stesso test: il piano dentro `deferredBreakDue` è `.long` con `duration == 300`, ed è lo stesso oggetto che poi parte.
+
+- [x] **ISC-162** Dopo **4 ore** di microfono attivo senza un solo input arriva una notifica di
+      anomalia, **una volta sola**, e la pausa resta comunque bloccata. *Falsificatore:* un test
+      che supera le 4 ore e conta esattamente un evento, più il polo negativo a 3h59.
+      *Prova:* `testAMicrophoneOpenForFourHoursWithoutATouchIsAnnouncedOnce` (esattamente 1 evento su 5 ore) + i due poli negativi `testNoWatchdogBeforeFourHours` e `testTouchingTheMacResetsTheWatchdog`.
+
+- [x] **ISC-163** `Anti:` La rilevazione della call non introduce **nessun permesso nuovo**: Otium
+      non compare in Impostazioni → Privacy → Microfono né → Telecamera. *Falsificatore:*
+      ispezione del pannello dopo un'ora d'uso vero.
+      *Quello che è provato:* nel sorgente e nello script di build non esiste
+      `NSMicrophoneUsageDescription` né `NSCameraUsageDescription`, e senza quelle chiavi macOS
+      **termina** il processo che apra davvero uno stream — quindi il fallimento sarebbe rumoroso,
+      non silenzioso; e le due sonde a due poli hanno restituito valori veri senza che comparisse
+      un solo prompt. *Quello che manca, ed è il motivo per cui resta aperta:* il pannello di
+      Impostazioni non è stato aperto e guardato — `TCC.db` non è leggibile senza Accesso completo
+      al disco, quindi quella prova era sua. **Chiusa dal principale il 2026-08-04**, guardando il
+      pannello: *«non compare nella privacy, tutto ok»*.
+- [x] **ISC-164** `Anti:` Il microfono attivo non azzera e non fa arretrare il contatore: non
+      esiste percorso in cui accendere il microfono **riduca** `activeSeconds`.
+
+      *Prova:* `testTurningTheMicrophoneOnNeverRewindsTheClock` — mezz'ora alternando microfono acceso/spento, nessun arretramento fuori dalle pause.
+
+
+## Iterazione 23 — tre cose viste a schermo (2026-08-04)
+
+> Tutte e tre segnalate dal principale **usando l'app**, non leggendo il codice. È il modo in cui
+> questa app trova i suoi difetti da sempre, ed è la ragione per cui vale più un giro a mano di
+> un'ora di revisione del diff.
+
+- [x] **ISC-165** Di serie Otium interrompe **a qualunque ora**, e la finestra oraria è una cosa
+      che accendi tu. *Falsificatore:* `testAlwaysActiveInterruptsAtThreeInTheMorning` (pausa alle
+      3 di notte) più `testAnOldSettingsFileInheritsAlwaysActive` (un file scritto prima del campo
+      eredita l'acceso, non la vecchia finestra 7→23). Polo negativo:
+      `testNoBreakOutsideActiveHours`, che adesso deve **accendere** la finestra per misurare
+      quello che misura.
+      *Richiesta:* *«mettiamo di default che è sempre attivo e la possibilità di settare il tempo
+      a preferenza»*. La finestra resta scritta nel file, per chi la riaccende.
+
+- [x] **ISC-166** Nessuna frase italiana del corpus è inglese ricalcato. *Falsificatore:*
+      `testNoItalianTextUsesDeadImperatives` su un elenco chiuso di forme morte, e
+      `testEpictetusEightComesFromThePublishedItalianEdition` sul caso che l'ha aperto.
+      *Il caso:* Epitteto, Manuale 8 diceva *«ma vogli che vadano come vanno e starai bene»*, che
+      è `but wish the things which happen` di George Long tradotto parola per parola — e `vogli`
+      in italiano vivo non esiste più. Segnalato leggendolo a schermo: *«non sembra italiano»*.
+      Adesso l'italiano viene da un'edizione pubblicata del Manuale e l'inglese dalla traduzione
+      Carter, letti verbatim dalle fonti in sessione: nessuno dei due passa dall'altro.
+      *Sweep di classe:* `vogli` cercato su tutto `Sources`, **un solo** punto; le altre dieci
+      voci di Epitteto confrontate con l'edizione pubblicata e già in italiano idiomatico.
+
+- [x] **ISC-167** Nessuna frase mostrata **durante** la pausa argomenta contro il fare la pausa.
+      *Falsificatore:* rilettura delle 82 voci di `Facts.swift`, che è il pool che finisce sulla
+      schermata di blocco. *Il caso:* *«Dopo un'interruzione, tornare al livello di concentrazione
+      precedente richiede parecchi minuti»* — vera, ma riguarda le interruzioni **subite**, e
+      letta nell'istante in cui l'app ti sta interrompendo diventava un argomento contro il gesto
+      che stavi per fare. Segnalata dal principale: *«va contro lo scopo dell'app»*. Sostituita
+      con la distinzione che quella stessa letteratura sostiene davvero.
+      *Dichiarato:* questo criterio si prova **leggendo**, non con un test. Un lint per parole
+      chiave qui sarebbe teatro, perché il difetto non è nelle parole ma nel posto in cui le leggi.
+
+- [x] **ISC-168** Quattro alternative dell'esercizio stanno **in fila**, non due sopra e due
+      sotto. *Falsificatore:* `testFourVariantsStayOnOneRow` scritto con il 4 letterale — un test
+      che dice `singleRowLimit` si adegua a qualunque valore e non prova niente — più
+      `testSevenVariantsStillSplit`, perché le sette del push-up in fila non ci starebbero.
+      *Prova visiva:* `--snapshot --esercizio=squat`, quattro pulsanti su una riga sola.
+      *Richiesta:* *«voglio che siano messe in fila, non due sopra e due sotto. Risulta brutto
+      così»*.
+
+- [x] **ISC-169** Il programma orario è **tre righe allineate sullo stesso bordo destro**, e le
+      ore restano a schermo in grigio quando il programma è «Sempre». *Falsificatore:* fotografia
+      della finestra vera, `--mostra-prefs --voce=interruzioni`, nei due stati e nelle due livree.
+      *Prova:* quattro immagini guardate — Sempre/chiaro e Personalizzato/scuro — con tutti i
+      comandi della pagina che finiscono sullo stesso margine dei due interruttori sopra.
+      *Tre versioni, e le prime due erano sbagliate:* la prima **nascondeva** le ore, e un comando
+      che sparisce non insegna che esiste; la seconda le mostrava in grigio ma con l'interruttore
+      e le frecce a distanze diverse dal margine — *«troppo attaccato, non è armonioso»*. La terza
+      metteva un selettore a due caselle che non si allineava con niente. **La quarta, quella
+      buona, è un interruttore** — la stessa forma dei due che stanno già sulla pagina — che dice
+      **«Personalizzato»** e non «Attivo sempre», perché un interruttore che spegne una funzione
+      accendendosi si legge al contrario. Sotto, `Dalle` e `Alle` con l'ora scritta `07:00` e non
+      `7`, il numero staccato di otto punti dalle frecce, e dodici punti fra le righe invece dei
+      sei di `conNota`.
+      *La lezione, ed è finita in `OPERATIONAL_RULES.md`:* l'armonia non è una proprietà del
+      comando che ho toccato, è la relazione con i comandi vicini. Guardavo il ritaglio, non la
+      pagina.
+
+
+## Iterazione 24 — la crescita si guarda (2026-08-04)
+
+> *«Sarebbe carino far vedere, quando uno attiva l'incremento oltre il 100%, come quei numeri
+> stanno aumentando … e dato che comunque li stai registrando, mostrami il miglioramento ad
+> oggi»*. Il registro aveva già tutto — 61 conferme, 637 ripetizioni, 21 esercizi — e nessuna
+> schermata lo mostrava.
+
+- [x] **ISC-170** Le statistiche hanno **due pagine**, «Riepilogo» e «Crescita», e il selettore del
+      periodo compare solo sulla prima. *Falsificatore:* fotografia della finestra vera con
+      `--surface=stats --pagina=crescita`. *Perché il periodo sparisce:* una progressione guardata
+      dentro la finestra «Oggi» non è una progressione, è un numero, e un comando che resta a
+      schermo senza fare niente è peggio di un comando assente.
+
+- [x] **ISC-171** La pagina della crescita mostra, per ogni esercizio davvero confermato almeno
+      una volta, le barre di ogni conferma in ordine di tempo, la **prima → l'ultima**, e il
+      moltiplicatore raggiunto solo quando è oltre il pieno. *Falsificatore:* `GrowthTests`, sette
+      test — solo le conferme contano (una pausa saltata con 99 ripetizioni non entra), l'ordine è
+      il tempo e non quello del file, chi è cresciuto sta in cima, i giorni sono quelli con almeno
+      una conferma e non il calendario, zero ripetizioni non è una conferma.
+
+- [x] **ISC-172** Il numero mostrato dice **quello che è successo**, non quello che l'app
+      prometteva: `deltaPercent` si calcola sulla prima e l'ultima conferma, e può divergere dal
+      moltiplicatore. *Falsificatore:* `testDeltaPercentIsWhatHappenedNotWhatWasPromised` — 105%
+      promesso, 25% vissuto, e la pagina può mostrarli diversi. Quando divergono ha ragione il
+      secondo, perché in mezzo ci sono la rampa e i cambi di variante.
+
+- [x] **ISC-173** Le tenute si scrivono in **secondi**, non in ripetizioni: `45 s` di plank
+      accanto a `11` push-up. *Falsificatore:* visto nella fotografia, dove la riga del plank
+      diceva `30 → 45` come se fossero quarantacinque plank.
+
+- [x] **ISC-174** La pagina si può **guardare** senza aspettare settimane d'uso:
+      `--crescita-finta` semina sette esercizi su una decina di giorni nella cartella usa e getta.
+      *Falsificatore:* la sonda gira e produce l'immagine. *Perché serviva:* in modalità sonda il
+      registro nasce vuoto, quindi senza semina la pagina mostrava per sempre soltanto il suo ramo
+      «non c'è ancora niente» — che è esattamente il modo in cui una pagina nuova resta non
+      verificata pur avendo una fotografia a prova.
+
+### Iterazione 24b — la percentuale che si contraddiceva (2026-08-04)
+
+- [x] **ISC-175** La percentuale accanto alle ripetizioni è la **variazione vera fra la prima e
+      l'ultima conferma**, non il moltiplicatore della progressione, e porta il segno.
+      *Il difetto, letto a schermo da lui e non da un test:* `archer push-up 6 → 4` con la
+      pastiglia «110%», `sollevamenti sui polpacci 15 → 15` con «105%», `crunch 11 → 20` con
+      «105%» quando è quasi il doppio. La causa è vera e non è un errore di calcolo: il
+      moltiplicatore si applica alle ripetizioni **di base**, che cambiano da sole con la rampa
+      dei primi giorni e con le varianti. Ma due numeri sulla stessa riga che si contraddicono
+      sono un numero sbagliato, non due punti di vista. *Falsificatore:*
+      `testGrownMeansTheRepsWentUpNotThatTheMultiplierDid` — tre esercizi col moltiplicatore
+      alzato, uno solo conta come cresciuto; l'archer scende a −33% e sta in fondo.
+
+- [x] **ISC-176** Scendere si dichiara: `−33%` si scrive, non si nasconde, e la riga senza
+      variazione dice `=`. *Falsificatore:* lo stesso test, più la fotografia della pagina.
+
+- [x] **ISC-177** Le tessere della pagina sono **centrate**. *Falsificatore:* fotografia.
+      *La causa:* la tessera riserva sempre una riga per il confronto col periodo precedente, e
+      lì quel confronto non esiste mai — lo spazio vuoto spingeva il contenuto in alto e la
+      tessera sembrava scentrata. Sembrava, ed era.
+
+- [x] **ISC-178** La pagina si chiama **Andamento**, non «Crescita». Sua parola.
+
+### Iterazione 24c — il metro giusto (2026-08-04)
+
+- [x] **ISC-179** Una **stazione di circuito** non si confronta con un esercizio singolo. Il
+      circuito distribuisce il volume su quattro stazioni (`circuitFactor` 0.75), quindi ogni
+      stazione porta meno per costruzione. *Il caso:* nel suo registro l'archer push-up vale 6 da
+      solo e 4 in circuito, e la pagina leggeva un calo del 33% in una giornata in cui aveva fatto
+      **quattro** esercizi invece di uno. Sua domanda: *«perché l'archer è sceso? io ho sempre
+      completato»*. *Falsificatore:* `testCircuitStationsAreNotADecline`.
+      *Come si riconosce, visto che il registro non lo scrive:* le conferme fra due chiusure di
+      pausa stanno nella stessa pausa, e una pausa con più di una conferma è un circuito. La
+      chiusura con `reason: "circuito"` conferma quando c'è.
+
+- [x] **ISC-180** La percentuale è **dove sei rispetto a quanto era prescritto**, non rispetto a
+      dove eri partito. *Correzione sua:* *«il 100% di partenza per i push-up era 8, quindi se
+      adesso ne faccio 8 sono a livello base, non ho un incremento»*. Misurare dalla prima
+      conferma premiava chi era partito dentro la rampa — tornare al pieno si leggeva come un
+      progresso — e dava a ogni esercizio uno zero diverso. *Falsificatore:*
+      `testFullPrescriptionIsTheZeroNotTheFirstConfirmation` e
+      `testAboveFullIsReportedAsAboveFull`.
+
+- [x] **ISC-181** Ogni conferma si misura sulla **propria** prescrizione, circuito compreso: così
+      il circuito conta invece di sparire, e chi lo usa spesso non resta senza numero. La riga
+      mostra `prescritto → fatto`.
+
+- [x] **ISC-182** `Anti:` Nessuna enfasi grafica che non si veda a schermo. L'ultima barra doveva
+      essere più scura delle altre; nella fotografia non lo era, e invece di spedire una regola
+      non verificata è stata **tolta**. Restano più chiare solo le stazioni di circuito, che è
+      l'unica differenza che cambia il significato del numero.
+
+### Iterazione 24d — il circuito vale pieno (2026-08-04)
+
+- [x] **ISC-183** Una stazione di circuito porta il **volume pieno**, come l'esercizio da solo.
+      `circuitFactor` passa da 0.75 a 1.0. *La ragione, che è sua e batte la mia:* le quattro
+      stazioni sono gambe, spinta, addome ed esplosivo, cioè *«esercizi singoli per ogni gruppo
+      muscolare»* — non si sommano sullo stesso muscolo, quindi non c'è affaticamento da
+      ripartire e ridurre toglieva lavoro senza una ragione fisiologica. La mia motivazione
+      precedente («quattro al volume pieno non stanno in cinque minuti») era una stima di tempo
+      travestita da criterio di allenamento. *Falsificatore:*
+      `testStationsCarryTheSameLoadAsTheExerciseAlone`, che prima asseriva l'opposto.
+
+- [x] **ISC-184** Le stazioni **già fatte** restano misurate su quanto era prescritto allora:
+      `legacyCircuitFactor` 0.75 fino al 2026-08-04. Senza, il cambio di una costante avrebbe
+      riletto tutto lo storico al 75% di se stesso, cioè avrebbe inventato un calo mai avvenuto —
+      lo stesso difetto appena riparato, al contrario.
+
+- [x] **ISC-185** Il grafico ha una **legenda**: ogni barra è una pausa, l'altezza sono le
+      ripetizioni di quella volta, la percentuale è dove sei rispetto a quante ne erano previste.
+      *Perché serviva:* le barre erano lì senza etichetta e lui ha dovuto chiedere cosa fossero.
+      Un grafico che va chiesto non è difficile, è senza etichetta.
+
+- [ ] **ISC-186** `Anti:` Nessuna barra deve risultare più scura delle altre senza una ragione.
+      **Aperta, e dichiarata:** nella resa con dati finti la prima barra del push-up esce più
+      scura delle sei successive, e le tre spiegazioni provate (enfasi sull'ultima, tinta del
+      circuito, sovrapposizione per larghezza calcolata) non la spiegano. Non blocca l'uso e non
+      tocca nessun numero; resta aperta invece di essere chiusa a parole.
+
+### Iterazione 25 — due pagine, due domande (2026-08-04)
+
+- [x] **ISC-187** Le statistiche sono **Allenamento** e **Pause**, in quest'ordine, e si aprono
+      sull'allenamento. Gli «esercizi svolti» sono passati di là, perché sono allenamento e non
+      contabilità delle interruzioni. *Falsificatore:* fotografia delle due pagine.
+
+- [x] **ISC-188** «Esercizi svolti» sulla pagina dell'allenamento legge **tutto il registro**
+      (`StatsPeriod.all`, nuovo), non il periodo scelto sull'altra pagina: due scale diverse nella
+      stessa pagina fanno sbagliare i conti a chi legge. Il periodo resta selezionabile solo dove
+      governa qualcosa.
+
+- [x] **ISC-189** La barra della percentuale di pause fatte è **larga quanto la carta**. Era fissa
+      a 260 punti: accanto alla scritta «100%» si vedeva una barra piena a metà, cioè due cose che
+      si contraddicono nello stesso riquadro. *Rilievo suo:* *«perché 100% mi dimostra, però metà
+      giornata?»*.
+
+- [x] **ISC-190** In inglese i nomi contabili degli esercizi sono al **plurale** (`squats`,
+      `split squats`, `glute bridges`, `squat thrusts`, `dead bugs`); in italiano restano
+      invariabili, perché un prestito straniero in italiano non prende la -s. *Nato da una sua
+      domanda:* *«il plurale di burpee non è burpees?»* — in inglese sì, ed era già così; in
+      italiano no, e anche quello era già giusto. Le incoerenze erano altrove.
+      *Difetto pagato per strada, e vale come lezione:* al primo tentativo i plurali sono finiti
+      in `italianName` invece che in `englishName`, perché lo script cercava il blocco sbagliato.
+      Due test sono diventati rossi e li ho quasi «riparati» dichiarando una falla nell'ordine di
+      esecuzione che non esisteva. **Il test rosso aveva ragione.**
+
+- [x] **ISC-191** Tolta la citazione di Thoreau *«Andai nei boschi…»*. Andare a vivere nei boschi
+      non è una cosa che si fa in novanta secondi fra due riunioni, e una frase che chiede
+      un'altra vita mentre te ne chiedo dieci di squat non parla a chi la legge. Le altre tredici
+      di Thoreau restano.
+
+- [x] **ISC-192** I nomi inglesi degli esercizi vanno al **plurale anche in italiano**: `burpees`,
+      `squats`, `push-ups`, `crunches`, `sit-ups`, `russian twists`, `jump squats`, `squat
+      thrusts`, `mountain climbers`, `jumping jacks`, `dead bugs`, `dips su sedia`. Sua richiesta,
+      contro la grammatica e con ragione: non sono prestiti generici, sono i nomi che si usano in
+      palestra, dove si dice «dieci burpees». *Falsificatore:* fotografia della pausa —
+      «4 burpees», con le alternative «squat thrusts · jump squats · mountain climbers».
+      *Restano singolari* le tenute (plank, hollow hold, superman), dove il numero sono secondi,
+      e i nomi italiani (affondi, corsa sul posto, sollevamento gambe), che seguono la loro lingua.
+      **E `crunch bicicletta`**, tenuto singolare su sua conferma: il plurale inglese dentro un
+      composto italiano («crunches bicicletta») suona storto, e la coerenza di una regola non vale
+      una riga che si legge male.
+      *Verificato prima di toccare:* il registro su disco scrive `rawValue`, non il nome, quindi
+      nessuna riga già scritta cambia significato. Il commento che diceva il contrario era vecchio
+      ed è stato tolto invece di ereditato.
+
+## Iterazione 25 — quello che l'app ti aveva promesso (2026-08-04)
+
+> *«Prima di una pausa lunga mi ha detto di prepararmi per il primo esercizio e non il circuito …
+> avendo rinviato la pausa, poi chiuso l'app e riaperto mi ha dato come pausa una breve invece di
+> quella lunga che dovevo fare»*. Due promesse rotte nello stesso pomeriggio, e la seconda sta nel
+> registro: `postponed long` alle 18:20:28, `postponed micro` alle 18:22:26, chiusa alle 18:25.
+
+- [x] **ISC-193** Con il circuito acceso di serie il preavviso parla del **circuito**, non della
+      prima stazione: «Preparati al circuito». *Falsificatore:* `--circuit-probe`, che ha adesso
+      due poli — col circuito **acceso** la riga non dev'essere il nome di una stazione sola, col
+      circuito **proposto** dev'essere esattamente l'esercizio del turno, perché lì il giro è un
+      sì che devi dare tu e annunciarlo sarebbe la stessa bugia al contrario. Più la fotografia
+      del pannello vero (`--demo-hud --circuito`). *Perché una parola e non quattro nomi:* sua
+      indicazione — l'elenco delle stazioni resta dove serve, dentro la pausa e nel complimento
+      finale, e il preavviso non deve crescere di quattro righe.
+
+- [x] **ISC-194** La stessa riga vale per il rinvio, l'auto-rinvio e la ripresa della pausa
+      rimandata, che nominavano tutti e tre l'esercizio singolo. *Falsificatore:* i quattro punti
+      passano da `upcomingSubtitle` / `upcomingTarget`, e non c'è più nessun `plan.exercise.label`
+      nudo nelle notifiche che precedono la pausa.
+
+- [x] **ISC-195** Una pausa **rinviata** sopravvive alla chiusura dell'app: riaprendo torna del
+      tipo che ti spettava, non del tipo che il ciclo calcolerebbe adesso. *Falsificatore:*
+      `PendingBreakTests`, cinque test, provati **rossi** togliendo la riga `?? dovuta` da
+      `planNextBreak` (due fallimenti, poi rimessa). *La causa:* `EngineSnapshot` salvava
+      rotazione, orologio e data e **non** il tipo della pausa in attesa; un tipo che dipende
+      dall'orologio del momento in cui è stato scritto non si ricalcola dopo, perché chiudere
+      l'app quell'orologio lo riporta indietro.
+
+- [x] **ISC-196** `Anti:` La pausa dovuta **non** si eredita all'infinito e **non** si ripropone
+      dopo un'assenza vera. Vale una volta sola — la consuma la prima pianificazione — e scade con
+      la finestra di grazia, che è la stessa soglia con cui l'orologio decide se riprendere o
+      ripartire da zero: via cinque minuti, quella pausa l'hai fatta camminando. Si azzera anche su
+      pausa spontanea accreditata e su pausa dichiarata a mano. *Falsificatore:* gli stessi test,
+      con lo snapshot scritto a mano perché con `microsSinceLong` a 2 la piena la imporrebbe
+      comunque il ciclo — e il verde direbbe soltanto che il ciclo funziona.
+
+- [x] **ISC-197** `Anti:` La fase `breaking` resta fuori: chiudere l'app con lo schermo già
+      coperto non ti fa ritrovare la stessa pausa alla riapertura. *Falsificatore:*
+      `testABreakAlreadyOnScreenIsNotOwedAgain`. *Perché:* lì la pausa la stavi facendo, e
+      riproporla intera punirebbe proprio chi l'aveva quasi finita.
+
+- [x] **ISC-198** I **sollevamenti sulle punte** sono fra le alternative di squat, affondo, split
+      squat e ponte. *Il caso:* in treno il 2026-08-04 nessuna delle quattro alternative dello
+      squat era eseguibile — chiedono tutte spazio o pavimento — e li ha fatti fuori menu, con il
+      registro che ha scritto squat. *Prezzo dichiarato:* lo squat passa da quattro alternative a
+      cinque, quindi la sua fila diventa due righe 3+2 invece di una sola (ISC-168 vale da quattro
+      in giù). Si torna in fila togliendo `jump squat`, che è la meno eseguibile in pubblico.
+
+## Iterazione 26 — il testo va a capo dove va a capo il senso (2026-08-07)
+
+> *«"dopo" dovrebbe andare a capo. serve sistemare il layout del testo in quelle schermate. hai una
+> regola da mettere?»* — e, sulla stessa schermata: *«questa frase ha davvero senso da mettere? è
+> ovvio che abbassa la glicemia postprandiale più che a digiuno perché a digiuno non c'è stato
+> pranzo…»*. Due difetti diversi sulla stessa pagina: uno di tipografia, uno di merito.
+
+- [x] **ISC-199** La frase della pausa **non va a capo dentro una frase quando può andare a capo
+      fra due frasi**. Nella schermata zen la riga 1 si chiudeva su «Dopo», che è la prima parola
+      del secondo periodo: il taglio cadeva nel punto di massima coesione. *Falsificatore:*
+      `--tagli`, che stampa i tagli veri di tutte le frasi del mazzo alle tre larghezze reali, e
+      `QuoteWrapTests` che li giudica.
+
+- [x] **ISC-200** I tagli si calcolano **a numero di righe invariato**. Un'impaginazione che
+      aggiunge una riga cambia l'altezza del blocco, e l'altezza in questa pagina è già misurata e
+      vincolata (ISC della fase di riposo, `--misura`). *Falsificatore:* `QuoteWrapTests` confronta
+      il numero di righe scelto con quello dell'avido su tutto il mazzo: uguale, sempre.
+
+- [x] **ISC-201** `Anti:` Nessuna riga finisce con una parola che apre un periodo nuovo, e
+      l'ultima riga non porta **una parola sola**. *Falsificatore:* gli stessi test, con il **polo
+      negativo**: sul testo grezzo, senza `QuoteWrap`, il mazzo deve produrre almeno una
+      violazione, altrimenti il test sta misurando niente.
+
+- [x] **ISC-202** La regola vive in **un posto solo** e la usano tutte e tre le superfici che
+      mostrano una frase — riposo, esercizio, pannello. *Falsificatore:* `grep` di `QuoteWrap` in
+      `Views.swift`, tre occorrenze, e nessun `Text(phrase.localizedText)` nudo rimasto.
+
+- [x] **ISC-203** Il mazzo non contiene **confronti vacui**, cioè frasi la cui forma promette un
+      paragone e il cui secondo termine è impossibile per costruzione. Il caso: «Camminare dopo il
+      pasto abbassa la glicemia postprandiale più che camminare a digiuno» — a digiuno una glicemia
+      postprandiale non esiste, quindi il paragone non dice niente. *Falsificatore:* la passata a
+      mano su tutte le frasi comparative del mazzo, enumerate con un grep dichiarato, ognuna con un
+      verdetto scritto.
+
+- [x] **ISC-204** `Anti:` La passata **non** riscrive il merito di una frase per salvarla. Dove il
+      concetto non regge la frase esce; dove regge ma la fonte è vaga, o esce o la fonte diventa
+      quella vera — mai una fonte inventata per dare peso a una riscrittura (è la regola in cima a
+      `Facts.swift`).
+
+**Chiuse il 2026-08-07.** `QuoteWrap.swift` in `OtiumCore`, tre viste agganciate, `--tagli` come
+sonda a due poli e `QuoteWrapTests` come giudizio.
+
+- *ISC-199 · 201:* `--tagli` sulle 483 frasi e sulle tre colonne — avido **77 · 69 · 100** difetti,
+  scelto **0 · 0 · 0**. Il caso «Dopo» riprodotto per nome (`ilCasoDopo`) e fotografato prima e
+  dopo sulla schermata vera (`--snapshot --fatto --frase=357`).
+- *ISC-200:* `ilNumeroDiRigheNonCambiaMai`, tutto il mazzo su tre colonne: zero differenze.
+- *ISC-202:* le tre colonne vivono in `QuoteWrap.colonne`, le viste le leggono da lì; i caporali
+  stavano scritti tre volte e adesso stanno in `Phrase.displayText`.
+- *Poli:* 8 test provati **rossi** sostituendo la scelta con l'avido (`ilCasoDopo` e
+  `lImpaginazioneNonLasciaDifetti` cadono per primi), poi ripristinati. Suite piena: **380 verdi**.
+- *ISC-203 · 204:* dodici frasi comparative enumerate con un grep dichiarato su `Facts.swift`,
+  `Mindful.swift`, `Quotes.swift`. Una tolta — la glicemia postprandiale, confronto vacuo. Tre
+  citazioni d'autore restano come sono, sette fatti reggono. **Una resta segnalata e aspetta lui:**
+  «La forza delle gambe … predice l'autonomia … meglio di molti esami del sangue» — il paragone è
+  possibile ma il secondo termine («molti») non è falsificabile, e la riga sotto dice la stessa cosa
+  con una fonte vera. Non toccata di mia iniziativa: è vaga, non vacua, e la differenza conta.
+- *Secondo sguardo:* non eletto. Raggio locale, nessun confine di sicurezza, niente da pubblicare;
+  il giudizio è meccanico e ha i due poli.

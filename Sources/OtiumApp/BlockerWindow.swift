@@ -12,7 +12,20 @@ extension Notification.Name {
 /// screen di sistema, e un processo si può sempre uccidere da un altro Mac. Questo non è un
 /// lucchetto — è attrito forte, che è esattamente il punto: *"già il richiamo permette di essere
 /// in condizione di scelta"*.
-final class BlockerWindow: NSWindow {
+///
+/// **È un `NSPanel` non-attivante, e non è un dettaglio: è l'unica classe che entra nello Space
+/// di un'altra app a schermo intero.** Misurato il 2026-08-03 sul Mac del principale (macOS 26)
+/// con iTerm a schermo intero nativo: la vecchia `NSWindow`, alzata dopo
+/// `setActivationPolicy(.regular)` + `activate(ignoringOtherApps:)`, **non entrava in quello
+/// Space** — zero pixel sullo schermo, e il server grafico non la elencava nemmeno fra le
+/// finestre on-screen — mentre l'app si prendeva comunque il primo piano senza attivarsi
+/// davvero (`isActive == false`, nessuna finestra key). Il battito da 2 s ripeteva la rapina
+/// ogni due secondi: chi scriveva vedeva il testo bloccarsi, tornare, ribloccarsi.
+/// Sette combinazioni di livello e `collectionBehavior` provate, tutte a zero: il colpevole non
+/// erano i flag della finestra, era la coppia policy+activate. Questa configurazione — pannello
+/// non-attivante, nessun cambio di policy, nessun `activate` — copre il 100% dello schermo e
+/// riceve i tasti (`isActive == true`, key sì), col chiosco intatto (`presentationOptions` 490).
+final class BlockerWindow: NSPanel {
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
@@ -20,10 +33,18 @@ final class BlockerWindow: NSWindow {
     init(screen: NSScreen, content: NSView) {
         super.init(
             contentRect: screen.frame,
-            styleMask: [.borderless],
+            styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
+        // **Un `NSPanel` di suo sparisce quando l'app perde il fuoco.** Su uno scudo che deve
+        // restare inchiodato è esattamente il difetto opposto a quello che stiamo curando, e
+        // non si vedrebbe finché un'altra app non prende il fuoco per un istante.
+        hidesOnDeactivate = false
+        // Un pannello «solo se serve» rinuncia a diventare key quando pensa di non averne
+        // bisogno; qui i tasti servono sempre — i due Esc dell'uscita d'emergenza li riceve lui.
+        becomesKeyOnlyIfNeeded = false
+        isFloatingPanel = false
         isOpaque = true
         hasShadow = false
         backgroundColor = NSColor(calibratedWhite: 0.05, alpha: 1.0)
@@ -68,7 +89,6 @@ final class BlockerController {
 
     private unowned let model: AppModel
     private var windows: [BlockerWindow] = []
-    private var savedPolicy: NSApplication.ActivationPolicy = .accessory
     private var reassertTimer: Timer?
     private var isShowing = false
     /// Il blocco è **in corso ma tolto di mezzo**, perché il Mac dorme o lo schermo è bloccato.
@@ -145,18 +165,22 @@ final class BlockerController {
         suspended = false
         // Nel frattempo la pausa può essere finita: allora non si rimette su niente.
         guard model.phase == .breaking else { hide(); return }
-        NSApp.activate(ignoringOtherApps: true)
         rebuildWindows()
         NSApp.presentationOptions = Self.kioskOptions
     }
 
+    /// **Nessun `setActivationPolicy(.regular)`, nessun `activate(ignoringOtherApps:)`.**
+    ///
+    /// Erano lì per «prendersi il controllo», e su macOS 26 fanno il contrario: l'attivazione a
+    /// comando non viene più concessa a un'app che non è già davanti, e il solo effetto rimasto
+    /// è spostare il primo piano su Otium — senza attivarla e senza portare lo scudo nello Space
+    /// dove sei tu, se quello Space appartiene a un'app a schermo intero. Il fuoco lo prende il
+    /// pannello con `makeKeyAndOrderFront`, che funziona anche da app `.accessory`: misurato
+    /// `isActive == true` e finestra key sopra iTerm a schermo intero. Vedi `BlockerWindow`.
     func show(plan: BreakPlan) {
         guard !isShowing else { return }
         isShowing = true
         suspended = false
-        savedPolicy = NSApp.activationPolicy()
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
         rebuildWindows()
         NSApp.presentationOptions = Self.kioskOptions
 
@@ -169,12 +193,20 @@ final class BlockerController {
         // e nell'incidente del 27-28 luglio è proprio lo strato di sopra ad aver dimenticato di
         // chiamare `hide()`. Se dimenticasse di nuovo, il nero durerebbe due secondi invece che
         // fino al tasto di accensione.
+        //
+        // **Si rimette davanti la finestra, non si riattiva l'app.** La riga di prima chiamava
+        // `NSApp.activate` a ogni giro, ed è quella che sotto un'app a schermo intero produceva
+        // il conflitto ogni due secondi: scrivi, ti si blocca, scrivi, ti si blocca. Il fuoco
+        // ora si recupera per la via che funziona — e si riprende anche se per qualche motivo
+        // il pannello avesse perso lo stato di key, che è il modo in cui questo difetto si
+        // ripresenterebbe.
         let t = Timer(timeInterval: 2.0, repeats: true) { [weak self] _ in
             guard let self, self.isShowing else { return }
             if SafetyNets.blockerWatchdog, self.model.phase != .breaking { self.hide(); return }
             guard !self.suspended else { return }
-            if !NSApp.isActive { NSApp.activate(ignoringOtherApps: true) }
-            self.windows.first?.makeKeyAndOrderFront(nil)
+            guard let front = self.windows.first else { return }
+            front.orderFrontRegardless()
+            if !front.isKeyWindow { front.makeKeyAndOrderFront(nil) }
         }
         RunLoop.main.add(t, forMode: .common)
         reassertTimer = t
@@ -189,7 +221,9 @@ final class BlockerController {
         NSApp.presentationOptions = []
         for window in windows { window.orderOut(nil) }
         windows.removeAll()
-        NSApp.setActivationPolicy(savedPolicy == .regular ? .regular : .accessory)
+        // Niente da rimettere a posto: la pausa non tocca più la politica di attivazione, quindi
+        // non c'è più nessun `savedPolicy` da ripristinare. L'app resta quella della barra di
+        // stato dall'inizio alla fine.
     }
 
     private func rebuildWindows() {
@@ -237,7 +271,11 @@ final class WarningHUD {
             NSHostingView(rootView: Dismissible(onDismiss: { [weak self] in self?.hide() }) {
                 QuoteHUDView(phrase: phrase)
             }),
-            size: NSSize(width: 380, height: 132),
+            // 132 erano un'altezza scritta a mano che una frase di due righe non riempiva: la
+            // scatola sembrava vuota e grossa il doppio del necessario. Adesso 92 è solo il
+            // **minimo** — `present` prende comunque il massimo fra questo e l'altezza vera del
+            // contenuto, quindi una frase lunga alza il pannello invece di essere tagliata.
+            size: NSSize(width: 470, height: 92),
             sound: nil,
             seconds: seconds
         )

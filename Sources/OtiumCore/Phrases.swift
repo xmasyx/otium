@@ -65,6 +65,15 @@ public struct Phrase: Equatable, Sendable, Identifiable {
         attribution.isEmpty ? "anonimo" : attribution
     }
 
+    /// Come la frase si legge a schermo: i caporali ci sono per tutti tranne la voce dell'app,
+    /// che non cita nessuno.
+    ///
+    /// Sta qui e non nelle viste perché le superfici che mostrano una frase sono tre, e la
+    /// regola dei caporali stava scritta tre volte: il giorno che cambia, ne cambierebbe una.
+    public var displayText: String {
+        kind == .voce ? localizedText : "«\(localizedText)»"
+    }
+
     /// La firma nella lingua corrente, con lo stesso ripiego del testo.
     public var localizedCredit: String {
         if L.language == .italian { return credit }

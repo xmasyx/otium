@@ -57,13 +57,23 @@ esattamente il bout sedentario che gli studi misurano. Otium distingue i due cas
 |---|---|---|
 | guardi un video | un player **in elenco** sta producendo audio, attribuito al processo (helper annidati compresi) | conta come tempo fermo → la pausa scatta |
 | leggi un documento | l'app in primo piano è un lettore, e `lsof` dice quale `.pdf`/`.docx`/`.md` tiene aperto | conta come tempo fermo → la pausa scatta |
-| sei in call | microfono in uso | **rimanda**, e lo dichiara |
+| sei in call | microfono in uso, o telecamera che riprende | conta come tempo fermo → **ma la pausa non parte** finché la call dura |
 | te ne sei andato | nessun segnale, nessun input | pausa naturale, nessun esercizio |
 
 Ogni segnale **scade**, o basterebbe lasciare un PDF aperto e andare a pranzo per far contare il
 pranzo come lavoro: **45 minuti** per un video, **15** per un documento, senza un solo input.
 Oltre il tetto l'orologio si ferma — e rientrando non ti viene regalata una pausa che non hai
 preso: l'assenza vale solo da quando il segnale è scaduto.
+
+**La call è l'unica eccezione, e non scade mai.** Una riunione di due ore senza toccare il
+trackpad è la seduta più lunga della giornata: se il segnale scadesse, quelle due ore
+smetterebbero di contare a metà. Al posto del tetto c'è un richiamo — dopo **4 ore** di microfono
+acceso senza un solo tocco l'app avvisa che qualcosa lo sta tenendo aperto. Avvisa, non blocca.
+
+**E la pausa arretrata arriva più grossa.** Se il tempo seduto ha superato il **doppio**
+dell'intervallo, perché eri in riunione o perché hai rinviato, quella che scatta è la pausa piena
+da 5 minuti e non lo snack da 90 secondi. Un ciclo intero saltato non si ripaga con novanta
+secondi.
 
 L'elenco dei player è chiuso di proposito: contano solo browser e riproduttori video, mai un
 processo qualsiasi che stia suonando. Spotify e Musica sono **fuori** — la musica di sottofondo
@@ -96,7 +106,10 @@ all'ultimo secondo non serve a niente.
 **Rampa progressiva.** Si parte al 55% del volume e si sale al 100% in quattro settimane. Partire
 pieni il primo giorno è il modo più rapido per farsi male e disinstallare l'app.
 
-**Non ti blocca durante una call.** Se un microfono è in uso, la pausa si rimanda e lo dichiara.
+**Non ti blocca durante una call, mai.** Finché un microfono è in uso la pausa si rimanda e lo
+dichiara, senza limite di rinvii e senza limite di durata: una riunione di tre ore non finisce con
+lo schermo coperto a metà. Il tempo però continua a contare, e quando la call finisce trovi il
+preavviso di un minuto — non la schermata addosso.
 
 **Non ti chiude fuori.** C'è sempre un'uscita: digitare per esteso una frase esatta. Ogni salto
 finisce nel registro — non è un giudizio, è un dato. E se non c'è nessuno davanti al Mac il blocco
@@ -117,10 +130,11 @@ la scelta davanti agli occhi, non toglierla.
 Otium **non compare** in Impostazioni → Privacy e sicurezza, perché non usa niente che lo richieda:
 
 - l'inattività si legge da `CGEventSource`, che non richiede né Accessibilità né Input Monitoring;
-- il rilevamento delle call legge `kAudioDevicePropertyDeviceIsRunningSomewhere`, cioè *se* un
-  dispositivo è in uso — nessuno stream aperto, nessun byte di audio, nessun permesso microfono;
+- il rilevamento delle call legge `kAudioDevicePropertyDeviceIsRunningSomewhere` e il suo gemello
+  video `kCMIODevicePropertyDeviceIsRunningSomewhere`, cioè *se* un dispositivo è in uso — nessuno
+  stream aperto, nessun byte di audio o di immagine, nessun permesso microfono né telecamera;
 - il preavviso è un pannello dell'app, non una notifica di sistema (che richiederebbe un permesso);
-- niente telecamera, niente registrazione schermo, niente rete.
+- niente registrazione schermo, niente rete.
 
 Tutto resta in `~/Library/Application Support/Otium/`: `settings.json` e `ledger.jsonl`, un registro
 append-only in JSON Lines che puoi leggere con qualsiasi cosa.
@@ -143,17 +157,29 @@ fra quanto arriva la prossima pausa, invece di avviare un secondo timer in paral
 L'app vive nella barra dei menu: il numero è quanti minuti di lavoro attivo mancano alla prossima
 pausa. Da lì: totali di oggi, preferenze, le fonti, il registro.
 
-Per farla ripartire da sola se viene chiusa, in Preferenze → *Avvio automatico*, oppure:
+Per farla partire all'accensione, in Preferenze → *Avvio automatico*, oppure:
 
 ```bash
-dist/Otium.app/Contents/MacOS/Otium --install-agent   # LaunchAgent con KeepAlive
-dist/Otium.app/Contents/MacOS/Otium --agent-status
-dist/Otium.app/Contents/MacOS/Otium --remove-agent
+/Applications/Otium.app/Contents/MacOS/Otium --install-agent   # registra l'avvio al login
+/Applications/Otium.app/Contents/MacOS/Otium --agent-status
+/Applications/Otium.app/Contents/MacOS/Otium --remove-agent
 ```
 
-Lo stato dell'avvio automatico non risponde "il file esiste?" ma "il file che lancia esiste ancora,
-ed è questa copia?" — un plist che punta a un binario spostato riparte ogni giorno fallendo in
-silenzio.
+L'avvio automatico passa da **`SMAppService`**, la via moderna: Otium compare fra le app di
+*Impostazioni di Sistema → Generali → Elementi login ed estensioni → Apri al login*, con il suo
+interruttore. Se lo spegni da lì, l'app **non** se lo rimette: ti porta all'interruttore e basta.
+
+> **Cambiato il 2026-08-03.** Prima l'avvio automatico era un LaunchAgent scritto a mano in
+> `~/Library/LaunchAgents`, con `KeepAlive` per far ripartire Otium dopo un `kill -9`. macOS lo
+> cataloga come *legacy agent*: finiva nella sezione «Consenti in background» invece che fra le
+> app di «Apri al login», attribuito a «Unknown Developer», e faceva ricomparire l'avviso
+> «Attività app in background» a ogni ricostruzione del bundle. Il `KeepAlive` è caduto con lui,
+> e la scelta è dichiarata: sprangava la finestra sul retro lasciando aperta la porta, perché
+> «Esci da Otium» è un'uscita pulita che non faceva scattare niente. La rete che resta è il
+> ripristino a caldo — riaperta entro la finestra di grazia, l'app riprende il conto da dov'era.
+>
+> Chi aveva la versione precedente non deve fare niente: il vecchio agent viene tolto da solo al
+> primo avvio. A mano, se serve: `--remove-legacy-agent`. `--doctor` lo segnala se è sopravvissuto.
 
 ### Vedere la schermata senza aspettare mezz'ora
 
@@ -199,3 +225,15 @@ La sonda del blocco si tara da sola costruendo una finestra di misura nota, perc
 `kCGWindowBounds` non vive nello stesso spazio di coordinate di `NSScreen.frame`: su un display in
 modalità scalata una finestra da 1512×982 punti viene elencata come 1362×884, e confrontare i
 numeri grezzi fa dichiarare rotta un'app sana.
+
+## Licenza
+
+Codice rilasciato con licenza **MIT**, testo completo in [`LICENSE`](LICENSE). Nessuna dipendenza
+di terze parti: solo Swift e i framework di sistema di macOS.
+
+Le 338 citazioni e le 73 frasi che l'app mostra durante la pausa vengono da autori di pubblico
+dominio (Seneca, Marco Aurelio, Epitteto, Nietzsche, Montaigne, Pascal, Spinoza, Leopardi,
+Sunzi, Tao Te Ching, Dialoghi, Dhammapada, Gita). Le rese inglesi sono traduzioni storiche
+anch'esse di pubblico dominio, in 313 casi su 338: Gummere, Long, Common, Zimmern, Legge,
+Max Müller, Arnold, Cotton, Trotter, Elwes, Giles, Edwardes. Le restanti 25 sono traduzioni
+originali di questo progetto e ricadono sotto la stessa licenza MIT.

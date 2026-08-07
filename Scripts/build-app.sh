@@ -55,10 +55,64 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 
-echo "▸ firma ad-hoc…"
-codesign --force --sign - --timestamp=none "$APP" >/dev/null 2>&1 \
-    || echo "  (firma saltata: non blocca l'avvio in locale)"
+# L'identità stabile serve perché la firma ad-hoc cambia a ogni ricostruzione e macOS non
+# riconosce più l'app come la stessa: con un certificato il requisito designato diventa il
+# certificato invece di un cdhash che cambia. Si crea una volta sola con
+# Scripts/make-signing-cert.sh; senza, si ricade sull'ad-hoc e lo si dice invece di firmare
+# di nascosto in un modo diverso da quello atteso.
+#
+# **Correzione del 2026-08-03.** Qui c'era scritto che l'avviso «Attività app in background»
+# nasceva dalla firma ad-hoc. Era falso, e la prova è Kalamos: firmata allo stesso modo, senza
+# Team ID, `Developer Name: (null)` nel registro, e nessun avviso. L'avviso veniva dal
+# LaunchAgent scritto a mano, che macOS cataloga come *legacy agent*. Curato passando a
+# `SMAppService` — vedi `LoginItem` in SystemProbes.swift. La firma stabile resta perché è
+# comunque la cosa giusta, non perché curi quello.
+IDENTITY="Otium Dev"
+if security find-identity -v -p codesigning 2>/dev/null | grep -q "$IDENTITY"; then
+    # Le graffe non sono decorative: «${IDENTITY}» senza graffe fa leggere a bash i byte
+    # del caporale come parte del nome, e con `set -u` lo script muore su una variabile
+    # che esiste (provato qui il 2026-08-02).
+    echo "▸ firma con identità stabile «${IDENTITY}»…"
+    codesign --force --sign "$IDENTITY" --timestamp=none "$APP"
+else
+    echo "▸ firma ad-hoc (lancia una volta Scripts/make-signing-cert.sh per quella stabile)…"
+    codesign --force --sign - --timestamp=none "$APP" >/dev/null 2>&1 \
+        || echo "  (firma saltata: non blocca l'avvio in locale)"
+fi
+
+# ── Installazione in /Applications
+#
+# **Perché la build non finisce in `dist/`.** «Compilato» non vuol dire «consegnato»: la copia
+# che si apre è quella installata, e fermarsi a `dist/` è costato due volte la stessa figura
+# (30 e 31 luglio, modifiche verificate su una build che lui non stava usando). Da oggi la
+# destinazione è una sola, `/Applications`, che è anche dove `SMAppService` si aspetta di
+# trovare un'app registrata all'avvio.
+#
+# `OTIUM_SKIP_INSTALL=1` salta il passo, per provare una build senza toccare l'installata.
+INSTALLED="/Applications/Otium.app"
+if [[ "${OTIUM_SKIP_INSTALL:-0}" == "1" ]]; then
+    echo "▸ installazione saltata (OTIUM_SKIP_INSTALL=1)"
+# `pgrep -f` confronta il modello con **l'intera riga di comando di qualunque processo**, quindi
+# senza àncore basta un `grep`, un editor o una sonda che nominano quel percorso per far credere
+# che l'app sia viva. Successo il 2026-08-03, e il salto dell'installazione è passato inosservato
+# perché il messaggio sembrava sensato. Le àncore chiedono la cosa giusta: *il primo argomento è
+# esattamente questo eseguibile?*
+elif pgrep -f "^$INSTALLED/Contents/MacOS/Otium( |\$)" >/dev/null; then
+    # Sostituire il bundle sotto un processo vivo non si fa: si dice e ci si ferma qui.
+    echo "⚠︎ Otium è in esecuzione da $INSTALLED — esci dall'app e rilancia questo script"
+    echo "  (il bundle nuovo resta pronto in $APP)"
+else
+    # Graffe obbligatorie anche qui: i puntini di sospensione sono un carattere multibyte
+    # attaccato al nome, e con `set -u` `$INSTALLED…` muore su una variabile che esiste
+    # (successo il 2026-08-03: il bundle veniva costruito e non installato mai). È la stessa
+    # lezione scritta venti righe più su per il caporale — la trappola non è il carattere, è
+    # scrivere una variabile nuda accanto a un segno non ASCII.
+    echo "▸ installo in ${INSTALLED}…"
+    rm -rf "$INSTALLED"
+    ditto "$APP" "$INSTALLED"
+fi
 
 echo "✓ pronto: $APP"
-echo "  apri con:  open \"$APP\""
+echo "  installata:  $INSTALLED"
+echo "  apri con:  open \"$INSTALLED\""
 echo "  registro:  ~/Library/Application Support/Otium/ledger.jsonl"

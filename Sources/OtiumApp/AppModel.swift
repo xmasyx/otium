@@ -1,16 +1,20 @@
 import AppKit
 import Combine
 import OtiumCore
+import ServiceManagement
 
 /// L'app è stata avviata per **una sonda o una resa**, non per lavorare.
 ///
-/// Serve a una cosa sola, e l'ho pagata sondando: `applyAutoStartPreference()` gira dentro
-/// `AppModel.init` e reinstalla l'avvio automatico quando questo punta a **un'altra copia**
-/// dell'app. Il caso per cui esiste è giusto (ricostruisci l'app altrove e l'avvio automatico
-/// resta appeso al nulla), ma vale anche per una sonda lanciata dal terminale: il 2026-07-28 le
-/// mie sonde su `.build/debug/OtiumApp` hanno riscritto l'avvio automatico del principale dal
-/// bundle al binario di sviluppo, che ogni `swift build` sovrascrive. Al login sarebbe partita
-/// una copia di lavoro, in silenzio, e nessuno l'avrebbe saputo.
+/// Serve a una cosa sola, e l'ho pagata sondando: `AppModel.init` tocca com'è configurata la
+/// macchina. Il 2026-07-28 le mie sonde su `.build/debug/OtiumApp` hanno riscritto l'avvio
+/// automatico del principale dal bundle al binario di sviluppo, che ogni `swift build`
+/// sovrascrive. Al login sarebbe partita una copia di lavoro, in silenzio, e nessuno l'avrebbe
+/// saputo.
+///
+/// Da `SMAppService` (2026-08-03) quel guasto preciso non è più possibile — si registra il
+/// bundle, e una sonda fuori da un `.app` non ha niente da registrare. **Il guardiano resta**,
+/// perché ora `init` fa un'altra cosa che una sonda non deve fare: `migrateLegacyLaunchAgent()`
+/// cancella un file dalla `~/Library/LaunchAgents` di chi la lancia.
 ///
 /// Una sonda non deve poter cambiare com'è configurata la macchina che sta misurando.
 enum ProbeMode {
@@ -45,7 +49,7 @@ final class AppModel: ObservableObject {
 
     @Published private(set) var engine: SessionEngine
     @Published private(set) var summary = DailySummary()
-    @Published private(set) var launchAgentState: LaunchAgent.State = .notInstalled
+    @Published private(set) var loginItemState: LoginItem.State = .notRegistered
     @Published var escapeText: String = ""
     /// La frase di questa pausa. **Si estrae una volta sola, quando la pausa comincia**, e resta
     /// ferma finché dura: calcolarla dentro la vista significherebbe ripescarla a ogni ridisegno,
@@ -114,9 +118,21 @@ final class AppModel: ObservableObject {
         engine.countLaunch()
         RotationStore.save(engine.snapshot)
         refreshSummary()
-        launchAgentState = LaunchAgent.state()
+        migrateLegacyLaunchAgent()
+        loginItemState = LoginItem.state()
         applyAutoStartPreference()
         launchPhrase = drawPhrase(launch: true)
+    }
+
+    /// Fissa la frase della pausa a una precisa, per **fotografarla**.
+    ///
+    /// Serve perché la frase esce a caso dal mazzo, e una fotografia che dovrebbe provare come va
+    /// a capo un testo preciso non si può ottenere rilanciando la sonda finché non esce quello
+    /// giusto. Solo sonde: la vita normale continua a pescare.
+    func pinPhrase(_ index: Int) {
+        let pool = PhraseLibrary.breakPool(includingUser: false)
+        guard pool.indices.contains(index) else { return }
+        currentPhrase = pool[index]
     }
 
     /// Pesca dal mazzo giusto e lo mette subito al sicuro su disco.
@@ -132,22 +148,32 @@ final class AppModel: ObservableObject {
         return phrase
     }
 
+    /// Il vecchio avvio automatico se ne va da solo, una volta sola, al primo avvio che lo trova.
+    ///
+    /// Senza questo passaggio un Mac che aveva già Otium si ritroverebbe **due** avvii: il plist
+    /// legacy ancora caricato in launchd e la registrazione nuova. Non è teorico, è esattamente
+    /// il caso di questa macchina il 2026-08-03.
+    private func migrateLegacyLaunchAgent() {
+        guard !ProbeMode.active else { return }
+        guard LoginItem.legacyAgentInstalled() else { return }
+        LoginItem.removeLegacyAgent()
+    }
+
     /// Otium riparte a ogni accensione, senza che tu debba ricordartene.
     ///
-    /// Si installa da sola quando la preferenza è accesa e l'avvio automatico non c'è o punta a
-    /// un'altra copia — il caso vero è ricostruire l'app in un'altra cartella e ritrovarsi un
-    /// LaunchAgent che punta al nulla. **Non** si reinstalla se l'hai tolto dalle preferenze:
-    /// quel gesto spegne anche la preferenza, e un'app che si rimette da sola ciò che hai appena
-    /// rimosso è un'app che non ti ascolta.
+    /// Si registra da sola quando la preferenza è accesa e la registrazione non c'è. **Non** si
+    /// rimette se l'hai tolta — né dalle preferenze dell'app, né dall'interruttore in
+    /// Impostazioni di Sistema, che è il caso `requiresApproval`: quel gesto è tuo e un'app che
+    /// rimette da sé ciò che hai appena tolto è un'app che non ti ascolta.
     private func applyAutoStartPreference() {
         guard !ProbeMode.active else { return }
         guard engine.settings.autoStartAtLogin else { return }
-        switch launchAgentState {
-        case .healthy:
+        switch loginItemState {
+        case .enabled, .requiresApproval, .notFound:
             return
-        case .notInstalled, .danglingTarget, .pointsElsewhere:
-            LaunchAgent.install()
-            launchAgentState = LaunchAgent.state()
+        case .notRegistered:
+            LoginItem.enable()
+            loginItemState = LoginItem.state()
         }
     }
 
@@ -233,12 +259,22 @@ final class AppModel: ObservableObject {
         guard engine.phase == .warning || stantia else { return cachedEnvironment }
         lastEnvironmentSample = now
         environmentSamples += 1
+        // **Il microfono si legge sempre, non più solo quando serve a rimandare.** Prima era
+        // dietro `deferWhenMicrophoneActive`, e da quando la call è anche un segnale di presenza
+        // quella porta chiudeva la cosa sbagliata: chi avesse spento il rinvio avrebbe perso pure
+        // il conteggio del tempo in riunione. Chi decide cosa farne resta il motore, che il
+        // rinvio lo continua a subordinare all'interruttore.
+        let microfono = MicRadar.isInputActive()
+        let telecamera = CameraRadar.isCapturing()
         cachedEnvironment = EngineEnvironment(
-            microphoneActive: engine.settings.deferWhenMicrophoneActive ? MicRadar.isInputActive() : false,
+            microphoneActive: microfono,
             // Il nome del documento si chiede solo nel preavviso, che è l'unico momento in cui
             // finirà davvero sotto gli occhi di qualcuno.
             presence: engine.settings.detectQuietPresence
-                ? PresenceRadar.current(includeDocument: engine.phase == .warning) : nil
+                ? PresenceRadar.current(includeDocument: engine.phase == .warning,
+                                        microphoneActive: microfono,
+                                        cameraActive: telecamera)
+                : nil
         )
         return cachedEnvironment
     }
@@ -290,7 +326,7 @@ final class AppModel: ObservableObject {
             hud.show(
                 title: plan.kind == .long ? L.t("Pausa piena fra un minuto", "Full break in one minute")
                           : L.t("Pausa fra un minuto", "Break in one minute"),
-                subtitle: plan.exercise.label,
+                subtitle: upcomingSubtitle(plan),
                 sound: settings.notificationSound
             )
         case .deferredBreakDue(let plan):
@@ -302,10 +338,22 @@ final class AppModel: ObservableObject {
             hud.show(
                 title: L.t("Il microfono si è chiuso", "The microphone is free"),
                 subtitle: plan.kind == .long
-                    ? L.t("la pausa piena rimandata riparte fra un minuto — \(plan.exercise.label)",
-                          "the deferred full break resumes in one minute — \(plan.exercise.label)")
-                    : L.t("la pausa rimandata riparte fra un minuto — \(plan.exercise.label)",
-                          "the deferred break resumes in one minute — \(plan.exercise.label)"),
+                    ? L.t("la pausa piena rimandata riparte fra un minuto — \(upcomingTarget(plan))",
+                          "the deferred full break resumes in one minute — \(upcomingTarget(plan))")
+                    : L.t("la pausa rimandata riparte fra un minuto — \(upcomingTarget(plan))",
+                          "the deferred break resumes in one minute — \(upcomingTarget(plan))"),
+                sound: settings.notificationSound
+            )
+        case .callWatchdog(let seconds):
+            // **Non blocca, avvisa.** È il rovescio del veto: da quando un microfono acceso
+            // impedisce la pausa senza limiti, l'unico modo di accorgersi che un'app se l'è
+            // dimenticato aperto è che l'app lo dica. Se sei davvero in riunione da quattro ore
+            // senza toccare il Mac, questo pannello è comunque l'informazione giusta.
+            hud.show(
+                title: L.t("Microfono acceso da \(Int(seconds / 3600)) ore",
+                           "Microphone on for \(Int(seconds / 3600)) hours"),
+                subtitle: L.t("nessuna pausa può partire mentre è in uso — se non sei in call, controlla quale app lo tiene aperto",
+                              "no break can start while it is in use — if you are not on a call, check which app is holding it"),
                 sound: settings.notificationSound
             )
         case .breakTimeOver:
@@ -351,13 +399,13 @@ final class AppModel: ObservableObject {
             // non era stata applicata. Chiesto dal principale il 2026-07-31: *«non mi piace il
             // suono quando posticipo la pausa. togliamolo»*.
             hud.show(title: L.t("Rinviata di 2 minuti", "Postponed by 2 minutes"),
-                     subtitle: plan.exercise.label, sound: nil)
+                     subtitle: upcomingTarget(plan, capitalized: true), sound: nil)
         case .autoDeferred(let plan, let reason):
             blocker.hide()
             // Muto anche questo, e per un motivo in piu': l'auto-rinvio scatta **mentre sei in
             // call**, cioe' nell'unico momento in cui un suono di sistema non lo senti solo tu.
             hud.show(title: L.t("Pausa rimandata — \(reason)", "Break deferred — \(reason)"),
-                     subtitle: plan.exercise.label, sound: nil)
+                     subtitle: upcomingTarget(plan, capitalized: true), sound: nil)
         case .naturalBreak:
             // Arriva da due posti diversi. Mentre lavori è solo contabilità — ti sei alzato da
             // solo, e va bene così. Ma arriva **anche** dalla pausa in corso, quando l'assenza
@@ -394,6 +442,38 @@ final class AppModel: ObservableObject {
 
     func refreshSummary() {
         summary = ledger.summary()
+    }
+
+    /// Cosa dire **prima** che la pausa cominci.
+    ///
+    /// È il gemello mancante di `completionSubtitle`, e mancava dalla parte che conta di più: alla
+    /// fine la notifica elencava già tutte le stazioni, all'inizio nominava solo la prima. Con il
+    /// circuito acceso di serie il preavviso prometteva «16 squat» e lo schermo si copriva su
+    /// quattro esercizi. Segnalato dal principale il 2026-08-04, prima di una pausa piena.
+    ///
+    /// **Non elenca le stazioni, dice una parola sola** (sua indicazione, stessa segnalazione): il
+    /// pannello del preavviso non deve crescere di quattro righe per dire una cosa che si legge in
+    /// tre parole. I nomi restano dove servono, cioè dentro la pausa e nel complimento finale.
+    func upcomingSubtitle(_ plan: BreakPlan) -> String {
+        guard isCircuitAhead(plan) else { return plan.exercise.label }
+        return L.t("Preparati al circuito", "Get ready for the circuit")
+    }
+
+    /// Lo stesso fatto quando va **dentro** una frase già scritta, dove «Preparati al circuito»
+    /// non entrerebbe: «la pausa piena rimandata riparte fra un minuto — il circuito».
+    func upcomingTarget(_ plan: BreakPlan, capitalized: Bool = false) -> String {
+        guard isCircuitAhead(plan) else { return plan.exercise.label }
+        return capitalized ? L.t("Il circuito", "The circuit") : L.t("il circuito", "the circuit")
+    }
+
+    /// Quella che sta arrivando è una pausa in circuito?
+    ///
+    /// Guarda `circuitActive`, non le impostazioni: in modalità «proponi il circuito» il piano
+    /// nasce sull'esercizio del turno e il giro è un sì che devi dare tu dentro la pausa. Lì
+    /// l'esercizio nominato è quello vero, e annunciare un circuito sarebbe la stessa bugia al
+    /// contrario.
+    private func isCircuitAhead(_ plan: BreakPlan) -> Bool {
+        plan.circuitActive && plan.circuit.count > 1
     }
 
     /// Cosa dire quando la pausa si chiude.
@@ -767,6 +847,12 @@ final class AppModel: ObservableObject {
         Stats.previous(entries: ledger.entries(), period: period)
     }
 
+    /// La pagina della crescita legge **tutto** il registro, non il periodo scelto: una
+    /// progressione guardata dentro la finestra «Oggi» non è una progressione, è un numero.
+    func growth() -> GrowthReport {
+        Growth.report(entries: ledger.entries(), book: engine.progress, sex: settings.sex)
+    }
+
     var secondsLeftOfBreak: Double { engine.secondsLeftOfBreak }
     var exerciseDone: Bool { engine.exerciseDone }
 
@@ -794,21 +880,29 @@ final class AppModel: ObservableObject {
         objectWillChange.send()
     }
 
-    func installLaunchAgent() {
-        LaunchAgent.install()
-        launchAgentState = LaunchAgent.state()
+    func enableLoginItem() {
+        LoginItem.enable()
+        loginItemState = LoginItem.state()
         var s = engine.settings
         s.autoStartAtLogin = true
         update(settings: s)
     }
 
-    func removeLaunchAgent() {
-        LaunchAgent.uninstall()
-        launchAgentState = LaunchAgent.state()
+    func disableLoginItem() {
+        LoginItem.disable()
+        loginItemState = LoginItem.state()
         // Toglierlo spegne anche la preferenza, o al prossimo avvio se lo rimetterebbe da solo.
         var s = engine.settings
         s.autoStartAtLogin = false
         update(settings: s)
+    }
+
+    /// Apre la sezione di Impostazioni di Sistema dove l'interruttore è tuo.
+    ///
+    /// Serve nel caso `requiresApproval`: l'app **non può** riaccendersi da sé, e l'unica cosa
+    /// onesta che può fare è portarti dove si accende.
+    func openLoginItemsSettings() {
+        SMAppService.openSystemSettingsLoginItems()
     }
 
     // MARK: - Lettura per l'interfaccia

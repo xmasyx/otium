@@ -53,7 +53,7 @@ public enum Facts {
         // `Text` riceve la frase interpolata, e un valore interpolato non passa dal markdown.
         // Trovato guardando il provino il 2026-07-29; il cancello delle citazioni non poteva
         // vederlo, perché cerca il testo nella fonte e non sa com'è fatto lo schermo.
-        f("Non conta quanto stai seduto in tutto: conta quanto a lungo resti seduto senza mai alzarti.",
+        f("Non conta quanto stai seduto in tutto, conta quanto a lungo resti seduto senza mai alzarti.",
           "ricerca sul comportamento sedentario, consenso scientifico",
           "It is not how long you sit in total, it is how long you sit without a break.",
           "consensus in sedentary behaviour research"),
@@ -102,7 +102,7 @@ public enum Facts {
           "Stamatakis et al., Nature Medicine, 2022",
           "Three daily 1-2 minute bouts of vigorous activity in ordinary life are associated with about 40% lower mortality.",
           "Stamatakis et al., Nature Medicine, 2022"),
-        f("Non serve allenarsi in senso stretto per avere benefici cardiovascolari: servono momenti duri, brevi e ripetuti.",
+        f("Non serve allenarsi in senso stretto per avere benefici cardiovascolari, servono momenti duri, brevi e ripetuti.",
           "Stamatakis et al., Nature Medicine, 2022",
           "You do not need to train in the strict sense to get cardiovascular benefit: you need hard moments, short and repeated.",
           "Stamatakis et al., Nature Medicine, 2022"),
@@ -207,10 +207,18 @@ public enum Facts {
           "psicologia cognitiva, letteratura sul task switching",
           "Switching tasks costs a reorientation time you never get back: multitasking is fast switching, not parallelism.",
           "cognitive psychology, task switching literature"),
-        f("Dopo un'interruzione, tornare al livello di concentrazione precedente richiede parecchi minuti.",
-          "ricerca sulle interruzioni nel lavoro d'ufficio",
-          "After an interruption, getting back to your previous level of concentration takes several minutes.",
-          "research on interruptions in office work"),
+        // **Tolta il 2026-08-04, e il motivo vale come regola.** Diceva: «dopo un'interruzione,
+        // tornare al livello di concentrazione precedente richiede parecchi minuti». È vera, e
+        // riguarda le interruzioni **subite** — la notifica, il collega, il messaggio. Ma questa
+        // frase compariva sulla schermata di blocco, cioè nell'unico istante in cui l'app sta
+        // interrompendo di proposito: letta lì diventava un argomento contro il gesto che stavi
+        // per fare. Segnalata dal principale guardando lo schermo: *«va contro lo scopo
+        // dell'app»*. Al suo posto c'è il fatto che la stessa letteratura sostiene davvero,
+        // e che è la tesi su cui Otium è costruito.
+        f("Una pausa programmata non è un'interruzione subita. La prima la decidi tu, la seconda ti arriva addosso mentre lavori.",
+          "letteratura sulle interruzioni: il costo misurato è quello delle interruzioni non pianificate",
+          "A scheduled break is not an interruption you suffer. You decide the first; the second lands on you mid-task.",
+          "interruption literature: the measured cost is that of unplanned interruptions"),
         f("Il sonno consolida quello che hai imparato durante il giorno: studiare di più togliendo ore di sonno è un cattivo affare.",
           "neuroscienze del sonno, consenso scientifico",
           "Sleep consolidates what you learned during the day: studying more by cutting sleep is a bad trade.",
@@ -236,7 +244,7 @@ public enum Facts {
     // MARK: - Schiena, collo, respiro
 
     static let posturaFatti: [Phrase] = [
-        f("Non esiste una postura giusta: esiste il cambio di postura. Il carico statico è il problema, non l'angolo.",
+        f("Non esiste una postura giusta, esiste il cambio di postura. Il problema è il carico statico, non l'angolo.",
           "ergonomia occupazionale, consenso scientifico",
           "There is no correct posture: there is changing posture. Static load is the problem, not the angle.",
           "occupational ergonomics consensus"),
@@ -361,15 +369,22 @@ public enum Facts {
           "medicina preventiva, consenso scientifico",
           "Regular physical activity is one of the few interventions with a documented effect on sleep, mood and metabolism together.",
           "preventive medicine consensus"),
-        f("Camminare dopo il pasto abbassa la glicemia postprandiale più che camminare a digiuno.",
-          "letteratura su attività postprandiale e glicemia",
-          "Walking after a meal lowers post-meal glucose more than walking on an empty stomach.",
-          "literature on postprandial activity and glycaemia"),
+        // **Tolta il 2026-08-07: era un confronto vacuo**, e l'ha visto lui a schermo durante una
+        // pausa. Diceva «Camminare dopo il pasto abbassa la glicemia postprandiale più che
+        // camminare a digiuno»: a digiuno una glicemia postprandiale non esiste, quindi il secondo
+        // termine del paragone è impossibile per costruzione e la frase non afferma niente.
+        //
+        // **Il fatto vero che ci somiglia riguarda il momento dell'esercizio**, non lo stomaco:
+        // camminare *dopo* il pasto smorza il picco più che camminare un'ora *prima*. Non è
+        // rientrata riscritta — la fonte era «letteratura su attività postprandiale e glicemia»,
+        // l'unica del file senza un aggancio, e riscrivere il merito tenendo una fonte vaga è
+        // esattamente il difetto che questo file rimprovera agli altri. La riga sotto copre già lo
+        // stesso terreno, con una meta-analisi vera.
         f("Anche due minuti di cammino dopo mangiato hanno un effetto misurabile sulla glicemia.",
           "meta-analisi su brevi camminate postprandiali",
           "Even two minutes of walking after eating have a measurable effect on blood glucose.",
           "meta-analyses on short postprandial walks"),
-        f("Il freddo e il caldo si adattano; l'immobilità no: il corpo non impara mai a starci bene.",
+        f("Il freddo e il caldo si adattano, l'immobilità no. Il corpo non impara mai a starci bene.",
           "fisiologia dell'adattamento, consenso scientifico",
           "You adapt to cold and heat; you never adapt to stillness: the body never learns to be fine with it.",
           "adaptation physiology consensus"),

@@ -198,6 +198,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             // frase che prende la pagina, il conto che scende. Senza, la resa mostra sempre e
             // solo il primo minuto e mezzo, cioè metà della schermata che l'app disegna.
             if CommandLine.arguments.contains("--fatto") { model.fastForwardToRest() }
+            // `--frase=<n>` fissa quale frase disegnare: senza, la fotografia mostra quella che
+            // esce dal mazzo, e una prova sull'impaginazione di un testo preciso diventa una
+            // caccia. L'indice è quello che stampa `--tagli`.
+            if let n = CommandLine.arguments.first(where: { $0.hasPrefix("--frase=") })?
+                .split(separator: "=", maxSplits: 1).last.flatMap({ Int($0) }) {
+                model.pinPhrase(n)
+            }
             // `--tenuta-da=<secondi>` rende una tenuta **gia' cominciata**: e' l'unico modo di
             // guardare la preparazione e l'avviso del cambio lato, che durano tre secondi e nella
             // vita passano mentre hai la faccia sul pavimento.
@@ -334,7 +341,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             host = NSHostingView(rootView: DeclareSeatedView(model: model, onDone: {}).frame(width: size.width, height: size.height))
         case "stats":
             StatsView.expandGroupsForSnapshot = CommandLine.arguments.contains("--expanded")
-            size = NSSize(width: 620, height: 1400)
+            if let pagina = CommandLine.arguments.first(where: { $0.hasPrefix("--pagina=") })?
+                .split(separator: "=", maxSplits: 1).last
+                .flatMap({ StatsView.Page(rawValue: String($0)) }) {
+                StatsView.initialPageForSnapshot = pagina
+            }
+            // La pagina della crescita è alta la metà del riepilogo: renderla a 1400 lascerebbe
+            // ottocento punti di carta vuota sotto, che in una fotografia si legge come un
+            // difetto di layout e non come una sonda tarata male.
+            size = NSSize(width: 620,
+                          height: StatsView.initialPageForSnapshot == .allenamento ? 700 : 1400)
             host = NSHostingView(rootView: StatsView(model: model).frame(width: size.width, height: size.height))
         case "prefs":
             // **La misura deve essere quella vera della vista** (`.frame` in fondo a `PrefsView`).
@@ -460,8 +476,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         else { return }
         let seconds = arg.split(separator: "=").last.flatMap { Double($0) } ?? 60
         let quote = CommandLine.arguments.contains("--quote")
-        if quote, let phrase = model.launchPhrase {
+        // `--lunga` pesca la frase **più lunga del mazzo** invece di una a caso.
+        //
+        // La domanda a cui deve rispondere è «una frase lunga viene tagliata?», e una pescata a
+        // caso non risponde: se esce corta si vede una scatola sana e si conclude che va tutto
+        // bene. Il caso peggiore va **scelto**, non sperato.
+        let piuLunga = CommandLine.arguments.contains("--lunga")
+        let scelta = piuLunga
+            ? PhraseLibrary.launchPool().max { $0.localizedText.count < $1.localizedText.count }
+            : model.launchPhrase
+        // `--circuito` mostra il preavviso **vero** di una pausa piena in circuito, costruito dal
+        // motore e scritto da `upcomingSubtitle`. Serve a guardare la riga che il principale ha
+        // visto sbagliata il 2026-08-04: una stringa giusta in un test può ancora entrare storta
+        // nel pannello, e il pannello si guarda.
+        let circuito = CommandLine.arguments.contains("--circuito")
+        if quote, let phrase = scelta {
             model.showLaunchPhraseForSeconds(phrase, seconds: seconds)
+        } else if circuito {
+            var s = Settings()
+            s.startDate = Date()
+            s.circuitMode = .subito
+            let finto = AppModel(settings: s, ledger: Ledger(url: FileManager.default
+                .temporaryDirectory.appendingPathComponent("otium-demo-\(UUID().uuidString).jsonl")))
+            finto.headless = true
+            finto.forceBreakNow(long: true)
+            let riga = finto.plan.map { finto.upcomingSubtitle($0) } ?? "?"
+            model.announceForSeconds(title: L.t("Pausa piena fra un minuto", "Full break in one minute"),
+                                     subtitle: riga, seconds: seconds)
         } else {
             model.announceForSeconds(title: "Pausa fra un minuto", subtitle: "12 affondi",   // lingua: ok sonda di sviluppo (--demo-hud)
                                      seconds: seconds)
@@ -853,8 +894,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         print(ok
               ? "RISULTATO: PASS — la notifica nomina tutte le stazioni del circuito"
               : "RISULTATO: FAIL — la notifica racconta meno del giro che hai fatto")
+
+        let primaOk = probePreavvisoDelCircuito(url: url)
         try? FileManager.default.removeItem(at: url)
-        exit(ok ? 0 : 1)
+        exit(ok && primaOk ? 0 : 1)
+    }
+
+    /// La seconda metà della stessa sonda: **prima** della pausa, il preavviso parla del circuito?
+    ///
+    /// Il difetto era il gemello di quello sopra, e più caro: con il circuito acceso di serie il
+    /// preavviso prometteva un esercizio solo — «16 squat» — e lo schermo si copriva su quattro.
+    /// Segnalato dal principale il 2026-08-04, prima di una pausa piena.
+    ///
+    /// Due poli, perché uno solo non misura niente: **acceso di serie** deve nominare il circuito,
+    /// e **proposto** deve nominare l'esercizio del turno, dove il circuito è un sì che devi dare
+    /// tu dentro la pausa e annunciarlo sarebbe la stessa bugia al contrario.
+    private func probePreavvisoDelCircuito(url: URL) -> Bool {
+        func riga(_ modo: CircuitMode) -> (String, BreakPlan)? {
+            var s = Settings()
+            s.startDate = Date()
+            s.circuitMode = modo
+            let probe = AppModel(settings: s, ledger: Ledger(url: url))
+            probe.headless = true
+            probe.idleOverride = 0
+            probe.start()
+            probe.forceBreakNow(long: true)
+            guard let plan = probe.plan else { return nil }
+            return (probe.upcomingSubtitle(plan), plan)
+        }
+
+        guard let (acceso, pianoAcceso) = riga(.subito), let (proposto, pianoProposto) = riga(.proposto) else {
+            print("preavviso: nessun piano costruito"); return false
+        }
+        print("preavviso col circuito acceso: \(acceso)")
+        print("preavviso col circuito proposto: \(proposto)")
+
+        // Non «contiene la parola giusta»: **non deve essere il nome di una stazione sola**, che
+        // era esattamente il difetto.
+        let accesoOk = pianoAcceso.circuitActive && acceso != pianoAcceso.exercise.label
+        let propostoOk = !pianoProposto.circuitActive && proposto == pianoProposto.exercise.label
+        if !accesoOk { print("  FAIL: col circuito acceso il preavviso nomina una stazione sola") }
+        if !propostoOk { print("  FAIL: col circuito proposto il preavviso non nomina l'esercizio del turno") }
+        print(accesoOk && propostoOk
+              ? "RISULTATO: PASS — il preavviso dice quello che poi arriva"
+              : "RISULTATO: FAIL — il preavviso promette una cosa diversa da quella che arriva")
+        return accesoOk && propostoOk
     }
 
     /// `--policy-probe` — dopo aver aperto e chiuso una finestra, Otium torna un'app della barra
@@ -1473,6 +1557,46 @@ if ProbeMode.active {
         _ = ledger.append(LedgerEntry(timestamp: ora.addingTimeInterval(-3500),
                                       type: .completed, breakKind: .micro))
     }
+
+    // `--crescita-finta` semina **una decina di giorni** di conferme, che è l'unico modo di
+    // guardare la pagina della crescita: nella cartella usa e getta il registro nasce vuoto, e
+    // una pagina che disegna una storia su un registro vuoto mostra per sempre soltanto il suo
+    // ramo «non c'è ancora niente». I numeri salgono di poco e non tutti, perché una progressione
+    // in cui tutto sale sempre è un grafico finto e non farebbe vedere il caso che conta.
+    if arguments.contains("--crescita-finta") {
+        let ledger = Ledger()
+        let giorno: TimeInterval = 24 * 3600
+        let storia: [(ExerciseKind, [Int])] = [
+            (.pushUp,      [8, 8, 9, 9, 10, 10, 11]),
+            (.squat,       [10, 11, 11, 12, 13, 13]),
+            (.crunch,      [12, 12, 13, 14, 15]),
+            (.plank,       [30, 30, 35, 40, 45]),
+            (.gluteBridge, [10, 11, 11]),
+            (.calfRaise,   [15, 15, 15, 15]),
+            (.burpee,      [5, 6]),
+        ]
+        var progresso = ProgressBook()
+        for (kind, serie) in storia {
+            for (i, reps) in serie.enumerated() {
+                let quando = Date().addingTimeInterval(-giorno * Double(serie.count - i))
+                _ = ledger.append(LedgerEntry(timestamp: quando, type: .exerciseDone,
+                                              exercise: kind, reps: reps))
+                // **Ogni conferma chiude la sua pausa.** Senza, stanno tutte nella stessa e la
+                // lettura le classifica come circuito: la sonda mostrerebbe un ramo che nei dati
+                // veri non c'è, ed è il modo in cui una semina finta smette di somigliare al vero.
+                _ = ledger.append(LedgerEntry(timestamp: quando.addingTimeInterval(60),
+                                              type: .completed, breakKind: .micro))
+            }
+            // Il moltiplicatore sale solo dove la serie è davvero salita: la pagina mette la
+            // pastiglia accanto alla riga cresciuta, e con tutte le pastiglie accese non si
+            // vedrebbe se la mette al posto giusto.
+            if let primo = serie.first, let ultimo = serie.last, ultimo > primo {
+                progresso.byExercise[kind.rawValue] =
+                    ExerciseProgress(level: ultimo >= primo + 4 ? 1.1025 : 1.05, streak: 1)
+            }
+        }
+        ProgressStore.save(progresso)
+    }
 }
 
 if arguments.contains("--presence"), let watchArg = arguments.first(where: { $0.hasPrefix("--watch") }) {
@@ -1497,8 +1621,9 @@ if arguments.contains("--presence"), let watchArg = arguments.first(where: { $0.
         let document = app.flatMap { a in
             ReaderApps.isReader(a.bundleIdentifier) ? PresenceRadar.openDocument(pid: a.processIdentifier) : nil
         } ?? "—"
-        let verdict = PresenceRadar.detect()
-            .map { "\($0.kind.rawValue) · tetto \(Int(PresenceCap.seconds(for: $0.kind) / 60))′ · \($0.detail)" }
+        let verdict = PresenceRadar.detect(microphoneActive: MicRadar.isInputActive(),
+                                           cameraActive: CameraRadar.isCapturing())
+            .map { "\($0.kind.rawValue) · \(PresenceCap.label(for: $0.kind)) · \($0.detail)" }
             ?? "nessuna presenza"
         let line = "\(front) | suona: \(plays ? "sì" : "no") | doc: \(document) | → \(verdict)"
         if line != last {
@@ -1517,6 +1642,7 @@ if arguments.contains("--presence") {
     let idle = IdleProbe.seconds()
     print(String(format: "inattività: %.0f s", idle))
     print("microfono in uso: \(MicRadar.isInputActive() ? "sì (call)" : "no")")
+    print("telecamera in uso: \(CameraRadar.isCapturing() ? "sì (videochiamata)" : "no")")
     if let audio = PresenceRadar.detectAudio() {
         print("audio: \(audio.detail)")
     } else {
@@ -1534,8 +1660,9 @@ if arguments.contains("--presence") {
         print("lettura: no — in primo piano c'è \(front?.localizedName ?? "?") "
             + "(\(front?.bundleIdentifier ?? "?"))")
     }
-    if let p = PresenceRadar.detect() {
-        print("→ presenza: \(p.kind.rawValue) · \(p.detail) · tetto \(Int(PresenceCap.seconds(for: p.kind) / 60)) min")
+    if let p = PresenceRadar.detect(microphoneActive: MicRadar.isInputActive(),
+                                    cameraActive: CameraRadar.isCapturing()) {
+        print("→ presenza: \(p.kind.rawValue) · \(p.detail) · \(PresenceCap.label(for: p.kind))")
     } else {
         print("→ presenza: nessuna — fermo qui significherebbe assente")
     }
@@ -1554,20 +1681,72 @@ if arguments.contains("--version") {
 }
 
 if arguments.contains("--agent-status") {
-    print(LaunchAgent.state())
+    print(LoginItem.state())
+    if LoginItem.legacyAgentInstalled() {
+        print("residuo: il vecchio LaunchAgent è ancora installato in \(LoginItem.legacyPlistURL.path)")
+    }
     exit(0)
 }
 if arguments.contains("--install-agent") {
-    let ok = LaunchAgent.install()
-    print(ok ? "installato: \(LaunchAgent.plistURL.path)" : "installazione fallita")
-    print(LaunchAgent.state())
+    let ok = LoginItem.enable()
+    print(ok ? "registrato" : "registrazione fallita")
+    print(LoginItem.state())
     exit(ok ? 0 : 1)
 }
 if arguments.contains("--remove-agent") {
-    let ok = LaunchAgent.uninstall()
-    print(ok ? "rimosso" : "rimozione fallita (forse non era installato)")
-    print(LaunchAgent.state())
+    let ok = LoginItem.disable()
+    print(ok ? "rimosso" : "rimozione fallita (forse non era registrato)")
+    print(LoginItem.state())
     exit(ok ? 0 : 1)
+}
+// La migrazione a mano, per il caso in cui l'app non venga aperta: `--doctor` la segnala, questo
+// la esegue. Da sola l'app la fa al primo avvio.
+if arguments.contains("--remove-legacy-agent") {
+    guard LoginItem.legacyAgentInstalled() else {
+        print("nessun vecchio LaunchAgent da togliere")
+        exit(0)
+    }
+    let ok = LoginItem.removeLegacyAgent()
+    print(ok ? "vecchio LaunchAgent rimosso: \(LoginItem.legacyPlistURL.path)" : "rimozione fallita")
+    exit(ok ? 0 : 1)
+}
+
+// `--tagli` stampa **dove va a capo** ogni frase del mazzo, sulle tre colonne vere, prima
+// e dopo l'impaginazione. È la sonda che ha aperto ISC-199: prima diceva che la frase zen
+// chiudeva la riga su «Dopo», cioè aprendo il secondo periodo.
+//
+// Ha due poli per costruzione: la colonna `avido` è il comportamento di `Text` lasciato a
+// sé, e deve mostrare difetti; la colonna `scelto` è quella che si vede, e non deve
+// mostrarne. Se un giorno l'avido risultasse pulito, il verde non direbbe più niente.
+if CommandLine.arguments.contains("--tagli") {
+    let verboso = CommandLine.arguments.contains("--verboso")
+    var totali: [String: (Int, Int)] = [:]
+    for colonna in QuoteWrap.colonne {
+        let nome = colonna.nome
+        var difettiAvido = 0, difettiScelto = 0
+        for (i, p) in PhraseLibrary.breakPool(includingUser: false).enumerated() {
+            let w = colonna.larghezza
+            let font = QuoteWrap.serif(colonna.corpo(p.localizedText))
+            let avido = QuoteWrap.naturalLines(p.displayText, width: w, font: font)
+            let scelto = QuoteWrap.lines(p.displayText, width: w, font: font)
+            let da = QuoteWrap.difetti(avido), ds = QuoteWrap.difetti(scelto)
+            difettiAvido += da.count
+            difettiScelto += ds.count
+            let righeDiverse = avido.count != scelto.count
+            if !da.isEmpty || !ds.isEmpty || righeDiverse || verboso {
+                print("\n[\(nome) #\(i)] avido \(avido.count) righe \(da.map(\.rawValue)) · scelto \(scelto.count) righe \(ds.map(\.rawValue))")
+                for r in avido { print("  avido  | \(r)") }
+                for r in scelto { print("  scelto | \(r)") }
+            }
+        }
+        totali[nome] = (difettiAvido, difettiScelto)
+    }
+    print("\n=== TAGLI ===")
+    for colonna in QuoteWrap.colonne {
+        let (a, s) = totali[colonna.nome] ?? (0, 0)
+        print("\(colonna.nome)\tavido: \(a) difetti\tscelto: \(s) difetti")
+    }
+    exit(0)
 }
 
 // Da qui in giù si apre l'interfaccia: prima ci si assicura di essere l'unica istanza.

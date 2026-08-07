@@ -28,6 +28,12 @@ public struct Cadence: Codable, Equatable, Sendable {
     /// Ogni quanti break ne arriva uno pieno. 3 → micro, micro, pieno.
     public var longEveryNBreaks: Int
     /// Oltre questa inattività l'orologio si ferma e la pausa diventa "naturale".
+    ///
+    /// **90 e non 60 dal 2026-08-05**, su richiesta del principale: *«non dovrebbe essere 60
+    /// secondi ma 90 come una vera pausa naturale»*. Un minuto senza toccare niente è un
+    /// paragrafo letto, non una pausa, e accreditarlo regalava riposo mai fatto. Il numero da
+    /// solo non basta e non era pensato per bastare: le pause fantasma misurate quel giorno
+    /// erano da 14 e 18 minuti, e la rete per quelle è `PresenceKind.terminal`.
     public var idleThresholdSeconds: Double
     /// Preavviso prima che lo schermo si copra: serve a chiudere quello che stai facendo.
     ///
@@ -78,7 +84,7 @@ public struct Cadence: Codable, Equatable, Sendable {
         microDurationSeconds: 90,
         longDurationSeconds: 5 * 60,
         longEveryNBreaks: 3,
-        idleThresholdSeconds: 60,
+        idleThresholdSeconds: 90,
         warningSeconds: 60,
         postponeSeconds: 120,
         postponesAllowed: 1
@@ -90,7 +96,7 @@ public struct Cadence: Codable, Equatable, Sendable {
         microDurationSeconds: 5 * 60,
         longDurationSeconds: 5 * 60,
         longEveryNBreaks: 1,
-        idleThresholdSeconds: 60,
+        idleThresholdSeconds: 90,
         warningSeconds: 60,
         postponeSeconds: 120,
         postponesAllowed: 1
@@ -102,7 +108,7 @@ public struct Cadence: Codable, Equatable, Sendable {
         microDurationSeconds: 5 * 60,
         longDurationSeconds: 5 * 60,
         longEveryNBreaks: 1,
-        idleThresholdSeconds: 60,
+        idleThresholdSeconds: 90,
         warningSeconds: 60,
         postponeSeconds: 120,
         postponesAllowed: 1
@@ -254,7 +260,17 @@ public struct Settings: Codable, Equatable, Sendable {
     /// Riaprendo l'app entro questo tempo, il conto riprende da dov'era. Di serie vale quanto
     /// una pausa piena (5 min): sotto è un riavvio, sopra è già una pausa vera.
     public var resumeGraceSeconds: Double
-    /// Ore di silenzio: fuori da questa finestra Otium non interrompe.
+    /// **Di serie Otium è attivo sempre**, e la finestra oraria è una cosa che accendi tu.
+    ///
+    /// Nasceva col contrario, 7→23, e la scelta era ragionevole ma non era una misura: nessuno
+    /// studio dice che alle 23:01 stare seduti smetta di far male. Chi lavora la notte veniva
+    /// lasciato scoperto proprio nelle ore in cui è più fermo, e per accorgersene doveva
+    /// sospettare che una finestra esistesse. Richiesta del principale, 2026-08-04:
+    /// *«mettiamo di default che è sempre attivo e la possibilità di settare il tempo a
+    /// preferenza»*. Il silenzio notturno resta a un interruttore di distanza.
+    public var activeHoursAlwaysOn: Bool
+    /// Ore di silenzio: fuori da questa finestra Otium non interrompe. Vale solo con
+    /// `activeHoursAlwaysOn` spento.
     public var activeFromHour: Int
     public var activeToHour: Int
 
@@ -299,6 +315,7 @@ public struct Settings: Codable, Equatable, Sendable {
         notificationSound: String = "Tink",
         holdEndSound: String = "Glass",
         resumeGraceSeconds: Double = 5 * 60,
+        activeHoursAlwaysOn: Bool = true,
         activeFromHour: Int = 7,
         activeToHour: Int = 23
     ) {
@@ -329,6 +346,7 @@ public struct Settings: Codable, Equatable, Sendable {
         self.notificationSound = notificationSound
         self.holdEndSound = holdEndSound
         self.resumeGraceSeconds = max(0, resumeGraceSeconds)
+        self.activeHoursAlwaysOn = activeHoursAlwaysOn
         self.activeFromHour = activeFromHour
         self.activeToHour = activeToHour
     }
@@ -448,6 +466,11 @@ public struct Settings: Codable, Equatable, Sendable {
         notificationSound = (try? c.decode(String.self, forKey: .notificationSound)) ?? d.notificationSound
         holdEndSound = (try? c.decode(String.self, forKey: .holdEndSound)) ?? d.holdEndSound
         resumeGraceSeconds = (try? c.decode(Double.self, forKey: .resumeGraceSeconds)) ?? d.resumeGraceSeconds
+        // **Assente vuol dire acceso, di proposito.** Un file scritto prima di questo campo
+        // porta una finestra che l'utente non ha quasi mai scelto: era il valore di serie.
+        // Ereditarla significherebbe lasciare in piedi il silenzio notturno che la richiesta del
+        // 2026-08-04 esiste per togliere. Chi la vuole la riaccende, e resta scritta.
+        activeHoursAlwaysOn = (try? c.decode(Bool.self, forKey: .activeHoursAlwaysOn)) ?? d.activeHoursAlwaysOn
         activeFromHour = (try? c.decode(Int.self, forKey: .activeFromHour)) ?? d.activeFromHour
         activeToHour = (try? c.decode(Int.self, forKey: .activeToHour)) ?? d.activeToHour
     }

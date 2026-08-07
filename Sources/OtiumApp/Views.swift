@@ -275,16 +275,40 @@ struct BreakView: View {
             // mostra è un'app a cui non puoi dare torto.
             if let presence = model.engine.lastPresence {
                 HStack(spacing: 8) {
-                    Image(systemName: presence.kind == .media ? "play.rectangle" : "doc.text")
+                    Image(systemName: Self.presenceIcon(presence.kind))
                         .foregroundStyle(Palette.dim)
-                    Text(presence.kind == .media
-                         ? L.t("fermo davanti a un video: \(presence.detail)", "still, watching a video: \(presence.detail)")
-                         : L.t("fermo su un documento: \(presence.detail)", "still, on a document: \(presence.detail)"))
+                    Text(Self.presenceLabel(presence))
                         .foregroundStyle(Palette.dim)
                     Spacer()
                 }
                 .font(.system(size: 12))
             }
+        }
+    }
+
+    /// **Uno `switch` esaustivo, non un ternario.** Con due soli rami `.call` diceva «fermo su un
+    /// documento» mentre eri al telefono, e `.terminal` avrebbe ereditato in silenzio la stessa
+    /// frase sbagliata. Così il compilatore obbliga chi aggiunge un tipo a scriverne la riga.
+    static func presenceIcon(_ kind: PresenceKind) -> String {
+        switch kind {
+        case .media: return "play.rectangle"
+        case .reading: return "doc.text"
+        case .terminal: return "terminal"
+        case .call: return "phone"
+        }
+    }
+
+    static func presenceLabel(_ presence: PresenceSignal) -> String {
+        let detail = presence.detail
+        switch presence.kind {
+        case .media:
+            return L.t("fermo davanti a un video: \(detail)", "still, watching a video: \(detail)")
+        case .reading:
+            return L.t("fermo su un documento: \(detail)", "still, on a document: \(detail)")
+        case .terminal:
+            return L.t("fermo a leggere l'output: \(detail)", "still, reading output: \(detail)")
+        case .call:
+            return L.t("in conversazione: \(detail)", "on a call: \(detail)")
         }
     }
 
@@ -324,7 +348,7 @@ struct BreakView: View {
                 Text(plan.exercise.kind.isPerSide
                      ? L.t("\(plan.exercise.displayReps) s per lato. Due tocchi ti avvisano \(Int(Hold.switchWarningSeconds)) s prima del cambio, e un suono diverso chiude.",
                            "\(plan.exercise.displayReps) s per side. Two taps warn you \(Int(Hold.switchWarningSeconds)) s before the switch, a different sound ends it.")
-                     : L.t("Il tempo scende da solo e un suono chiude: non devi guardare lo schermo.",
+                     : L.t("Il tempo scende da solo e un suono chiude, non devi guardare lo schermo.",
                            "The time counts down on its own and a sound ends it: you do not have to watch the screen."))
                     .font(.system(size: 14))
                     .foregroundStyle(Palette.accent.opacity(0.85))
@@ -648,8 +672,12 @@ struct BreakView: View {
                 // **Su una tenuta il pulsante grande fa partire il tempo, non lo chiude.**
                 // «Fatte tutte» qui non ha senso: la tenuta finisce quando finisce il tempo, e a
                 // quel punto non c'è nessuno che possa premere, perché sei a terra.
-                primary(L.t("Pronto — poi \(Int(Hold.prepareSeconds)) s per scendere",
-                            "Ready — then \(Int(Hold.prepareSeconds)) s to get down"),
+                // **L'etichetta dice cosa fa il dito e cosa succede dopo.** «Pronto» chiedeva una
+                // dichiarazione di stato — e la risposta onesta, a terra non ancora, era no.
+                // Riscritta dal principale il 2026-08-04: prima l'azione, poi il tempo che
+                // regala, così premi anche se non sei ancora giù.
+                primary(L.t("Premi per iniziare, poi hai \(Int(Hold.prepareSeconds)) s per metterti in posizione",
+                            "Press to start, then you have \(Int(Hold.prepareSeconds)) s to get into position"),
                         enabled: true) { model.startHold() }
             } else if model.hold != nil {
                 // **Mentre il conto gira il pulsante non serve, e una via d'uscita sì.**
@@ -919,12 +947,16 @@ struct RestQuote: View {
 
     /// Larghezza vera della fase di riposo: 1440 di schermo meno i 48+48 di margine, arrotondati
     /// al valore che la vista impone. Serve al provino per misurare la stessa cosa che si vede.
-    static let width: CGFloat = 1000
+    static let width: CGFloat = QuoteWrap.riposo.larghezza
+
+    /// Il corpo scende sulle frasi lunghe: la soglia è misurata, non stimata (vedi sopra), e vive
+    /// in `QuoteWrap.riposo` perché è la stessa che decide i tagli.
+    static func corpo(_ phrase: Phrase) -> CGFloat { QuoteWrap.riposo.corpo(phrase.localizedText) }
 
     var body: some View {
         VStack(spacing: 24) {
-            Text(phrase.kind == .voce ? phrase.localizedText : "«\(phrase.localizedText)»")
-                .font(.system(size: phrase.localizedText.count > 95 ? 30 : 40, design: .serif))
+            Text(QuoteWrap.wrapped(phrase.displayText, width: Self.width, size: Self.corpo(phrase)))
+                .font(.system(size: Self.corpo(phrase), design: .serif))
                 .foregroundStyle(Palette.paper.opacity(0.94))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
@@ -942,6 +974,9 @@ struct RestQuote: View {
 struct QuoteBlock: View {
     let phrase: Phrase
 
+    static let width: CGFloat = QuoteWrap.esercizio.larghezza
+    static let corpo: CGFloat = QuoteWrap.esercizio.corpoBase
+
     var body: some View {
         VStack(spacing: 6) {
             // **La voce dell'app non porta i caporali e non porta una firma.** I caporali dicono
@@ -952,12 +987,12 @@ struct QuoteBlock: View {
             // messo il lineare per la voce e le grazie per le citazioni: due caratteri sulla
             // stessa schermata sono un cambio di tono che nessuno ha chiesto, e la distinzione la
             // fanno già i caporali che non ci sono.
-            Text(phrase.kind == .voce ? phrase.localizedText : "«\(phrase.localizedText)»")
-                .font(.system(size: 18, design: .serif))
+            Text(QuoteWrap.wrapped(phrase.displayText, width: Self.width, size: Self.corpo))
+                .font(.system(size: Self.corpo, design: .serif))
                 .foregroundStyle(Palette.paper.opacity(0.62))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: 620)
+                .frame(maxWidth: Self.width)
             if phrase.kind != .voce {
                 Text(phrase.localizedCredit)
                     .font(.system(size: 11))
@@ -1076,24 +1111,52 @@ struct Dismissible<Content: View>: View {
 struct QuoteHUDView: View {
     let phrase: Phrase
 
+    static let width: CGFloat = QuoteWrap.pannello.larghezza
+    static let corpo: CGFloat = QuoteWrap.pannello.corpoBase
+
+    /// Chi l'ha detta, un pelo sotto la frase e più in sordina.
+    private var credito: some View {
+        Text(phrase.localizedCredit)
+            .font(.system(size: 12))
+            .foregroundStyle(.secondary)
+    }
+
     var body: some View {
         HStack(spacing: 14) {
             RoundedRectangle(cornerRadius: 2).fill(Palette.accent).frame(width: 4)
-            VStack(alignment: .leading, spacing: 8) {
-                // Stessa regola della pausa: via i caporali e la firma, il carattere non si tocca.
-                Text(phrase.kind == .voce ? phrase.localizedText : "«\(phrase.localizedText)»")
-                    .font(.system(size: 14, design: .serif))
+            VStack(alignment: .leading, spacing: 6) {
+                // **Il blocco si centra come un tutt'uno, e va bene così.**
+                //
+                // Provata e scartata la via opposta il 2026-08-03: un contrappeso invisibile
+                // sopra — la firma stessa, copiata e nascosta — che metteva la *frase* esatta
+                // sull'asse centrale e lasciava la firma appesa sotto. Guardata a schermo, in una
+                // scatola stretta come questa fa salire il peso visivo e il pannello sembra
+                // sbilanciato in alto. Il difetto vero non era il centraggio: era l'altezza fissa
+                // di 132 punti, in cui una frase di due righe ballava. Tolta quella, il blocco
+                // centrato è la lettura giusta — e la frase, che occupa quasi tutto, di fatto
+                // ci sta sopra.
+                Text(QuoteWrap.wrapped(phrase.displayText, width: Self.width, size: Self.corpo))
+                    .font(.system(size: Self.corpo, design: .serif))
+                    // **L'interlinea di serie è pensata per una riga o due, non per quattro.**
+                    // Sulla frase più lunga del mazzo — tre righe di serif in una colonna stretta
+                    // — il blocco si legge come un muro. Tre punti d'aria fra le righe non si
+                    // notano su una frase corta e salvano quella lunga.
+                    .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
-                if phrase.kind != .voce {
-                    Text(phrase.localizedCredit)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                }
+                if phrase.kind != .voce { credito }
             }
             Spacer(minLength: 0)
         }
-        .padding(16)
-        .frame(width: 380, height: 132, alignment: .leading)
+        .padding(18)
+        // **Nessuna altezza scritta qui.** Erano 132 punti fissi: una frase di due righe ci
+        // ballava dentro, e una lunga sarebbe stata tagliata. Ora la detta il contenuto, con il
+        // solo minimo del pannello — la stessa regola che `WarningHUD` applica già alle altre.
+        //
+        // La larghezza invece resta scritta, ed è cresciuta da 380 a 420: la frase più lunga del
+        // mazzo (Dhammapada, 137 caratteri) in 380 punti andava a tre righe strette e si leggeva
+        // come un blocco compatto. Quaranta punti in più le tolgono una riga senza far invadere
+        // al pannello mezzo schermo.
+        .frame(width: 470, alignment: .leading)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
@@ -1701,8 +1764,8 @@ struct PrefsView: View {
     private var interruzioniSection: some View {
         SwiftUI.Section {
             Toggle(L.t("Rimanda se un microfono è in uso (call)", "Defer while a microphone is in use (a call)"), isOn: $draft.deferWhenMicrophoneActive)
-            conNota(L.t("Un film o un PDF sono immobilità perfetta, e senza questo guardare Netflix vale come una pausa ben fatta. Tetti senza un solo input: 45 min per un video, 15 per un documento.",
-                        "A film or a PDF is perfect stillness: without this, watching Netflix counts as a well-taken break. Caps without a single input: 45 min for a video, 15 for reading.")) {
+            conNota(L.t("Un film o un PDF sono immobilità perfetta, e senza questo guardare Netflix vale come una pausa ben fatta. Tetti senza un solo input: 45 min per un video, 15 per un documento. Una call non ha tetto, perché una riunione lunga è la seduta più lunga della giornata.",
+                        "A film or a PDF is perfect stillness: without this, watching Netflix counts as a well-taken break. Caps without a single input: 45 min for a video, 15 for reading. A call has no cap, because a long meeting is the longest sit of the day.")) {
                 Toggle(L.t("Conta anche video e lettura come tempo fermo", "Count video and reading as sitting time too"), isOn: $draft.detectQuietPresence)
             }
         }
@@ -1716,17 +1779,91 @@ struct PrefsView: View {
             }
         }
 
-        SwiftUI.Section {
-            conNota(L.t("Fuori da questa finestra Otium non interrompe.",
-                        "Outside this window Otium does not interrupt.")) {
-                LabeledContent(L.t("Ore attive", "Active hours")) {
-                    HStack {
-                        Stepper("\(draft.activeFromHour)", value: $draft.activeFromHour, in: 0...23)
-                        Text("→")
-                        Stepper("\(draft.activeToHour)", value: $draft.activeToHour, in: 0...23)
-                    }
+        // **La sezione ha un titolo, e dentro una riga dice lo stato a parole.** Con il solo
+        // interruttore spento la pagina non affermava niente: bisognava dedurre «allora è sempre
+        // attivo» dall'assenza di una finestra, e dedurre non è leggere. Segnalato dal principale
+        // il 2026-08-04: *«non dice che è sempre attivo»*. La riga è **derivata**, non un'altra
+        // impostazione — dice cosa farà il motore, e si riscrive da sola quando cambi le ore.
+        SwiftUI.Section(L.t("Quando interrompe", "When it interrupts")) {
+            // **Le due frecce restano sempre a schermo, spente finché l'interruttore è acceso**
+            // (2026-08-04, sua richiesta esplicita: *«sia comunque mostrata grigia, che vuol dire
+            // che non è selezionabile, però è lì»*). Nasconderle era la prima versione, ed era
+            // peggio: un comando che sparisce non insegna che esiste, e chi vuole il silenzio
+            // notturno deve prima indovinare che spegnendo l'interruttore comparirà qualcosa.
+            // Grigie dicono due cose insieme — la finestra esiste, e adesso non conta.
+            conNota(draft.activeHoursAlwaysOn
+                    ? L.t("Accendi «Personalizzato» per tenere una finestra di silenzio, per esempio la notte.",
+                          "Turn on “Custom” to keep a quiet window, at night for instance.")
+                    : L.t("Fuori da questa finestra Otium non interrompe.",
+                          "Outside this window Otium does not interrupt.")) {
+                // **Una riga per comando, tutte allineate sullo stesso bordo destro.** La prima
+                // versione metteva un interruttore e due frecce a distanze diverse dal margine, e
+                // il risultato non era brutto per gusto: era brutto perché *niente* era in linea
+                // con niente. Segnalato dal principale il 2026-08-04: *«troppo attaccato, non è
+                // armonioso»*.
+                //
+                // Il selettore a due caselle è la stessa forma di Lingua e Sesso, che sono già
+                // nella finestra: la coerenza dentro l'app vale più di somigliare a un pannello
+                // di sistema. Le ore si scrivono **07:00**, non `7`, perché un numero nudo è una
+                // quantità e questa è un'ora del giorno.
+                // **Un interruttore, come gli altri due della pagina.** Il selettore a due caselle
+                // era la versione di mezzo, e il difetto era che nessun altro comando qui dentro
+                // è fatto così: due interruttori sopra, due frecce accanto, e in mezzo un
+                // segmento che non si allineava con nessuno dei due. La forma giusta era già
+                // sulla pagina.
+                //
+                // **Acceso vuol dire «personalizzato», non «attivo».** Il campo sotto resta
+                // `activeHoursAlwaysOn` perché è così che lo legge il motore, ma l'interruttore
+                // dice la cosa che *aggiunge* qualcosa: un interruttore chiamato «Attivo sempre»
+                // spegne una funzione accendendosi, e si legge al contrario.
+                // Dodici punti fra le righe invece dei sei di `conNota`: tre comandi a sei punti
+                // l'uno dall'altro si leggono come un blocco unico, ed è il secondo rilievo dello
+                // stesso pomeriggio sulla stessa sezione.
+                VStack(alignment: .leading, spacing: 12) {
+                LabeledContent(L.t("Otium interrompe", "Otium interrupts")) {
+                    Text(statoOrario)
+                        .foregroundStyle(Palette.accentOnWindow)
+                        .fontWeight(.medium)
+                }
+                Toggle(L.t("Personalizzato", "Custom"),
+                       isOn: Binding(get: { !draft.activeHoursAlwaysOn },
+                                     set: { draft.activeHoursAlwaysOn = !$0 }))
+                // Il numero a sinistra e le frecce all'estremità, con otto punti in mezzo: è la
+                // stessa geometria di «Consenti 1 rinvio a mano» qui sopra. Attaccati erano il
+                // rilievo del 2026-08-04 — *«le parti sulla destra sono troppo appiccicate»*.
+                LabeledContent(L.t("Dalle", "From")) {
+                    oraSelettore($draft.activeFromHour)
+                }
+                .disabled(draft.activeHoursAlwaysOn)
+                LabeledContent(L.t("Alle", "To")) {
+                    oraSelettore($draft.activeToHour)
+                }
+                .disabled(draft.activeHoursAlwaysOn)
                 }
             }
+        }
+    }
+
+    /// Lo stato a parole, derivato dalle impostazioni e mai scritto due volte. È l'unica riga
+    /// della sezione che non si può cambiare: si legge.
+    private var statoOrario: String {
+        guard !draft.activeHoursAlwaysOn else {
+            return L.t("sempre, a qualunque ora", "always, at any hour")
+        }
+        let da = String(format: "%02d:00", draft.activeFromHour)
+        let a = String(format: "%02d:00", draft.activeToHour)
+        return L.t("dalle \(da) alle \(a)", "from \(da) to \(a)")
+    }
+
+    /// L'ora del giorno: il numero, poi le frecce all'estremità destra. Le frecce restano un
+    /// controllo di sistema — tastiera e VoiceOver ci arrivano — ma l'etichetta è nostra, perché
+    /// quella dello `Stepper` si incolla alle frecce e non si può distanziare.
+    private func oraSelettore(_ ora: Binding<Int>) -> some View {
+        HStack(spacing: 8) {
+            Text(String(format: "%02d:00", ora.wrappedValue))
+                .monospacedDigit()
+            Stepper("", value: ora, in: 0...23)
+                .labelsHidden()
         }
     }
 
@@ -1816,36 +1953,47 @@ struct PrefsView: View {
     @ViewBuilder
     private var sistemaSection: some View {
         SwiftUI.Section(L.t("Avvio automatico", "Start at login")) {
-            switch model.launchAgentState {
-            case .notInstalled:
+            switch model.loginItemState {
+            case .notRegistered:
                 HStack {
                     Text(L.t("Otium non riparte da sola.", "Otium does not restart on its own.")).foregroundStyle(.secondary)
-                    Button(L.t("Installa", "Install")) { model.installLaunchAgent() }
+                    Spacer()
+                    Button(L.t("Attiva", "Turn on")) { model.enableLoginItem() }
                 }
-            case .healthy:
+            case .enabled:
                 HStack {
                     // Il verde di sistema qui era l'unico colore della finestra che non veniva
                     // dalla livrea: verde mela accanto al verde alloro, e si vedeva. Segnalato
                     // dal principale il 2026-07-31. L'arancione degli avvisi qui sotto resta,
                     // perché quello non è una livrea, è un semaforo.
-                    Label(L.t("Attivo e puntato a questa copia", "Active and pointing at this copy"), systemImage: "checkmark.seal")
+                    Label(L.t("Attivo: Otium parte all'accensione", "On: Otium starts at login"), systemImage: "checkmark.seal")
                         .foregroundStyle(Palette.accentOnWindow)
                     Spacer()
-                    Button(L.t("Rimuovi", "Remove")) { model.removeLaunchAgent() }
+                    Button(L.t("Rimuovi", "Remove")) { model.disableLoginItem() }
                 }
-            case .danglingTarget(let path):
+            case .requiresApproval:
+                // **L'app non prova a riaccenderlo da sé.** L'interruttore è in Impostazioni di
+                // Sistema, è tuo, e l'unica cosa onesta che Otium può fare è portarti lì.
                 VStack(alignment: .leading) {
-                    Label(L.t("L'avvio automatico punta a un file che non esiste più", "Start at login points at a file that no longer exists"),
+                    Label(L.t("Spento da te in Impostazioni di Sistema", "Turned off by you in System Settings"),
                           systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
-                    Text(path).font(.caption).foregroundStyle(.secondary)
-                    Button(L.t("Ripara", "Repair")) { model.installLaunchAgent() }
+                    Text(L.t("Otium resta registrata, ma non partirà finché non riaccendi l'interruttore. Può farlo solo tu.",
+                             "Otium stays registered but will not start until you turn the switch back on. Only you can."))
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button(L.t("Apri Impostazioni di Sistema", "Open System Settings")) { model.openLoginItemsSettings() }
                 }
-            case .pointsElsewhere(let path):
+            case .notFound:
+                // Non è un guasto da riparare con un bottone: è l'app lanciata da fuori un
+                // bundle, cioè il binario di sviluppo. Dirlo è più utile che offrire una cura
+                // che non curerebbe niente.
                 VStack(alignment: .leading) {
-                    Label(L.t("L'avvio automatico punta a un'altra copia di Otium", "Start at login points at another copy of Otium"),
+                    Label(L.t("Questa copia non è registrabile", "This copy cannot be registered"),
                           systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
-                    Text(path).font(.caption).foregroundStyle(.secondary)
-                    Button(L.t("Punta a questa", "Point at this one")) { model.installLaunchAgent() }
+                    Text(L.t("macOS registra l'avvio automatico di un'app dentro il suo bundle. Stai usando Otium fuori da un «.app» — di solito il binario di sviluppo. Apri Otium.app e l'avvio automatico torna disponibile.",
+                             "macOS registers start at login for an app inside its bundle. You are running Otium outside a “.app” — usually the development binary. Open Otium.app and start at login becomes available again."))
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
@@ -2040,16 +2188,47 @@ struct StatsView: View {
     private var stats: PeriodStats { model.stats(for: period) }
     private var previous: PeriodStats { model.previousStats(for: period) }
 
+    /// Le due pagine della finestra. **Il periodo vale solo sul riepilogo**: la crescita si legge
+    /// per forza su tutto il registro, perché una progressione guardata dentro «Oggi» non è una
+    /// progressione. Per questo il selettore del periodo sparisce sulla seconda pagina invece di
+    /// restare lì a non fare niente.
+    enum Page: String, CaseIterable, Hashable {
+        case allenamento, pause
+        var title: String {
+            switch self {
+            case .allenamento: return L.t("Allenamento", "Training")
+            case .pause:       return L.t("Pause", "Breaks")
+            }
+        }
+    }
+
+    /// Solo per la sonda: `--surface=stats --pagina=crescita` apre già sulla seconda pagina.
+    /// Senza, una fotografia della finestra mostrerebbe per sempre solo la prima, che è
+    /// esattamente il modo in cui una pagina nuova resta non verificata.
+    static var initialPageForSnapshot: Page = .allenamento
+
+    @State private var page: Page = StatsView.initialPageForSnapshot
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    numbers
-                    compliance
-                    muscleCards
-                    hourStrip
-                    insights
+                    switch page {
+                    // **Prima l'allenamento, poi le pause** (2026-08-04, sua richiesta). Le due
+                    // pagine adesso rispondono a due domande diverse invece che a «tutto» e «una
+                    // cosa»: cosa sto facendo col corpo, e come sta andando la disciplina delle
+                    // interruzioni. Gli esercizi svolti sono passati di qua perché sono
+                    // allenamento, non contabilità delle pause.
+                    case .allenamento:
+                        growthPage
+                        muscleCards
+                    case .pause:
+                        numbers
+                        compliance
+                        hourStrip
+                        insights
+                    }
                 }
                 .padding(.horizontal, 22).padding(.bottom, 24)
             }
@@ -2060,10 +2239,151 @@ struct StatsView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Otium").font(.system(size: 22, weight: .semibold, design: .rounded))   // lingua: ok nome proprio
-            periodPicker
+            HStack {
+                Text("Otium").font(.system(size: 22, weight: .semibold, design: .rounded))   // lingua: ok nome proprio
+                Spacer()
+                pagePicker
+            }
+            if page == .pause { periodPicker }
         }
         .padding(.horizontal, 22).padding(.top, 18).padding(.bottom, 14)
+    }
+
+    private var pagePicker: some View {
+        SegmentedChoice(options: Page.allCases.map { ($0, $0.title) }, selection: $page)
+    }
+
+    // MARK: - La pagina della crescita
+
+    /// **Quello che è successo, non quello che l'app promette.** Il moltiplicatore della
+    /// progressione dice dove sei arrivato; qui accanto c'è la prima conferma e l'ultima, che è
+    /// la stessa cosa detta da chi le ha fatte. Quando i due numeri divergono ha ragione il
+    /// secondo, e vederli insieme è tutto il punto della pagina.
+    ///
+    /// Chiesta dal principale il 2026-08-04: *«far vedere come quei numeri stanno aumentando»*.
+    @ViewBuilder
+    private var growthPage: some View {
+        let report = model.growth()
+        if report.lines.isEmpty {
+            Text(L.t("Nessun esercizio confermato, ancora. La crescita comincia alla prima pausa fatta davvero.",
+                     "No exercise confirmed yet. Growth starts at the first break you actually do."))
+                .foregroundStyle(.secondary)
+                .padding(.vertical, 30)
+        } else {
+            HStack(spacing: 10) {
+                tile("\(report.totalReps)",
+                     plural(report.totalReps, it: "ripetizione", "ripetizioni", en: "rep", "reps"),
+                     delta: nil, riservaSpazioDelta: false)
+                tile("\(report.activeDays)",
+                     plural(report.activeDays, it: "giorno", "giorni", en: "day", "days"),
+                     delta: nil, riservaSpazioDelta: false)
+                tile("\(report.grownCount)/\(report.measuredCount)",
+                     L.t("oltre il 100%", "past 100%"), delta: nil, riservaSpazioDelta: false)
+            }
+            // **Una legenda, perché il grafico non si spiegava da solo.** Le barre erano lì e
+            // basta, e il principale ha chiesto cosa fossero: *«non capisco le barre che sono in
+            // mezzo»*. Un grafico che ha bisogno di essere chiesto è un grafico senza etichetta,
+            // non un grafico difficile.
+            Text(L.t("Ogni barra è una pausa, in ordine di tempo: l'altezza sono le ripetizioni di quella volta. La percentuale dice dove sei rispetto a quante ne erano previste.",
+                     "Each bar is one break, in time order: its height is the reps you did that time. The percentage says where you are against how many were prescribed."))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if !model.settings.progressBeyondFull {
+                Text(L.t("La crescita oltre il 100% è spenta, quindi l'app non ti proporrà più ripetizioni in più. Quello che vedi qui resta la tua storia.",
+                         "Growth past 100% is off, so the app will not propose more reps. What you see here is still your history."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            VStack(spacing: 0) {
+                ForEach(Array(report.lines.enumerated()), id: \.offset) { riga in
+                    growthRow(riga.element)
+                    if riga.offset < report.lines.count - 1 {
+                        Divider().opacity(0.35)
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.primary.opacity(Palette.isDarkAppearance ? 0.06 : 0.04))
+            )
+        }
+    }
+
+    private func growthRow(_ line: GrowthLine) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(line.kind.localizedName)
+                    .font(.system(size: 13, weight: .medium))
+                Text(L.t("\(line.all.count)× · \(line.totalReps) in tutto",
+                         "\(line.all.count)× · \(line.totalReps) total"))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            .frame(width: 190, alignment: .leading)
+
+            sparkline(line.all)
+                .frame(height: 26)
+                .frame(maxWidth: .infinity)
+
+            // Prima → ultima, che è la crescita come l'hai vissuta. Le tenute sono **secondi**,
+            // e scriverne il numero nudo accanto a un push-up direbbe che hai fatto 45 plank.
+            // **Il pieno, poi dove sei.** Prima qui c'era «prima conferma → ultima», e la prima
+            // conferma cadeva dentro la rampa: tornare al pieno si leggeva come un miglioramento.
+            // Il pieno è lo stesso metro per tutti gli esercizi, ed è quello che l'app usa per
+            // proporre. Correzione sua, 2026-08-04.
+            HStack(spacing: 6) {
+                Text("\(line.all.last?.base ?? line.baseReps)").foregroundStyle(.secondary)
+                Text("→").foregroundStyle(.secondary)
+                Text(line.all.last.map { line.kind.isTimed ? "\($0.reps) s" : "\($0.reps)" } ?? "—")
+                    .fontWeight(.semibold)
+            }
+            .font(.system(size: 13)).monospacedDigit()
+            .frame(width: 92, alignment: .trailing)
+
+            // **La variazione vera, non il moltiplicatore.** Prima qui c'era `level`, e accanto a
+            // `6 → 4` diceva «110%»: due numeri sulla stessa riga che si contraddicono sono un
+            // numero sbagliato. Adesso la pastiglia è la stessa aritmetica delle ripetizioni che
+            // ha di fianco, segno compreso — scendere si dice, non si nasconde.
+            Text(line.percentOfBase.map { "\($0)%" } ?? "—")
+                .font(.system(size: 12, weight: .semibold)).monospacedDigit()
+                .foregroundStyle(line.grown ? Palette.onAccentOnWindow : Color.secondary)
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background(
+                    Capsule().fill(line.grown ? Palette.accentOnWindow
+                                              : Color.primary.opacity(0.06))
+                )
+                .frame(width: 72, alignment: .trailing)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 9)
+    }
+
+    /// Le barre delle conferme, in ordine di tempo. **Altezza relativa al massimo di quella
+    /// riga**, non a un massimo globale: confrontare 45 secondi di plank con 4 push-up su una
+    /// scala sola farebbe sparire i push-up, e la domanda qui è «questo esercizio sta salendo?»,
+    /// non «quale esercizio è il più grosso».
+    private func sparkline(_ values: [GrowthSession]) -> some View {
+        let massimo = max(1, values.map(\.reps).max() ?? 1)
+        return GeometryReader { geo in
+            let spazio: CGFloat = 3
+            let larghezza = max(2, (geo.size.width - spazio * CGFloat(max(0, values.count - 1)))
+                                / CGFloat(max(1, values.count)))
+            HStack(alignment: .bottom, spacing: spazio) {
+                ForEach(Array(values.enumerated()), id: \.offset) { barra in
+                    // Le stazioni di circuito si vedono ma **non si confondono**: portano meno
+                    // volume per costruzione, e messe alla pari del singolo farebbero sembrare
+                    // un calo una giornata in cui hai fatto quattro esercizi invece di uno.
+                    // **Barre tutte uguali, tranne quelle di circuito.** L'enfasi sull'ultima
+                    // l'ho provata e a schermo non si vedeva dove la volevo: una regola che non
+                    // si verifica non si spedisce. Il circuito resta più chiaro, perché quello
+                    // sì cambia il significato del numero.
+                    let opacita: Double = barra.element.circuit ? 0.22 : 0.55
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(Palette.accentOnWindow.opacity(opacita))
+                        .frame(width: min(larghezza, 22),
+                               height: max(3, geo.size.height * CGFloat(barra.element.reps) / CGFloat(massimo)))
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+        }
     }
 
     /// Il selettore del periodo, scritto a mano invece che con `.pickerStyle(.segmented)`.
@@ -2073,7 +2393,7 @@ struct StatsView: View {
     /// pulsanti veri, non testo cliccabile, o si perderebbero tastiera e VoiceOver.
     private var periodPicker: some View {
         HStack(spacing: 2) {
-            ForEach(StatsPeriod.allCases, id: \.self) { p in
+            ForEach(StatsPeriod.allCases.filter { $0 != .all }, id: \.self) { p in
                 let selected = model.statsPeriod == p
                 Button { model.statsPeriod = p } label: {
                     Text(p.title)
@@ -2140,16 +2460,23 @@ struct StatsView: View {
         return "\(s.completed) \(fatte) · \(s.skipped) \(saltate)\(emergenze)"
     }
 
-    private func tile(_ value: String, _ caption: String, delta: Int?) -> some View {
+    /// - Parameter riservaSpazioDelta: nel riepilogo la riga del confronto c'è quasi sempre, e
+    ///   quando manca si tiene uno spazio vuoto per non far ballare le tessere vicine. Nella
+    ///   pagina dell'andamento **non c'è mai**, e quello spazio spingeva tutto il contenuto in
+    ///   alto: la tessera sembrava scentrata, ed era vero. Rilievo del principale, 2026-08-04.
+    private func tile(_ value: String, _ caption: String, delta: Int?,
+                      riservaSpazioDelta: Bool = true) -> some View {
         VStack(spacing: 4) {
             Text(value).font(.system(size: 25, weight: .semibold, design: .rounded))
                 .monospacedDigit().foregroundStyle(Palette.accentOnWindow)
                 .lineLimit(1).minimumScaleFactor(0.6)
             Text(caption).font(.system(size: 10)).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Text(delta.map { $0 == 0 ? " " : "\($0 > 0 ? "+" : "")\($0) vs \(period == .day ? L.t("ieri", "yesterday") : L.t("prima", "before"))" } ?? " ")   // lingua: ok «vs» si scrive uguale nelle due lingue
-                .font(.system(size: 9))
-                .foregroundStyle((delta ?? 0) > 0 ? Palette.accentOnWindow : Color.secondary)
+            if riservaSpazioDelta {
+                Text(delta.map { $0 == 0 ? " " : "\($0 > 0 ? "+" : "")\($0) vs \(period == .day ? L.t("ieri", "yesterday") : L.t("prima", "before"))" } ?? " ")   // lingua: ok «vs» si scrive uguale nelle due lingue
+                    .font(.system(size: 9))
+                    .foregroundStyle((delta ?? 0) > 0 ? Palette.accentOnWindow : Color.secondary)
+            }
         }
         .frame(maxWidth: .infinity).padding(.vertical, 14)
         .background(Color.primary.opacity(0.045))
@@ -2169,10 +2496,14 @@ struct StatsView: View {
                                 .foregroundStyle(Palette.accentOnWindow).monospacedDigit()
                             Text(L.t("delle pause proposte", "of the breaks offered")).font(.system(size: 13, weight: .medium))
                         }
+                        // **Larga quanto la carta, non 260 punti.** Con la finestra a 640 quella
+                        // misura fissa lasciava una barra piena a metà accanto alla scritta
+                        // «100%»: due cose che si contraddicono nello stesso riquadro. Rilievo
+                        // suo, 2026-08-04: *«perché 100% mi dimostra però metà giornata?»*.
                         ProgressView(value: s.complianceRate).tint(Palette.accentOnWindow)
-                            .frame(width: 260)
+                            .frame(maxWidth: .infinity)
                         Text(s.complianceRate < 0.5
-                             ? L.t("Sotto la metà: è la cadenza a essere sbagliata, non tu. Allungala nelle preferenze.",
+                             ? L.t("Sotto la metà, è la cadenza a essere sbagliata, non tu. Allungala nelle preferenze.",
                                    "Below half: it is the cadence that is wrong, not you. Lengthen it in preferences.")
                              : riepilogoPause(s))
                             .font(.system(size: 11)).foregroundStyle(.secondary)
@@ -2193,7 +2524,10 @@ struct StatsView: View {
 
     @ViewBuilder
     private var muscleCards: some View {
-        let groups = stats.repsByMuscleGroup
+        // Sulla pagina dell'allenamento il periodo non esiste, quindi si legge tutto: è la stessa
+        // scala dell'andamento che sta sopra, e due scale diverse nella stessa pagina sono un
+        // modo garantito di far sbagliare i conti a chi legge.
+        let groups = model.stats(for: page == .allenamento ? .all : period).repsByMuscleGroup
         if !groups.isEmpty {
             let peak = Double(groups.first?.reps ?? 1)
             Card(title: L.t("Esercizi svolti", "Exercises done"),

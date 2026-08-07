@@ -84,6 +84,9 @@ enum Doctor {
         // ── L'avvio automatico, il controllo per cui questo comando esiste
         riga("avvio automatico", avvioAutomatico())
 
+        // ── Il residuo della vecchia via, che ne farebbe partire due
+        riga("vecchio LaunchAgent", vecchioAgent())
+
         // ── Le due risposte del primo avvio
         riga("primo avvio", primoAvvio())
 
@@ -165,44 +168,47 @@ enum Doctor {
         }
     }
 
-    /// **La domanda giusta non è «punta a me», è «punta a qualcosa che regge».**
+    /// **La domanda giusta non è «il file c'è», è «macOS lo farà partire».**
     ///
-    /// `LaunchAgent.state()` confronta il bersaglio con il binario in esecuzione, e per l'app è la
-    /// domanda giusta: se ti hanno spostato, riparati. Per il doctor no — lo si lancia quasi
-    /// sempre dal terminale, cioè dal binario di sviluppo, e un avvio automatico perfettamente
-    /// sano risulterebbe rotto. È la stessa trappola già pagata due volte oggi: una sonda che
-    /// risponde a una domanda più debole di quella che le hai fatto.
+    /// Da quando l'avvio automatico passa da `SMAppService` (2026-08-03) non c'è più un percorso
+    /// da confrontare: si registra il bundle, non un eseguibile scritto dentro un plist. Sparisce
+    /// così tutta la classe di guasti che questa sonda cercava — bersaglio inesistente, bersaglio
+    /// dentro `.build/` — e restano due domande vere: **è registrato?** e **l'hai spento tu?**
     ///
-    /// Qui il guasto vero è uno solo, ed è quello che è successo davvero: **l'avvio automatico
-    /// puntato dentro `.build/`**, cioè a un binario che ogni compilazione sovrascrive.
+    /// Il doctor si lancia quasi sempre dal terminale, cioè dal binario di sviluppo, che non sta
+    /// dentro un `.app`: lì lo stato è `notFound` e la risposta onesta è «non misurabile da qui»,
+    /// non «rotto». È la stessa trappola già pagata: una sonda che risponde a una domanda più
+    /// debole di quella che le hai fatto.
     private static func avvioAutomatico() -> Verdict {
-        let bersaglio: String?
-        switch LaunchAgent.state() {
-        case .notInstalled:
-            return .warn("non installato: Otium non riparte da sola all'accensione")
-        case .healthy:
-            bersaglio = Bundle.main.executablePath
-        case .danglingTarget(let dove):
-            return .fail("punta a un file che non esiste più: \(dove)",
-                         fix: "apri Otium ▸ Preferenze e premi Ripara")
-        case .pointsElsewhere(let dove):
-            bersaglio = dove
+        let dentroUnBundle = Bundle.main.bundleURL.pathExtension == "app"
+        switch LoginItem.state() {
+        case .enabled:
+            return .ok("attivo: macOS avvia \(Bundle.main.bundleURL.lastPathComponent) all'accensione")
+        case .notRegistered:
+            return .warn("non registrato: Otium non riparte da sola all'accensione")
+        case .requiresApproval:
+            return .fail("registrato ma spento in Impostazioni di Sistema",
+                         fix: "Impostazioni di Sistema ▸ Generali ▸ Elementi login ed estensioni ▸ riaccendi Otium")
+        case .notFound:
+            guard dentroUnBundle else {
+                return .warn("non misurabile da qui: stai eseguendo il binario di sviluppo, fuori da un .app")
+            }
+            return .fail("macOS non riconosce questo bundle come registrabile",
+                         fix: "sposta Otium.app in /Applications e riaprila")
         }
-        guard let dove = bersaglio else {
-            return .warn("bersaglio non leggibile dal file di avvio")
+    }
+
+    /// Il vecchio LaunchAgent non deve essere sopravvissuto alla migrazione.
+    ///
+    /// *I plist sopravvivono ai cambi di sistema, i loro bersagli no.* Se è ancora lì, launchd
+    /// lancia la copia vecchia **oltre** a quella registrata da `SMAppService`: due Otium che
+    /// contano lo stesso tempo, e l'avviso «Attività app in background» che continua a tornare.
+    private static func vecchioAgent() -> Verdict {
+        guard LoginItem.legacyAgentInstalled() else {
+            return .ok("nessun residuo del vecchio avvio automatico")
         }
-        if dove.contains("/.build/") {
-            return .fail("punta a \(dove), un binario di sviluppo che ogni compilazione sovrascrive",
-                         fix: "apri l'app installata e, nelle Preferenze, premi «Punta a questa»")
-        }
-        guard FileManager.default.isExecutableFile(atPath: dove) else {
-            return .fail("punta a \(dove), che non è eseguibile",
-                         fix: "apri Otium ▸ Preferenze e premi Ripara")
-        }
-        let stessa = dove == Bundle.main.executablePath
-        return .ok(stessa
-                   ? "attivo, e punta a questa copia"
-                   : "attivo, e punta a \(dove)")
+        return .fail("il vecchio LaunchAgent è ancora installato: \(LoginItem.legacyPlistURL.path)",
+                     fix: "apri Otium.app una volta — lo toglie da sola — oppure: launchctl bootout gui/$(id -u)/\(LoginItem.legacyLabel) && rm \(LoginItem.legacyPlistURL.path)")
     }
 
     private static func primoAvvio() -> Verdict {

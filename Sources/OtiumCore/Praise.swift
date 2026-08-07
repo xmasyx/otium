@@ -33,7 +33,7 @@ public enum Praise {
         ("Questa è disciplina.", "That's discipline."),
         ("Un'altra nel conto.", "Another one on the count."),
         ("Preciso.", "Right on."),
-        ("Non era scontato: l'hai fatta.", "It wasn't a given: you did it."),
+        ("Non era scontato, e l'hai fatta.", "It wasn't a given, and you did it."),
         ("Il corpo ringrazia.", "Your body thanks you."),
         ("Puntuale.", "Right on time."),
     ]
@@ -43,7 +43,7 @@ public enum Praise {
         ("La più faticosa della giornata, fatta.", "The hardest one of the day, done."),
         ("Bel fegato.", "That took guts."),
         ("Quella costava, e l'hai pagata.", "That one cost something, and you paid it."),
-        ("Cuore a mille: è il punto.", "Heart pounding: that's the point."),
+        ("Cuore a mille, ed è il punto.", "Heart pounding, and that's the point."),
         ("La più scomoda, tolta di mezzo.", "The most uncomfortable one, out of the way."),
     ]
 

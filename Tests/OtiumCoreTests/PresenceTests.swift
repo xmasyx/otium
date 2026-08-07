@@ -271,9 +271,14 @@ final class PresenceTests: XCTestCase {
         XCTAssertEqual(signal?.detail, "documento aperto in Microsoft Word")
     }
 
-    /// Un terminale davanti non è né lettura né video: fermo lì significa assente davvero.
+    /// **Questo test diceva l'opposto fino al 2026-08-05**, e la riga vecchia merita di restare
+    /// scritta: *«un terminale davanti non è né lettura né video: fermo lì significa assente
+    /// davvero»*. Era una scelta esplicita, e si è rivelata sbagliata nel caso più frequente della
+    /// giornata del principale, cioè guardare un agente macinare. I tre identificatori che stavano
+    /// qui sono passati a `TerminalPresenceTests`; qui resta ciò che davvero non produce presenza,
+    /// cioè un'app che nessuno dei quattro elenchi conosce.
     func testEverythingElseIsNoPresence() {
-        for id in ["com.googlecode.iterm2", "com.apple.Terminal", "com.apple.dt.Xcode", nil] {
+        for id in ["com.example.sconosciuta", "com.apple.Calculator", nil] {
             XCTAssertNil(PresenceClassifier.classify(
                 frontmost: id, isPlayingAudio: false, document: nil, appName: "?"
             ), "\(id ?? "nil") non deve produrre presenza")
@@ -283,7 +288,7 @@ final class PresenceTests: XCTestCase {
     /// E nemmeno un'app qualunque che sta suonando: se non è un player riconosciuto, non conta.
     func testAnUnknownAppPlayingAudioIsNotPresence() {
         XCTAssertNil(PresenceClassifier.classify(
-            frontmost: "com.apple.Terminal", isPlayingAudio: true, document: nil, appName: "Terminale"
+            frontmost: "com.apple.Calculator", isPlayingAudio: true, document: nil, appName: "Calcolatrice"
         ))
     }
 

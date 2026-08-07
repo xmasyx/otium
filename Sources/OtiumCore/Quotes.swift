@@ -116,7 +116,13 @@ public enum Quotes {
 
         q("Non sono le cose a turbare gli uomini, ma le opinioni che essi ne hanno.", "Men are disturbed not by the things which happen, but by the opinions about the things.", "Epitteto", "Manuale, 5"),
         q("Alcune cose dipendono da noi, altre no.", "Of things some are in our power, and others are not.", "Epitteto", "Manuale, 1"),
-        q("Non chiedere che le cose vadano come vuoi tu, ma vogli che vadano come vanno e starai bene.", "Seek not that the things which happen should happen as you wish; but wish the things which happen to be as they are.", "Epitteto", "Manuale, 8"),
+        // **Non era italiano, ed era italiano tradotto dall'inglese.** «Ma vogli che vadano come
+        // vanno» ricalca parola per parola il «but wish the things which happen» di George Long,
+        // e `vogli` è un imperativo che in italiano vivo non esiste più. Segnalato dal principale
+        // il 2026-08-04 leggendolo a schermo: *«non sembra italiano»*. Adesso l'italiano viene da
+        // un'edizione pubblicata del Manuale e l'inglese dalla traduzione Carter: nessuno dei due
+        // passa dall'altro.
+        q("Non devi adoperarti perché gli avvenimenti seguano il tuo desiderio, ma desiderarli così come avvengono, e la tua vita scorrerà serena.", "Don't demand that things happen as you wish, but wish that they happen as they do happen, and you will go on well.", "Epitteto", "Manuale, 8"),
         q("Ricordati che sei un attore in un dramma scelto dall'autore.", "Remember that thou art an actor in a play, of such a kind as the author may choose.", "Epitteto", "Manuale, 17"),
         q("Se vuoi migliorare, accetta di sembrare sciocco riguardo alle cose esterne.", "If you would improve, submit to be considered without sense and foolish with respect to externals.", "Epitteto", "Manuale, 13"),
         q("Non dire mai di nulla “l'ho perso”, ma “l'ho restituito”.", "Never say about anything, I have lost it, but say I have restored it.", "Epitteto", "Manuale, 11"),
@@ -146,9 +152,9 @@ public enum Quotes {
         q("Fa' il tuo lavoro, qualunque sia, fino in fondo e senza lamentarti.", "To do my business, whatsoever it be, thoroughly, and without querulousness.", "Marco Aurelio", "Pensieri, I, 12"),
         q("Curava il corpo con misura, non come chi vuole vivere a lungo.", "His care of his body within bounds and measure, not as one that desired to live long.", "Marco Aurelio", "Pensieri, I, 13"),
         q("Tutto quello che appartiene al corpo è come un fiume.", "As a stream so are all things belonging to the body.", "Marco Aurelio", "Pensieri, II, 15"),
-        q("Non fare niente a caso, né senza uno scopo.", "Never to do anything either rashly, or feignedly, or hypocritically.", "Marco Aurelio", "Pensieri, II, 15"),
+        q("Non fare niente a caso, né per finta, né da ipocrita.", "Never to do anything either rashly, or feignedly, or hypocritically.", "Marco Aurelio", "Pensieri, II, 15"),
         q("Guarda quanto in fretta ogni cosa si scioglie e si disfa.", "Consider how quickly all things are dissolved and resolved.", "Marco Aurelio", "Pensieri, II, 9"),
-        q("Non fare niente controvoglia, né senza averlo esaminato, né a malincuore.", "Do nothing against thy will, nor contrary to the community, nor without due examination, nor with reluctancy.", "Marco Aurelio", "Pensieri, III, 5"),
+        q("Non fare niente controvoglia, né contro il bene comune, né senza averlo esaminato.", "Do nothing against thy will, nor contrary to the community, nor without due examination, nor with reluctancy.", "Marco Aurelio", "Pensieri, III, 5"),
         q("Scegli liberamente ciò che è meglio e restaci attaccato.", "Make choice of that which is best, and stick unto it.", "Marco Aurelio", "Pensieri, III, 7"),
         q("Quello che sto per fare, non sarà per caso una delle cose che non servono?", "May not this that now I go about, be of the number of unnecessary actions.", "Marco Aurelio", "Pensieri, IV, 20"),
         q("Non c'è niente di meglio, per un uomo, che limitarsi alle azioni necessarie.", "There is nothing better, than for a man to confine himself to necessary actions.", "Marco Aurelio", "Pensieri, IV, 20"),
@@ -210,7 +216,7 @@ public enum Quotes {
         q("Cibo, sonno, desiderio: si corre sempre dentro questo cerchio.", "Reflect how long you have been doing the same thing: food, sleep, lust — this is one's daily round.", "Seneca", "Lettere a Lucilio, 77"),
         q("Tutto quello che solleva l'animo fa bene anche al corpo.", "Whatever has uplifted the soul helps the body also.", "Seneca", "Lettere a Lucilio, 78"),
         q("Il medico ti dirà quanto camminare e quanto esercitarti.", "The physician will prescribe your walks and your exercise.", "Seneca", "Lettere a Lucilio, 78"),
-        q("Non cedere all'ozio, che è dove scivola la salute pigra.", "He will warn you not to become addicted to idleness, as is the tendency of the inactive invalid.", "Seneca", "Lettere a Lucilio, 78"),
+        q("Non prendere l'abitudine dell'ozio: è la china di chi resta fermo.", "He will warn you not to become addicted to idleness, as is the tendency of the inactive invalid.", "Seneca", "Lettere a Lucilio, 78"),
         q("Chi sembra non fare nulla, sta facendo le cose più grandi.", "Those who seem to be busied with nothing are busied with the greater tasks.", "Seneca", "Lettere a Lucilio, 8"),
         q("Concedi al corpo solo quanto basta a stare in salute.", "Indulge the body only so far as is needful for good health.", "Seneca", "Lettere a Lucilio, 8"),
         q("Quanti allenano il corpo, e quanto pochi l'ingegno.", "How many men train their bodies, and how few train their minds!", "Seneca", "Lettere a Lucilio, 80"),
@@ -231,7 +237,7 @@ public enum Quotes {
         // in lingua originale e viene ritrovata dentro il file scaricato prima di essere scritta.
         // Una sola bocciata su ottantasei, ed era un doppione già in corpus — la lettera 55.
 
-        q("In ogni atto osserva ciò che viene prima e ciò che segue: e solo allora mettiti all'opera.", "In every act observe the things which come first, and those which follow it; and so proceed to the act.", "Epitteto", "Manuale, 29"),
+        q("In ogni atto osserva ciò che viene prima e ciò che segue, e solo allora mettiti all'opera.", "In every act observe the things which come first, and those which follow it; and so proceed to the act.", "Epitteto", "Manuale, 29"),
         q("Ogni cosa ha due manici: uno per cui si può portare, l'altro per cui non si può.", "Everything has two handles, the one by which it may be borne, the other by which it may not.", "Epitteto", "Manuale, 43"),
         q("A tavola non dire come si deve mangiare, mangia come si deve.", "At a banquet do not say how a man ought to eat, but eat as you ought to eat.", "Epitteto", "Manuale, 46"),
         q("La malattia è un impedimento per il corpo, non per la volontà, a meno che la volontà stessa non lo scelga.", "Disease is an impediment to the body, but not to the will, unless the will itself chooses.", "Epitteto", "Manuale, 9"),
@@ -245,7 +251,7 @@ public enum Quotes {
         q("Che abbiamo vissuto abbastanza non lo decidono gli anni né i giorni, ma l'animo.", "To have lived long enough depends neither upon our years nor upon our days, but upon our minds.", "Seneca", "Lettere a Lucilio, 61"),
         q("Faccio in modo che un solo giorno valga per me quanto una vita intera.", "I am endeavouring to live every day as if it were a complete life.", "Seneca", "Lettere a Lucilio, 61"),
         q("La vita è già abbastanza attrezzata: siamo noi a essere avidi dei suoi strumenti.", "Life is well enough furnished, but we are too greedy with regard to its furnishings.", "Seneca", "Lettere a Lucilio, 61"),
-        q("Alle cose non mi consegno: le presto me stesso e non vado a caccia di pretesti per perdere tempo.", "I do not surrender myself to my affairs, but loan myself to them, and I do not hunt out excuses for wasting my time.", "Seneca", "Lettere a Lucilio, 62"),
+        q("Alle cose non mi consegno, mi presto soltanto, e non vado a caccia di pretesti per perdere tempo.", "I do not surrender myself to my affairs, but loan myself to them, and I do not hunt out excuses for wasting my time.", "Seneca", "Lettere a Lucilio, 62"),
         q("Ovunque io mi fermi, lì lavoro i miei pensieri e rivolgo nell'animo qualcosa che fa bene.", "Wherever I am situated, I carry on my own meditations and ponder in my mind some wholesome thought.", "Seneca", "Lettere a Lucilio, 62"),
         q("In questa dimora esposta abita un animo libero.", "In this dwelling, which is exposed to peril, my soul lives free.", "Seneca", "Lettere a Lucilio, 65"),
         q("Il posto che dio occupa nel mondo, nell'uomo lo occupa l'animo.", "God's place in the universe corresponds to the soul's relation to man.", "Seneca", "Lettere a Lucilio, 65"),
@@ -278,7 +284,12 @@ public enum Quotes {
         q("Bisogna avere ancora un caos dentro di sé per partorire una stella danzante.", "One must still have chaos in one, to give birth to a dancing star.", "Nietzsche", "Così parlò Zarathustra, Prologo"),
         q("Diventa ciò che sei.", "Become what thou art.", "Nietzsche", "Ecce homo (dal motto di Pindaro)"),
         q("Solo i pensieri che vengono camminando hanno valore.", "Only those thoughts that come by walking have any value.", "Nietzsche", "Crepuscolo degli idoli, Massime e strali 34"),
-        q("Chi combatte con i mostri deve guardarsi dal non diventarlo.", "He who fights with monsters should be careful lest he thereby become a monster.", "Nietzsche", "Al di là del bene e del male, 146"),
+        // Traduzione di Ferruccio Masini per Adelphi, prima metà dell'aforisma: l'abisso, che
+        // è la seconda, porterebbe la riga a ~170 caratteri e la schermata di pausa ne regge 145.
+        // Prima qui c'era «deve guardarsi **dal non** diventarlo», che con quella preposizione
+        // dice alla lettera l'opposto — «attento a NON diventare un mostro». La forma giusta è
+        // «di non diventare», ed è la differenza fra un aforisma e un errore di stampa.
+        q("Chi ha da lottare con i mostri deve star bene attento di non diventare un mostro lui pure.", "He who fights with monsters should be careful lest he thereby become a monster.", "Nietzsche", "Al di là del bene e del male, 146"),
         q("Il segreto per raccogliere dall'esistenza la massima fecondità è vivere pericolosamente.", "The secret of realising the largest productivity and the greatest enjoyment of existence is to live in danger.", "Nietzsche", "La gaia scienza, 283"),
 
         q("Tutta l'infelicità degli uomini deriva da una cosa sola: non saper restare in riposo in una stanza.", "The unhappiness of men arises from one single fact, that they cannot stay quietly in their own chamber.", "Pascal", "Pensieri, 139"),
@@ -291,7 +302,11 @@ public enum Quotes {
         q("Non ridere, non piangere, non detestare, ma comprendere.", "Not to laugh, not to lament, nor to curse, but to understand.", "Spinoza", "Trattato politico, I"),
 
         q("La maggior parte degli uomini conduce vite di quieta disperazione.", "The mass of men lead lives of quiet desperation.", "Thoreau", "Walden, I"),
-        q("Andai nei boschi perché volevo vivere deliberatamente, affrontare solo i fatti essenziali della vita.", "I went to the woods because I wished to live deliberately, to front only the essential facts of life.", "Thoreau", "Walden, II"),
+        // Tolta il 2026-08-04, su sua richiesta: *«non ce ne frega niente, questa è nata nei
+        // boschi»*. Andare a vivere nei boschi non è una cosa che puoi fare in novanta secondi
+        // fra una riunione e l'altra, e una frase che chiede un'altra vita mentre ti chiedo dieci
+        // squat non parla a chi la sta leggendo. Le altre tredici di Thoreau restano: parlano di
+        // mattine, di semplicità e di cosa costa una cosa, che sono domande di questa vita qui.
         q("Semplifica, semplifica.", "Simplify, simplify.", "Thoreau", "Walden, II"),
         q("Non basta essere occupati, anche le formiche lo sono. La domanda è: di che cosa siamo occupati?", "It is not enough to be busy; so are the ants. The question is: what are we busy about?", "Thoreau", "Lettere a H. Blake"),
         q("Il costo di una cosa è la quantità di vita che devi scambiare per averla.", "The cost of a thing is the amount of life which is required to be exchanged for it.", "Thoreau", "Walden, I"),
@@ -367,7 +382,7 @@ public enum Quotes {
         q("Chi scrive col sangue non vuole essere letto, vuole essere imparato a memoria.", "He that writeth in blood and proverbs doth not want to be read, but learnt by heart.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
         q("Le massime devono essere cime.", "Proverbs should be peaks.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
         q("Aria sottile e pulita, il pericolo vicino e lo spirito pieno di una cattiveria allegra: stanno bene insieme.", "The atmosphere rare and pure, danger near and the spirit full of a joyful wickedness: thus are things well matched.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
-        q("Il coraggio vuole ridere.", "The courage which scareth away ghosts createth for itself goblins: it wanteth to laugh.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
+        q("Il coraggio che scaccia i fantasmi si crea i propri folletti: vuole ridere.", "The courage which scareth away ghosts createth for itself goblins: it wanteth to laugh.", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
         q("Chi di voi sa insieme ridere ed essere sollevato?", "Who among you can at the same time laugh and be exalted?", "Nietzsche", "Così parlò Zarathustra, I, Del leggere e dello scrivere"),
         q("Restate fedeli alla terra.", "Remain true to the earth.", "Nietzsche", "Così parlò Zarathustra, Prologo, 3"),
         q("È mattina quando sono sveglio, e dentro di me c'è un'alba.", "Morning is when I am awake and there is a dawn in me.", "Thoreau", "Walden, II"),
@@ -433,7 +448,7 @@ public enum Quotes {
         q("Il sapere ha valore solo in quanto contribuisce al dispiegarsi in ogni direzione di tutta la natura umana.", "Knowledge has value only in so far as it contributes to the all-round unfolding of the whole of human nature.", "Rudolf Steiner", "La filosofia della libertà, I"),
         q("Davanti all'idea bisogna porsi da padroni, altrimenti si finisce in sua schiavitù.", "One must face the idea as its master, or one falls into bondage to it.", "Rudolf Steiner", "La filosofia della libertà, I"),
         q("È libero solo l'uomo che in ogni istante della vita è in grado di seguire se stesso.", "Only that man is free who at every moment of his life is able to follow himself.", "Rudolf Steiner", "La filosofia della libertà, X"),
-        q("Vivere e lasciar vivere è la massima fondamentale degli uomini liberi.", "To live in love towards our actions, and to let live in the understanding of the other person's will, is the fundamental maxim of free men.", "Rudolf Steiner", "La filosofia della libertà, X"),
+        q("Vivere nell'amore per l'azione e lasciar vivere nella comprensione della volontà altrui è la massima fondamentale degli uomini liberi.", "To live in love towards our actions, and to let live in the understanding of the other person's will, is the fundamental maxim of free men.", "Rudolf Steiner", "La filosofia della libertà, X"),
         q("La nostra vita si compone di azioni libere e di azioni non libere.", "Our life is made up of free and unfree actions.", "Rudolf Steiner", "La filosofia della libertà, X"),
         q("L'individuo umano è la sorgente di ogni moralità e il centro di ogni vita.", "The human individual is the source of all morality and the centre of earthly life.", "Rudolf Steiner", "La filosofia della libertà, X"),
         q("La vita ha solo lo scopo e la destinazione che l'uomo stesso le dà.", "Life has only the purpose and the destiny that man himself gives it.", "Rudolf Steiner", "La filosofia della libertà, XII"),
@@ -518,7 +533,7 @@ public enum Quotes {
         // frammento non esisteva nel testo con quelle parole: quelle NON sono qui, ed è
         // esattamente il motivo per cui il cancello esiste.
 
-        q("Chi ripassa il vecchio e ne ricava il nuovo può essere maestro.", "If a man keeps cherishing his old knowledge, so as continually to be acquiring new.", "Confucio", "Dialoghi, II, 11"),
+        q("Chi ripassa il vecchio e ne ricava il nuovo può essere maestro.", "If a man keeps cherishing his old knowledge, so as continually to be acquiring new, he may be a teacher of others.", "Confucio", "Dialoghi, II, 11"),
         q("Imparare senza pensare è fatica sprecata.", "Learning without thought is labour lost.", "Confucio", "Dialoghi, II, 15"),
         q("Chi sta in punta di piedi non sta saldo; chi allarga il passo non cammina.", "He who stands on his tiptoes does not stand firm.", "Laozi", "Tao Te Ching, 24"),
         q("Il morbido e il debole vincono il duro e il forte.", "The soft overcomes the hard; and the weak the strong.", "Laozi", "Tao Te Ching, 36"),
@@ -540,7 +555,18 @@ public enum Quotes {
         q("Destandosi, con impegno, con misura e con dominio di sé, il saggio si fa un'isola che nessuna piena può sommergere.", "By rousing himself, by earnestness, by restraint and control, the wise man may make for himself an island which no flood can overwhelm.", "Buddha", "Dhammapada, II, 25"),
         q("Come il fabbricante di frecce raddrizza la sua freccia, il saggio raddrizza il proprio pensiero tremante e instabile.", "As a fletcher makes straight his arrow, a wise man makes straight his trembling and unsteady thought.", "Buddha", "Dhammapada, III, 33"),
         q("Il saggio sorvegli i propri pensieri, difficili da cogliere, astuti, che corrono dove vogliono: ben sorvegliati portano felicità.", "Let the wise man guard his thoughts: hard to perceive, very artful, they rush wherever they list. Guarded well, they bring happiness.", "Buddha", "Dhammapada, III, 36"),
-        q("Gli irrigatori guidano l'acqua, i fabbricanti di frecce piegano la freccia, i falegnami piegano il legno: i saggi danno forma a se stessi.", "Well-makers lead the water (wherever they like); fletchers bend the arrow; carpenters bend a log of wood; wise people fashion themselves.", "Buddha", "Dhammapada, VI, 80"),
+        // L'italiano segue una traduzione pubblicata (gironi.it, versetto 80), con una sola
+        // correzione: dove quella dice «il fabbro», qui c'è «il fabbricante di frecce». Il pali
+        // ha *usukāra*, chi le frecce le costruisce — il fabbro batte il ferro, che è un altro
+        // mestiere — e *tejana* è il **fusto**, che si raddrizza e non si piega: una freccia
+        // piegata è da buttare. È anche il verbo che prepara l'ultima riga, dove il saggio
+        // raddrizza se stesso, ed è quello che il verso III, 33 qui sopra usa già.
+        // Il vecchio «piegano la freccia» non era inventato: era il calco fedele dell'inglese
+        // che sta in questa stessa riga, cioè Max Müller, 1881. L'inglese resta il suo, perché è
+        // una traduzione pubblicata a sua volta e le due lingue non devono ricalcarsi.
+        // Il terzo «come» è caduto per stare nei 145 caratteri che la schermata di pausa
+        // sopporta: con tutti e tre erano 156, e il test lo ha fermato prima di me.
+        q("Come il contadino incanala l'acqua, il fabbricante di frecce raddrizza il fusto e il falegname lavora il legno, così il saggio lavora se stesso.", "Well-makers lead the water (wherever they like); fletchers bend the arrow; carpenters bend a log of wood; wise people fashion themselves.", "Buddha", "Dhammapada, VI, 80"),
         q("Come una roccia salda non è scossa dal vento, così i saggi non vacillano tra il biasimo e la lode.", "As a solid rock is not shaken by the wind, wise people falter not amidst blame and praise.", "Buddha", "Dhammapada, VI, 81"),
         q("Il sé è signore del sé; chi altri potrebbe esserlo? Con il sé ben domato si trova un signore che pochi trovano.", "Self is the lord of self, who else could be the lord? With self well subdued, a man finds a lord such as few can find.", "Buddha", "Dhammapada, XII, 160"),
         q("La salute è il più grande dei doni, l'appagamento la ricchezza migliore.", "Health is the greatest of gifts, contentedness the best riches.", "Buddha", "Dhammapada, XV, 204"),

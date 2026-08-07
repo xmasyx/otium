@@ -279,45 +279,45 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
 
     public var italianName: String {
         switch self {
-        case .squat: return "squat"
+        case .squat: return "squats"
         case .lunge: return "affondi"
-        case .splitSquat: return "split squat"
+        case .splitSquat: return "split squats"
         case .gluteBridge: return "ponte per i glutei"
         case .calfRaise: return "sollevamenti sui polpacci"
-        case .pushUp: return "push-up"
-        case .diamondPushUp: return "diamond push-up"
-        case .archerPushUp: return "archer push-up"
-        case .inclinePushUp: return "push-up inclinati"
-        case .kneePushUp: return "push-up sulle ginocchia"
-        case .wallPushUp: return "push-up al muro"
-        case .pikePushUp: return "pike push-up"
-        case .benchDip: return "dip su sedia"
-        case .crunch: return "crunch"
-        case .sitUp: return "sit-up"
+        case .pushUp: return "push-ups"
+        case .diamondPushUp: return "diamond push-ups"
+        case .archerPushUp: return "archer push-ups"
+        case .inclinePushUp: return "push-ups inclinati"
+        case .kneePushUp: return "push-ups sulle ginocchia"
+        case .wallPushUp: return "push-ups al muro"
+        case .pikePushUp: return "pike push-ups"
+        case .benchDip: return "dips su sedia"
+        case .crunch: return "crunches"
+        case .sitUp: return "sit-ups"
         case .legRaise: return "sollevamento gambe"
         case .bicycleCrunch: return "crunch bicicletta"
-        case .deadBug: return "dead bug"
-        case .russianTwist: return "russian twist"
+        case .deadBug: return "dead bugs"
+        case .russianTwist: return "russian twists"
         case .plank: return "plank"
         case .sidePlank: return "plank laterale"
         case .hollowHold: return "hollow hold"
         case .superman: return "superman"
         case .ytw: return "Y-T-W"
-        case .burpee: return "burpee"
-        case .squatThrust: return "squat thrust"
-        case .jumpingJack: return "jumping jack"
-        case .jumpSquat: return "jump squat"
-        case .mountainClimber: return "mountain climber"
+        case .burpee: return "burpees"
+        case .squatThrust: return "squat thrusts"
+        case .jumpingJack: return "jumping jacks"
+        case .jumpSquat: return "jump squats"
+        case .mountainClimber: return "mountain climbers"
         case .highKnees: return "corsa sul posto"
         }
     }
 
     public var englishName: String {
         switch self {
-        case .squat: return "squat"
+        case .squat: return "squats"
         case .lunge: return "lunges"
-        case .splitSquat: return "split squat"
-        case .gluteBridge: return "glute bridge"
+        case .splitSquat: return "split squats"
+        case .gluteBridge: return "glute bridges"
         case .calfRaise: return "calf raises"
         case .pushUp: return "push-ups"
         case .diamondPushUp: return "diamond push-ups"
@@ -331,7 +331,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .sitUp: return "sit-ups"
         case .legRaise: return "leg raises"
         case .bicycleCrunch: return "bicycle crunches"
-        case .deadBug: return "dead bug"
+        case .deadBug: return "dead bugs"
         case .russianTwist: return "russian twists"
         case .plank: return "plank"
         case .sidePlank: return "side plank"
@@ -339,7 +339,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .superman: return "superman"
         case .ytw: return "Y-T-W"
         case .burpee: return "burpees"
-        case .squatThrust: return "squat thrust"
+        case .squatThrust: return "squat thrusts"
         case .jumpingJack: return "jumping jacks"
         case .jumpSquat: return "jump squats"
         case .mountainClimber: return "mountain climbers"
@@ -347,9 +347,18 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         }
     }
 
-    /// Il nome nella lingua scelta. `italianName` resta il nome canonico usato dal registro e
-    /// dai test: quello non si traduce mai, o una riga scritta in inglese e riletta in italiano
-    /// diventerebbe un altro esercizio.
+    /// Il nome nella lingua scelta.
+    ///
+    /// **I nomi inglesi vanno al plurale anche in italiano** (sua richiesta, 2026-08-04). La
+    /// grammatica direbbe il contrario — un prestito straniero in italiano non prende la -s — ma
+    /// questi non sono prestiti generici: sono i nomi che si usano in palestra, dove si dice
+    /// «dieci burpees» e nessuno dice «dieci burpee». Restano singolari le tenute (plank, hollow
+    /// hold, superman), perché lì il numero sono secondi e non ripetizioni, e i nomi italiani
+    /// (affondi, sollevamento gambe, corsa sul posto), che seguono la loro lingua.
+    ///
+    /// **Il registro non passa da qui**: su disco si scrive `rawValue`, cioè il nome del caso.
+    /// La riga di commento che diceva il contrario era vecchia e sbagliata, e l'ho tolta invece
+    /// di ereditarla.
     public var localizedName: String { L.t(italianName, englishName) }
 
     public var cue: String {
@@ -474,14 +483,18 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .diamondPushUp, .archerPushUp, .pikePushUp, .inclinePushUp, .benchDip:
             return [.pushUp, .diamondPushUp, .archerPushUp, .benchDip, .pikePushUp, .inclinePushUp]
                 .filter { $0 != self }
+        // **I sollevamenti sulle punte per ultimi, ma ci sono.** Le altre alternative dello squat
+        // chiedono tutte spazio o pavimento — affondi, split squat, ponte — e in treno, in coda,
+        // in ascensore non ne fai nessuna: restava solo saltare la pausa. Il principale li ha
+        // fatti lo stesso il 2026-08-04, fuori menu, e il registro ha scritto squat.
         case .squat:
-            return [.splitSquat, .jumpSquat, .lunge, .gluteBridge]
+            return [.splitSquat, .jumpSquat, .lunge, .gluteBridge, .calfRaise]
         case .lunge:
-            return [.splitSquat, .squat, .gluteBridge]
+            return [.splitSquat, .squat, .gluteBridge, .calfRaise]
         case .splitSquat:
-            return [.lunge, .squat, .gluteBridge]
+            return [.lunge, .squat, .gluteBridge, .calfRaise]
         case .gluteBridge:
-            return [.squat, .splitSquat, .lunge]
+            return [.squat, .splitSquat, .lunge, .calfRaise]
         case .calfRaise:
             return [.jumpingJack, .squat]
         case .crunch, .sitUp, .bicycleCrunch, .russianTwist:
@@ -524,7 +537,13 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
 /// invece che guardando uno snapshot.
 public enum VariantLayout {
     /// Fino a questo numero le alternative restano su una riga sola.
-    public static let singleRowLimit = 3
+    ///
+    /// **Era 3, è 4 dal 2026-08-04.** Il numero che conta è quattro perché quattro è il caso più
+    /// frequente nel corpus (lo squat, la sedia, il polpaccio), e spezzato 2+2 dava una griglia
+    /// invece di una scelta. Segnalato dal principale guardando la schermata: *«voglio che siano
+    /// messe in fila, non due sopra e due sotto, risulta brutto così»*. Il push-up con le sue
+    /// sette varianti resta su due righe, 4+3, perché sette in fila non ci starebbero.
+    public static let singleRowLimit = 4
 
     public static func rows<T>(_ items: [T]) -> [[T]] {
         if items.isEmpty { return [] }
@@ -759,11 +778,27 @@ public struct ExercisePlanner: Sendable {
 
     /// Quanto vale una stazione dentro il circuito rispetto allo stesso esercizio da solo.
     ///
-    /// Quattro esercizi al volume pieno non stanno in cinque minuti, e chi ci prova la seconda
-    /// volta non lo rifà. Tre quarti è la quota che tiene il circuito sotto i due minuti di
-    /// lavoro effettivo lasciando il resto della pausa a quello per cui esiste: stare lontano
-    /// dallo schermo.
-    public static let circuitFactor: Double = 0.75
+    /// **Uno, dal 2026-08-04.** Era tre quarti, con la motivazione che quattro esercizi al volume
+    /// pieno non stanno in cinque minuti. Il principale l'ha ribaltata con un argomento che vale
+    /// più del mio: *«quegli esercizi sono singoli per ogni gruppo muscolare»*, cioè le quattro
+    /// stazioni non si sommano sullo stesso muscolo — gambe, spinta, addome, esplosivo — quindi
+    /// non c'è un affaticamento da ripartire, e ridurre toglieva lavoro senza una ragione
+    /// fisiologica. È il suo corpo e la sua app.
+    public static let circuitFactor: Double = 1.0
+
+    /// Quanto valeva **prima** del 2026-08-04, e la data del cambio.
+    ///
+    /// Non è nostalgia: la pagina dell'andamento misura ogni conferma su quello che era stato
+    /// prescritto *in quel momento*. Senza questi due valori, tutte le stazioni di circuito già
+    /// fatte verrebbero rilette contro il volume pieno e risulterebbero al 75% di se stesse —
+    /// cioè un calo comparso per un cambio di costante, che è esattamente il difetto appena
+    /// riparato, al contrario.
+    public static let legacyCircuitFactor: Double = 0.75
+    public static let circuitFactorChangedOn: Date = {
+        var c = DateComponents()
+        c.year = 2026; c.month = 8; c.day = 4
+        return Calendar.current.date(from: c) ?? .distantPast
+    }()
 
     /// Il microcircuito della pausa piena: **una stazione per famiglia**, esplosivo compreso.
     ///

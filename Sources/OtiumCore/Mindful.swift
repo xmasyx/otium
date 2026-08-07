@@ -47,12 +47,16 @@ public enum Mindful {
     // MARK: - Il corpo, adesso
 
     static let corpo: [Phrase] = [
-        v("Il collo che duole la sera è quello che la mattina non si è mai girato.", "The neck that aches at night is the neck that never turned all morning."),
-        v("Alzati come per guardare dalla finestra. Poi guardaci davvero.", "Stand up as if to look out of the window. Then actually look out of it."),
-        v("Espira più a lungo di quanto inspiri: è la via più breve alla calma.", "Breathe out longer than you breathe in: it's the shortest way to calm down."),
+        v("Il collo che duole la sera è quello che durante il giorno non si è mai mosso.", "The neck that aches at night is the one that never moved all day."),
+        v("Alzati come per guardare dalla finestra. Poi fallo davvero.", "Stand up as if to look out of the window. Then actually do it."),
+        v("Espira più a lungo di quanto inspiri. È la via più breve alla calma.", "Breathe out longer than you breathe in. It's the shortest way to calm down."),
         v("Anche gli occhi hanno un muscolo, e lo tieni contratto da un'ora.", "Your eyes have a muscle too, and you've been clenching it for an hour."),
         v("Guarda qualcosa di lontano. I tuoi occhi si sono dimenticati che la distanza esiste.", "Look at something far away. Your eyes have forgotten that distance exists."),
-        v("Sciogli le spalle: le tieni su da tanto che non te ne accorgi più.", "Drop your shoulders: you've held them up so long you no longer notice."),
+        v("Sciogli le spalle. Le tieni contratte da tanto che non te ne accorgi più.", "Drop your shoulders. You've held them clenched so long you no longer notice."),
+        // Rimessa il 2026-08-01 su richiesta del principale, che aveva visto la logica rovesciata
+        // nella versione affermativa («il muscolo che **usi** adesso è quello che avrai»): vera
+        // anche quella, ma è la perdita a mordere, non la conservazione.
+        v("Il muscolo che non usi adesso è quello che non avrai fra vent'anni.", "The muscle you don't use now is the one you won't have in twenty years."),
         v("La mandibola contratta è una decisione che stai prendendo senza saperlo. Lasciala andare.", "A clenched jaw is a decision you're making without knowing it. Let it go."),
         v("Se ti accorgi di essere in apnea davanti allo schermo, non sei il solo. Respira.", "If you catch yourself holding your breath at the screen, you're not the only one. Breathe."),
     ]
@@ -62,7 +66,11 @@ public enum Mindful {
     static let presenza: [Phrase] = [
         v("Ascolta i rumori della stanza. Ci sono da un'ora e non li sentivi.", "Listen to the sounds of the room. They've been there an hour and you hadn't heard them."),
         v("Accorgersi di essersi distratti è già essere tornati.", "Noticing that you drifted off is already being back."),
-        v("Chiudi gli occhi per dieci secondi. Non succede niente, ed è la buona notizia.", "Close your eyes for ten seconds. Nothing happens, and that's the good news."),
+        // L'italiano non traduce l'inglese, e qui apposta: «ed è la buona notizia» era il calco
+        // di *that's the good news* — commentava la frase invece di lasciarla lavorare. «E va
+        // bene così» accetta e basta, che è il registro di tutto il gruppo. In inglese la chiusa
+        // originale è inglese vero e resta.
+        v("Chiudi gli occhi per dieci secondi. Non succede niente, e va bene così.", "Close your eyes for ten seconds. Nothing happens, and that's the good news."),
         v("Sentire i piedi appoggiati per terra è il modo più veloce di tornare nel corpo.", "Feeling your feet on the floor is the fastest way back into your body."),
         v("Guarda una cosa sola per dieci secondi, senza nominarla.", "Look at one thing for ten seconds without naming it."),
         v("Le mani sono contratte sul mouse da un'ora. Aprile.", "Your hands have been clamped on the mouse for an hour. Open them."),
@@ -72,8 +80,8 @@ public enum Mindful {
 
     static let costanza: [Phrase] = [
         v("Comincia male, ma comincia.", "Start badly, but start."),
-        v("Fai la versione più piccola: quella riesce anche nei giorni storti.", "Do the smallest version: that one gets done even on bad days."),
-        v("Comincia dicendoti due minuti soli: quasi mai ti fermi lì.", "Begin by telling yourself just two minutes: you almost never stop there."),
+        v("Fai la versione più piccola. Quella riesce anche nei giorni storti.", "Do the smallest version. That one gets done even on bad days."),
+        v("Comincia dicendoti «solo due minuti». Difficile che ti fermi lì.", "Begin by telling yourself it's just two minutes. You almost never stop there."),
     ]
 
     // MARK: - Lavoro e attenzione
@@ -81,7 +89,7 @@ public enum Mindful {
     static let lavoro: [Phrase] = [
         v("La stanchezza non si vede da dentro, si vede dagli errori.", "Tiredness can't be seen from the inside: it shows up in the mistakes."),
         v("Quando rileggi la stessa riga tre volte, non è la riga, sei tu.", "When you read the same line three times, it isn't the line: it's you."),
-        v("Proteggi le tue ore migliori: sono poche e le stai regalando.", "Guard your best hours: there are few of them, and you're giving them away."),
+        v("Proteggi le tue ore migliori. Sono poche e le stai sprecando.", "Guard your best hours. There are few of them, and you're wasting them."),
         v("Fai la cosa difficile per prima, o la penserai tutto il giorno.", "Do the hard thing first, or you'll think about it all day."),
     ]
 
@@ -120,8 +128,8 @@ public enum Mindful {
 
     // MARK: - Tempo e impermanenza
 
+    // «Nessuno ricorda le mail. Tutti ricordano come stavano.» tolta il 2026-08-01 (nota 22).
     static let tempo: [Phrase] = [
-        v("Nessuno ricorda le mail. Tutti ricordano come stavano.", "Nobody remembers the emails. Everybody remembers how they felt."),
         v("La cosa che rimandi da tre settimane ti prende venti minuti.", "The thing you've been putting off for three weeks takes twenty minutes."),
     ]
 
@@ -130,8 +138,8 @@ public enum Mindful {
     static let se: [Phrase] = [
         v("Quando tutto sembra pesante, comincia dal corpo. La testa segue.", "When everything feels heavy, start with the body. The head follows."),
         v("Una domanda semplice: quando hai bevuto l'ultima volta?", "A simple question: when did you last drink something?"),
-        v("La forza di volontà si esaurisce. L'ambiente no: cambia quello.", "Willpower runs out. Your surroundings don't: change those."),
-        v("Lunedì è un giorno come oggi, solo più tardi.", "Monday is a day just like today, only later."),
+        v("La forza di volontà si esaurisce. L'ambiente no, cambia quello.", "Willpower runs out. Your surroundings don't, so change those."),
+        // «Lunedì è un giorno come oggi, solo più tardi.» tolta il 2026-08-01 (nota 27).
     ]
 
     // MARK: - Natura e respiro largo
@@ -144,7 +152,7 @@ public enum Mindful {
         m("La natura non ha fretta, eppure tutto si compie.", "Nature is not in a hurry, and yet everything gets done."),
         m("Anche il campo migliore riposa un anno su tre.", "Even the best field lies fallow one year in three."),
         m("Il grano cresce di notte, quando nessuno guarda.", "Wheat grows at night, when nobody is watching."),
-        v("Guarda il cielo: è lì tutto il giorno e tu non alzi mai la testa.", "Look at the sky: it's up there all day and you never lift your head."),
+        v("Guarda il cielo. È lì tutto il giorno e tu non alzi mai la testa.", "Look at the sky. It's up there all day and you never lift your head."),
     ]
 
     // MARK: - Cominciare, finire, ricominciare
@@ -153,7 +161,7 @@ public enum Mindful {
         v("Metti le scarpe. Il resto viene da sé.", "Put your shoes on. The rest follows by itself."),
         v("Finire una cosa piccola rimette in moto tutto il resto.", "Finishing one small thing sets everything else moving again."),
         v("Il momento in cui vorresti smettere è quasi sempre poco prima del successo.", "The moment you want to quit is almost always just before it works."),
-        v("Lascia il lavoro a metà di una frase: domani saprai dove riprendere.", "Stop work in the middle of a sentence: tomorrow you'll know where to pick up."),
+        v("Lascia il lavoro a metà di una frase, domani saprai dove riprendere.", "Stop work in the middle of a sentence, and tomorrow you'll know where to pick up."),
     ]
 
     // MARK: - Relazione con lo schermo
@@ -161,7 +169,7 @@ public enum Mindful {
     static let schermo: [Phrase] = [
         v("Il feed è progettato per non finire mai. La tua giornata no.", "The feed is designed never to end. Your day isn't."),
         v("Se hai aperto il telefono senza motivo, l'hai fatto per abitudine, non per bisogno.", "If you opened your phone for no reason, that was habit, not need."),
-        v("Guarda un punto lontano: gli occhi ricordano com'era il mondo prima dei quaranta centimetri.", "Look at a distant point: your eyes remember the world before it shrank to arm's length."),
+        v("Guarda un punto lontano. Gli occhi ricordano com'era il mondo prima che fosse ridotto alla portata di quaranta centimetri.", "Look at a distant point. Your eyes remember the world before it shrank to forty centimetres."),
         v("La finestra è lì da stamattina.", "The window has been there since this morning."),
         v("Non devi rispondere subito. Quasi mai.", "You don't have to reply right away. Almost never."),
     ]

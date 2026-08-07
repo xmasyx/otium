@@ -683,6 +683,138 @@ final class LanguageLintTests: XCTestCase {
         return out
     }
 
+    // MARK: - I due punti retorici
+
+    /// **Il tic italiano che nessun cancello guardava.**
+    ///
+    /// Il 2026-08-01 il principale l'ha detto in chiaro: *«i due punti vanno usati solamente in
+    /// situazioni specifiche e invece tu ne abusi parecchio»*. Misurati sul corpus di quel giorno,
+    /// **74 frasi su 486**, una ogni 6,6. In italiano i due punti hanno quattro funzioni — elenco,
+    /// spiegazione, conseguenza, discorso diretto — e la pausa a effetto non è fra queste.
+    ///
+    /// `LIFEOS/TOOLS/ItalianStyle.ts`, il cancello che questa regola la conosce già, è agganciato a
+    /// PDF, docx ed email e **non a un sorgente Swift**: è per questo che settantaquattro sono
+    /// entrati senza che niente fiatasse. Una regola che vive solo dove non passa il lavoro non è
+    /// una regola, è un promemoria.
+    ///
+    /// **Il lettore è stretto apposta, e la prima versione non lo era.** Bocciare qualunque
+    /// negazione prima dei due punti dava quattro falsi positivi su cinque — fra cui «Il sistema
+    /// linfatico non ha una pompa propria: si muove con la contrazione dei muscoli», dove i due
+    /// punti spiegano e basta, che è una delle quattro funzioni buone. La firma vera dell'antitesi
+    /// è più precisa: **il verbo negato prima dei due punti torna, affermativo, subito dopo** —
+    /// «non conta X: conta Y», «non stai perdendo: stai restituendo». Quello non è spiegare, è un
+    /// ritmo inglese travestito da punteggiatura.
+    static func rilieviSuiDuePunti(_ testo: String) -> [String] {
+        var out: [String] = []
+        for frase in Self.frasiDi(testo) {
+            let quanti = frase.filter { $0 == ":" }.count
+            guard quanti > 0 else { continue }
+            if quanti >= 2 {
+                out.append("due volte i due punti nella stessa frase — il secondo diventa virgola o punto")
+                continue
+            }
+            guard let i = frase.firstIndex(of: ":") else { continue }
+            let dopo = Self.paroleDi(String(frase[frase.index(after: i)...]))
+            let prima = Self.paroleDi(String(frase[frase.startIndex..<i]))
+
+            if let testa = dopo.first, ["e", "ma", "però", "quindi"].contains(testa) {
+                out.append("congiunzione dopo i due punti — o i due punti o la congiunzione, mai tutte e due")
+            }
+            let insiemeDopo = Set(dopo)
+            for (k, p) in prima.enumerated() where p == "non" && k + 1 < prima.count {
+                let verbo = prima[k + 1]
+                if insiemeDopo.contains(verbo) {
+                    out.append("antitesi «non \(verbo) … : \(verbo) …» — è uno stacco a effetto, "
+                               + "e in italiano vuole la virgola o il punto")
+                    break
+                }
+            }
+        }
+        return out
+    }
+
+    private static func frasiDi(_ t: String) -> [String] {
+        t.replacingOccurrences(of: "? ", with: ". ")
+            .replacingOccurrences(of: "! ", with: ". ")
+            .components(separatedBy: ". ")
+            .filter { !$0.isEmpty }
+    }
+
+    private static func paroleDi(_ s: String) -> [String] {
+        s.lowercased()
+            .components(separatedBy: CharacterSet.letters.inverted)
+            .filter { !$0.isEmpty }
+    }
+
+    /// Tutto quello che a schermo è una frase italiana scritta da noi: il mazzo delle pause e i
+    /// complimenti di fine esercizio, che stanno in un elenco a parte e per questo erano sfuggiti.
+    private static var testiItalianiDelCorpus: [String] {
+        PhraseLibrary.breakPool(includingUser: false).map(\.text)
+            + (Praise.afterBreak + Praise.afterHardOne).map(\.it)
+    }
+
+    func testNoRhetoricalColonSurvivesInThePhraseCorpus() {
+        var colpevoli: [String] = []
+        for testo in Self.testiItalianiDelCorpus {
+            for r in Self.rilieviSuiDuePunti(testo) {
+                colpevoli.append("«\(testo)»\n     → \(r)")
+            }
+        }
+        XCTAssertGreaterThan(Self.testiItalianiDelCorpus.count, 400, "il lettore non ha trovato il corpus")
+        XCTAssertTrue(colpevoli.isEmpty, """
+            \(colpevoli.count) frasi usano i due punti come stacco a effetto. In italiano \
+            servono a elencare, spiegare, tirare una conseguenza o aprire un discorso diretto — \
+            la pausa a effetto vuole la virgola o il punto:
+              \(colpevoli.joined(separator: "\n  "))
+            """)
+    }
+
+    /// **Il test negativo, tutti e due i poli.** Un controllo mai controllato è un'asserzione
+    /// travestita da verifica: qui il caso 1 è la frase da cui è nato il fascicolo, e i casi 3–5
+    /// sono usi legittimi che devono passare, perché un lint che boccia tutto non serve a niente.
+    func testTheColonLintCatchesTheRhetoricalOnesAndSparesTheFourGoodUses() {
+        // 1 — il caso fondatore, quello che il principale ha corretto a mano il 27 luglio.
+        XCTAssertEqual(Self.rilieviSuiDuePunti("Non stai perdendo tempo: stai restituendo sangue alle gambe.").count, 1,
+                       "non vede l'antitesi che ha aperto il fascicolo")
+
+        // 2 — la stessa forma con un altro verbo, e la congiunzione dopo i due punti.
+        XCTAssertFalse(Self.rilieviSuiDuePunti("Non esiste una postura giusta: esiste il cambio di postura.").isEmpty)
+        XCTAssertFalse(Self.rilieviSuiDuePunti("Osserva ciò che viene prima e ciò che segue: e solo allora mettiti all'opera.").isEmpty)
+        XCTAssertFalse(Self.rilieviSuiDuePunti("Serve una cosa sola: la calma, e poi ne serve un'altra: il tempo").isEmpty,
+                       "non vede due volte i due punti dentro la stessa frase")
+
+        // 3 — elenco. È la prima delle quattro funzioni, e deve passare.
+        XCTAssertTrue(Self.rilieviSuiDuePunti("Delle cose del corpo prendi solo quanto basta all'uso: cibo, bevanda, vestito, casa.").isEmpty,
+                      "boccia un elenco")
+
+        // 4 — spiegazione con una negazione davanti, che è il falso positivo della prima versione.
+        XCTAssertTrue(Self.rilieviSuiDuePunti("Il sistema linfatico non ha una pompa propria: si muove con la contrazione dei muscoli.").isEmpty,
+                      "boccia una spiegazione solo perché contiene «non»")
+
+        // 5 — discorso diretto e domanda introdotta.
+        XCTAssertTrue(Self.rilieviSuiDuePunti("Una domanda semplice: quando hai bevuto l'ultima volta?").isEmpty)
+        XCTAssertTrue(Self.rilieviSuiDuePunti("Al mattino, quando ti alzi controvoglia, ricorda: mi sveglio per fare il lavoro di un essere umano.").isEmpty)
+
+        // 6 — due punti in due frasi diverse non sono «due volte nella stessa frase».
+        XCTAssertTrue(Self.rilieviSuiDuePunti("Prima dell'illuminazione: tagliare legna, portare acqua. Dopo l'illuminazione: tagliare legna, portare acqua.").isEmpty,
+                      "conta i due punti sull'intero testo invece che sulla singola frase")
+    }
+
+    /// **La densità, che è un difetto diverso dal singolo caso.** Ogni due punti può essere
+    /// legittimo e l'insieme suonare lo stesso da macchina: il 2026-08-01 erano 74 su 486, una
+    /// frase ogni 6,6. Questo tetto non giudica la singola riga, tiene bassa la quota — e può solo
+    /// scendere.
+    func testTheColonDensityStaysBelowTheItalianBudget() {
+        let testi = Self.testiItalianiDelCorpus
+        let conDuePunti = testi.filter { $0.contains(":") }.count
+        let quota = Double(conDuePunti) / Double(testi.count)
+        XCTAssertLessThan(quota, 0.13, """
+            \(conDuePunti) frasi su \(testi.count) (\(Int(quota * 100))%) usano i due punti. \
+            Ognuna può essere corretta e l'insieme suonare lo stesso tradotto dall'inglese: \
+            in italiano i due punti sono più rari che in inglese.
+            """)
+    }
+
     // MARK: - Attrezzi
 
     private static func packageRoot() -> URL {

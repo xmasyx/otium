@@ -217,4 +217,37 @@ final class QuoteSourcePrecisionTests: XCTestCase {
             }
         }
     }
+
+    // MARK: - L'italiano non è inglese ricalcato
+
+    /// Il difetto che l'ha fatto nascere: «ma **vogli** che vadano come vanno», cioè
+    /// `but wish the things which happen` tradotto parola per parola. `vogli` è un imperativo
+    /// che in italiano vivo non esiste più, e a schermo si legge come una lingua straniera.
+    /// Segnalato dal principale il 2026-08-04.
+    ///
+    /// Non è un controllo di stile generico: è l'elenco chiuso delle forme che quel modo di
+    /// tradurre produce, e cresce solo quando se ne trova un'altra sul campo.
+    func testNoItalianTextUsesDeadImperatives() {
+        let morte = ["vogli ", "vogli.", "vogli,", "sappilo che", "fa' che tu"]
+        var trovate: [String] = []
+        for testo in Quotes.all.map({ $0.text }) + Mindful.all.map({ $0.text }) {
+            let minuscolo = testo.lowercased()
+            for forma in morte where minuscolo.contains(forma) {
+                trovate.append("«\(forma.trimmingCharacters(in: .whitespaces))» in: \(testo.prefix(60))…")
+            }
+        }
+        XCTAssertTrue(trovate.isEmpty,
+                      "forme morte trovate:\n  " + trovate.joined(separator: "\n  "))
+    }
+
+    /// Epitteto VIII, la riga che ha aperto il caso: deve venire dall'edizione italiana, non
+    /// dall'inglese. Il polo positivo è preciso, così se qualcuno la riscrive a mano il test lo dice.
+    func testEpictetusEightComesFromThePublishedItalianEdition() {
+        let epitteto = Quotes.all.first { $0.work.contains("Manuale, 8") }
+        XCTAssertNotNil(epitteto)
+        XCTAssertTrue(epitteto!.text.contains("la tua vita scorrerà serena"),
+                      "atteso il finale dell'edizione pubblicata, trovato: \(epitteto!.text)")
+        XCTAssertFalse(epitteto!.text.contains("vogli"))
+    }
+
 }

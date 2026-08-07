@@ -1,8 +1,10 @@
 import AppKit
 import CoreAudio
+import CoreMediaIO
 import Darwin
 import IOKit.pwr_mgt
 import OtiumCore
+import ServiceManagement
 
 /// Da quanto non tocchi niente. È l'unico ingrediente che serve per misurare il tempo attivo,
 /// e non richiede **nessun** permesso: né Accessibilità, né Registrazione schermo, né Input
@@ -84,6 +86,60 @@ public enum MicRadar {
     }
 }
 
+/// Il radar delle videochiamate: una telecamera sta riprendendo?
+///
+/// È il gemello esatto di `MicRadar`, su `kCMIODevicePropertyDeviceIsRunningSomewhere`, e come
+/// quello **non chiede nessun permesso**: dice *se* un dispositivo è in uso, non cosa inquadra, e
+/// nessuno stream viene aperto. Otium continua a non comparire in Privacy → Telecamera, che è
+/// l'invariante su cui è costruita tutta l'app.
+///
+/// Perché serve accanto al microfono: il microfono da solo non distingue «seduto in riunione» da
+/// «in piedi che cammina con gli AirPods». La telecamera accesa sì — quello è sempre qualcuno
+/// seduto davanti allo schermo, ed è il segnale forte.
+public enum CameraRadar {
+
+    public static func isCapturing() -> Bool {
+        for device in devices() where isRunningSomewhere(device) {
+            return true
+        }
+        return false
+    }
+
+    private static func devices() -> [CMIOObjectID] {
+        var address = CMIOObjectPropertyAddress(
+            mSelector: CMIOObjectPropertySelector(kCMIOHardwarePropertyDevices),
+            mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
+            mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain)
+        )
+        var size: UInt32 = 0
+        guard CMIOObjectGetPropertyDataSize(
+            CMIOObjectID(kCMIOObjectSystemObject), &address, 0, nil, &size
+        ) == noErr, size > 0 else { return [] }
+
+        let count = Int(size) / MemoryLayout<CMIOObjectID>.size
+        var ids = [CMIOObjectID](repeating: 0, count: count)
+        var used: UInt32 = 0
+        guard CMIOObjectGetPropertyData(
+            CMIOObjectID(kCMIOObjectSystemObject), &address, 0, nil, size, &used, &ids
+        ) == noErr else { return [] }
+        return ids
+    }
+
+    private static func isRunningSomewhere(_ device: CMIOObjectID) -> Bool {
+        var address = CMIOObjectPropertyAddress(
+            mSelector: CMIOObjectPropertySelector(kCMIODevicePropertyDeviceIsRunningSomewhere),
+            mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
+            mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain)
+        )
+        var running: UInt32 = 0
+        var used: UInt32 = 0
+        guard CMIOObjectGetPropertyData(
+            device, &address, 0, nil, UInt32(MemoryLayout<UInt32>.size), &used, &running
+        ) == noErr else { return false }
+        return running != 0
+    }
+}
+
 /// Il radar della presenza: perché sei davanti al Mac pur non toccando niente.
 ///
 /// Due strati, entrambi **senza alcun permesso**:
@@ -110,7 +166,16 @@ public enum PresenceRadar {
     /// - Parameter includeDocument: vedi `detect(includeDocument:)`. La cache non distingue fra
     ///   una lettura col documento e una senza, e va bene così: il dettaglio in più non cambia il
     ///   verdetto, e un secondo campione appena chiesto il primo sarebbe solo un altro `lsof`.
-    public static func current(includeDocument: Bool = false) -> PresenceSignal? {
+    public static func current(
+        includeDocument: Bool = false,
+        microphoneActive: Bool = false,
+        cameraActive: Bool = false
+    ) -> PresenceSignal? {
+        // La call scavalca la cache: vedi `PresenceClassifier.call`.
+        if let inCall = PresenceClassifier.call(microphoneActive: microphoneActive,
+                                                cameraActive: cameraActive) {
+            return inCall
+        }
         if Date().timeIntervalSince(cachedAt) < refreshInterval { return cached }
         cachedAt = Date()
         cached = detect(includeDocument: includeDocument)
@@ -146,7 +211,15 @@ public enum PresenceRadar {
     ///   **con o senza** il nome del documento — guarda `PresenceClassifier`, il ramo è lo stesso.
     ///   Il nome serve solo alla riga che compare nella schermata di blocco, cioè una volta ogni
     ///   mezz'ora e non venti volte al minuto. Trovato durante l'audit del 2026-07-28.
-    static func detect(includeDocument: Bool = false) -> PresenceSignal? {
+    static func detect(
+        includeDocument: Bool = false,
+        microphoneActive: Bool = false,
+        cameraActive: Bool = false
+    ) -> PresenceSignal? {
+        if let inCall = PresenceClassifier.call(microphoneActive: microphoneActive,
+                                                cameraActive: cameraActive) {
+            return inCall
+        }
         guard let front = NSWorkspace.shared.frontmostApplication else { return nil }
         let classified = PresenceClassifier.classify(
             frontmost: front.bundleIdentifier,
@@ -354,93 +427,124 @@ public enum PresenceRadar {
     }
 }
 
-/// Il LaunchAgent che riavvia Otium se qualcuno la uccide.
-///
-/// Con il registro delle lezioni davanti: *i plist sopravvivono ai cambi di sistema, i loro
-/// bersagli no*. Per questo `state()` non chiede "il plist esiste?" ma "il file che il plist
-/// lancia esiste ancora, ed è questo qui?" — un agent che punta a un binario sparito riparte
-/// ogni giorno fallendo in silenzio.
-public enum LaunchAgent {
-    public static let label = "app.otium.mac"   // lingua: ok identificativo del LaunchAgent, non un testo
 
-    public static var plistURL: URL {
-        URL(fileURLWithPath: NSHomeDirectory())
-            .appendingPathComponent("Library/LaunchAgents/\(label).plist")
-    }
+/// L'avvio automatico, affidato a `SMAppService` invece che a un LaunchAgent scritto a mano.
+///
+/// **Perché è cambiato, il 2026-08-03.** La versione precedente scriveva un plist in
+/// `~/Library/LaunchAgents` e lo caricava con `launchctl`. Funzionava, ma macOS lo cataloga come
+/// *legacy agent*: nel registro degli elementi in background (`sfltool dumpbtm`) il record esce
+/// `Type: legacy agent (0x10008)`, `Parent Identifier: Unknown Developer`, finisce nella sezione
+/// «Consenti in background» e **non compare fra le app di «Apri al login»**, che è dove il
+/// principale è andato a cercarlo senza trovarlo.
+///
+/// **La colpa non era della firma**, ed è la prova che ha chiuso il caso: Kalamos è firmata allo
+/// stesso modo, senza Team ID e con `Developer Name: (null)`, e usa questa API. È l'API a decidere
+/// la categoria, non il certificato.
+///
+/// **L'avviso «Attività app in background» non c'entra con questa scelta, e la riga che diceva il
+/// contrario era una diagnosi sbagliata** (corretta il 2026-08-04). Non tornava «dopo ogni
+/// ricostruzione del bundle»: tornava a ogni login perché LaunchServices aveva registrate, sotto
+/// `app.otium.mac`, due copie usa-e-getta dell'app in cartelle temporanee ormai cancellate. A ogni
+/// login le ripassa, non le trova, e annuncia l'app come disinstallata; il gestore degli elementi
+/// in background ricalcola il record e rispunta l'avviso. Provato nel log unificato: due annunci
+/// alle 11:10:30, esattamente quante erano le copie morte, e l'agente della notifica due secondi
+/// dopo. Riparato togliendole dal registro con `lsregister -u <percorso>`, senza toccare una riga
+/// di questo file. **Il probe, se ricapita:** `lsregister -dump`, elencare i `path:` che finiscono
+/// in `.app` e cercare quelli che sul disco non esistono più.
+///
+/// **Cosa si perde, dichiarato:** il `KeepAlive` che rilanciava Otium dopo un `kill -9`. Scelto
+/// il 2026-08-03, con due fatti davanti: la via d'uscita facile («Esci da Otium», uscita pulita)
+/// non era coperta comunque, quindi l'anti-imbroglio sprangava una finestra lasciando aperta la
+/// porta; e i rapporti di crash in `~/Library/Logs/DiagnosticReports` erano zero. Resta il
+/// ripristino a caldo di `SessionEngine.restore()`, che è il vero paracadute: riaperta entro la
+/// finestra di grazia, l'app riprende il conto da dov'era.
+///
+/// **Cosa si guadagna, oltre alla categoria giusta:** non c'è più un percorso da tenere allineato.
+/// `SMAppService.mainApp` registra *il bundle*, non un eseguibile scritto dentro un plist, quindi
+/// gli stati «punta a un file che non esiste più» e «punta a un'altra copia» **non possono più
+/// esistere** — e con loro sparisce la logica che li riparava.
+public enum LoginItem {
+    /// L'etichetta del vecchio agent. Vive ancora qui per una ragione sola: toglierlo dai Mac
+    /// che ce l'hanno già.
+    public static let legacyLabel = "app.otium.mac"   // lingua: ok identificativo launchd, non un testo
 
     public enum State: Equatable {
-        case notInstalled
-        /// Installato e puntato al bundle giusto.
-        case healthy
-        /// Installato ma punta a un eseguibile che non esiste più.
-        case danglingTarget(String)
-        /// Installato ma punta a un'altra copia di Otium: l'app è stata spostata.
-        case pointsElsewhere(String)
-    }
-
-    public static func currentExecutable() -> String {
-        Bundle.main.executablePath ?? CommandLine.arguments.first ?? ""
+        /// Mai registrato: Otium non riparte da sola.
+        case notRegistered
+        /// Registrato e acceso.
+        case enabled
+        /// Registrato, ma spento da te in Impostazioni di Sistema. **L'app non prova a
+        /// riaccenderlo**: quell'interruttore è tuo, e un'app che rimette ciò che hai appena
+        /// tolto è un'app che non ascolta.
+        case requiresApproval
+        /// macOS non ha un bundle da registrare. È il caso del binario di sviluppo lanciato da
+        /// `.build/`, che non sta dentro un `.app`.
+        case notFound
     }
 
     public static func state() -> State {
-        guard let data = try? Data(contentsOf: plistURL),
-              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil),
-              let dict = plist as? [String: Any],
-              let args = dict["ProgramArguments"] as? [String],
-              let target = args.first
-        else { return .notInstalled }
+        switch SMAppService.mainApp.status {
+        case .enabled: return .enabled
+        case .requiresApproval: return .requiresApproval
+        case .notFound: return .notFound
+        case .notRegistered: return .notRegistered
+        // Uno stato che oggi non esiste non è «sano»: lo si tratta come non registrato, che è la
+        // risposta che si auto-corregge, perché registrare di nuovo è idempotente. Dichiarato qui
+        // invece che lasciato al ramo muto.
+        @unknown default: return .notRegistered
+        }
+    }
 
-        if !FileManager.default.fileExists(atPath: target) { return .danglingTarget(target) }
-        let mine = currentExecutable()
-        if !mine.isEmpty, target != mine { return .pointsElsewhere(target) }
-        return .healthy
+    /// Registra l'avvio al login. `false` se macOS rifiuta, e il motivo va nel log invece di
+    /// sparire: un fallimento silenzioso qui è indistinguibile da un successo.
+    @discardableResult
+    public static func enable() -> Bool {
+        do {
+            try SMAppService.mainApp.register()
+            return true
+        } catch {
+            NSLog("Otium: avvio al login non registrato — \(error.localizedDescription)")   // lingua: ok riga di log, non testo a schermo
+            return false
+        }
     }
 
     @discardableResult
-    public static func install() -> Bool {
-        let executable = currentExecutable()
-        guard !executable.isEmpty else { return false }
-        // `KeepAlive: true` è la trappola, ed è costata un ciclo infinito riprodotto sul banco
-        // il 2026-07-27: launchd avvia una copia, quella trova il lock già preso da Otium e
-        // esce **pulita** (codice 0), launchd la rilancia perché "keep alive" significa
-        // *sempre*, e si riparte — `state = spawn scheduled`, all'infinito.
-        //
-        // `SuccessfulExit: false` dice l'unica cosa che serve davvero: **rilancia solo se è
-        // morta male**. Un'uscita pulita — la copia di troppo, o tu che scegli "Esci da Otium" —
-        // resta un'uscita. Un `kill -9` no, e lì riparte, che è il motivo per cui esiste.
-        let dict: [String: Any] = [
-            "Label": label,
-            "ProgramArguments": [executable],
-            "RunAtLoad": true,
-            "KeepAlive": ["SuccessfulExit": false],
-            "ThrottleInterval": 10,
-            "ProcessType": "Interactive",
-        ]
-        guard let data = try? PropertyListSerialization.data(
-            fromPropertyList: dict, format: .xml, options: 0
-        ) else { return false }
+    public static func disable() -> Bool {
+        do {
+            try SMAppService.mainApp.unregister()
+            return true
+        } catch {
+            NSLog("Otium: avvio al login non rimosso — \(error.localizedDescription)")   // lingua: ok riga di log, non testo a schermo
+            return false
+        }
+    }
 
-        try? FileManager.default.createDirectory(
-            at: plistURL.deletingLastPathComponent(), withIntermediateDirectories: true
-        )
-        guard (try? data.write(to: plistURL, options: .atomic)) != nil else { return false }
-        bootout()
-        return run(["bootstrap", "gui/\(getuid())", plistURL.path])
+    // MARK: - Il vecchio agent, da togliere una volta sola
+
+    public static var legacyPlistURL: URL {
+        URL(fileURLWithPath: NSHomeDirectory())
+            .appendingPathComponent("Library/LaunchAgents/\(legacyLabel).plist")
+    }
+
+    public static func legacyAgentInstalled() -> Bool {
+        FileManager.default.fileExists(atPath: legacyPlistURL.path)
+    }
+
+    /// Toglie il vecchio agent: prima lo scarica da launchd, poi cancella il plist.
+    ///
+    /// L'ordine non è indifferente. Cancellare il file senza `bootout` lascia il job **caricato**
+    /// fino al prossimo login, quindi launchd continuerebbe a rilanciare la copia vecchia
+    /// *accanto* a quella registrata qui, e il registro degli elementi in background
+    /// continuerebbe a mostrare l'elemento legacy che è tutta la ragione di questo cambiamento.
+    @discardableResult
+    public static func removeLegacyAgent() -> Bool {
+        guard legacyAgentInstalled() else { return false }
+        launchctl(["bootout", "gui/\(getuid())/\(legacyLabel)"])
+        return (try? FileManager.default.removeItem(at: legacyPlistURL)) != nil
     }
 
     @discardableResult
-    public static func uninstall() -> Bool {
-        bootout()
-        return (try? FileManager.default.removeItem(at: plistURL)) != nil
-    }
-
-    @discardableResult
-    private static func bootout() -> Bool {
-        run(["bootout", "gui/\(getuid())/\(label)"])
-    }
-
-    @discardableResult
-    private static func run(_ args: [String]) -> Bool {
+    private static func launchctl(_ args: [String]) -> Bool {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/bin/launchctl")
         task.arguments = args

@@ -3,12 +3,17 @@ import Foundation
 /// Il periodo che si sta guardando.
 public enum StatsPeriod: String, CaseIterable, Sendable {
     case day, week, month
+    /// **Tutto il registro.** Serve alla pagina dell'allenamento, dove «esercizi svolti» deve
+    /// dire cosa hai allenato da quando usi l'app, non cosa hai fatto stamattina: la lista degli
+    /// esercizi accanto a un andamento di settimane, filtrata su oggi, si legge come un errore.
+    case all
 
     public var title: String {
         switch self {
         case .day: return L.t("Oggi", "Today")
         case .week: return L.t("Settimana", "Week")
         case .month: return L.t("Mese", "Month")
+        case .all: return L.t("Sempre", "All time")
         }
     }
 
@@ -23,6 +28,8 @@ public enum StatsPeriod: String, CaseIterable, Sendable {
             return calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? calendar.startOfDay(for: now)
         case .month:
             return calendar.dateInterval(of: .month, for: now)?.start ?? calendar.startOfDay(for: now)
+        case .all:
+            return .distantPast
         }
     }
 }
@@ -55,6 +62,21 @@ public struct PeriodStats: Sendable {
     public var vigorousBouts: Int = 0
     public var repsByExercise: [ExerciseKind: Int] = [:]
     public var moments: [BreakMoment] = []
+
+    /// **Giorni consecutivi, fino a oggi, con almeno una pausa fatta — e si legge su TUTTO il
+    /// registro, non sulla finestra scelta.**
+    ///
+    /// Era una proprietà calcolata sui soli `moments`, cioè su quello che la finestra aveva già
+    /// lasciato passare, e il difetto che ne usciva era grosso e silenzioso: con «Oggi» davanti
+    /// la serie non poteva superare **1** per costruzione, quindi la medaglia «giorni di fila»
+    /// — che compare solo sopra 1 — su quella scheda non è mai comparsa; e con «Settimana» la
+    /// serie si accorciava al lunedì, perché la finestra comincia lunedì e la domenica prima
+    /// restava fuori. Trenta giorni di fila letti come uno.
+    ///
+    /// A trovarlo è stato un test che falliva **un giorno su sette**: scritto con `Date()` vero,
+    /// passava dal martedì alla domenica e diventava rosso il lunedì. Un test così non è rumore
+    /// da zittire — è la spia che qualcosa dipende dal giorno in cui gira.
+    public var streakDays: Int = 0
 
     public var totalReps: Int { repsByExercise.values.reduce(0, +) }
     /// Le interruzioni della sedentarietà: quelle che l'esercizio l'hanno visto, più quelle
@@ -99,27 +121,6 @@ public struct PeriodStats: Sendable {
         let hours = Set(done.keys).union(missed.keys)
         guard let first = hours.min(), let last = hours.max() else { return [] }
         return (first...last).map { (hour: $0, done: done[$0] ?? 0, missed: missed[$0] ?? 0) }
-    }
-
-    /// Giorni consecutivi, fino a oggi, con almeno una pausa fatta.
-    public var streakDays: Int {
-        let cal = Calendar.current
-        // **Stessa definizione di pausa del resto dell'app.** `interruptions` dice che una pausa
-        // è `completed + natural` — alzarsi da soli conta, ed è il comportamento che l'app dice
-        // di voler premiare. La serie guardava solo le `completed`, quindi una giornata passata
-        // ad alzarsi spontaneamente la spezzava: l'app puniva ciò che dichiara di apprezzare.
-        let giorni = Set(moments
-            .filter { $0.outcome == .completed || $0.outcome == .natural }
-            .map { cal.startOfDay(for: $0.at) })
-        guard !giorni.isEmpty else { return 0 }
-        var streak = 0
-        var day = cal.startOfDay(for: Date())
-        while giorni.contains(day) {
-            streak += 1
-            guard let prev = cal.date(byAdding: .day, value: -1, to: day) else { break }
-            day = prev
-        }
-        return streak
     }
 
     public func label(_ seconds: Double) -> String {
@@ -229,7 +230,44 @@ public enum Stats {
         // esagerata per arrivarci. Trovato nell'audit del 2026-07-28.
         s.activeSeconds = max(0, s.activeSeconds)
         s.moments.sort { $0.at > $1.at }
+        // **`entries`, non `window`**: la serie è una proprietà della cronologia, non della
+        // finestra che stai guardando. E con `now` e `calendar` iniettati, non `Date()` e
+        // `.current` presi di nascosto: un numero che dipende dall'orologio vero non si può
+        // provare, ed è esattamente il motivo per cui l'unico test che lo toccava era rosso il
+        // lunedì e verde negli altri sei giorni.
+        s.streakDays = streak(in: entries, now: now, calendar: calendar)
         return s
+    }
+
+    /// Giorni consecutivi, fino a `now`, con almeno una pausa fatta.
+    ///
+    /// **Stessa definizione di pausa del resto dell'app.** `interruptions` dice che una pausa è
+    /// `completed + natural` — alzarsi da soli conta, ed è il comportamento che l'app dice di
+    /// voler premiare. Guardando solo le `completed`, una giornata passata ad alzarsi
+    /// spontaneamente spezzerebbe la serie: l'app punirebbe ciò che dichiara di apprezzare.
+    ///
+    /// **Le correzioni valgono anche qui**: una pausa dichiarata e poi tolta non tiene in piedi
+    /// la sua giornata. Si conta per giorno e l'`undo` scala di uno, come fa il resto dei conti —
+    /// e non si potrebbe leggere dai soli `moments`, che è ciò che questa funzione ha smesso di
+    /// fare.
+    private static func streak(in entries: [LedgerEntry], now: Date, calendar: Calendar) -> Int {
+        var perGiorno: [Date: Int] = [:]
+        for e in entries.sorted(by: { $0.timestamp < $1.timestamp }) {
+            let giorno = calendar.startOfDay(for: e.timestamp)
+            switch e.type {
+            case .completed, .natural: perGiorno[giorno, default: 0] += 1
+            case .undo: perGiorno[giorno] = max(0, (perGiorno[giorno] ?? 0) - 1)
+            default: break
+            }
+        }
+        var streak = 0
+        var giorno = calendar.startOfDay(for: now)
+        while (perGiorno[giorno] ?? 0) > 0 {
+            streak += 1
+            guard let precedente = calendar.date(byAdding: .day, value: -1, to: giorno) else { break }
+            giorno = precedente
+        }
+        return streak
     }
 
     /// I benefici **possibili**, agganciati ciascuno al suo studio e alla sua soglia.

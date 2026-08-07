@@ -346,8 +346,14 @@ final class SessionEngineTests: XCTestCase {
         XCTAssertTrue(events.contains { if case .autoDeferred = $0 { return true }; return false })
     }
 
-    /// …ma non all'infinito: dopo N rinvii automatici il break arriva comunque.
-    func testDeferralsAreBoundedByMaxAutoDefers() {
+    /// ISC-155 — …e **senza limite**: finché il microfono è in uso lo schermo non si copre mai.
+    ///
+    /// Questo test diceva l'opposto fino al 2026-08-04 (`testDeferralsAreBoundedByMaxAutoDefers`):
+    /// dopo `maxAutoDefers` rinvii la pausa partiva comunque, cioè in piena riunione. Il
+    /// principale l'ha chiesto esplicitamente: *«finché il microfono è attivo non può bloccarsi
+    /// lo schermo»*. Il polo negativo sta sotto, ed è quello che tiene onesto questo criterio:
+    /// spento il microfono, la pausa arriva.
+    func testTheScreenNeverLocksWhileTheMicrophoneIsInUse() {
         var s = Settings()
         s.maxAutoDefers = 2
         s.autoDeferSeconds = 60
@@ -355,14 +361,36 @@ final class SessionEngineTests: XCTestCase {
         let inCall = EngineEnvironment(microphoneActive: true)
 
         advance(&engine, seconds: 30 * 60, env: inCall)
-        advance(&engine, seconds: 70, env: inCall)
-        for _ in 0..<3 { advance(&engine, seconds: 70, env: inCall) }
+        // Tre ore di riunione, cioè ~180 volte il vecchio tetto di due rinvii da un minuto.
+        for _ in 0..<180 {
+            advance(&engine, seconds: 70, env: inCall)
+            XCTAssertNotEqual(engine.phase, .breaking, "schermo coperto durante una call")
+        }
+        XCTAssertEqual(engine.phase, .postponed)
+    }
+
+    /// Il polo negativo di ISC-155: senza microfono la stessa attesa finisce in una pausa.
+    func testWithoutTheMicrophoneTheSameWaitEndsInABreak() {
+        var s = Settings()
+        s.maxAutoDefers = 2
+        s.autoDeferSeconds = 60
+        var engine = makeEngine(s)
+
+        advance(&engine, seconds: 30 * 60, env: EngineEnvironment(microphoneActive: true))
+        XCTAssertEqual(engine.phase, .postponed, "in call si rimanda")
+        // La call finisce: preavviso, e poi lo schermo si copre.
+        advance(&engine, seconds: 5)
+        advance(&engine, seconds: 70)
         XCTAssertEqual(engine.phase, .breaking)
     }
 
-    /// Fuori dalle ore attive Otium non interrompe.
+    /// Fuori dalle ore attive Otium non interrompe — **ma solo se la finestra è accesa.**
+    /// Dal 2026-08-04 di serie è spenta, quindi il test deve accenderla per misurare quello che
+    /// misura; il polo opposto è `testAlwaysActiveInterruptsAtThreeInTheMorning`.
     func testNoBreakOutsideActiveHours() {
-        var engine = makeEngine()
+        var s = Settings()
+        s.activeHoursAlwaysOn = false
+        var engine = makeEngine(s)
         advance(&engine, seconds: 29 * 60, now: Self.night)   // preavviso: sta dentro i 30
         let events = advance(&engine, seconds: 70, now: Self.night)
         XCTAssertEqual(engine.phase, .working)
@@ -370,6 +398,28 @@ final class SessionEngineTests: XCTestCase {
             if case .breakSkipped(_, let reason) = $0 { return reason == .outOfHours }
             return false
         })
+    }
+
+    /// ISC-165 — di serie Otium interrompe a qualunque ora, notte compresa.
+    ///
+    /// Nasceva 7→23, e quella finestra non è una misura: chi lavora la notte restava scoperto
+    /// proprio nelle ore in cui è più fermo. Richiesta del principale il 2026-08-04.
+    func testAlwaysActiveInterruptsAtThreeInTheMorning() {
+        var engine = makeEngine()
+        XCTAssertTrue(engine.settings.activeHoursAlwaysOn, "di serie è acceso")
+        advance(&engine, seconds: 29 * 60, now: Self.night)
+        advance(&engine, seconds: 70, now: Self.night)
+        XCTAssertEqual(engine.phase, .breaking, "alle 3 di notte la pausa arriva lo stesso")
+    }
+
+    /// E un file di impostazioni scritto **prima** che questo campo esistesse eredita l'acceso,
+    /// non la vecchia finestra: è il punto della richiesta, e senza questo il silenzio notturno
+    /// sopravviverebbe a se stesso.
+    func testAnOldSettingsFileInheritsAlwaysActive() throws {
+        let vecchio = #"{"activeFromHour":7,"activeToHour":23}"#.data(using: .utf8)!
+        let letto = try JSONDecoder().decode(Settings.self, from: vecchio)
+        XCTAssertTrue(letto.activeHoursAlwaysOn)
+        XCTAssertEqual(letto.activeFromHour, 7, "la finestra resta scritta, per chi la riaccende")
     }
 
     // MARK: - Uscita di sicurezza
@@ -835,6 +885,75 @@ final class DeferredBreakTests: XCTestCase {
         let plan = BreakPlan(index: 1, kind: .micro, duration: 90,
                              exercise: Exercise(kind: .squat, reps: 10))
         XCTAssertNil(Ledger.entry(for: .deferredBreakDue(plan), now: Self.workingHour))
+    }
+
+    // MARK: - «Fai una pausa adesso» durante un'attesa
+
+    /// **Il caso vero, segnalato dal principale il 2026-08-04:** la call finisce, l'app annuncia
+    /// che la pausa rimandata riparte fra un minuto, e chi vuole farla subito clicca «Fai una
+    /// pausa adesso» — e non succedeva **niente**, in silenzio, perché il motore accettava la
+    /// richiesta solo in fase `working`. Zero secondi di attesa: nessun tick fra il clic e il
+    /// blocco.
+    func testForceBreakNowStartsImmediatelyDuringTheWarningAfterACall() {
+        var engine = makeEngine()
+        reachMicrophoneDefer(&engine)
+        advance(&engine, seconds: 10, step: 10, env: .quiet)
+        XCTAssertEqual(engine.phase, .warning, "il microfono si è chiuso: preavviso")
+
+        let events = engine.forceBreakNow(now: Self.workingHour)
+        XCTAssertEqual(engine.phase, .breaking, "la pausa parte al clic, non allo scadere del minuto")
+        XCTAssertTrue(events.contains { if case .breakStarted = $0 { return true }; return false })
+    }
+
+    /// Vale anche prima che il microfono si liberi: se chiedi la pausa mentre l'attesa è ancora in
+    /// corso, l'hai chiesta tu, e una richiesta esplicita batte ogni euristica.
+    func testForceBreakNowStartsImmediatelyWhileStillDeferred() {
+        var engine = makeEngine()
+        reachMicrophoneDefer(&engine)
+
+        engine.forceBreakNow(now: Self.workingHour)
+        XCTAssertEqual(engine.phase, .breaking)
+    }
+
+    /// Lo stesso vale per il rinvio chiesto a mano: è un'attesa, e «adesso» la scavalca.
+    func testForceBreakNowOverridesAManualPostponement() {
+        var engine = makeEngine()
+        advance(&engine, seconds: engine.settings.cadence.intervalSeconds + 10, env: .quiet)
+        XCTAssertEqual(engine.phase, .breaking)
+        XCTAssertFalse(engine.postpone().isEmpty)
+        XCTAssertEqual(engine.phase, .postponed)
+
+        engine.forceBreakNow(now: Self.workingHour)
+        XCTAssertEqual(engine.phase, .breaking)
+    }
+
+    /// **Anti-claim, e senza questo il verde qui sopra sarebbe solo "il cancello è stato tolto".**
+    /// L'attesa aveva già il suo piano: farla partire adesso non deve far avanzare la rotazione
+    /// degli esercizi di un turno in più, o chiedere «adesso» invece di aspettare sessanta secondi
+    /// salterebbe un esercizio.
+    func testForcingDuringAWaitKeepsTheSamePlanAndDoesNotAdvanceTheRotation() {
+        var engine = makeEngine()
+        reachMicrophoneDefer(&engine)
+        let atteso = engine.plan
+        let turno = engine.breakIndex
+
+        engine.forceBreakNow(now: Self.workingHour)
+        XCTAssertEqual(engine.plan?.index, atteso?.index, "è la pausa di prima, non una nuova")
+        XCTAssertEqual(engine.plan?.exercise.kind, atteso?.exercise.kind)
+        XCTAssertEqual(engine.breakIndex, turno, "la rotazione non è avanzata due volte")
+    }
+
+    /// **Secondo anti-claim.** Una pausa già in corso non si «fa adesso»: c'è già. Senza questo,
+    /// il cancello allargato potrebbe riavviare il blocco e azzerare l'esercizio a metà.
+    func testForceBreakNowDoesNothingDuringABreakInProgress() {
+        var engine = makeEngine()
+        advance(&engine, seconds: engine.settings.cadence.intervalSeconds + 10, env: .quiet)
+        XCTAssertEqual(engine.phase, .breaking)
+        let piano = engine.plan
+
+        XCTAssertTrue(engine.forceBreakNow(now: Self.workingHour).isEmpty,
+                      "durante la pausa la richiesta non fa niente")
+        XCTAssertEqual(engine.plan?.index, piano?.index, "il piano in corso non è stato rifatto")
     }
 }
 
