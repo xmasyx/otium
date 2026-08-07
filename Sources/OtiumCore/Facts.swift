@@ -130,10 +130,20 @@ public enum Facts {
           "fisiologia dell'esercizio, meccanismo GLUT4",
           "Contracting your legs activates glucose transporters even without insulin: it is an independent pathway.",
           "exercise physiology, the GLUT4 mechanism"),
-        f("La forza delle gambe negli adulti predice l'autonomia in età avanzata meglio di molti esami del sangue.",
-          "geriatria, letteratura su forza e funzione",
-          "Leg strength in adults predicts independence in old age better than many blood tests.",
-          "geriatrics, literature on strength and function"),
+        // **Riscritta il 2026-08-07, e il paragone è caduto.** Diceva «predice l'autonomia in età
+        // avanzata meglio di molti esami del sangue»: «gli esami del sangue» non sono una
+        // categoria che predice l'autosufficienza, quindi il secondo termine del confronto non
+        // esiste e nessun quantificatore lo ripara — «alcuni» la rende vera per costruzione,
+        // «tutti» la rende falsa. Tolto il paragone, resta il dato misurato, che è più forte:
+        // Guralnik 1995, 1122 persone sopra i 70 anni **senza** disabilità all'inizio, quattro
+        // anni di seguito, e chi stava nel gruppo peggiore dei test di funzione delle gambe aveva
+        // da 4,2 a 4,9 volte la probabilità di perdere l'autosufficienza, a parità di età, sesso e
+        // malattie croniche. La fonte era «geriatria, letteratura su forza e funzione», la seconda
+        // più vaga del file: adesso è la sua.
+        f("Chi fatica ad alzarsi da una sedia e a camminare ha da quattro a cinque volte più probabilità di perdere l'autosufficienza in quattro anni.",
+          "Guralnik et al., N Engl J Med, 1995",
+          "Those who struggle most to rise from a chair and to walk are four to five times more likely to lose their independence within four years.",
+          "Guralnik et al., N Engl J Med, 1995"),
         f("La forza di presa della mano è uno dei predittori di mortalità più semplici e robusti che esistano.",
           "studi prospettici su forza di presa e mortalità",
           "Grip strength is one of the simplest and most robust predictors of mortality there is.",

@@ -2,7 +2,7 @@
 slug: otium
 title: Otium — pause forzate con allenamento integrato per macOS
 phase: complete
-progress: 229/233
+progress: 230/234
 iteration: 26
 context_sufficient: true
 interview_invoked: false
@@ -2315,3 +2315,25 @@ sonda a due poli e `QuoteWrapTests` come giudizio.
   con una fonte vera. Non toccata di mia iniziativa: è vaga, non vacua, e la differenza conta.
 - *Secondo sguardo:* non eletto. Raggio locale, nessun confine di sicurezza, niente da pubblicare;
   il giudizio è meccanico e ha i due poli.
+
+**Seguito del 2026-08-07, su sua correzione.** La riga della forza delle gambe non è uscita dal
+mazzo: è stata **riscritta senza il paragone**, perché lui ha osservato che forza di presa e
+autosufficienza sono due esempi diversi e la riga sotto non la copriva davvero.
+
+- [x] **ISC-205** Il fatto sulla forza delle gambe dice l'autosufficienza e **non** contiene un
+      confronto. Adesso è *«Chi fatica ad alzarsi da una sedia e a camminare ha da quattro a cinque
+      volte più probabilità di perdere l'autosufficienza in quattro anni»*, con fonte
+      **Guralnik et al., N Engl J Med, 1995** — 1122 persone sopra i 70 anni senza disabilità
+      all'inizio, quattro anni di seguito, 4,2–4,9 volte per il gruppo peggiore a parità di età,
+      sesso e malattie croniche. *Falsificatore:* la fonte è stata **letta in sessione**
+      (NEJM 332:556-561, PubMed 7838189), non ricordata; fotografia della schermata vera
+      (`--frase=425`). *Perché non è la riscrittura che l'anti-claim ISC-204 vieta:* lì il divieto è
+      inventare una fonte per salvare una frase, qui la fonte vaga è stata **sostituita da quella
+      vera** e l'affermazione ristretta a ciò che quella fonte misura.
+
+- [x] **ISC-206** Nessuna frase supera **tre righe** nella fase di riposo. *Il buco trovato per
+      strada:* il cancello dei 145 caratteri copre `Quotes` e `Mindful` e **non** `Facts`, dove
+      quattro righe lunghe stavano da prima e la mia da 146 è passata senza un errore. Il conto dei
+      caratteri era comunque la domanda più debole — il corpo scende a 30 punti sopra i 95, quindi
+      la lunghezza non dice l'altezza. *Falsificatore:* `nessunaFraseSuperaLeTreRigheNelRiposo`,
+      provato rosso abbassando la soglia a 2 (7 fallimenti).

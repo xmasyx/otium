@@ -97,6 +97,24 @@ struct QuoteWrapTests {
         }
     }
 
+    /// **Nessuna frase supera le tre righe nella fase di riposo.**
+    ///
+    /// Esiste perché il cancello sulla lunghezza (`testNoPhraseOverflowsTheScreenInEitherLanguage`,
+    /// 145 caratteri) copre `Quotes` e `Mindful` e **non** `Facts`: il 2026-08-07 una riga da 146
+    /// caratteri ci è passata attraverso senza che niente dicesse niente, e altre quattro erano lì
+    /// da prima. Il numero di caratteri era comunque la domanda sbagliata — il corpo scende a 30
+    /// punti sopra i 95, quindi la lunghezza non dice l'altezza. Questa la dice: tre righe è quanto
+    /// il mazzo produce oggi ed è quanto è stato **guardato** a schermo. Oltre, nessuno ha ancora
+    /// guardato, e il test si rompe apposta per farlo guardare.
+    @Test func nessunaFraseSuperaLeTreRigheNelRiposo() {
+        let colonna = QuoteWrap.riposo
+        for p in mazzo {
+            let font = QuoteWrap.serif(colonna.corpo(p.localizedText))
+            let righe = QuoteWrap.lines(p.displayText, width: colonna.larghezza, font: font)
+            #expect(righe.count <= 3, "\(righe.count) righe — mai guardate a schermo: \(p.displayText)")
+        }
+    }
+
     /// Il caso che ha aperto la regola, per nome. Vale come documentazione eseguibile: se un
     /// giorno qualcuno cambia i pesi del costo, questo dice cosa si stava cercando di ottenere.
     @Test func ilCasoDopo() {
