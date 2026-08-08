@@ -184,22 +184,25 @@ final class ZenModeTests: XCTestCase {
         XCTAssertEqual(b.phase(at: fine), .done)
     }
 
-    /// **I suoni sono due, e escono una volta sola.**
+    /// **Un suono solo, all'inizio, e la fine è muta.**
     ///
-    /// Il polo negativo è dentro il test: contando i suoni su tutta la durata, battito per battito,
-    /// il totale deve restare 2. Se un giorno qualcuno aggiungesse un suono per passo, qui il
-    /// numero esploderebbe a un centinaio — che è esattamente il difetto che il commento su
-    /// `Breath.Cue` promette di non avere.
-    func testOnlyTwoCuesFireAndEachExactlyOnce() {
+    /// La fine senza campanello è una sua richiesta del 2026-08-09, e il motivo è che un suono
+    /// all'ultimo respiro ti riporta fuori proprio quando eri dentro: la guida smette e chi vuole
+    /// continua da solo. Il test conta i suoni battito per battito su **tutta** la durata più due
+    /// secondi oltre la fine, quindi becca tutti e due i modi di sbagliare: un suono per passo
+    /// farebbe esplodere il numero a un centinaio, e un suono di chiusura ricomparso si vedrebbe
+    /// come un secondo elemento in coda.
+    func testOnlyOneCueFiresAndTheEndIsSilent() {
         let b = respiro(.sospiro, total: 60)
         var contati: [Breath.Cue] = []
+        // Il conteggio arriva oltre `endsAt`: se la fine tornasse a suonare, comparirebbe qui.
         var t = t0
         while t < b.endsAt.addingTimeInterval(2) {
             let dopo = t.addingTimeInterval(0.1)
             contati += b.cues(from: t, to: dopo)
             t = dopo
         }
-        XCTAssertEqual(contati, [.start, .end])
+        XCTAssertEqual(contati, [.start])
     }
 
     /// Quanti respiri entrano nella pausa: è il numero mostrato accanto a «respiro N di …».

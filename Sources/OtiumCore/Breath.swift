@@ -210,16 +210,22 @@ public struct Breath: Equatable, Sendable {
         case done
     }
 
-    /// I momenti che meritano un suono. **Sono due soli, ed è una scelta.**
+    /// I momenti che meritano un suono. **È uno solo, ed è la fine a non averlo.**
     ///
-    /// La tentazione è suonare a ogni cambio di passo, che in un sospiro ciclico vuol dire un suono
-    /// ogni due o tre secondi per cinque minuti: cento suoni. Sarebbe la cosa più fastidiosa mai
-    /// messa in questa app, e in ufficio — cioè esattamente dove questa modalità serve — anche la
-    /// più imbarazzante. Il ritmo lo dà l'occhio, il suono dice solo quando comincia e quando
-    /// finisce.
+    /// La tentazione era suonare a ogni cambio di passo: in un respiro ciclico da cinque minuti
+    /// sono cento suoni, la cosa più fastidiosa mai messa in questa app e, in ufficio, anche la più
+    /// imbarazzante. Il ritmo lo dà l'occhio.
+    ///
+    /// **E la fine è muta, per sua richiesta del 2026-08-09**, con la ragione dentro: *«se uno
+    /// continua con la pausa si fermerà ad un certo punto ed aiuta a rilassarsi»*. Un suono
+    /// all'ottavo respiro è un campanello che dice «finito», e ti riporta fuori proprio nel momento
+    /// in cui eri dentro. Senza, la guida semplicemente smette, e chi vuole continua da solo finché
+    /// gli va: è la differenza fra un esercizio che si chiude e un respiro che si lascia andare.
+    ///
+    /// È l'opposto della regola delle tenute, dove la fine **deve** suonare perché sei a terra
+    /// sotto sforzo e non guardi lo schermo. Qui non c'è nessuno sforzo da interrompere.
     public enum Cue: String, Equatable, Sendable, CaseIterable {
         case start
-        case end
     }
 
     public var breathStart: Date { startedAt.addingTimeInterval(Self.prepareSeconds) }
@@ -279,7 +285,6 @@ public struct Breath: Equatable, Sendable {
         var out: [Cue] = []
         func crossed(_ instant: Date) -> Bool { instant > from && instant <= to }
         if crossed(breathStart) { out.append(.start) }
-        if crossed(endsAt) { out.append(.end) }
         return out
     }
 }

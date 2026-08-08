@@ -730,10 +730,9 @@ final class AppModel: ObservableObject {
     private func play(_ cue: Breath.Cue) {
         switch cue {
         // Il via è lo stesso tocco secco delle tenute: dice «adesso», e non si fa ascoltare.
+        // Il via è lo stesso tocco secco delle tenute: dice «adesso», e non si fa ascoltare. La
+        // fine non c'è, e il perché sta scritto accanto a `Breath.Cue`.
         case .start: NSSound(named: "Pop")?.play()   // lingua: ok nome di un suono di sistema
-        // La fine è il suono che scegli tu, per la stessa ragione delle tenute: mentre respiri hai
-        // gli occhi su un cerchio o chiusi, e la fine te la deve dire l'orecchio.
-        case .end:   previewSound(settings.holdEndSound)
         }
     }
 
