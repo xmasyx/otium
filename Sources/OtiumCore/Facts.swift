@@ -202,7 +202,9 @@ public enum Facts {
           "Looking into the distance relaxes the ciliary muscle, which stays contracted for hours holding near focus.",
           "physiological optics, basic knowledge"),
         f("La regola 20-20-20 è ovunque, ma un confronto diretto fra intervalli diversi non ha trovato differenze su sintomi e lettura.",
-          "Johnson & Rosenfield, letteratura optometrica, 2023",
+          // Fonte resa precisa il 2026-08-08: la rivista è Optometry and Vision Science, e la
+          // regola in cima al file dice di scrivere la citazione puntuale quando è davvero quella.
+          "Johnson & Rosenfield, Optom Vis Sci, 2023",
           "The 20-20-20 rule is everywhere, but a direct comparison of different intervals found no difference in symptoms or reading.",
           "Johnson & Rosenfield, optometric literature, 2023"),
         f("Guardare qualcosa di naturale — anche solo dalla finestra — recupera l'attenzione meglio di guardare un altro schermo.",
@@ -269,10 +271,19 @@ public enum Facts {
           "fisiologia articolare, nozione di base",
           "Joints feed on movement, not on rest.",
           "joint physiology, basic knowledge"),
-        f("La pressione sui dischi lombari da seduti è maggiore che in piedi.",
-          "biomeccanica del rachide, misurazioni classiche di Nachemson",
-          "Pressure on the lumbar discs is higher seated than standing.",
-          "spinal biomechanics, Nachemson's classic measurements"),
+        // Stessa classe di difetto della sedia, trovata il 2026-08-08 verificando: la frase diceva
+        // in tono di fatto una cosa contesa. Il 40% in più da seduti è Nachemson, anni Sessanta;
+        // Wilke (1999) misurò il contrario, e la revisione sistematica del 2022 (PMC8950176) trova
+        // un effetto complessivo ma NESSUNA differenza nel sottogruppo degli studi dopo il 1990,
+        // con potenza statistica insufficiente. Adesso la frase dice la discordanza.
+        // Seconda riscrittura, 2026-08-08, su sua indicazione: usare le misure vere del carico
+        // lombare invece di raccontare la controversia. Wilke impiantò un trasduttore nel nucleo
+        // del disco L4-L5 di un volontario e misurò ogni posizione per 24 ore. I numeri qui sotto
+        // sono presi dalla Tabella 1 del paper, letta direttamente, non da una fonte secondaria.
+        f("Dentro un disco lombare la pressione da seduti rilassati è 0,46 MPa, in piedi 0,50, curvi in avanti 0,83. Non è sedersi a caricare la schiena, è piegarsi.",
+          "Wilke et al., Spine, 1999 · misure in vivo su L4-L5",
+          "Measured inside a lumbar disc, pressure while sitting relaxed is 0.46 MPa, standing 0.50, bent forward 0.83. It is not sitting that loads the back, it is bending.",
+          "Wilke et al., Spine, 1999 · in vivo measurements at L4-L5"),
         f("Il dolore lombare cronico correla più con l'immobilità e la paura del movimento che con i reperti radiologici.",
           "medicina muscoloscheletrica, consenso scientifico",
           "Chronic low back pain correlates more with immobility and fear of movement than with radiological findings.",
@@ -406,10 +417,15 @@ public enum Facts {
           "fisiologia cardiovascolare, nozione di base",
           "Standing up immediately changes blood distribution and heart rate.",
           "cardiovascular physiology, basic knowledge"),
-        f("Il corpo umano è fatto per stare in piedi, camminare e accovacciarsi: la sedia ha meno di duecento anni di storia diffusa.",
-          "antropologia della postura, consenso scientifico",
-          "The human body is built to stand, walk and squat: the chair has less than two hundred years of widespread history.",
-          "anthropology of posture, consensus"),
+        // La versione precedente diceva che «la sedia ha meno di duecento anni di storia diffusa»
+        // sotto la firma «antropologia della postura, consenso scientifico», e il principale l'ha
+        // contestata il 2026-08-08: le sedie egizie sono del terzo millennio a.C. La frase confondeva
+        // l'oggetto, antichissimo e di rango, con il suo uso di massa, che è davvero recente. Adesso
+        // dice la seconda cosa e porta una data verificabile invece di una firma vaga.
+        f("Il corpo è fatto per stare in piedi, camminare e accovacciarsi. Stare seduti tutto il giorno è qualcosa di pochi anni: la prima sedia prodotta in serie è del 1859, e ne uscirono cinquanta milioni.",
+          "Thonet n. 14, 1859 · storia del design industriale",
+          "The human body is built to stand, walk and squat. Sitting all day is recent: the first mass-produced chair dates from 1859, and fifty million of them were made within seventy years.",
+          "Thonet No. 14, 1859 · history of industrial design"),
         f("Accovacciarsi profondamente è un movimento naturale che si perde con il disuso, non con l'età.",
           "letteratura su mobilità articolare e disuso",
           "A deep squat is a natural movement lost through disuse, not through age.",
