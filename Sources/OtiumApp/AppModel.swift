@@ -111,7 +111,7 @@ final class AppModel: ObservableObject {
         engine.progress = ProgressStore.load()
         // Un avvio in più, subito messo al sicuro: la citazione deve cambiare anche se la
         // sessione finisce senza mai arrivare a una pausa.
-        Palette.apply(s.theme)
+        Palette.apply(s.theme, zen: s.zenMode)
         // La lingua prima di qualunque cosa parli: la frase d'avvio, il menu, la schermata.
         // Senza scelta ancora fatta si propone quella del Mac, che l'onboarding conferma.
         L.language = s.language ?? AppLanguage.systemDefault
@@ -140,7 +140,10 @@ final class AppModel: ObservableObject {
     /// Il salvataggio è immediato e non differito: un'app della barra dei menu viene chiusa senza
     /// cerimonie, e un mazzo salvato «più tardi» rimetterebbe in gioco frasi già uscite.
     private func drawPhrase(launch: Bool) -> Phrase? {
-        let pool = launch ? PhraseLibrary.launchPool() : PhraseLibrary.breakPool()
+        // **In modalità Zen i fatti restano fuori** (vedi `PhraseLibrary.zenPool`): stai
+        // rallentando il respiro, e non è il momento di leggere che stare seduti equivale al fumo.
+        let pool = launch ? PhraseLibrary.launchPool()
+            : (engine.settings.zenMode ? PhraseLibrary.zenPool() : PhraseLibrary.breakPool())
         let phrase = launch
             ? decks.launch.draw(from: pool, using: &rng)
             : decks.breaks.draw(from: pool, using: &rng)
@@ -207,6 +210,17 @@ final class AppModel: ObservableObject {
     func fastForwardToRest() {
         guard engine.phase == .breaking, let plan else { return }
         let now = Date()
+        // **In Zen la scorciatoia deve passare per la porta di Zen.** Con `markExerciseDone` la
+        // resa scriveva nel registro le ripetizioni di un esercizio che quella pausa non ha mai
+        // chiesto, cioè la sonda falsificava proprio la cosa che la modalità esiste per non fare.
+        // Trovato guardando la fotografia della fase di riposo il 2026-08-08.
+        if plan.isZen {
+            _ = engine.tick(elapsed: SessionEngine.breathSeconds(for: plan) + 5, idle: 0, now: now,
+                            environment: environmentSample(now: now))
+            stopBreath()
+            markBreathDone()
+            return
+        }
         _ = engine.tick(elapsed: plan.exercise.minimumSeconds + 5, idle: 0, now: now,
                         environment: environmentSample(now: now))
         markExerciseDone()
@@ -305,6 +319,9 @@ final class AppModel: ObservableObject {
             // secondi prima. Sta qui e non nei sei punti che chiudono una pausa, perché una rete
             // sola in fondo regge anche la via d'uscita che qualcuno aggiungerà domani.
             stopHold()
+            // Il respiro sta nella stessa rete e per lo stesso motivo: il suo battito suona la
+            // fine, e una fine che suona a chi è già tornato a lavorare è peggio del silenzio.
+            stopBreath()
         }
     }
 
@@ -380,6 +397,8 @@ final class AppModel: ObservableObject {
             escapeText = ""
             currentPhrase = drawPhrase(launch: false)
             if !headless { blocker.show(plan: plan) }
+            // In Zen il respiro comincia con la pausa: vedi `startBreath`.
+            if plan.isZen { startBreath() }
         case .exerciseConfirmed:
             // La riga nel registro l'ha già scritta il mapping qui sopra; qui non c'è niente da
             // mostrare — il conto in alto nella schermata di blocco si aggiorna da solo, perché
@@ -467,6 +486,17 @@ final class AppModel: ObservableObject {
     /// pannello del preavviso non deve crescere di quattro righe per dire una cosa che si legge in
     /// tre parole. I nomi restano dove servono, cioè dentro la pausa e nel complimento finale.
     func upcomingSubtitle(_ plan: BreakPlan) -> String {
+        // **In Zen il preavviso nominava l'esercizio del turno**, cioè una cosa che quella pausa
+        // non ti chiederà mai. Segnalato dal principale il 2026-08-08: *«mi ha detto che avrei
+        // dovuto fare il ponte per i glutei, anche se ho messo la modalità Zen»*. Il piano portava
+        // già la risposta giusta (`plan.breath`), erano le tre righe che lo raccontano a non
+        // saperlo. Il campo `exercise` resta popolato apposta — vedi la nota in `buildPlan` — e
+        // questo è il prezzo di quella scelta: ogni superficie che lo legge deve chiedere prima
+        // se la pausa è Zen.
+        if let respiro = plan.breath {
+            return L.t("Preparati a respirare · \(respiro.localizedName)",
+                       "Get ready to breathe · \(respiro.localizedName)")
+        }
         guard isCircuitAhead(plan) else { return plan.exercise.label }
         return L.t("Preparati al circuito", "Get ready for the circuit")
     }
@@ -474,8 +504,11 @@ final class AppModel: ObservableObject {
     /// Lo stesso fatto quando va **dentro** una frase già scritta, dove «Preparati al circuito»
     /// non entrerebbe: «la pausa piena rimandata riparte fra un minuto — il circuito».
     func upcomingTarget(_ plan: BreakPlan, capitalized: Bool = false) -> String {
-        guard isCircuitAhead(plan) else { return plan.exercise.label }
-        return capitalized ? L.t("Il circuito", "The circuit") : L.t("il circuito", "the circuit")
+        // Una fonte sola: vedi `BreakPlan.demandLabel`, che è il posto dove questa domanda ha un
+        // test. Qui resta solo la maiuscola, che dipende da dove finisce la frase.
+        let etichetta = plan.demandLabel
+        guard capitalized, let prima = etichetta.first else { return etichetta }
+        return prima.uppercased() + etichetta.dropFirst()
     }
 
     /// Quella che sta arrivando è una pausa in circuito?
@@ -498,6 +531,14 @@ final class AppModel: ObservableObject {
     /// Le stazioni si elencano tutte. Il pannello cresce in altezza da solo, quindi quattro nomi
     /// non tagliano niente — e vedere le quattro righe che hai fatto è metà del premio.
     func completionSubtitle(_ plan: BreakPlan) -> String {
+        // Anche il complimento finale nominava l'esercizio mai fatto, e per giunta con il totale
+        // delle ripetizioni di oggi accanto: due numeri veri messi insieme a raccontare una cosa
+        // falsa. Qui si dice cosa hai fatto davvero.
+        if let respiro = plan.breath {
+            let quante = summary.zenBreaks
+            return L.t("\(respiro.localizedName) · oggi \(quante) pause di respiro",
+                       "\(respiro.localizedName) · \(quante) breathing breaks today")
+        }
         guard plan.circuitActive, plan.circuit.count > 1 else {
             return L.t("\(plan.exercise.label) · oggi \(summary.totalReps) ripetizioni",
                        "\(plan.exercise.label) · \(summary.totalReps) reps today")
@@ -632,6 +673,81 @@ final class AppModel: ObservableObject {
         holdTimer = nil
         lastHoldTick = nil
         hold = nil
+        objectWillChange.send()
+    }
+
+    // MARK: - Il respiro guidato (modalità Zen)
+
+    /// Il respiro in corso, se ce n'è uno. `nil` fuori dalla modalità Zen.
+    @Published private(set) var breath: Breath?
+    private var lastBreathTick: Date?
+    private var breathTimer: Timer?
+
+    /// **Il respiro parte da solo con la pausa, e non ha un «Pronto».**
+    ///
+    /// Le tenute ce l'hanno perché devi scendere a terra e nessuno può farlo per te. Qui non devi
+    /// andare da nessuna parte, quindi un pulsante da premere sarebbe solo un modo per restare
+    /// bloccati: senza premerlo `exerciseDone` non diventa mai vero, e «Torna al lavoro» resterebbe
+    /// spento per sempre davanti a qualcuno che non ha capito cosa vuoi da lui.
+    func startBreath() {
+        guard let plan, let protocollo = plan.breath, breath == nil else { return }
+        let now = Date()
+        breath = Breath(protocollo: protocollo,
+                        total: SessionEngine.breathSeconds(for: plan),
+                        startedAt: now)
+        lastBreathTick = now
+        // Dieci battiti al secondo come per le tenute, e qui servono davvero: il cerchio che si
+        // gonfia e si sgonfia legge `progress` dentro il passo, e a un battito al secondo si
+        // muoverebbe a scatti.
+        let t = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in self?.breathTick() }
+        RunLoop.main.add(t, forMode: .common)
+        breathTimer = t
+        objectWillChange.send()
+    }
+
+    /// **Solo per le rese**: un respiro cominciato `secondsAgo` secondi fa, senza battito.
+    func seedBreathForSnapshot(secondsAgo: Double) {
+        guard let plan, let protocollo = plan.breath else { return }
+        breath = Breath(protocollo: protocollo,
+                        total: SessionEngine.breathSeconds(for: plan),
+                        startedAt: Date().addingTimeInterval(-secondsAgo))
+        objectWillChange.send()
+    }
+
+    private func breathTick() {
+        guard let breath, let previous = lastBreathTick else { return }
+        let now = Date()
+        lastBreathTick = now
+        for cue in breath.cues(from: previous, to: now) { play(cue) }
+        if breath.phase(at: now) == .done {
+            stopBreath()
+            markBreathDone()
+        } else {
+            objectWillChange.send()
+        }
+    }
+
+    private func play(_ cue: Breath.Cue) {
+        switch cue {
+        // Il via è lo stesso tocco secco delle tenute: dice «adesso», e non si fa ascoltare.
+        case .start: NSSound(named: "Pop")?.play()   // lingua: ok nome di un suono di sistema
+        // La fine è il suono che scegli tu, per la stessa ragione delle tenute: mentre respiri hai
+        // gli occhi su un cerchio o chiusi, e la fine te la deve dire l'orecchio.
+        case .end:   previewSound(settings.holdEndSound)
+        }
+    }
+
+    func stopBreath() {
+        breathTimer?.invalidate()
+        breathTimer = nil
+        lastBreathTick = nil
+        breath = nil
+        objectWillChange.send()
+    }
+
+    func markBreathDone() {
+        engine.markBreathDone()
+        reconcileBlocker()
         objectWillChange.send()
     }
 
@@ -888,12 +1004,22 @@ final class AppModel: ObservableObject {
     /// Il primo avvio non è ancora stato completato: manca la lingua o il sesso.
     var needsOnboarding: Bool { engine.settings.language == nil || engine.settings.sex == nil }
 
-    func update(settings: Settings) {
-        Palette.apply(settings.theme)
+    /// **Il risultato del salvataggio non si butta più.**
+    ///
+    /// `SettingsStore.save` restituisce un `Bool` che qui veniva scartato, e «Applica» rispondeva
+    /// «Preferenze aggiornate» comunque: un verde falso, cioè la stessa classe di difetto già
+    /// pagata sul registro, dove un `try?` diceva sempre di sì mentre il disco pieno buttava via
+    /// le righe. Scoperto guardando **perché** la modalità Zen non aveva effetto il 2026-08-08:
+    /// quel giro l'impostazione sul disco non c'era, e con la vecchia versione non esisteva un solo
+    /// modo di accorgersene.
+    @discardableResult
+    func update(settings: Settings) -> Bool {
+        Palette.apply(settings.theme, zen: settings.zenMode)
         L.language = settings.language ?? L.language
         engine.settings = settings
-        SettingsStore.save(settings)
+        let scritto = SettingsStore.save(settings)
         objectWillChange.send()
+        return scritto
     }
 
     func enableLoginItem() {
@@ -969,6 +1095,15 @@ final class AppModel: ObservableObject {
     /// nella finestra delle fonti, dove le apri tu.
     var currentStudy: Study {
         guard let plan else { return Evidence.sittingInterval }
+        // **In Zen girano solo le fonti di Zen**, per la stessa ragione per cui le voci «non
+        // promesso» stanno fuori dal giro: la riga sotto il blocco dice *perché ti sto
+        // interrompendo*, e citare il crollo glicemico mentre respiri spiega un lavoro che in
+        // questo momento non stai facendo.
+        if plan.isZen {
+            let list = Evidence.zen
+            let i = ((plan.index - 1) % list.count + list.count) % list.count
+            return list[i]
+        }
         return Evidence.study(forBreak: plan.index)
     }
 

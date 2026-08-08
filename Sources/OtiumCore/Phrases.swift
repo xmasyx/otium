@@ -228,4 +228,23 @@ public enum PhraseLibrary {
     public static func launchPool(includingUser: Bool = true) -> [Phrase] {
         Quotes.all.map(\.phrase) + Mindful.all + (includingUser ? userPhrases() : [])
     }
+
+    /// **Il pool della modalità Zen: citazioni e pensieri, niente fisiologia.**
+    ///
+    /// Deciso dal principale il 2026-08-08: *«per la zen mode usiamo solo le frasi zen, citazioni
+    /// dei libri etc.»*. La ragione si vede meglio nel caso peggiore: stai facendo sei respiri al
+    /// minuto per calmarti, e lo schermo ti dice che stare seduti otto ore equivale al fumo. È vero,
+    /// è una nostra frase, ed è esattamente la cosa da non leggere in quel momento.
+    ///
+    /// **Contiene la stessa roba di `launchPool`, e non è un caso**: sono due momenti che chiedono
+    /// la stessa cosa, cioè tono e non dato. Restano due funzioni perché rispondono a due domande
+    /// diverse, e il giorno che una delle due deve cambiare non deve trascinarsi dietro l'altra.
+    ///
+    /// **Il costo, dichiarato:** senza i fatti il mazzo si accorcia di `Facts.all`, quindi in Zen
+    /// mode le frasi tornano prima. Con circa sedici pause al giorno restano comunque settimane
+    /// prima di rivedere una riga, ed è il motivo per cui citazioni e pensieri stanno insieme
+    /// invece di essere due pool separati.
+    public static func zenPool(includingUser: Bool = true) -> [Phrase] {
+        launchPool(includingUser: includingUser)
+    }
 }

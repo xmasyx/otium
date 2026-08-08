@@ -32,7 +32,11 @@ extension NSColor {
 enum Palette {
     private(set) static var current: ThemePalette = ThemeName.alloro.palette
 
-    static func apply(_ theme: ThemeName) { current = theme.palette }
+    /// Applica la livrea, nella variante giusta. In modalità Zen cambia **solo l'accento**, e la
+    /// ragione sta scritta accanto ai colori, in `ThemeName.zenPalette`.
+    static func apply(_ theme: ThemeName, zen: Bool = false) {
+        current = zen ? theme.zenPalette : theme.palette
+    }
 
     static var ink: Color { Color(current.ink) }
     static var paper: Color { Color(current.paper) }
@@ -133,7 +137,9 @@ struct BreakView: View {
                 // rendeva netto un passaggio che deve essere una dissolvenza.
                 VStack(spacing: 0) {
                     ZStack {
-                        if model.exerciseDone { restHeader(plan) } else { header(plan) }
+                        if plan.isZen { header(plan) }
+                        else if model.exerciseDone { restHeader(plan) }
+                        else { header(plan) }
                     }
                     // **Lo spazio sopra è limitato, quello sotto no.** Con due molle uguali il
                     // contenuto si centra, e nel riposo — dove la frase è corta — finiva un terzo
@@ -141,11 +147,25 @@ struct BreakView: View {
                     // dove guardi saltava giù di centoventi punti. Bloccando la molla di sopra il
                     // baricentro delle due facce coincide, e in fase 1 non cambia niente perché
                     // lì il contenuto è alto e la molla è già schiacciata.
-                    Spacer(minLength: 8).frame(maxHeight: 140)
+                    // **In Zen la molla di sopra si chiude quasi del tutto.** L'alone è grande il
+                    // doppio su richiesta sua, e con i 140 punti dell'altra faccia la colonna
+                    // usciva dallo schermo da tutte e due le parti: sopra spariva l'intestazione,
+                    // sotto le vie d'uscita. Visto nella fotografia, che è l'unico posto dove una
+                    // colonna troppo alta si vede.
+                    Spacer(minLength: 8).frame(maxHeight: plan.isZen && !model.exerciseDone ? 8 : 140)
                     // Il crossfade: le due facce si scambiano dentro la stessa `ZStack`, quindi
                     // una sfuma mentre l'altra compare invece di sostituirla di scatto.
                     ZStack {
-                        if model.exerciseDone {
+                        // In Zen la faccia è una sola e dura tutta la pausa: il respiro finisce
+                        // nell'istante in cui il pulsante si accende, quindi non c'è una seconda
+                        // faccia da mostrare — la frase sta già dentro la prima.
+                        // **Finito il respiro torna la faccia del riposo.** Da quando il respiro
+                        // guidato non riempie più tutta la pausa (2026-08-08), quello che avanza è
+                        // riposo vero, con la frase grande: tenere l'alone spento a schermo per
+                        // tre minuti direbbe «stai ancora facendo qualcosa», e non è vero.
+                        if let respiro = plan.breath, !model.exerciseDone {
+                            breathBody(plan, respiro)
+                        } else if model.exerciseDone {
                             restBody.transition(.opacity.combined(with: .offset(y: 10)))
                         } else {
                             exercise(plan).transition(.opacity.combined(with: .offset(y: -10)))
@@ -261,7 +281,9 @@ struct BreakView: View {
     private func header(_ plan: BreakPlan) -> some View {
         VStack(spacing: 10) {
             HStack {
-                Text(plan.kind == .long ? L.t("PAUSA PIENA", "FULL BREAK") : L.t("MICRO-PAUSA", "MICRO-BREAK"))
+                Text(plan.isZen
+                     ? L.t("PAUSA ZEN", "ZEN BREAK")
+                     : (plan.kind == .long ? L.t("PAUSA PIENA", "FULL BREAK") : L.t("MICRO-PAUSA", "MICRO-BREAK")))
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .tracking(2)
                     .foregroundStyle(Palette.accent)
@@ -363,6 +385,317 @@ struct BreakView: View {
                 circuitOffer(plan)
             }
         }
+    }
+
+    // MARK: - La faccia della modalità Zen
+
+    /// **La pausa che si può fare in un open space**: un respiro guidato al posto dell'esercizio.
+    ///
+    /// Chiesta il 2026-08-08. Tiene lo stesso scheletro dell'altra faccia — intestazione, contenuto
+    /// al centro, comandi in basso — perché cambiare modalità non deve sembrare cambiare app.
+    ///
+    /// **La frase sta QUI dentro, e non nel riposo che viene dopo.** È l'unica scelta possibile una
+    /// volta deciso che il respiro dura tutta la pausa: la faccia del riposo, in Zen, comparirebbe
+    /// nell'istante esatto in cui il pulsante si accende, cioè verrebbe letta da nessuno. E in una
+    /// schermata che chiede di rallentare, una riga da leggere è esattamente ciò che serve agli
+    /// occhi mentre il resto del corpo non fa niente.
+    private func breathBody(_ plan: BreakPlan, _ protocollo: BreathProtocol) -> some View {
+        VStack(spacing: 26) {
+            breathCircle(protocollo)
+            // **La stessa `QuoteBlock` dell'altra faccia, non una copia.** Così i tagli di riga di
+            // questa schermata li governa la stessa colonna che il cancello `--tagli` misura: una
+            // colonna nuova qui sarebbe una superficie senza guardia.
+            eyesClosedHint
+            if let phrase = model.currentPhrase {
+                QuoteBlock(phrase: phrase)
+            }
+            Text(breathFooterLine(plan, protocollo))
+                .font(.system(size: 13, design: .rounded))
+                .foregroundStyle(Palette.dim)
+                .monospacedDigit()
+        }
+    }
+
+    /// **L'invito a chiudere gli occhi, e solo per i primi respiri.**
+    ///
+    /// Sua richiesta del 2026-08-08: *«invitiamo a farlo poi con gli occhi chiusi quando
+    /// possibile»*. Il «poi» è la parte che conta e detta il momento: l'alone esiste per guidare
+    /// chi guarda, quindi l'invito arriva **dopo** che il ritmo l'hai preso, non subito. Dal terzo
+    /// respiro in avanti, e poi sparisce da solo: una riga che resta a schermo per cinque minuti
+    /// smette di essere un invito e diventa arredamento.
+    @ViewBuilder
+    private var eyesClosedHint: some View {
+        let ciclo: Int = {
+            guard case .breathing(_, _, _, _, let n)? = model.breath?.phase(at: Date()) else { return 0 }
+            return n
+        }()
+        ZStack {
+            if ciclo >= 3, ciclo <= 6 {
+                Text(L.t("Se puoi, da qui in poi chiudi gli occhi. Il ritmo ce l'hai.",
+                         "From here on close your eyes if you can. You have the rhythm."))
+                    .font(.system(size: 13, design: .rounded))
+                    .foregroundStyle(Palette.accent.opacity(0.85))
+                    .transition(.opacity)
+            }
+        }
+        // Altezza riservata, come le tre fessure dei comandi: comparendo e sparendo dentro uno
+        // spazio suo non sposta di diciassette punti tutto quello che ha sotto.
+        .frame(height: 17)
+        .animation(.easeInOut(duration: 0.8), value: ciclo >= 3 && ciclo <= 6)
+    }
+
+    /// Il cerchio che si gonfia e si sgonfia, e la parola dentro.
+    ///
+    /// **Il ritmo lo dà l'occhio, non l'orecchio**: un suono a ogni cambio di passo vorrebbe dire
+    /// cento suoni in cinque minuti, in ufficio, che è il posto dove questa modalità serve. Vedi la
+    /// nota su `Breath.Cue`.
+    @ViewBuilder
+    private func breathCircle(_ protocollo: BreathProtocol) -> some View {
+        let now = Date()
+        // **Il respiro quadrato ha un disegno suo, e non è un vezzo.** Il principale ha mandato la
+        // sua animazione a parte, il 2026-08-08, e aveva ragione a distinguerla: una sfera che
+        // pulsa non sa mostrare i due «trattieni», perché in quei quattro secondi non succede
+        // niente e l'animazione si ferma. Il quadrato invece li mostra come lati, e i quattro tempi
+        // uguali diventano quattro segmenti uguali, che è la cosa che quel protocollo ti chiede di
+        // sentire. È anche la risposta alla sua richiesta iniziale: *«la differenza di movimento in
+        // base all'esercizio scelto»*.
+        switch model.breath?.phase(at: now) {
+        case .none:
+            // Il respiro è fermo: o non è ancora partito, o l'hai interrotto tu. Il disegno resta
+            // al minimo invece di sparire, o la pagina si accorcia di trecento punti e i comandi in
+            // basso saltano su.
+            // **Niente parola** (sua richiesta, 2026-08-08). A respiro fermo non c'è niente da
+            // fare, e una scritta al centro di un alone spento sembra un messaggio di errore.
+            breathShape(protocollo, scale: 0.62, sideIndex: 0, sideProgress: 0, label: "", sub: "")
+
+        case .preparing(let left):
+            breathShape(protocollo, scale: 0.62, sideIndex: 0, sideProgress: 0,
+                        label: L.t("Mettiti comodo", "Get comfortable"), sub: "\(left)")
+
+        case .breathing(let step, let indice, let left, let progress, _):
+            breathShape(protocollo,
+                        scale: breathScale(step: step, stepIndex: indice, progress: progress),
+                        sideIndex: indice,
+                        sideProgress: progress,
+                        label: step.localizedName,
+                        sub: "\(left)")
+
+        case .done:
+            // Finito: resta l'alone al minimo, muto. Che sia finito lo dice il pulsante che si
+            // accende, non una parola in mezzo allo schermo.
+            breathShape(protocollo, scale: 0.62, sideIndex: 3, sideProgress: 1, label: "", sub: "")
+        }
+    }
+
+    /// Quale delle due forme disegnare: il quadrato per il box breathing, l'alone per gli altri.
+    @ViewBuilder
+    private func breathShape(_ protocollo: BreathProtocol, scale: Double,
+                             sideIndex: Int, sideProgress: Double,
+                             label: String, sub: String) -> some View {
+        if protocollo == .quadrato {
+            squareShape(scale: scale, sideIndex: sideIndex, sideProgress: sideProgress,
+                        label: label, sub: sub)
+        } else {
+            circleShape(scale: scale, label: label, sub: sub)
+        }
+    }
+
+    /// **Il quadrato del box breathing**: un lato per tempo, e la linea che lo percorre.
+    ///
+    /// Il giro è quello del riferimento che ha mandato lui: il tratto luminoso sale lungo il lato
+    /// **alto** mentre inspiri, scende lungo il **destro** mentre trattieni, torna indietro sul
+    /// **basso** mentre espiri e risale sul **sinistro** nel secondo trattenimento. Alla fine del
+    /// giro il quadrato è chiuso, e ricomincia.
+    ///
+    /// I lati già percorsi restano accesi, quello in corso si disegna: senza la memoria dei lati
+    /// fatti, a metà del terzo tempo il quadrato sarebbe un trattino solo e non si capirebbe più a
+    /// che punto del giro sei.
+    /// **Stessa luce degli altri due, geometria diversa** (sua correzione, 2026-08-08: *«anche il
+    /// box breath deve avere lo stesso stile e colore degli altri»*). Il quadrato disegnato con una
+    /// linea sottile e netta era corretto e fuori posto: nella stessa app, a due clic di distanza,
+    /// sembravano due prodotti. Qui sotto c'è **lo stesso alone** dell'altra faccia, che respira con
+    /// il ciclo, e il tratto che percorre i lati è morbido e con il suo bagliore invece che una
+    /// riga da diagramma. La geometria resta quadrata perché è quella a mostrare i quattro tempi.
+    private func squareShape(scale: Double, sideIndex: Int, sideProgress: Double,
+                             label: String, sub: String) -> some View {
+        let lato: CGFloat = 320
+        let pienezza = min(1, max(0, (scale - 0.62) / 0.38))
+        return ZStack {
+            // L'alone, identico a quello del respiro ciclico: è ciò che rende le due facce la
+            // stessa app. Non sale e non scende, però — qui la quota la racconta già il lato che si
+            // sta percorrendo, e due movimenti insieme si darebbero fastidio.
+            RadialGradient(
+                colors: [
+                    Palette.ink.opacity(0.95),
+                    Palette.accent.opacity(0.26 + 0.26 * pienezza),
+                    Palette.accent.opacity(0.12 + 0.14 * pienezza),
+                    Palette.accent.opacity(0),
+                ],
+                center: .center,
+                startRadius: 6,
+                endRadius: 168
+            )
+            .frame(width: 470, height: 470)
+            .scaleEffect(0.86 + 0.18 * pienezza)
+            .blur(radius: 16)
+
+            // Il binario spento: dice dov'è il giro anche quando è appena cominciato.
+            //
+            // **`stroke` e non `strokeBorder`**, ed è la differenza fra due lati allineati e due
+            // lati sfalsati di un punto e mezzo: `strokeBorder` rientra di mezza linea, i lati qui
+            // sotto no, e nella fotografia il tratto acceso correva accanto al suo binario invece
+            // che dentro. Visto solo nell'immagine, come sempre per queste cose.
+            // Angoli vivi e non arrotondati: i quattro lati che si accendono sono segmenti dritti,
+            // e un binario stondato sotto a un tratto dritto si vede subito che sono due disegni
+            // diversi. La morbidezza la porta il bagliore, non il raggio.
+            Rectangle()
+                .stroke(Palette.accent.opacity(0.13), lineWidth: 2)
+                .frame(width: lato, height: lato)
+
+            // Il tratto vivo, disegnato due volte: una copia larga e sfocata fa il bagliore, quella
+            // sopra tiene la linea leggibile. È lo stesso trucco dell'alone, ed è il motivo per cui
+            // le due facce ora si somigliano davvero invece di condividere solo il colore.
+            ForEach(0..<4, id: \.self) { i in
+                let quanto = i < sideIndex ? 1.0 : (i == sideIndex ? sideProgress : 0.0)
+                ZStack {
+                    // **Testa piatta e non tonda sul bagliore.** Un capo tondo sporge di mezza
+                    // linea oltre il suo estremo: su un tratto da dieci punti fanno cinque punti
+                    // fuori da ogni angolo, e nella fotografia i lati accesi uscivano dal quadrato
+                    // come quattro spilli. Sul tratto sottile sopra la sporgenza è un punto e mezzo
+                    // e serve, perché è quella che dà la punta morbida al lato in corso.
+                    SquareSide(index: i)
+                        .trim(from: 0, to: quanto)
+                        .stroke(Palette.accent.opacity(0.5),
+                                style: StrokeStyle(lineWidth: 9, lineCap: .butt))
+                        .blur(radius: 7)
+                    SquareSide(index: i)
+                        .trim(from: 0, to: quanto)
+                        .stroke(Palette.accent.opacity(0.9),
+                                style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                }
+                .frame(width: lato, height: lato)
+            }
+
+            VStack(spacing: 6) {
+                Text(label.uppercased())
+                    .font(.system(size: 26, weight: .medium, design: .rounded))
+                    .tracking(6)
+                    .foregroundStyle(Palette.paper.opacity(0.92))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(maxWidth: 380)
+                if !sub.isEmpty {
+                    Text(sub)
+                        .font(.system(size: 64, weight: .light, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(Palette.accent)
+                }
+            }
+        }
+        .frame(height: 400)
+        .animation(.linear(duration: 0.1), value: sideProgress)
+    }
+
+    /// Quanto è grande il cerchio adesso.
+    ///
+    /// Fra 0,62 e 1: sotto sembra un punto e sopra tocca i bordi della colonna. Cresce inspirando,
+    /// resta fermo trattenendo, cala espirando. **La seconda inspirazione corta del sospiro parte da
+    /// dove era arrivata la prima**, invece di ripartire dal basso, o l'animazione racconterebbe
+    /// un respiro buttato via e ripreso da capo, che è il contrario di quello che stai facendo.
+    /// **I due trattenimenti non sono lo stesso trattenimento.** Nel respiro quadrato si trattiene
+    /// da pieni dopo l'inspirazione e da vuoti dopo l'espirazione: tenere l'alone al massimo in
+    /// tutti e due i casi racconterebbe polmoni pieni mentre li hai vuoti. La distinzione la porta
+    /// `stepIndex`, che è la stessa ragione per cui esiste (vedi `Breath.Phase`).
+    private func breathScale(step: BreathProtocol.Step, stepIndex: Int, progress: Double) -> Double {
+        let minimo = 0.62, massimo = 1.0
+        switch step.action {
+        case .inspira:   return minimo + (massimo - minimo) * 0.82 * progress
+        case .ancora:    return minimo + (massimo - minimo) * (0.82 + 0.18 * progress)
+        case .trattieni: return stepIndex <= 1 ? massimo : minimo
+        case .pausa:     return minimo
+        case .espira:    return massimo - (massimo - minimo) * progress
+        }
+    }
+
+    /// **L'alone che respira**: sale e si illumina inspirando, scende e si spegne espirando.
+    ///
+    /// Nasce dalle tredici registrazioni che il principale ha messo in `~/Desktop/breath` il
+    /// 2026-08-08, e soprattutto dallo screenshot che le riassume: un alone radiale con il cuore
+    /// scuro, la corona luminosa e **una parola sola al centro**. In nessuno dei riferimenti c'è un
+    /// bordo netto, e infatti il cerchio con il contorno che c'era prima si leggeva come un anello
+    /// di caricamento, cioè la cosa opposta a quella che deve dire.
+    ///
+    /// **Tre cose si muovono insieme, e sono tre perché lui le ha chieste tutte e tre**: la
+    /// dimensione, la luce (*«una sfera che si illumina»*) e la quota (*«mentre sale inspirando…
+    /// e discende durante l'espirazione»*). Muoverne una sola dà un'animazione corretta e morta;
+    /// muoverle insieme è ciò che si segue con la coda dell'occhio, che è il punto: la guida serve
+    /// a chi tiene gli occhi aperti, e dopo qualche ciclo si chiudono.
+    ///
+    /// **Il colore resta quello della livrea**, non l'arancione e il viola dei riferimenti: quelli
+    /// sono pin a tutto schermo su fondo bianco, qui è una stanza buia, e la regola di famiglia dice
+    /// che a cambiare è l'accento. La forma si prende, la tavolozza no.
+    private func circleShape(scale: Double, label: String, sub: String) -> some View {
+        // Quanto è "pieno" il respiro adesso, da 0 a 1: serve tre volte qui sotto, e ricavarlo tre
+        // volte dalla scala sarebbe la stessa formula scritta in tre punti.
+        let pienezza = min(1, max(0, (scale - 0.62) / 0.38))
+        // La quota: in alto quando è pieno, in basso quando è vuoto. Ventidue punti in tutto, che a
+        // occhio è un respiro e non un salto.
+        let quota = 11 - pienezza * 22
+        return ZStack {
+            RadialGradient(
+                colors: [
+                    // Il cuore **più scuro del fondo**: è quello che nello screenshot fa sembrare
+                    // la sfera piena invece che disegnata.
+                    Palette.ink.opacity(0.95),
+                    Palette.accent.opacity(0.30 + 0.32 * pienezza),
+                    Palette.accent.opacity(0.14 + 0.16 * pienezza),
+                    Palette.accent.opacity(0),
+                ],
+                center: .center,
+                startRadius: 10,
+                endRadius: 232
+            )
+            .frame(width: 470, height: 470)
+            .scaleEffect(scale)
+            .blur(radius: 16)
+            .offset(y: quota)
+
+            VStack(spacing: 6) {
+                // Maiuscoletto spaziato, come nell'unico riferimento che guida davvero: una parola
+                // al centro di un alone va vista in un colpo, non letta.
+                Text(label.uppercased())
+                    .font(.system(size: 26, weight: .medium, design: .rounded))
+                    .tracking(6)
+                    .foregroundStyle(Palette.paper.opacity(0.92))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(maxWidth: 460)
+                if !sub.isEmpty {
+                    Text(sub)
+                        .font(.system(size: 64, weight: .light, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(Palette.accent)
+                }
+            }
+            .offset(y: quota)
+        }
+        .frame(height: 400)
+        // Si muove da sola a ogni ridisegno, dieci volte al secondo: l'animazione serve solo a
+        // smussare i decimi, quindi è corta quanto il battito. Più lunga e l'alone resterebbe
+        // indietro rispetto alla parola, che è la cosa che stai seguendo.
+        .animation(.linear(duration: 0.1), value: scale)
+    }
+
+    /// La riga sotto: a che respiro sei, e quanti ne restano. Il tempo lo dice il cronometro qui
+    /// sotto, quindi qui non si ripete.
+    private func breathFooterLine(_ plan: BreakPlan, _ protocollo: BreathProtocol) -> String {
+        let totali = model.breath?.plannedCycles ?? 0
+        guard case .breathing(_, _, _, _, let ciclo)? = model.breath?.phase(at: Date()) else {
+            return L.t("\(protocollo.localizedName) · \(protocollo.breathsPerMinute) respiri al minuto",
+                       "\(protocollo.localizedName) · \(protocollo.breathsPerMinute) breaths a minute")
+        }
+        return L.t("respiro \(min(ciclo, totali)) di \(totali) · \(protocollo.localizedName)",
+                   "breath \(min(ciclo, totali)) of \(totali) · \(protocollo.localizedName)")
     }
 
     /// **Il numero grande di una tenuta, che scende.**
@@ -549,6 +882,17 @@ struct BreakView: View {
     /// «0 squat»: uno zero occupa lo spazio di un'informazione senza esserlo.
     private func todayBadge(_ plan: BreakPlan) -> String {
         let pausa = model.summary.completed + model.summary.natural + 1
+        // **In Zen il conto delle ripetizioni non c'entra niente**, ed è la stessa ragione per cui
+        // il registro non le scrive: quelle ripetizioni non le ha fatte nessuno. Qui si dice quante
+        // pause di respiro hai fatto oggi, che è l'unico numero vero di questa modalità.
+        if plan.isZen {
+            let respiri = model.summary.zenBreaks
+            guard respiri > 0 else {
+                return L.t("oggi: \(pausa)ª pausa", "today: break #\(pausa)")
+            }
+            return L.t("oggi: \(pausa)ª pausa · \(respiri) di respiro",
+                       "today: break #\(pausa) · \(respiri) breathing")
+        }
         let kind = plan.exercise.kind
         let suoi = model.summary.repsByExercise[kind] ?? 0
         let totale = model.summary.totalReps
@@ -572,7 +916,7 @@ struct BreakView: View {
     @ViewBuilder
     private var restBody: some View {
         if let phrase = model.currentPhrase {
-            RestQuote(phrase: phrase)
+            RestQuote(phrase: phrase, zen: model.plan?.isZen == true)
         } else {
             // Il mazzo può essere vuoto solo se il file delle frasi è illeggibile, cioè quasi
             // mai. Ma «quasi mai» disegnava uno schermo nero muto ed è esattamente la ferita del
@@ -683,6 +1027,19 @@ struct BreakView: View {
                 primary(L.t("Torna al lavoro", "Back to work"), enabled: model.canReturnToWork) {
                     model.returnToWork()
                 }
+            } else if plan.isZen {
+                // **In Zen il pulsante grande non serve, e non deve nemmeno sembrare che serva.**
+                // Il respiro parte da solo e si chiude da solo, quindi qui c'è solo la meta, spenta
+                // finché non ci si arriva — la stessa forma della fase di riposo, che è ciò che
+                // questa schermata è. L'unica cosa premibile è la via d'uscita: se hai interrotto
+                // il respiro, lo ritrovi.
+                if model.breath == nil {
+                    primary(L.t("Riprendi il respiro", "Resume breathing"), enabled: true) {
+                        model.startBreath()
+                    }
+                } else {
+                    primary(L.t("Torna al lavoro", "Back to work"), enabled: false) {}
+                }
             } else if model.exerciseIsTimed, model.hold == nil {
                 // **Su una tenuta il pulsante grande fa partire il tempo, non lo chiude.**
                 // «Fatte tutte» qui non ha senso: la tenuta finisce quando finisce il tempo, e a
@@ -724,7 +1081,12 @@ struct BreakView: View {
                 // minimo di movimento, cioè al momento in cui «Fatte tutte» si accende; su una
                 // tenuta il minimo *è* il tempo, e il tempo è già il numero grande al centro
                 // dello schermo. Lasciarla vorrebbe dire scrivere lo stesso numero due volte.
-                if !model.exerciseDone, !model.exerciseIsTimed {
+                // **In Zen sparisce per la stessa ragione delle tenute, più una.** Il minimo è il
+                // tempo, che è già il cronometro qui sopra; e la parola «movimento» descriveva un
+                // lavoro che in questa modalità non stai facendo. Trovato guardando la fotografia
+                // del pannello intero il 2026-08-08, non leggendo il codice: la riga è a due
+                // centimetri dal cerchio del respiro e diceva «ancora 18 s di movimento».
+                if !model.exerciseDone, !model.exerciseIsTimed, !plan.isZen {
                     if model.canFinishNow {
                         // **Due risposte, non una.** Il registro sa quante ripetizioni ti sono
                         // state chieste, non quante ne hai fatte: senza questa seconda via la
@@ -957,8 +1319,43 @@ struct BreakView: View {
 /// a quaranta punti mangerebbe l'altezza del cronometro. La soglia non si stima: sta qui perché il
 /// provino la misura con `--surface=provino --riposo --misura`, e la misura vale solo se il
 /// provino disegna **questa** vista invece di ricopiarne i numeri.
+/// Un lato del quadrato del box breathing, come tracciato percorribile.
+///
+/// Quattro `Shape` separate e non un rettangolo con `trim` sopra: il `trim` di un `Rectangle`
+/// parte dall'angolo che decide SwiftUI e gira sempre nello stesso verso, mentre qui ogni lato ha
+/// il suo **verso di percorrenza** — il basso va da destra a sinistra e il sinistro dal basso in
+/// alto — che è ciò che fa sembrare il tratto un giro invece che quattro lampi scollegati.
+struct SquareSide: Shape {
+    let index: Int
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        switch index {
+        case 0:  // alto, da sinistra a destra: inspiri
+            p.move(to: CGPoint(x: rect.minX, y: rect.minY))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        case 1:  // destro, dall'alto in basso: trattieni
+            p.move(to: CGPoint(x: rect.maxX, y: rect.minY))
+            p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        case 2:  // basso, da destra a sinistra: espiri
+            p.move(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            p.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        default: // sinistro, dal basso in alto: trattieni, e il giro si chiude
+            p.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+            p.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        }
+        return p
+    }
+}
+
 struct RestQuote: View {
     let phrase: Phrase
+    /// **In Zen la frase è dell'accento, non bianca** (sua richiesta, 2026-08-08: *«il bianco
+    /// stona»*). Ha ragione, e la ragione è nella pagina: dopo il respiro lo schermo è fatto di
+    /// una cosa sola, l'alone salvia, e un bianco pieno accanto è l'unico elemento che non
+    /// appartiene alla stessa luce. Nella pausa con esercizio il bianco resta, perché lì la frase
+    /// arriva **dopo** che il colore ha già smesso di parlare.
+    var zen = false
 
     /// Larghezza vera della fase di riposo: 1440 di schermo meno i 48+48 di margine, arrotondati
     /// al valore che la vista impone. Serve al provino per misurare la stessa cosa che si vede.
@@ -972,7 +1369,7 @@ struct RestQuote: View {
         VStack(spacing: 24) {
             Text(QuoteWrap.wrapped(phrase.displayText, width: Self.width, size: Self.corpo(phrase)))
                 .font(.system(size: Self.corpo(phrase), design: .serif))
-                .foregroundStyle(Palette.paper.opacity(0.94))
+                .foregroundStyle(zen ? Palette.accent.opacity(0.92) : Palette.paper.opacity(0.94))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1346,6 +1743,8 @@ struct PrefsView: View {
     /// una sua `Settings` (la scena delle preferenze).
     @State private var draft: OtiumCore.Settings
     @State private var applied = false
+    /// L'ultimo «Applica» non è arrivato sul disco. Resta acceso finché non ritenti.
+    @State private var saveFailed = false
     /// La voce aperta. Si riparte sempre da `profilo`: una finestra che riapre dove l'avevi
     /// lasciata la volta scorsa è comoda finché non ti chiedi perché non vedi più le altre.
     @State private var section: Section = .profilo
@@ -1498,13 +1897,47 @@ struct PrefsView: View {
         .background(Palette.windowEdge)
     }
 
+    /// **I comandi della modalità Zen si applicano subito, senza «Applica».**
+    ///
+    /// Richiesta del principale, 2026-08-08: *«modalità zen ha il togle, non deve chiedere conferma
+    /// di applica»*. E ha ragione al di là della comodità: un interruttore che *sembra* acceso
+    /// mentre il motore lo ignora è esattamente il guasto che gli è costato una pausa sbagliata la
+    /// sera prima. Qui l'unico stato è quello vero, quindi quella distanza non può più esistere.
+    ///
+    /// **Scrive solo il proprio campo**, prendendo le impostazioni vive e non la bozza: se hai
+    /// altre modifiche in sospeso in un altro pannello, girare questo interruttore non deve
+    /// applicartele di straforo. La bozza si allinea insieme, o «Modifiche non applicate» si
+    /// accenderebbe per una modifica che è già sul disco.
+    ///
+    /// Resta un'eccezione dichiarata: tutto il resto della finestra continua a passare da «Applica»,
+    /// perché cambiare cadenza o pool a ogni clic vorrebbe dire riscrivere il file dieci volte
+    /// mentre stai ancora decidendo.
+    private func zenVivo<V>(_ campo: WritableKeyPath<OtiumCore.Settings, V>) -> Binding<V> {
+        Binding(
+            get: { draft[keyPath: campo] },
+            set: { nuovo in
+                draft[keyPath: campo] = nuovo
+                var vive = model.settings
+                vive[keyPath: campo] = nuovo
+                saveFailed = !model.update(settings: vive)
+            }
+        )
+    }
+
     /// Il piede fisso: lo stato del salvataggio a sinistra, il pulsante a destra, sempre lì.
     private var applyBar: some View {
         HStack {
             // Un pulsante che non risponde è indistinguibile da un pulsante rotto: prima
             // "Applica" salvava in silenzio, e l'unico modo di sapere se aveva funzionato
             // era riaprire la finestra.
-            if applied {
+            if saveFailed {
+                // Un salvataggio fallito non deve somigliare a uno riuscito: qui la riga resta
+                // finché non ritenti, invece di sparire dopo due secondi e mezzo come il verde.
+                Label(L.t("Non sono riuscito a salvare le preferenze",
+                          "I could not save the preferences"), systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.red)
+                    .font(.system(size: 13, weight: .medium))
+            } else if applied {
                 Label(L.t("Preferenze aggiornate", "Preferences updated"), systemImage: "checkmark.circle.fill")
                     .foregroundStyle(Palette.accentOnWindow)
                     .font(.system(size: 13, weight: .medium))
@@ -1518,7 +1951,9 @@ struct PrefsView: View {
             }
             Spacer()
             Button(L.t("Applica", "Apply")) {
-                model.update(settings: draft)
+                let scritto = model.update(settings: draft)
+                saveFailed = !scritto
+                guard scritto else { return }
                 withAnimation { applied = true }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                     withAnimation { applied = false }
@@ -1755,6 +2190,46 @@ struct PrefsView: View {
                     Button(L.t("nessuno", "none")) { setAll(category, on: false) }
                         .buttonStyle(.link).font(.caption)
                         .foregroundStyle(Palette.accentOnWindow)
+                }
+            }
+        }
+
+        // **La modalità Zen sta QUI, nel pannello degli esercizi, e non in uno suo.**
+        //
+        // Non aggiunge una funzione accanto alle altre: **sostituisce** quello che c'è in questa
+        // pagina. Metterla altrove vorrebbe dire lasciare che qualcuno scelga con cura il pool
+        // degli esercizi senza sapere che un interruttore in un'altra scheda li spegne tutti.
+        SwiftUI.Section(L.t("In ufficio", "At the office")) {
+            conNota(L.t("Le pause chiedono un respiro guidato invece di un esercizio: si fa da seduti, senza cambiarsi e senza farsi notare. Il lavoro metabolico però non c'è, perché respirare non contrae nessun muscolo. È il ripiego per quando allenarsi non è possibile, non il suo pari.",
+                        "Breaks ask for guided breathing instead of an exercise: you do it seated, without changing clothes and without being noticed. The metabolic work is absent, though, because breathing contracts no muscle. It is the fallback for when training is not possible, not its equal.")) {
+                Toggle(L.t("Modalità Zen", "Zen mode"), isOn: zenVivo(\.zenMode))
+            }
+            if draft.zenMode {
+                // **Due scelte e non una**, perché le due pause non chiedono la stessa cosa: la
+                // piena dura quanto la sessione misurata da Laborde, la micro non dura quanto
+                // niente di misurato. Il perché sta nella riga sotto ognuna, che cambia con la voce
+                // scelta come già fa il circuito.
+                conNota(draft.zenProtocolShort.explanation) {
+                    Picker(L.t("Nelle micro-pause", "In micro-breaks"), selection: zenVivo(\.zenProtocolShort)) {
+                        ForEach(BreathProtocol.allCases, id: \.self) { Text($0.localizedName).tag($0) }
+                    }
+                    .pickerStyle(.menu)
+                }
+                conNota(draft.zenProtocolLong.explanation) {
+                    Picker(L.t("Nelle pause piene", "In full breaks"), selection: zenVivo(\.zenProtocolLong)) {
+                        ForEach(BreathProtocol.allCases, id: \.self) { Text($0.localizedName).tag($0) }
+                    }
+                    .pickerStyle(.menu)
+                }
+                conNota(L.t("Le sessioni singole da 5, 10, 15 e 20 minuti danno lo stesso effetto sull'attività vagale, quindi più lungo non è meglio. Sotto i cinque minuti però non ha misurato nessuno: novanta secondi sono una scelta di comodità, non un numero preso da uno studio. Quello che avanza della pausa resta riposo.",
+                            "Single sessions of 5, 10, 15 and 20 minutes give the same effect on vagal activity, so longer is not better. Below five minutes, though, nobody has measured: ninety seconds is a comfort choice, not a number from a study. What is left of the break stays rest.")) {
+                    Picker(L.t("Per quanto", "For how long"), selection: zenVivo(\.zenBreathSeconds)) {
+                        Text(L.t("60 secondi", "60 seconds")).tag(60.0)
+                        Text(L.t("90 secondi", "90 seconds")).tag(90.0)
+                        Text(L.t("3 minuti", "3 minutes")).tag(180.0)
+                        Text(L.t("5 minuti — la dose studiata", "5 minutes — the studied dose")).tag(300.0)
+                    }
+                    .pickerStyle(.menu)
                 }
             }
         }

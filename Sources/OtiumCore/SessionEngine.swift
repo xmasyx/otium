@@ -14,6 +14,34 @@ public struct BreakPlan: Equatable, Sendable {
     public var circuitActive: Bool = false
     /// Quale stazione, 0-based.
     public var stationIndex: Int = 0
+    /// **Il respiro guidato, quando la modalità Zen è accesa.** `nil` è la vita normale, cioè la
+    /// pausa con esercizio. Quando c'è, comanda: la pausa chiede respiro e non ripetizioni, e
+    /// `exercise` resta popolato solo perché la rotazione e il registro continuino a funzionare
+    /// (vedi la nota in `buildPlan`).
+    public var breath: BreathProtocol? = nil
+    /// Quanti secondi dura il respiro guidato di questa pausa. Sta nel piano e non si ricalcola
+    /// dalle impostazioni, per la stessa ragione per cui ci sta l'esercizio: il piano è la
+    /// fotografia di cosa ti è stato chiesto, e cambiare preferenza a metà pausa non deve
+    /// riscrivere la pausa in corso.
+    public var breathSeconds: Double = 0
+
+    /// La domanda che le viste devono fare, invece di leggere `breath != nil` in dodici punti.
+    public var isZen: Bool { breath != nil }
+
+    /// **Cosa questa pausa ti chiederà davvero**, in una parola, e in un posto solo.
+    ///
+    /// Nasce da un difetto vero, segnalato il 2026-08-08: con la modalità Zen accesa il preavviso
+    /// annunciava «16 ponte per i glutei». Il piano sapeva già la risposta, ma le superfici che la
+    /// raccontano erano **tre** — preavviso, rinvio, complimento finale — e ognuna la ri-derivava
+    /// per conto suo leggendo `exercise`. Tre copie della stessa domanda: bastava dimenticarne una,
+    /// e infatti erano sbagliate tutte e tre.
+    ///
+    /// Sta nel nucleo e non nell'app per una ragione pratica: qui ha un test, là non ce l'avrebbe.
+    public var demandLabel: String {
+        if let breath { return breath.localizedName }
+        if circuitActive, circuit.count > 1 { return L.t("il circuito", "the circuit") }
+        return exercise.label
+    }
 
     public init(index: Int, kind: BreakKind, duration: Double, exercise: Exercise,
                 circuit: [Exercise] = []) {
@@ -716,6 +744,26 @@ public struct SessionEngine {
             exercise: exercise,
             circuit: circuit
         )
+        // **In modalità Zen il piano porta un respiro, e l'esercizio resta dov'è.**
+        //
+        // Non si azzera `exercise`, e la tentazione c'era: un piano senza esercizio sembra più
+        // pulito. Ma l'esercizio del turno è la rotazione, il registro lo nomina per dire *cosa*
+        // era quella pausa, e le viste lo leggono in una dozzina di punti. Toglierlo vorrebbe dire
+        // rendere opzionale un campo che oggi non lo è, cioè pagare in tutta l'app il prezzo di una
+        // modalità che si accende e si spegne. Qui `breath` è la presenza che comanda: quando c'è,
+        // la pausa chiede quello, e nessuno conta ripetizioni.
+        if settings.zenMode {
+            piano.breath = settings.zenProtocol(for: kind)
+            // Mai più lungo della pausa che lo contiene, meno la preparazione: su una micro-pausa
+            // da 90 secondi un respiro da 90 sforerebbe, e il pulsante resterebbe spento a respiro
+            // finito, che si legge come un blocco.
+            piano.breathSeconds = min(settings.zenBreathSeconds,
+                                      piano.duration - Breath.prepareSeconds)
+            // Il circuito non ha senso quando non si fanno esercizi, e un piano che lo porta è un
+            // piano che mente su cosa offre — stessa regola già scritta per `CircuitMode.singolo`.
+            piano.circuit = []
+            return piano
+        }
         // **Chi il circuito lo fa sempre non deve dirlo ogni volta.** Il piano nasce già in
         // circuito, e l'esercizio del turno resta da parte: l'uscita dentro la pausa — «basta
         // così, torno all'esercizio singolo» — lo ritrova esattamente dov'era.
@@ -781,6 +829,39 @@ public struct SessionEngine {
         }
         exerciseDone = true
         return [.exerciseConfirmed(done)]
+    }
+
+    /// **Il respiro è finito**, cioè il gemello di `markExerciseDone` per la modalità Zen.
+    ///
+    /// **Non emette `exerciseConfirmed`, ed è l'intero punto di questo metodo.** Quell'evento
+    /// diventa una riga di registro con le ripetizioni dell'esercizio del turno, e in Zen quelle
+    /// ripetizioni non le ha fatte nessuno: passare da `markExerciseDone` scriverebbe nello storico
+    /// venti squat che non esistono. La pausa la conta la sua riga, scritta alla chiusura.
+    ///
+    /// **Il cancello resta**, come per le tenute e per le parziali: il respiro non si può dichiarare
+    /// finito prima che sia passato il tempo. Qui non c'è un pulsante da premere — il respiro parte
+    /// da solo con la pausa e finisce da solo — ma un motore che si fida di chi lo chiama è un
+    /// motore che un giorno verrà chiamato male.
+    @discardableResult
+    public mutating func markBreathDone() -> [EngineEvent] {
+        guard phase == .breaking, let current = plan, current.isZen else { return [] }
+        guard timer >= Self.breathSeconds(for: current) else { return [] }
+        exerciseDone = true
+        return []
+    }
+
+    /// Quanto dura il respiro guidato di questa pausa: **tutta la pausa meno la preparazione**.
+    ///
+    /// Non è un numero scelto per estetica, è l'unico che tiene insieme due vincoli già esistenti.
+    /// La dose di Balban è cinque minuti, che è esattamente la durata di una pausa piena: accorciare
+    /// il respiro per lasciare una coda di riposo consegnerebbe una dose più bassa di quella
+    /// studiata. E `canReturnToWork` pretende `timer >= duration`, quindi un respiro più lungo
+    /// lascerebbe il pulsante spento a respiro finito, che si legge come un blocco.
+    public static func breathSeconds(for plan: BreakPlan) -> Double {
+        let richiesti = max(1, plan.breathSeconds > 0 ? plan.breathSeconds
+                                                      : plan.duration - Breath.prepareSeconds)
+        guard let respiro = plan.breath else { return richiesti }
+        return Breath.wholeCycles(richiesti, of: respiro)
     }
 
     /// «Non tutte»: hai fatto meno di quante te ne aveva chieste, e lo dici.

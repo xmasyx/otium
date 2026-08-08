@@ -278,12 +278,86 @@ public enum Evidence {
         governsEN: "The 5% after two confirmations, and the step back after two shortfalls."
     )
 
+    // MARK: - Modalità Zen
+
+    /// Il protocollo di serie della modalità Zen, e la sua dose.
+    public static let cyclicSighing = Study(
+        id: "balban-2023",
+        claim: "Studio randomizzato e controllato su 108 persone: cinque minuti al giorno di "
+             + "respiro strutturato per 28 giorni, contro un pari periodo di meditazione "
+             + "mindfulness. Il respiro ciclico, cioè due inspirazioni e una lunga espirazione, "
+             + "migliora l'umore e abbassa la frequenza respiratoria più della meditazione e più "
+             + "degli altri due protocolli provati, box breathing e iperventilazione ciclica.",
+        citation: "Balban et al., «Brief structured respiration practices enhance mood and reduce "
+                + "physiological arousal», Cell Reports Medicine",
+        year: 2023,
+        url: "https://pubmed.ncbi.nlm.nih.gov/36630953/",
+        governs: "Il respiro ciclico come protocollo di serie, e i cinque minuti della pausa piena.",
+        claimEN: "Randomised controlled trial in 108 people: five minutes a day of structured "
+               + "breathing for 28 days, against an equal period of mindfulness meditation. "
+               + "Cyclic sighing, two inhales and one long exhale, improves mood and lowers "
+               + "respiratory rate more than meditation and more than the other two protocols "
+               + "tested, box breathing and cyclic hyperventilation.",
+        governsEN: "Cyclic sighing as the default protocol, and the five minutes of a full break."
+    )
+
+    /// I sei respiri al minuto del protocollo «risonanza».
+    public static let slowBreathing = Study(
+        id: "laborde-2022",
+        claim: "Revisione sistematica e meta-analisi su 223 studi: il respiro lento volontario "
+             + "alza la variabilità cardiaca a mediazione vagale mentre lo fai, subito dopo una "
+             + "sessione e dopo un ciclo di sessioni. Attorno ai sei respiri al minuto cuore e "
+             + "respiro entrano in fase, ed è lì che l'effetto è più grande.",
+        citation: "Laborde et al., «Effects of voluntary slow breathing on heart rate and heart "
+                + "rate variability: A systematic review and a meta-analysis», Neurosci Biobehav Rev",
+        year: 2022,
+        url: "https://pubmed.ncbi.nlm.nih.gov/35623448/",
+        governs: "I cinque secondi dentro e cinque fuori del protocollo a sei al minuto.",
+        claimEN: "Systematic review and meta-analysis of 223 studies: voluntary slow breathing "
+               + "raises vagally-mediated heart rate variability during the practice, right after "
+               + "a single session, and after a multi-session cycle. Around six breaths a minute "
+               + "heart and breath fall into phase, and that is where the effect is largest.",
+        governsEN: "The five seconds in and five out of the six-a-minute protocol."
+    )
+
+    /// **Quanto vale davvero la modalità Zen**, cioè la voce che le mette un tetto.
+    ///
+    /// Sta fra le fonti e non fra i disclaimer perché giustifica una funzione che c'è. Ma il numero
+    /// che porta è piccolo apposta: se un domani questa modalità venisse raccontata come l'uguale
+    /// della pausa con esercizio, è questa riga a smentirlo.
+    public static let breathworkCeiling = Study(
+        id: "fincham-2023",
+        claim: "Meta-analisi dei soli studi randomizzati e controllati: il lavoro sul respiro "
+             + "abbassa lo stress con un effetto piccolo-medio (g = −0,35 su 12 studi e 785 "
+             + "adulti), e simile su ansia e sintomi depressivi. Quasi tutti gli studi hanno "
+             + "rischio di bias moderato. È un beneficio reale e misurato, non un pareggio con il "
+             + "movimento: respirare non contrae nessun muscolo, e il lavoro metabolico delle "
+             + "pause con esercizio in modalità Zen non c'è.",
+        citation: "Fincham et al., «Effect of breathwork on stress and mental health: A "
+                + "meta-analysis of randomised-controlled trials», Scientific Reports",
+        year: 2023,
+        url: "https://pubmed.ncbi.nlm.nih.gov/36624160/",
+        governs: "L'esistenza della modalità Zen, e il suo tetto dichiarato.",
+        claimEN: "Meta-analysis of randomised controlled trials only: breathwork lowers stress "
+               + "with a small-to-medium effect (g = −0.35 across 12 trials and 785 adults), and "
+               + "similarly for anxiety and depressive symptoms. Nearly all trials carry a "
+               + "moderate risk of bias. It is a real, measured benefit, not a draw with movement: "
+               + "breathing contracts no muscle, and the metabolic work of exercise breaks is "
+               + "absent in Zen mode.",
+        governsEN: "The existence of Zen mode, and its stated ceiling."
+    )
+
     /// Tutte le fonti, nell'ordine in cui hanno senso da leggere.
     public static let all: [Study] = [
         sittingInterval, squatsBeatWalking, hourlyBreaks, microBreaks, vilpa,
         systematicBreaks, goalHabituation, repsInsteadOfLoad, progressionRule,
+        cyclicSighing, slowBreathing, breathworkCeiling,
         twentyTwentyTwenty, exerciseAndCognition,
     ]
+
+    /// Le fonti della modalità Zen: sono quelle che la riga sotto il blocco deve girare quando
+    /// quella modalità è accesa, perché le altre spiegano un lavoro che in Zen non stai facendo.
+    public static let zen: [Study] = [cyclicSighing, slowBreathing, breathworkCeiling]
 
     /// Le fonti che dichiarano cosa l'app **non** fa e non promette.
     public static let disclaimers: [Study] = [twentyTwentyTwenty, exerciseAndCognition]

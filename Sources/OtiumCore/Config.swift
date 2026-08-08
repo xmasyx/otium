@@ -246,6 +246,46 @@ public struct Settings: Codable, Equatable, Sendable {
     public var maxAutoDefers: Int
     /// Quanto dura un rinvio automatico per call.
     public var autoDeferSeconds: Double
+    /// **Modalità Zen: le pause chiedono un respiro guidato invece di un esercizio.**
+    ///
+    /// Spenta di serie, e deve restarlo: l'app esiste per il lavoro metabolico, e Zen è il ripiego
+    /// per quando quel lavoro non è socialmente possibile. Accenderla da sola sarebbe come decidere
+    /// al posto tuo che il tuo ufficio è un open space.
+    public var zenMode: Bool
+    /// **Il respiro delle micro-pause**, di serie il respiro ciclico.
+    ///
+    /// Non è la stessa scelta della pausa piena, e la ragione è nei numeri: in 87 secondi utili
+    /// entrano otto respiri ciclici e cinque quadrati, e il respiro ciclico agisce **respiro per
+    /// respiro** con la sua espirazione lunga, mentre la risonanza vive di aggancio fra due ritmi e
+    /// otto cicli sono pochi per farlo. Da dire com'è: a novanta secondi non è validato nessuno dei
+    /// tre, quindi questo è un innesco e non una dose.
+    public var zenProtocolShort: BreathProtocol
+    /// **Il respiro delle pause piene**, di serie la risonanza a sei al minuto.
+    ///
+    /// Qui la prova combacia con la durata: l'effetto vagale di Laborde è misurato su sessioni da
+    /// cinque minuti, e cinque minuti è quanto dura questa pausa.
+    ///
+    /// **Fissi e non a rotazione**, deciso con lui il 2026-08-08. Per gli esercizi alternare è
+    /// fisiologia, gruppi muscolari diversi; per il respiro non c'è niente da alternare, e l'unica
+    /// cosa che la varietà compra è non annoiarsi. Costa però due cose: ogni studio che ha misurato
+    /// un beneficio ha misurato **un protocollo solo ripetuto**, e la frequenza di risonanza è
+    /// individuale e ci si allena a trovarla, quindi alternandola quell'allenamento si diluisce.
+    /// La noia, in Zen, la rompe già la frase.
+    public var zenProtocolLong: BreathProtocol
+    /// **Quanto dura il respiro guidato dentro la pausa**, e non quanto dura la pausa.
+    ///
+    /// Prima riempiva tutto, quindi cinque minuti su una pausa piena, e il principale ha segnalato
+    /// il 2026-08-08 che è troppo. Ha ragione, e gli studi non lo contraddicono: Laborde e colleghi
+    /// hanno confrontato sessioni singole da 5, 10, 15 e 20 minuti a sei respiri al minuto e **non
+    /// hanno trovato differenze** nell'attività vagale fra le durate; la meta-analisi di Fincham non
+    /// trova alcuna correlazione fra durata e dimensione dell'effetto. Il che significa due cose
+    /// opposte da tenere insieme: **più lungo non è meglio**, e **sotto i cinque minuti nessuno ha
+    /// misurato**, perché cinque è il più corto mai provato.
+    ///
+    /// Di serie novanta secondi, che è una scelta di comodità dichiarata e non un numero preso da
+    /// uno studio. Chi vuole la dose studiata la rimette da qui. Il resto della pausa non sparisce:
+    /// diventa riposo con la frase, come nelle pause con esercizio.
+    public var zenBreathSeconds: Double
     /// La livrea. Di serie Alloro: verde notte e salvia, non nero e arancione — quello è il
     /// vestito di Sveglia e Timer di Apple.
     public var theme: ThemeName
@@ -311,6 +351,10 @@ public struct Settings: Codable, Equatable, Sendable {
         autoStartAtLogin: Bool = true,
         maxAutoDefers: Int = 6,
         autoDeferSeconds: Double = 5 * 60,
+        zenMode: Bool = false,
+        zenProtocolShort: BreathProtocol = .sospiro,
+        zenProtocolLong: BreathProtocol = .risonanza,
+        zenBreathSeconds: Double = 90,
         theme: ThemeName = .alloro,
         notificationSound: String = "Tink",
         holdEndSound: String = "Glass",
@@ -342,6 +386,10 @@ public struct Settings: Codable, Equatable, Sendable {
         self.autoStartAtLogin = autoStartAtLogin
         self.maxAutoDefers = max(0, maxAutoDefers)
         self.autoDeferSeconds = autoDeferSeconds
+        self.zenMode = zenMode
+        self.zenProtocolShort = zenProtocolShort
+        self.zenProtocolLong = zenProtocolLong
+        self.zenBreathSeconds = max(20, zenBreathSeconds)
         self.theme = theme
         self.notificationSound = notificationSound
         self.holdEndSound = holdEndSound
@@ -349,6 +397,13 @@ public struct Settings: Codable, Equatable, Sendable {
         self.activeHoursAlwaysOn = activeHoursAlwaysOn
         self.activeFromHour = activeFromHour
         self.activeToHour = activeToHour
+    }
+
+    /// Quale respiro tocca a questa pausa. **Una domanda, un posto**: prima la scelta era una sola
+    /// e la leggeva direttamente `buildPlan`; adesso sono due e la regola che le sceglie sta qui,
+    /// dove un test la vede, invece che dentro il motore.
+    public func zenProtocol(for kind: BreakKind) -> BreathProtocol {
+        kind == .long ? zenProtocolLong : zenProtocolShort
     }
 
     public var planner: ExercisePlanner {
@@ -403,6 +458,7 @@ public struct Settings: Codable, Equatable, Sendable {
     /// Le chiavi dei file scritti prima del 2026-07-31, tenute in vita solo per leggerle.
     private enum ChiaviRitirate: String, CodingKey {
         case offerCircuit, startLongInCircuit
+        case zenProtocolLegacy = "zenProtocol"
     }
 
     public init(from decoder: Decoder) throws {
@@ -462,6 +518,19 @@ public struct Settings: Codable, Equatable, Sendable {
         autoStartAtLogin = (try? c.decode(Bool.self, forKey: .autoStartAtLogin)) ?? d.autoStartAtLogin
         maxAutoDefers = (try? c.decode(Int.self, forKey: .maxAutoDefers)) ?? d.maxAutoDefers
         autoDeferSeconds = (try? c.decode(Double.self, forKey: .autoDeferSeconds)) ?? d.autoDeferSeconds
+        // **Assente vuol dire spenta**, che è il default, e qui è anche l'unica lettura sicura: un
+        // file scritto prima di questa versione appartiene a qualcuno che si allenava nelle pause.
+        zenMode = (try? c.decode(Bool.self, forKey: .zenMode)) ?? d.zenMode
+        // **La chiave vecchia non si butta.** `zenProtocol` era una sola per tutte le pause, ed è
+        // vissuta poche ore, ma un file scritto in quelle ore esiste: chi l'aveva scelto se lo
+        // ritrova su tutte e due, invece di vederlo sparire senza sapere perché.
+        let vecchieChiavi = try? decoder.container(keyedBy: ChiaviRitirate.self)
+        let unicoVecchio = try? vecchieChiavi?.decode(BreathProtocol.self, forKey: .zenProtocolLegacy)
+        zenProtocolShort = (try? c.decode(BreathProtocol.self, forKey: .zenProtocolShort))
+            ?? unicoVecchio ?? d.zenProtocolShort
+        zenProtocolLong = (try? c.decode(BreathProtocol.self, forKey: .zenProtocolLong))
+            ?? unicoVecchio ?? d.zenProtocolLong
+        zenBreathSeconds = max(20, (try? c.decode(Double.self, forKey: .zenBreathSeconds)) ?? d.zenBreathSeconds)
         theme = (try? c.decode(ThemeName.self, forKey: .theme)) ?? d.theme
         notificationSound = (try? c.decode(String.self, forKey: .notificationSound)) ?? d.notificationSound
         holdEndSound = (try? c.decode(String.self, forKey: .holdEndSound)) ?? d.holdEndSound

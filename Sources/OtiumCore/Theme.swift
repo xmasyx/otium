@@ -147,4 +147,36 @@ public enum ThemeName: String, Codable, CaseIterable, Sendable {
             )
         }
     }
+
+    /// **La stessa livrea in modalità Zen: cambia l'accento, non la stanza.**
+    ///
+    /// Chiesto dal principale il 2026-08-08 insieme alla modalità: *«utilizza anche colori diversi
+    /// quando si attiva la zen mode»*. La tentazione era una quarta livrea, ed è stata scartata per
+    /// una regola che questa app ha già scritto: le tre livree si distinguono per **accento**, e
+    /// carta e inchiostro sono la famiglia. Una palette nuova avrebbe rotto quella regola e avrebbe
+    /// buttato la livrea che hai scelto, che è tua e non c'entra niente con l'essere in ufficio.
+    ///
+    /// Il verso dello spostamento è lo stesso per tutte e tre: **verso il freddo e verso il poco
+    /// carico**. Un accento saturo dice «muoviti», che è giusto quando devi fare venti squat e
+    /// sbagliato quando devi rallentare il respiro. Sono valori scelti e scritti, non calcolati da
+    /// una formula: il calcolo sembra più elegante e produce colori che nessuno ha mai guardato, e
+    /// il contrasto lo controlla comunque `ContrastTests`.
+    public var zenPalette: ThemePalette {
+        let base = palette
+        let (accento, suChiaro): (String, String)
+        switch self {
+        case .alloro:  (accento, suChiaro) = ("#9FC7C9", "#2C6670")   // dalla salvia al verdemare
+        case .ardesia: (accento, suChiaro) = ("#A6C4C1", "#33646A")   // dal blu freddo all'acqua ferma
+        case .porpora: (accento, suChiaro) = ("#AAB0D2", "#4B5288")   // dal viola alla pervinca
+        }
+        return ThemePalette(
+            ink: base.ink,
+            paper: base.paper,
+            accent: RGB(hex: accento),
+            accentOnLight: RGB(hex: suChiaro),
+            dim: base.dim,
+            name: base.name,
+            description: base.description
+        )
+    }
 }

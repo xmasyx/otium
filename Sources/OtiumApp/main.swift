@@ -188,6 +188,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // sta toccando e chiuderebbe il break come pausa naturale, lasciando una schermata vuota.
         model.stop()
         model.headless = true
+        // `--zen[=protocollo]` fotografa la **modalità Zen**, che altrimenti si vedrebbe solo
+        // accendendola nelle preferenze vere. Va prima di `forceBreakNow`, perché è `buildPlan` a
+        // decidere se il piano porta un respiro, e un piano già costruito non cambia idea.
+        // Siamo dentro `ProbeMode`, quindi queste impostazioni vivono nella cartella usa e getta.
+        if let zenArg = CommandLine.arguments.first(where: { $0.hasPrefix("--zen") }) {
+            var s = model.settings
+            s.zenMode = true
+            if let nome = zenArg.split(separator: "=", maxSplits: 1).dropFirst().first.map(String.init),
+               let p = BreathProtocol(rawValue: nome) {
+                s.zenProtocolShort = p
+                s.zenProtocolLong = p
+            }
+            model.update(settings: s)
+        }
         // `--orfana` rende di proposito la schermata **senza piano**: è lo stato che il 27 e il 28
         // luglio 2026 era un rettangolo nero muto, e l'unico modo di sapere com'è adesso è
         // guardarlo. Un `if let` senza `else` non si vede leggendo il codice: si vede nei pixel.
@@ -219,6 +233,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             if let secondi = CommandLine.arguments.first(where: { $0.hasPrefix("--tenuta-da=") })?
                 .split(separator: "=", maxSplits: 1).last.flatMap({ Double($0) }) {
                 model.seedHoldForSnapshot(secondsAgo: secondi)
+            }
+            // `--respiro-da=<secondi>` è il gemello di `--tenuta-da` per la modalità Zen: il
+            // cerchio passa da minimo a massimo in nove secondi, quindi ogni fase del ciclo dura
+            // meno di un'inquadratura. Senza questo si potrebbe fotografare solo la preparazione.
+            if let secondi = CommandLine.arguments.first(where: { $0.hasPrefix("--respiro-da=") })?
+                .split(separator: "=", maxSplits: 1).last.flatMap({ Double($0) }) {
+                model.seedBreathForSnapshot(secondsAgo: secondi)
             }
         }
 

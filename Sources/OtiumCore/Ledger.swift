@@ -63,6 +63,11 @@ public struct DailySummary: Equatable, Sendable {
     public var deferred: Int = 0
     public var vigorousBouts: Int = 0
     public var repsByExercise: [ExerciseKind: Int] = [:]
+    /// **Quante delle pause completate erano di respiro.** Sottoinsieme di `completed`, non un
+    /// totale a parte: una pausa Zen è una pausa, e sommarla di nuovo la conterebbe due volte.
+    /// Esiste perché senza di lei una giornata tutta in ufficio mostrerebbe pause completate e
+    /// zero ripetizioni, che dal solo numero è indistinguibile da una giornata di pause saltate.
+    public var zenBreaks: Int = 0
 
     public var totalReps: Int { repsByExercise.values.reduce(0, +) }
 
@@ -168,6 +173,7 @@ public final class Ledger: @unchecked Sendable {
                 s.activeSeconds += e.seconds ?? 0
             case .completed:
                 s.completed += 1
+                if e.reason?.hasPrefix("zen:") == true { s.zenBreaks += 1 }
                 if let kind = e.exercise, let reps = e.reps {
                     s.repsByExercise[kind, default: 0] += reps
                     if kind.isVigorous { s.vigorousBouts += 1 }
@@ -187,6 +193,10 @@ public final class Ledger: @unchecked Sendable {
                 }
             case .undo:
                 s.completed = max(0, s.completed - 1)
+                // L'annullamento non dice *quale* pausa toglie, quindi il sottoinsieme si limita
+                // invece di indovinare: senza questa riga una giornata annullata potrebbe mostrare
+                // più pause di respiro che pause, che è un numero impossibile.
+                s.zenBreaks = min(s.zenBreaks, s.completed)
             }
         }
         return s
@@ -212,6 +222,18 @@ public final class Ledger: @unchecked Sendable {
             return LedgerEntry(timestamp: now, type: .exerciseDone,
                                exercise: exercise.kind, reps: exercise.reps)
         case .breakCompleted(let plan):
+            // **Una pausa Zen è una pausa, e non è un esercizio.** È la terza strada fra le due
+            // sbagliate: scriverci dentro l'esercizio del turno sporcherebbe lo storico con
+            // ripetizioni mai fatte, e non scrivere niente farebbe sembrare saltata una pausa che
+            // hai fatto. Qui la riga c'è e conta come pausa, `exercise` resta vuoto — quindi
+            // nessuna ripetizione e nessun conteggio di sessioni intense può attaccarsi — e il
+            // `reason` dice quale respiro era.
+            if let respiro = plan.breath {
+                return LedgerEntry(
+                    timestamp: now, type: .completed, breakKind: plan.kind,
+                    exercise: nil, reps: nil, reason: "zen:\(respiro.rawValue)"
+                )
+            }
             // **Senza ripetizioni**: quelle hanno già la loro riga, scritta quando le hai
             // confermate. Qui resta il nome dell'esercizio, che serve alla cronologia a dire
             // *cosa* era quella pausa; il numero no, o finirebbe contato due volte.

@@ -32,10 +32,23 @@ final class ContrastTests: XCTestCase {
         return RGB(r, g, b)
     }
 
+    /// **Ogni livrea in tutte e due le vesti: normale e Zen.**
+    ///
+    /// Aggiunto il 2026-08-08 con la modalità Zen, che sposta l'accento di ogni livrea verso il
+    /// freddo. Un accento nuovo scelto a occhio passa la revisione e fallisce sotto AA — è la
+    /// regola già scritta per le tre livree, e sarebbe stata una beffa aggiungere tre colori
+    /// esattamente sotto al cancello costruito per fermarli. Le prove qui sotto girano su questa
+    /// lista invece che su `ThemeName.allCases`, così una veste nuova entra nel cancello per
+    /// costruzione e non perché qualcuno si è ricordato di aggiungerla.
+    private var tutteLeVesti: [(String, ThemePalette)] {
+        ThemeName.allCases.flatMap { tema in
+            [(tema.rawValue, tema.palette), ("\(tema.rawValue) zen", tema.zenPalette)]
+        }
+    }
+
     /// **Ogni tema regge la soglia su ogni coppia che l'app usa davvero.**
     func testEveryThemeMeetsWcagOnTheCombinationsWeUse() {
-        for tema in ThemeName.allCases {
-            let p = tema.palette
+        for (tema, p) in tutteLeVesti {
             let coppie: [(String, RGB, RGB, Double)] = [
                 ("testo principale sulla schermata di blocco", p.paper, p.ink, 4.5),
                 ("numeri e titoli in accento", p.accent, p.ink, 3.0),
@@ -48,7 +61,7 @@ final class ContrastTests: XCTestCase {
                 let r = ratio(fg, bg)
                 XCTAssertGreaterThanOrEqual(
                     r, soglia,
-                    String(format: "%@ · %@: %.2f:1, sotto la soglia %.1f", tema.rawValue, nome, r, soglia)
+                    String(format: "%@ · %@: %.2f:1, sotto la soglia %.1f", tema, nome, r, soglia)
                 )
             }
         }
@@ -61,13 +74,12 @@ final class ContrastTests: XCTestCase {
     /// punti, tutti su testo da 11 punti — la dimensione che ha più bisogno di contrasto, non
     /// meno. La gerarchia si fa con corpo e peso, non con la trasparenza.
     func testDimTextCannotAffordOpacity() {
-        for tema in ThemeName.allCases {
-            let p = tema.palette
+        for (tema, p) in tutteLeVesti {
             XCTAssertGreaterThanOrEqual(ratio(p.dim, p.ink), 4.5,
-                                        "\(tema.rawValue): il secondario da solo è già sotto")
+                                        "\(tema): il secondario da solo è già sotto")
             // La prova che l'opacità lo affonda: se questa passasse, la regola non servirebbe.
             XCTAssertLessThan(ratio(blend(p.dim, over: p.ink, alpha: 0.65), p.ink), 4.5,
-                              "\(tema.rawValue): se il 65% reggesse, questa regola sarebbe inutile")
+                              "\(tema): se il 65% reggesse, questa regola sarebbe inutile")
         }
     }
 
@@ -120,23 +132,22 @@ final class ContrastTests: XCTestCase {
     /// Le soglie sono quelle del testo grande e degli elementi d'interfaccia (3:1): l'accento qui
     /// fa i titoli, le barre e i pulsanti, non i paragrafi.
     func testEveryLiveryAccentWorksOnBothWindowFaces() {
-        for tema in ThemeName.allCases {
-            let p = tema.palette
+        for (tema, p) in tutteLeVesti {
             let giorno = ratio(p.accentOnLight, Surface.giorno.paper)
             XCTAssertGreaterThanOrEqual(
                 giorno, 4.5,
-                String(format: "%@ · accento sulla carta: %.2f:1", tema.rawValue, giorno)
+                String(format: "%@ · accento sulla carta: %.2f:1", tema, giorno)
             )
             let sera = ratio(p.accent, Surface.sera.paper)
             XCTAssertGreaterThanOrEqual(
                 sera, 3.0,
-                String(format: "%@ · accento sull'inchiostro: %.2f:1", tema.rawValue, sera)
+                String(format: "%@ · accento sull'inchiostro: %.2f:1", tema, sera)
             )
             // Il testo **sopra** un riempimento d'accento: il pulsante pieno delle finestre.
             XCTAssertGreaterThanOrEqual(ratio(Surface.giorno.paper, p.accentOnLight), 4.5,
-                                        "\(tema.rawValue): la carta sopra l'accento di giorno")
+                                        "\(tema): la carta sopra l'accento di giorno")
             XCTAssertGreaterThanOrEqual(ratio(Surface.sera.paper, p.accent), 4.5,
-                                        "\(tema.rawValue): l'inchiostro sopra l'accento di sera")
+                                        "\(tema): l'inchiostro sopra l'accento di sera")
         }
     }
 
