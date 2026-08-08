@@ -625,7 +625,23 @@ public struct SessionEngine {
         // qui possono passare ore — una call che rinvia, un rinvio chiesto a mano — e in quelle
         // ore il contatore cammina. Il tipo di pausa va deciso su quanto tempo hai davvero
         // accumulato **adesso**, non su quanto ne avevi quando il piano è stato scritto.
-        let piano = overdueUpgrade(current, now: now)
+        var piano = overdueUpgrade(current, now: now)
+
+        // **E lo stesso vale per la modalità Zen**, che nel frattempo puoi aver girato.
+        //
+        // Segnalato da lui il 2026-08-09: preavviso ricevuto, Zen spenta nel minuto che restava, e
+        // la pausa gli ha proposto il respiro lo stesso. Il piano nasce al preavviso e `buildPlan`
+        // legge l'interruttore **in quell'istante**, quindi il minuto dopo era già una fotografia
+        // vecchia. Vale in tutte e due i versi, e il verso opposto è peggio: acceso il Zen durante
+        // il preavviso ti saresti trovato gli squat in ufficio, che è la ragione per cui quella
+        // modalità esiste.
+        //
+        // Si **ricostruisce** invece di rattoppare i tre campi, perché rattoppare significherebbe
+        // ricordarsi di tutto: il respiro, la durata, il circuito da svuotare o da rifare. Il piano
+        // è deterministico sull'indice, quindi ricostruirlo non fa avanzare niente.
+        if settings.zenMode != piano.isZen {
+            piano = buildPlan(index: piano.index, kind: piano.kind, now: now)
+        }
         plan = piano
         phase = .breaking
         timer = 0

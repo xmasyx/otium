@@ -330,6 +330,72 @@ final class ZenModeTests: XCTestCase {
         XCTAssertEqual(Breath.wholeCycles(4, of: .quadrato), 16)
     }
 
+    // MARK: - L'interruttore girato durante il preavviso
+
+    /// Porta il motore fino al preavviso e restituisce il piano annunciato, senza far partire la
+    /// pausa: è il minuto in cui lui ha girato l'interruttore.
+    private func finoAlPreavviso(_ settings: Settings) -> (SessionEngine, BreakPlan) {
+        var engine = SessionEngine(settings: settings, maxCredibleElapsed: 120)
+        var annunciato: BreakPlan?
+        var t = 0.0
+        while t < settings.cadence.intervalSeconds + 120, annunciato == nil {
+            for event in engine.tick(elapsed: 10, idle: 0, now: Self.workingHour, environment: .quiet) {
+                if case .warningStarted(let p) = event { annunciato = p }
+            }
+            t += 10
+        }
+        return (engine, annunciato!)
+    }
+
+    private func faPartireLaPausa(_ engine: inout SessionEngine) -> BreakPlan? {
+        var partito: BreakPlan?
+        var t = 0.0
+        while t < 300, partito == nil {
+            for event in engine.tick(elapsed: 5, idle: 0, now: Self.workingHour, environment: .quiet) {
+                if case .breakStarted(let p) = event { partito = p }
+            }
+            t += 5
+        }
+        return partito
+    }
+
+    /// **Spegnere Zen dopo il preavviso spegne il respiro anche nella pausa che sta arrivando.**
+    ///
+    /// Il difetto vero del 2026-08-09, segnalato da lui: preavviso ricevuto, Zen spenta nel minuto
+    /// che restava, e la pausa ha proposto il respiro lo stesso. Il piano nasce al preavviso, e
+    /// fino a quel giorno restava quella fotografia anche se cambiavi idea subito dopo.
+    func testTurningZenOffDuringTheWarningStillCancelsTheBreathing() {
+        var s = zenSettings()
+        let (motore, annunciato) = finoAlPreavviso(s)
+        XCTAssertTrue(annunciato.isZen, "al preavviso Zen era accesa")
+
+        var engine = motore
+        s.zenMode = false
+        engine.settings = s
+        let partito = faPartireLaPausa(&engine)
+        XCTAssertNotNil(partito)
+        XCTAssertFalse(partito!.isZen, "spenta durante il preavviso, la pausa non deve chiedere il respiro")
+        XCTAssertNil(partito!.breath)
+    }
+
+    /// **E il verso opposto**, che è quello che conta di più: acceso Zen mentre il preavviso corre,
+    /// la pausa non deve piombarti addosso con gli squat davanti ai colleghi. È anche il polo che
+    /// impedisce di «riparare» il difetto azzerando il respiro e basta.
+    func testTurningZenOnDuringTheWarningGivesBreathing() {
+        var s = Settings()
+        s.startDate = Self.workingHour
+        let (motore, annunciato) = finoAlPreavviso(s)
+        XCTAssertFalse(annunciato.isZen)
+
+        var engine = motore
+        s.zenMode = true
+        engine.settings = s
+        let partito = faPartireLaPausa(&engine)
+        XCTAssertNotNil(partito)
+        XCTAssertEqual(partito?.breath, s.zenProtocol(for: partito!.kind))
+        XCTAssertTrue(partito!.circuit.isEmpty, "in Zen il circuito non si costruisce")
+    }
+
     // MARK: - Il cancello anti-bluff
 
     /// **Il respiro non si può dichiarare finito prima del tempo**, e finito il tempo si chiude.
