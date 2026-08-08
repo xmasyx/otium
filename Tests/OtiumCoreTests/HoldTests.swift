@@ -79,8 +79,46 @@ final class HoldTests: XCTestCase {
         let h = sidePlank(40)
         XCTAssertEqual(h.phase(at: h.holdStart), .holding(side: 1, secondsLeft: 40))
         XCTAssertEqual(h.phase(at: h.holdStart.addingTimeInterval(19.5)), .holding(side: 1, secondsLeft: 21))
-        // L'istante esatto del cambio appartiene già al secondo lato.
-        XCTAssertEqual(h.phase(at: h.holdStart.addingTimeInterval(20)), .holding(side: 2, secondsLeft: 20))
+        // L'istante esatto del cambio non appartiene a nessuno dei due lati: è la finestra per
+        // girarsi. Il secondo lato comincia cinque secondi dopo, intero.
+        XCTAssertEqual(h.phase(at: h.holdStart.addingTimeInterval(20)), .switching(secondsLeft: 5))
+        XCTAssertEqual(h.phase(at: h.holdStart.addingTimeInterval(25)), .holding(side: 2, secondsLeft: 20))
+    }
+
+    /// **I cinque secondi per girarsi ci sono, e scendono da soli.**
+    ///
+    /// Chiesto dal principale il 2026-08-08: *«al cambio lato deve darmi 5 secondi per mettermi in
+    /// posizione, senza dover cliccare»*. Nessun gesto compare in questo test perché nessun gesto
+    /// esiste: la finestra si apre e si chiude sull'orologio, come tutto il resto qui dentro.
+    func testTheSwitchOpensAFiveSecondWindowWithoutAnyGesture() {
+        let h = sidePlank(40)
+        let cambio = h.holdStart.addingTimeInterval(20)
+        XCTAssertEqual(h.switchAt, cambio)
+        XCTAssertEqual(h.secondSideStart, cambio.addingTimeInterval(5))
+        for (offset, atteso) in [(0.0, 5), (0.5, 5), (1.2, 4), (4.1, 1), (4.99, 1)] {
+            XCTAssertEqual(h.phase(at: cambio.addingTimeInterval(offset)), .switching(secondsLeft: atteso),
+                           "a \(offset) s dal cambio")
+        }
+    }
+
+    /// **Il lavoro non si accorcia: si allunga l'orologio.** È la riga che rende la finestra una
+    /// cosa buona invece che uno sconto — venti secondi per lato restano venti per lato, e il
+    /// polo negativo è la vecchia versione, dove il secondo lato finiva a 40 e i cinque secondi
+    /// per girarsi se li mangiava lui.
+    func testTheTurnaroundIsNotStolenFromTheSecondSide() {
+        let h = sidePlank(40)
+        XCTAssertEqual(h.endsAt, h.holdStart.addingTimeInterval(45), "40 di tenuta più 5 per girarsi")
+        guard let inizioSecondo = h.secondSideStart else { return XCTFail("nessun secondo lato") }
+        XCTAssertEqual(h.phase(at: inizioSecondo), .holding(side: 2, secondsLeft: 20))
+        XCTAssertEqual(h.phase(at: inizioSecondo.addingTimeInterval(19.5)), .holding(side: 2, secondsLeft: 1))
+        XCTAssertEqual(h.phase(at: inizioSecondo.addingTimeInterval(20)), .done)
+    }
+
+    /// Un esercizio senza lati non paga nessuna finestra: la sua tenuta dura quello che dice.
+    func testAnExerciseWithoutSidesIsNotLengthened() {
+        let h = plank(45)
+        XCTAssertEqual(h.endsAt, h.holdStart.addingTimeInterval(45))
+        XCTAssertNil(h.secondSideStart)
     }
 
     /// **Il numero che serve sotto sforzo è quello del lato**, non il totale: quaranta che scende
@@ -89,8 +127,12 @@ final class HoldTests: XCTestCase {
         let h = sidePlank(40)
         XCTAssertEqual(h.secondsLeftOnCurrentSide(at: h.holdStart), 20)
         XCTAssertEqual(h.secondsLeftOnCurrentSide(at: h.holdStart.addingTimeInterval(19)), 1)
+        // Mentre ti giri il lato in corso è già il secondo, e il secondo è intero: farlo scendere
+        // durante il cambio scalerebbe un tempo che non stai tenendo.
         XCTAssertEqual(h.secondsLeftOnCurrentSide(at: h.holdStart.addingTimeInterval(20)), 20)
-        XCTAssertEqual(h.secondsLeftOnCurrentSide(at: h.holdStart.addingTimeInterval(39)), 1)
+        XCTAssertEqual(h.secondsLeftOnCurrentSide(at: h.holdStart.addingTimeInterval(24)), 20)
+        XCTAssertEqual(h.secondsLeftOnCurrentSide(at: h.holdStart.addingTimeInterval(25)), 20)
+        XCTAssertEqual(h.secondsLeftOnCurrentSide(at: h.holdStart.addingTimeInterval(44)), 1)
     }
 
     /// Senza lati, il conto del lato è il conto e basta.
@@ -118,12 +160,23 @@ final class HoldTests: XCTestCase {
         }
     }
 
-    /// L'ordine è quello della vita: via, avviso, cambio, fine.
+    /// L'ordine è quello della vita: via, avviso, fermati e girati, riparti, fine.
     func testTheCuesComeInTheOrderYouLiveThem() {
         let h = sidePlank(40)
         let all = h.cues(from: h.startedAt.addingTimeInterval(-1),
                          to: h.endsAt.addingTimeInterval(1))
-        XCTAssertEqual(all, [.start, .switchWarning, .switchSide, .end])
+        XCTAssertEqual(all, [.start, .switchWarning, .switchSide, .secondSideStart, .end])
+    }
+
+    /// **Il «riparti» arriva cinque secondi dopo il «fermati», non insieme.** È l'unica cosa che
+    /// senti mentre sei girato dall'altra parte e lo schermo non lo guardi.
+    func testTheSecondSideIsAnnouncedWhenItActuallyStarts() {
+        let h = sidePlank(40)
+        guard let cambio = h.switchAt, let via = h.secondSideStart else { return XCTFail("nessun cambio") }
+        XCTAssertEqual(h.cues(from: cambio.addingTimeInterval(-0.1), to: cambio), [.switchSide])
+        XCTAssertTrue(h.cues(from: cambio, to: via.addingTimeInterval(-0.1)).isEmpty,
+                      "mentre ti giri non deve suonare niente")
+        XCTAssertEqual(h.cues(from: via.addingTimeInterval(-0.1), to: via), [.secondSideStart])
     }
 
     /// **L'avviso arriva prima del cambio, non insieme.** Tre secondi, perché in plank non guardi

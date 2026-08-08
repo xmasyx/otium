@@ -21,7 +21,7 @@ enum ProbeMode {
     private static let flags = [
         "--orphan-probe", "--sleep-probe", "--radar-probe", "--menu-probe", "--confirm-probe",
         "--flush-probe", "--window-probe", "--snapshot", "--demo-break", "--demo-hud", "--presence",
-        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo", "--demo-ritmo", "--mostra-crescita", "--demo-crescita", "--lsof-probe", "--mostra-prefs", "--scatta", "--stats-probe", "--registro-finto", "--cadenza-finta", "--circuito-subito",   // lingua: ok nomi di flag da riga di comando, non testo a schermo
+        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo", "--demo-ritmo", "--mostra-crescita", "--demo-crescita", "--lsof-probe", "--mostra-prefs", "--scatta", "--stats-probe", "--registro-finto", "--cadenza-finta", "--circuito-subito", "--conto-probe",   // lingua: ok nomi di flag da riga di comando, non testo a schermo
     ]
 
     static var active: Bool {
@@ -344,6 +344,18 @@ final class AppModel: ObservableObject {
                           "the deferred break resumes in one minute — \(upcomingTarget(plan))"),
                 sound: settings.notificationSound
             )
+        case .postponeWarning(let plan):
+            // **Muto, per la stessa ragione per cui è muto il rinvio**: la pausa che torna l'hai
+            // rimandata tu un minuto fa, quindi non è una sorpresa da coprire con un suono. Sua
+            // indicazione, 2026-08-08: *«muto va bene, ho rinviato io la pausa, so che sta
+            // arrivando»*. Il pannello resta, e il conto nella barra dei menu con lui.
+            hud.show(
+                title: plan.kind == .long
+                    ? L.t("Pausa piena fra un minuto", "Full break in one minute")
+                    : L.t("Pausa fra un minuto", "Break in one minute"),
+                subtitle: upcomingSubtitle(plan),
+                sound: nil
+            )
         case .callWatchdog(let seconds):
             // **Non blocca, avvisa.** È il rovescio del veto: da quando un microfono acceso
             // impedisce la pausa senza limiti, l'unico modo di accorgersi che un'app se l'è
@@ -600,7 +612,11 @@ final class AppModel: ObservableObject {
     private func play(_ cue: Hold.Cue) {
         switch cue {
         // Il via e il cambio sono due tocchi secchi: devono dire «adesso», non farsi ascoltare.
-        case .start, .switchSide: NSSound(named: "Pop")?.play()   // lingua: ok nome di un suono di sistema
+        // Il via, il fermati e il riparti sono tre tocchi secchi: devono dire «adesso», non farsi
+        // ascoltare. Il secondo lato ha il suo perché i cinque secondi del cambio li passi girato
+        // dall'altra parte, e lo schermo da lì non lo vedi.
+        case .start, .switchSide, .secondSideStart:
+            NSSound(named: "Pop")?.play()   // lingua: ok nome di un suono di sistema
         case .switchWarning:      NSSound(named: "Morse")?.play() // lingua: ok nome di un suono di sistema
         // La fine è l'unico suono che scegli tu, ed è l'unico che devi riconoscere da un'altra
         // stanza mentale: sei sotto sforzo e stai contando i tuoi secondi, non i miei.
@@ -929,8 +945,20 @@ final class AppModel: ObservableObject {
         // principale stesso, per il motivo giusto: si legge come sessanta minuti. Con la lettera
         // attaccata `47s` e `23m` non si confondono, e il salto fra le due scale si legge per
         // quello che è — il conto è passato ai secondi perché ci siamo.
-        case .warning: return "\(max(0, Int(engine.timer.rounded())))s"
-        case .postponed, .working: return "\(minutesToNextBreak)m"
+        // **E il conto non scorre, sale per gradini** (60s, 30s, poi 5-4-3-2-1): un numero che
+        // cambia ogni secondo a lato dello schermo è rumore, i gradini sono eventi. La scala vive
+        // in `Countdown`, dentro OtiumCore, perché è l'unico posto dove i test la vedono.
+        case .warning:
+            let gradino = Countdown.step(remaining: engine.timer,
+                                         warningSeconds: engine.settings.cadence.warningSeconds)
+            return "\(gradino)s"
+        // **Durante un rinvio il numero deve essere quello del rinvio.** Diceva `0m` per tutti e
+        // due i minuti, e non era un caso limite: leggeva i minuti che mancano all'intervallo, che
+        // durante un rinvio è già scaduto per definizione. Adesso dice quanto manca davvero al
+        // ritorno, e l'ultimo minuto lo prende in mano il preavviso con la sua scala.
+        case .postponed:
+            return "\(max(1, Int((engine.timer / 60).rounded(.up))))m"
+        case .working: return "\(minutesToNextBreak)m"
         }
     }
 

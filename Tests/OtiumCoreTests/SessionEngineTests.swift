@@ -335,6 +335,50 @@ final class SessionEngineTests: XCTestCase {
         XCTAssertEqual(engine.phase, .breaking)
     }
 
+    /// **Un rinvio non finisce di colpo: finisce con il suo preavviso.**
+    ///
+    /// Chiesto dal principale il 2026-08-08: *«quando rimando la pausa deve fare la stessa cosa dei
+    /// 60s, 30s, 5-4-3-2-1»*. La scala vive in `Countdown` e la disegna la fase `warning`: quello
+    /// che si prova qui è che il rinvio ci passi dentro invece di saltare diritto allo schermo
+    /// coperto.
+    func testAManualPostponeEndsWithTheUsualWarning() {
+        var engine = makeEngine()
+        advance(&engine, seconds: 30 * 60)
+        XCTAssertFalse(engine.postpone().isEmpty)
+        XCTAssertEqual(engine.phase, .postponed)
+
+        // Primo minuto: si aspetta, e basta.
+        advance(&engine, seconds: 55, step: 1)
+        XCTAssertEqual(engine.phase, .postponed, "a un minuto dal ritorno il preavviso non è ancora suo")
+
+        let eventi = advance(&engine, seconds: 10, step: 1)
+        XCTAssertEqual(engine.phase, .warning)
+        XCTAssertTrue(eventi.contains { if case .postponeWarning = $0 { return true }; return false },
+                      "il passaggio si annuncia, o nessuno può renderlo muto")
+        XCTAssertLessThanOrEqual(engine.timer, engine.settings.cadence.warningSeconds)
+
+        // **Il totale resta quello promesso.** Il preavviso sta dentro i due minuti, non dopo:
+        // due minuti da «rinvia» a schermo coperto, come dice il pannello.
+        advance(&engine, seconds: 60, step: 1)
+        XCTAssertEqual(engine.phase, .breaking)
+    }
+
+    /// **Il polo negativo del test qui sopra.** Il rinvio deciso dall'app per il microfono non deve
+    /// prendere questa strada: ha già la sua, quella che si apre quando il microfono si libera. Se
+    /// prendesse anche questa, il preavviso partirebbe **in piena call** e la pausa arriverebbe
+    /// dopo sessanta secondi contro la regola che dice che non può arrivare mai.
+    func testTheMicrophoneDeferralDoesNotBorrowThatWarning() {
+        var engine = makeEngine()
+        let inCall = EngineEnvironment(microphoneActive: true)
+        advance(&engine, seconds: 29 * 60, env: inCall)
+        advance(&engine, seconds: 70, env: inCall)
+        XCTAssertEqual(engine.phase, .postponed)
+
+        let eventi = advance(&engine, seconds: 20 * 60, step: 5, env: inCall)
+        XCTAssertEqual(engine.phase, .postponed, "finché il microfono è in uso non si esce dall'attesa")
+        XCTAssertFalse(eventi.contains { if case .postponeWarning = $0 { return true }; return false })
+    }
+
     /// ISC-9 — microfono in uso: si rimanda, non si blocca.
     func testBreakIsDeferredWhileTheMicrophoneIsInUse() {
         var engine = makeEngine()

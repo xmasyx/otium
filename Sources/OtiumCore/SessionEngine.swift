@@ -112,6 +112,14 @@ public enum EngineEvent: Equatable, Sendable {
     case breakSkipped(BreakPlan, SkipReason)
     case naturalBreak(seconds: Double, creditedLong: Bool)
     case postponed(BreakPlan)
+    /// Il rinvio che avevi chiesto sta finendo: da qui in poi è un preavviso come tutti gli altri.
+    ///
+    /// **Serve perché un rinvio non può finire di colpo.** Premevi «rinvia», passavano due minuti
+    /// muti e lo schermo si copriva senza un gradino: la scala `60s · 30s · 5-4-3-2-1` esisteva
+    /// solo sulla porta principale. Chiesto dal principale il 2026-08-08. È un evento a sé e non
+    /// `warningStarted` per una ragione sola: questo preavviso è **muto**, perché il rinvio l'hai
+    /// chiesto tu e sai che la pausa sta tornando.
+    case postponeWarning(BreakPlan)
     case autoDeferred(BreakPlan, reason: String)
     /// Il microfono si è chiuso e c'era una pausa rimandata per colpa sua: è dovuta adesso.
     ///
@@ -207,6 +215,10 @@ public struct SessionEngine {
     /// dura quello che dura; questo è un'attesa che ha una causa fuori dall'app, e quando la causa
     /// finisce l'attesa non ha più motivo di esistere.
     private var postponedForMicrophone = false
+    /// Il rinvio in corso l'hai chiesto tu. Distinto da quello per microfono perché solo questo
+    /// finisce con un preavviso: l'altro ha già la sua porta, quella che si apre quando il
+    /// microfono si libera.
+    private var postponedByUser = false
     /// Da quanto un microfono è acceso senza che tu abbia toccato niente. Vedi `callWatchdog`.
     private var callSilentSeconds: Double = 0
     private var callWatchdogSignalled = false
@@ -516,8 +528,28 @@ public struct SessionEngine {
         }
 
         timer -= elapsed
+
+        // **Il rinvio finisce dalla stessa porta da cui entra ogni pausa.** Gli ultimi secondi del
+        // rinvio *sono* il preavviso: la fase cambia, il cronometro no, e la scala nella barra dei
+        // menu riparte da dove sarebbe partita comunque. Il totale resta quello promesso — due
+        // minuti sono due minuti — perché il preavviso sta **dentro** il rinvio, come già sta
+        // dentro l'intervallo.
+        //
+        // Il piano si promuove qui per lo stesso motivo del ramo del microfono sopra: fra il
+        // rinvio e adesso il contatore ha camminato, e un preavviso che annuncia una micro mentre
+        // arriva una pausa piena mente per sessanta secondi.
+        if postponedByUser, settings.cadence.warningSeconds > 0, timer > 0,
+           timer <= settings.cadence.warningSeconds {
+            postponedByUser = false
+            let dovuta = overdueUpgrade(current, now: now)
+            plan = dovuta
+            phase = .warning
+            return [.postponeWarning(dovuta)]
+        }
+
         guard timer <= 0 else { return [] }
         postponedForMicrophone = false
+        postponedByUser = false
         return startBreak(current, now: now, environment: environment)
     }
 
@@ -554,6 +586,9 @@ public struct SessionEngine {
             autoDefersUsed += 1
             phase = .postponed
             postponedForMicrophone = true
+            // Il rinvio che c'era prima è consumato: adesso l'attesa ha un'altra causa, e la
+            // porta d'uscita è quella del microfono.
+            postponedByUser = false
             timer = settings.autoDeferSeconds
             return [.autoDeferred(current, reason: "microfono in uso")]
         }
@@ -582,6 +617,7 @@ public struct SessionEngine {
         timer = 0
         plan = nil
         postponedForMicrophone = false
+        postponedByUser = false
         exerciseDone = false
         idleDuringBreak = 0
         return []
@@ -602,6 +638,7 @@ public struct SessionEngine {
         exerciseBaseline = 0
         singleExercise = nil
         postponedForMicrophone = false
+        postponedByUser = false
         timeOverSignalled = false
         return [event]
     }
@@ -886,6 +923,7 @@ public struct SessionEngine {
         guard canPostpone, let current = plan else { return [] }
         postponesUsed += 1
         phase = .postponed
+        postponedByUser = true
         timer = settings.cadence.postponeSeconds
         // Stessa incoerenza di `setPaused`, stesso rimedio: rinviare lascia il piano in piedi ma
         // non può lasciare in piedi «esercizio fatto», o per due minuti lo stato dice che hai
@@ -949,6 +987,7 @@ public struct SessionEngine {
         autoDefersUsed = 0
         // La causa del rinvio non esiste più: la pausa la stai facendo partire tu.
         postponedForMicrophone = false
+        postponedByUser = false
         exerciseDone = false
         idleDuringBreak = 0
         return startBreak(newPlan, now: now, environment: .quiet, forced: true)
@@ -1105,6 +1144,7 @@ public struct SessionEngine {
             idleDuringBreak = 0
             exerciseBaseline = 0
             singleExercise = nil
+            postponedByUser = false
         } else if phase == .paused {
             phase = .working
             clock.reset()

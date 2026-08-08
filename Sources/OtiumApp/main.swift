@@ -17,6 +17,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var growthWindow: NSWindow?
     private var doctorWindow: NSWindow?
     private var refreshTimer: Timer?
+    /// L'ultima scritta consegnata alla barra: serve a non riscriverla identica ogni secondo.
+    private var lastStatusTitle: String?
     private var statsHotKey: GlobalHotKey?
 
     /// La scorciatoia globale delle statistiche, scelta dal principale il 2026-07-28: **⌃S**.
@@ -93,7 +95,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         }
 
 
-        let t = Timer(timeInterval: 5.0, repeats: true) { [weak self] _ in self?.updateStatusTitle() }
+        // **Ogni secondo, non ogni cinque.** Con cinque secondi di passo gli ultimi cinque del
+        // preavviso non si vedono proprio: la barra ne mostrerebbe uno a caso e salterebbe gli
+        // altri quattro. Il costo si paga solo quando c'è qualcosa di nuovo da scrivere, perché
+        // `updateStatusTitle` esce senza toccare AppKit se la scritta non è cambiata — e per
+        // ventitré minuti su ventiquattro non cambia.
+        let t = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in self?.updateStatusTitle() }
         RunLoop.main.add(t, forMode: .common)
         refreshTimer = t
 
@@ -125,6 +132,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         runPrefsDemoIfRequested()
         runLsofProbeIfRequested()
         runRadarProbeIfRequested()
+        runCountdownProbeIfRequested()
 
         // Il secondo avvio non apre niente di nuovo: chiede a questa istanza di farsi vedere.
         // Su un'app della barra dei menu "farsi vedere" significa dire come sta, altrimenti
@@ -746,6 +754,52 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         }
     }
 
+    /// `--conto-probe` — nella barra dei menu si leggono davvero 60s, 30s, 5, 4, 3, 2, 1?
+    ///
+    /// **Legge il titolo dell'elemento nella barra, non il modello.** È la differenza che conta:
+    /// il numero giusto calcolato da `Countdown` non serve a niente se il timer che lo consegna ad
+    /// AppKit gira ogni cinque secondi, ed è esattamente com'era fino a oggi — gli ultimi cinque
+    /// secondi non sarebbero mai comparsi. Una sonda sul modello avrebbe detto PASS lo stesso.
+    ///
+    /// Il polo negativo è la lunghezza della sequenza: un conto che scorre al secondo produce
+    /// sessanta scritte diverse invece di sette, e la sonda fallisce.
+    private func runCountdownProbeIfRequested() {
+        guard CommandLine.arguments.contains("--conto-probe") else { return }
+        Thread.detachNewThread {
+            Thread.sleep(forTimeInterval: 120)
+            FileHandle.standardError.write("sonda: guardiano scattato\n".data(using: .utf8)!)
+            exit(3)
+        }
+
+        model.headless = true          // la pausa in fondo al preavviso non copre lo schermo
+        model.idleOverride = 0         // nessuno tocca la tastiera durante una sonda
+        var s = model.settings
+        s.cadence.intervalSeconds = 120
+        s.cadence.warningSeconds = 60
+        model.update(settings: s)
+        model.declareTimeAlreadySeated(minutes: 2)   // il prossimo battito entra nel preavviso
+
+        var viste: [String] = []
+        let campionatore = Timer(timeInterval: 0.2, repeats: true) { [weak self] _ in
+            guard let titolo = self?.statusItem.button?.title else { return }
+            if viste.last != titolo { viste.append(titolo) }
+        }
+        RunLoop.main.add(campionatore, forMode: .common)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 64) {
+            campionatore.invalidate()
+            print("scritte lette nella barra: \(viste.joined(separator: " → "))")
+            let conto = viste.filter { $0.hasSuffix("s") }
+            let attese = ["60s", "30s", "5s", "4s", "3s", "2s", "1s"]
+            let inOrdine = conto.filter(attese.contains) == attese
+            let ok = inOrdine && conto.count <= attese.count + 1   // + l'eventuale 0s a filo di pausa
+            print(ok
+                  ? "RISULTATO: PASS — la barra mostra i sette gradini, in ordine"
+                  : "RISULTATO: FAIL — attesi \(attese), letti \(conto)")
+            exit(ok ? 0 : 1)
+        }
+    }
+
     /// `--demo-ritmo` — la domanda delle due settimane, **come la vede chi ci è dentro**.
     ///
     /// Simula un'installazione di due settimane fa ancora in partenza graduale, che è l'unico
@@ -1179,7 +1233,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
     private func updateStatusTitle() {
-        statusItem.button?.title = model.statusTitle
+        let titolo = model.statusTitle
+        guard titolo != lastStatusTitle else { return }
+        lastStatusTitle = titolo
+        statusItem.button?.title = titolo
         statusItem.button?.toolTip = model.phase == .paused
             ? L.t("Otium sospesa", "Otium paused")
             : L.t("Prossima pausa fra \(model.minutesToNextBreak) minuti di lavoro attivo",

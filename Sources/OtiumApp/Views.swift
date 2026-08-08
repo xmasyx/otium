@@ -346,8 +346,8 @@ struct BreakView: View {
             // quando arriva sei sotto e non guardi niente.
             if plan.exercise.kind.isTimed, model.hold == nil {
                 Text(plan.exercise.kind.isPerSide
-                     ? L.t("\(plan.exercise.displayReps) s per lato. Due tocchi ti avvisano \(Int(Hold.switchWarningSeconds)) s prima del cambio, e un suono diverso chiude.",
-                           "\(plan.exercise.displayReps) s per side. Two taps warn you \(Int(Hold.switchWarningSeconds)) s before the switch, a different sound ends it.")
+                     ? L.t("\(plan.exercise.displayReps) s per lato. Due tocchi ti avvisano \(Int(Hold.switchWarningSeconds)) s prima del cambio, poi hai \(Int(Hold.switchPrepareSeconds)) s per girarti, e un suono diverso chiude.",
+                           "\(plan.exercise.displayReps) s per side. Two taps warn you \(Int(Hold.switchWarningSeconds)) s before the switch, then you get \(Int(Hold.switchPrepareSeconds)) s to turn over, and a different sound ends it.")
                      : L.t("Il tempo scende da solo e un suono chiude, non devi guardare lo schermo.",
                            "The time counts down on its own and a sound ends it: you do not have to watch the screen."))
                     .font(.system(size: 14))
@@ -422,6 +422,21 @@ struct BreakView: View {
                         .foregroundStyle(Palette.dim)
                         .tracking(2)
                 }
+            }
+
+        case .switching(let left):
+            // **Il cambio di lato ha la faccia della preparazione, ed è voluto.** È la stessa cosa
+            // che stai facendo — ti stai mettendo in posizione — e riconoscerla senza leggerla è
+            // il punto: da terra, girato, quello che ti arriva è il colore e un numero che scende.
+            VStack(spacing: 10) {
+                Text("\(left)")
+                    .font(.system(size: 140, weight: .bold, design: .rounded))
+                    .foregroundStyle(Palette.accent)
+                    .monospacedDigit()
+                Text(L.t("cambia lato", "switch sides"))
+                    .font(.system(size: 20, weight: .medium, design: .rounded))
+                    .foregroundStyle(Palette.accent)
+                    .tracking(2)
             }
 
         case .done:

@@ -202,7 +202,11 @@ public final class Ledger: @unchecked Sendable {
         // `callWatchdog` non lascia riga per la stessa ragione: è un sospetto sul mondo, non un
         // fatto sulla tua giornata, e il registro deve poter essere letto come cronologia di
         // quello che hai fatto davvero.
-        case .warningStarted, .breakStarted, .deferredBreakDue, .breakTimeOver, .callWatchdog:
+        // `postponeWarning` sta con loro, e vale la pena dirlo: il rinvio l'ha già scritto
+        // `postponed`, e questo evento è solo la sua ultima parte. Una riga qui conterebbe due
+        // volte lo stesso rinvio.
+        case .warningStarted, .breakStarted, .deferredBreakDue, .breakTimeOver, .callWatchdog,
+             .postponeWarning:
             return nil
         case .exerciseConfirmed(let exercise):
             return LedgerEntry(timestamp: now, type: .exerciseDone,

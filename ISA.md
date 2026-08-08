@@ -2337,3 +2337,53 @@ autosufficienza sono due esempi diversi e la riga sotto non la copriva davvero.
       caratteri era comunque la domanda più debole — il corpo scende a 30 punti sopra i 95, quindi
       la lunghezza non dice l'altezza. *Falsificatore:* `nessunaFraseSuperaLeTreRigheNelRiposo`,
       provato rosso abbassando la soglia a 2 (7 fallimenti).
+
+## Iterazione 27 — il rinvio ha una fine, il cambio lato ha un respiro (2026-08-08)
+
+> *«quando rimando la pausa però deve fare la stessa cosa dei 60s, 30s, 5,4,3,2,1»* e *«quando ci
+> sono esercizi come plank sul lato, al cambio lato deve darmi 5 secondi per mettermi in posizione
+> ma senza dover cliccare, automaticamente»*. Due difetti che si vedono solo vivendoli: il primo
+> nella barra dei menu, il secondo con la faccia sul pavimento.
+
+- [x] **ISC-205** Un rinvio chiesto a mano finisce **dentro un preavviso**, con la stessa scala di
+      sempre — 60s, 30s, 5-4-3-2-1 — e non con lo schermo che si copre di colpo. *Falsificatore:*
+      `testAManualPostponeEndsWithTheUsualWarning`, che pretende la fase `warning` e l'evento
+      `postponeWarning` nell'ultimo minuto del rinvio.
+
+- [x] **ISC-206** Il totale promesso non cambia: il preavviso sta **dentro** i due minuti, come già
+      sta dentro l'intervallo. *Falsificatore:* lo stesso test, che al minuto 2 esatto pretende
+      `breaking`.
+
+- [x] **ISC-207** Quel preavviso è **muto**. Il rinvio l'hai chiesto tu un minuto fa, quindi non è
+      la sorpresa che i suoni servono a coprire. *Falsificatore:* il gestore di `postponeWarning`
+      in `AppModel`, `sound: nil`, e l'evento separato da `warningStarted` proprio per poterlo dire.
+
+- [x] **ISC-208** `Anti:` Il rinvio deciso **dall'app per il microfono** non prende quella strada:
+      ha già la sua, quella che si apre quando il microfono si libera. Se la prendesse, il preavviso
+      partirebbe in piena call. *Falsificatore:*
+      `testTheMicrophoneDeferralDoesNotBorrowThatWarning`, venti minuti di call simulata: zero
+      `postponeWarning`, fase sempre `postponed`.
+
+- [x] **ISC-209** Durante un rinvio la barra dei menu dice **quanto manca al ritorno**. Diceva `0m`
+      per tutti e due i minuti, perché leggeva i minuti che mancano all'intervallo — che durante un
+      rinvio è scaduto per definizione. *Falsificatore:* `AppModel.statusTitle`, ramo `.postponed`,
+      letto sul cronometro del rinvio.
+
+- [x] **ISC-210** Al cambio di lato ci sono **cinque secondi per rimettersi in posizione**, e
+      arrivano **da soli**: nessun pulsante, come per i cinque secondi iniziali. *Falsificatore:*
+      `testTheSwitchOpensAFiveSecondWindowWithoutAnyGesture`, il conto 5→1 su cinque istanti.
+
+- [x] **ISC-211** Quei cinque secondi **non li paga il secondo lato**: venti per lato restano venti
+      per lato, e a scorrere è l'orologio. *Falsificatore:*
+      `testTheTurnaroundIsNotStolenFromTheSecondSide` — `endsAt` a `holdStart + 45` per un 40, e il
+      secondo lato che comincia intero.
+
+- [x] **ISC-212** Mentre ti giri lo schermo lo dice e un suono lo scandisce due volte: «fermati» al
+      cambio, «riparti» cinque secondi dopo. Sei girato dall'altra parte, lo schermo non lo guardi.
+      *Falsificatore:* `testTheSecondSideIsAnnouncedWhenItActuallyStarts`, che pretende il silenzio
+      **in mezzo**, e la fotografia della faccia vera (`--esercizio=sidePlank --tenuta-da=16`).
+
+**Chiuse il 2026-08-08.** Suite piena **383 verdi**. *Poli negativi:* azzerando
+`Hold.switchPrepareSeconds` e disattivando il passaggio a `warning`, **6 test diventano rossi**
+(cinque di `HoldTests`, `testAManualPostponeEndsWithTheUsualWarning`), poi ripristinati e riprovati
+verdi. Bundle ricostruito e installato: `dist/Otium.app` e `/Applications/Otium.app`.
