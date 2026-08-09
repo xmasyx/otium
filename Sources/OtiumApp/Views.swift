@@ -1855,6 +1855,11 @@ struct PrefsView: View {
         .frame(width: 760, height: 580)
         .background(Palette.windowPaper)
         .livrea()
+        // **La stessa impostazione si gira anche dal menu della barra** (2026-08-09), e la bozza
+        // non se ne accorgerebbe: l'interruttore resterebbe spento con la modalità accesa, cioè
+        // di nuovo la distanza fra quello che vedi e quello che fa il motore. Si allinea solo il
+        // campo di Zen, non tutta la bozza: le altre modifiche in sospeso restano tue.
+        .onChange(of: model.settings.zenMode) { _, nuovo in draft.zenMode = nuovo }
     }
 
         /// La colonna: piena, attaccata ai bordi, con la selezione nella livrea scelta.

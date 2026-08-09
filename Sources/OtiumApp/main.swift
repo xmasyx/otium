@@ -19,6 +19,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var refreshTimer: Timer?
     /// L'ultima scritta consegnata alla barra: serve a non riscriverla identica ogni secondo.
     private var lastStatusTitle: String?
+    /// La voce «Modalità Zen» del menu, tenuta per riferimento e non ritrovata per titolo: il
+    /// titolo è tradotto e cambierebbe con la lingua, il riferimento no.
+    private weak var zenItem: NSMenuItem?
     private var statsHotKey: GlobalHotKey?
 
     /// La scorciatoia globale delle statistiche, scelta dal principale il 2026-07-28: **⌃S**.
@@ -107,10 +110,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // Una riga da leggere mentre l'app si mette in ascolto. Cambia a ogni avvio.
         // Non durante le sonde: la frase d'avvio **sostituisce** il pannello che si sta provando,
         // e la sonda finirebbe per misurare una superficie diversa da quella che ha chiesto.
-        if !CommandLine.arguments.contains(where: { $0.hasPrefix("--snapshot") || $0.hasPrefix("--demo-hud") }) {
+        // `--scatta-menu` sta qui per una ragione vista sullo schermo: la frase d'avvio compare
+        // dopo sei decimi in un pannello suo, e **chiude il menu** che la sonda ha appena aperto.
+        // Il primo scatto era venuto buono per fortuna di tempi, il secondo mostrava la frase e
+        // nessun menu.
+        if !CommandLine.arguments.contains(where: {
+            $0.hasPrefix("--snapshot") || $0.hasPrefix("--demo-hud") || $0.hasPrefix("--scatta-menu")
+                || $0.hasPrefix("--segno-zen")
+        }) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
                 self?.model.showLaunchQuote()
             }
+        }
+
+        // `--zen-acceso` accende la modalità nella cartella usa e getta della sonda: serve a
+        // guardare la barra e il menu **come li vede chi l'ha accesa**, che con le impostazioni di
+        // serie non si vedrebbero mai.
+        if CommandLine.arguments.contains("--zen-acceso"), ProbeMode.active {
+            var s = model.settings
+            s.zenMode = true
+            model.update(settings: s)
+            statusItem.menu = buildMenu()
+            updateStatusTitle()
         }
 
         runDemoIfRequested()
@@ -123,6 +144,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         runOrphanProbeIfRequested()
         runSleepProbeIfRequested()
         runMenuProbeIfRequested()
+        captureMenuIfRequested()
+        captureBarIfRequested()
         runHotKeyProbeIfRequested()
         runPolicyProbeIfRequested()
         runCircuitProbeIfRequested()
@@ -489,6 +512,89 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             let scatto = Process()
             scatto.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
             scatto.arguments = ["-x", "-o", "-l\(window.windowNumber)", path]
+            try? scatto.run()
+            scatto.waitUntilExit()
+            print(path)
+            NSApp.terminate(nil)
+        }
+    }
+
+    /// `--scatta-menu=<file.png>` — fotografa il **menu della barra aperto**, che è l'unica
+    /// superficie dell'app che nessuna resa fuori schermo sa disegnare: lo compone il server delle
+    /// finestre quando lo apri, e `--scatta` non lo vede perché non è una finestra dell'app.
+    ///
+    /// Serve alla regola che dice di guardare la **pagina intera** dopo averne toccato una voce:
+    /// una spunta giusta in mezzo a voci sbagliate resta un menu sbagliato, e il difetto sta nella
+    /// relazione fra le righe, non nella riga.
+    ///
+    /// Lo scatto lo fa un processo esterno perché aprire il menu **blocca** questo: `performClick`
+    /// non ritorna finché il menu è aperto. Lo stesso processo poi chiude l'app, così l'uscita non
+    /// dipende da un run loop che sta girando dentro il tracking del menu.
+    ///
+    /// Con `--zen-acceso` la modalità Zen parte accesa: serve a guardare **la spunta**, che con le
+    /// impostazioni di serie non si disegnerebbe mai.
+    private func captureMenuIfRequested() {
+        guard let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--scatta-menu=") }),
+              let path = arg.split(separator: "=", maxSplits: 1).last.map(String.init)
+        else { return }
+
+        // **La regione si calcola tardi, non subito.** A fine avvio la finestra del pulsante nella
+        // barra ha ancora frame zero, e `screencapture` riceveva un rettangolo fuori da ogni
+        // schermo — risponde «does not intersect any displays» e non scatta niente. Ritagliare
+        // invece di prendere lo schermo intero serve a non portarsi dietro la scrivania di chi
+        // lancia la sonda.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+            guard let self else { return }
+            let finestra = self.statusItem.button?.window?.frame ?? .zero
+            let altezzaSchermo = NSScreen.main?.frame.height ?? 900
+            // Il menu si apre **a destra** del pulsante e si allarga fin dove serve: ancorare il
+            // ritaglio al bordo destro dello schermo è l'unico modo di prenderlo tutto. Il primo
+            // giro l'aveva tagliato a metà, e mezza pagina non risponde alla domanda per cui la
+            // sonda esiste.
+            let larghezzaSchermo = NSScreen.main?.frame.width ?? 1440
+            let larghezza = 460
+            let x = Int(max(0, min(finestra.minX - 40, larghezzaSchermo - CGFloat(larghezza))))
+            let y = Int(max(0, altezzaSchermo - finestra.maxY))
+            let regione = "\(x),\(y),\(larghezza),680"
+
+            let pid = ProcessInfo.processInfo.processIdentifier
+            let esterno = Process()
+            esterno.executableURL = URL(fileURLWithPath: "/bin/sh")
+            esterno.arguments = ["-c",
+                                 "sleep 1.5; /usr/sbin/screencapture -x -o -R\(regione) '\(path)'; kill \(pid)"]
+            try? esterno.run()
+
+            // Apre il menu e non torna finché resta aperto: da qui comanda il processo esterno,
+            // che scatta e chiude.
+            self.statusItem.button?.performClick(nil)
+        }
+    }
+
+    /// `--scatta-barra=<file.png>` — fotografa **solo la propria voce nella barra**, senza aprire
+    /// niente.
+    ///
+    /// Serve a scegliere un simbolo guardandolo. Lanciare più istanze insieme e fotografare tutta
+    /// la barra sembrava più furbo e non lo è: l'ordine con cui gli status item si dispongono
+    /// dipende da chi parte per primo, quindi in una foto sola non sai più quale segno è quale. Una
+    /// istanza per volta, ritagliata sul proprio rettangolo, toglie l'ambiguità.
+    private func captureBarIfRequested() {
+        guard let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--scatta-barra=") }),
+              let path = arg.split(separator: "=", maxSplits: 1).last.map(String.init)
+        else { return }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+            guard let self, let finestra = self.statusItem.button?.window?.frame else {
+                NSApp.terminate(nil); return
+            }
+            let altezzaSchermo = NSScreen.main?.frame.height ?? 900
+            let x = Int(max(0, finestra.minX - 12))
+            let y = Int(max(0, altezzaSchermo - finestra.maxY))
+            let w = Int(finestra.width + 24)
+            let h = Int(min(finestra.height, 40))
+
+            let scatto = Process()
+            scatto.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+            scatto.arguments = ["-x", "-o", "-R\(x),\(y),\(w),\(h)", path]
             try? scatto.run()
             scatto.waitUntilExit()
             print(path)
@@ -1121,8 +1227,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         print(ok
               ? "RISULTATO: PASS — nessuna voce promette una scorciatoia globale che l'app non ha"
               : "RISULTATO: FAIL — promettono ⌘ senza poterlo mantenere: \(promesse.joined(separator: ", "))")
+
+        // **La spunta della modalità Zen, e ha due poli.** Non basta che il clic accenda: la
+        // stessa impostazione si gira anche dalle Preferenze, quindi la sonda cambia lo stato
+        // **alle spalle del menu** e chiede al menu di riaprirsi. Il giorno in cui la
+        // risincronizzazione sparisse, quella riga diventerebbe rossa da sola; senza quel polo,
+        // il verde direbbe solo «il mio clic funziona», che è la domanda più debole.
+        var zenOk = zenItem != nil && zenItem?.state == .off && !model.settings.zenMode
+        print("zen · spenta di serie: \(zenOk ? "sì" : "NO")")
+        toggleZen()
+        let acceso = model.settings.zenMode && zenItem?.state == .on
+        print("zen · un clic la accende, spunta compresa: \(acceso ? "sì" : "NO")")
+        toggleZen()
+        let spento = !model.settings.zenMode && zenItem?.state == .off
+        print("zen · un altro clic la spegne: \(spento ? "sì" : "NO")")
+        var fuori = model.settings
+        fuori.zenMode = true
+        model.update(settings: fuori)
+        let primaDiRiaprire = zenItem?.state == .on
+        if let menu { menuWillOpen(menu) }
+        let riallineata = zenItem?.state == .on
+        print("zen · cambiata dalle Preferenze, la spunta si allinea riaprendo il menu: "
+              + "\(riallineata ? "sì" : "NO") (prima di riaprire era \(primaDiRiaprire ? "già on" : "off"))")
+        // **Il segno nella barra, e il polo che conta è l'aggiornamento immediato.** Il titolo non
+        // cambia quando giri la modalità, quindi la scorciatoia che salta le riscritture inutili
+        // farebbe comparire il vento al battito dopo. Qui si guarda subito, senza aspettare un
+        // secondo: se ricomparisse quella scorciatoia, questa riga diventerebbe rossa.
+        updateStatusTitle()
+        let segnoAcceso = statusItem.button?.image != nil
+        toggleZen()
+        let segnoSpento = statusItem.button?.image == nil && !model.settings.zenMode
+        toggleZen()
+        let segnoTornato = statusItem.button?.image != nil && model.settings.zenMode
+        print("zen · con la modalità accesa la barra porta il segno: \(segnoAcceso ? "sì" : "NO")")
+        print("zen · spegnendola il segno sparisce subito: \(segnoSpento ? "sì" : "NO")")
+        print("zen · riaccendendola torna subito: \(segnoTornato ? "sì" : "NO")")
+
+        zenOk = zenOk && acceso && spento && riallineata && segnoAcceso && segnoSpento && segnoTornato
+        print(zenOk
+              ? "RISULTATO ZEN: PASS — spunta e segno nella barra dicono sempre quello che fa il motore"
+              : "RISULTATO ZEN: FAIL")
+
         NSApp.terminate(nil)
-        exit(ok ? 0 : 1)
+        exit(ok && zenOk ? 0 : 1)
     }
 
     /// `--sleep-probe` — mentre il Mac dorme o lo schermo è bloccato, lo scudo si toglie di mezzo
@@ -1253,15 +1400,74 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
+    /// **Il simbolo di Zen nella barra, in un posto solo.**
+    ///
+    /// Il nome sta qui e non sparso nel codice perché è una scelta di gusto, e una scelta di gusto
+    /// si cambia guardandola: `--segno-zen=<nome>` la sovrascrive per una sonda, così i candidati
+    /// si mettono fianco a fianco nella barra vera invece di discuterli a parole. Con `char:` si
+    /// disegna un carattere qualunque, per i segni che SF Symbols non ha, come lo yin e lo yang.
+    static let zenSymbolDefault = "leaf"
+
+    private static func segnoZen() -> NSImage? {
+        let nome = CommandLine.arguments
+            .first { $0.hasPrefix("--segno-zen=") }?
+            .split(separator: "=", maxSplits: 1).last.map(String.init) ?? zenSymbolDefault
+        let descrizione = L.t("Modalità Zen attiva", "Zen mode on")
+
+        if nome.hasPrefix("char:") {
+            let testo = String(nome.dropFirst(5))
+            // Il carattere si disegna a mano: un `NSImage` da testo, con la stessa altezza di un
+            // simbolo di sistema, e da modello come gli altri per seguire chiaro e scuro.
+            let font = NSFont.systemFont(ofSize: 13)
+            let attributi: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.black]
+            let misura = (testo as NSString).size(withAttributes: attributi)
+            let img = NSImage(size: NSSize(width: ceil(misura.width), height: ceil(misura.height)))
+            img.lockFocus()
+            (testo as NSString).draw(at: .zero, withAttributes: attributi)
+            img.unlockFocus()
+            img.isTemplate = true
+            img.accessibilityDescription = descrizione
+            return img
+        }
+
+        let config = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)
+        let segno = NSImage(systemSymbolName: nome, accessibilityDescription: descrizione)?
+            .withSymbolConfiguration(config)
+        segno?.isTemplate = true
+        return segno
+    }
+
     private func updateStatusTitle() {
         let titolo = model.statusTitle
-        guard titolo != lastStatusTitle else { return }
-        lastStatusTitle = titolo
+        let zen = model.settings.zenMode
+        // **La chiave del confronto porta anche Zen, non solo la scritta.** Girando la modalità i
+        // minuti non cambiano, quindi con il solo titolo l'uscita anticipata si mangiava il segno:
+        // sarebbe comparso un minuto dopo, quando il numero cambia da sé.
+        let chiave = "\(titolo)|\(zen)"
+        guard chiave != lastStatusTitle else { return }
+        lastStatusTitle = chiave
         statusItem.button?.title = titolo
-        statusItem.button?.toolTip = model.phase == .paused
+
+        // **Il segno di Zen sta nella barra, non solo dentro il menu** (sua richiesta,
+        // 2026-08-09). La modalità decide che cosa ti chiede la prossima pausa, e se per saperlo
+        // devi aprire il menu lo stato resta nascosto proprio a chi l'ha appena girato. Un simbolo
+        // e non una lettera, perché accanto a un numero di minuti un carattere qualunque si legge
+        // come parte del numero. Da modello, così segue il chiaro e lo scuro della barra da sé.
+        if zen {
+            statusItem.button?.image = Self.segnoZen()
+            statusItem.button?.imagePosition = .imageLeading
+        } else {
+            statusItem.button?.image = nil
+            statusItem.button?.imagePosition = .noImage
+        }
+
+        let base = model.phase == .paused
             ? L.t("Otium sospesa", "Otium paused")
             : L.t("Prossima pausa fra \(model.minutesToNextBreak) minuti di lavoro attivo",
                   "Next break in \(model.minutesToNextBreak) minutes of active work")
+        statusItem.button?.toolTip = zen
+            ? base + L.t(" · modalità Zen attiva", " · Zen mode on")
+            : base
     }
 
     // MARK: - Menu
@@ -1286,6 +1492,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: L.t("Sospendi", "Pause"), action: #selector(togglePause), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: L.t("Fai una pausa adesso", "Take a break now"), action: #selector(breakNow), keyEquivalent: ""))
+
+        // **La modalità Zen si accende da qui, oltre che dalle Preferenze** (sua richiesta,
+        // 2026-08-09). Sta accanto a «Fai una pausa adesso» perché risponde alla stessa domanda —
+        // che cosa succede alla prossima pausa — e perché è la decisione che si prende quando la
+        // situazione cambia sotto di te: arriva qualcuno, sei in ufficio, non puoi metterti a
+        // terra. Aprire una finestra di preferenze per una decisione di quel tipo è una porta di
+        // troppo. Le tre scelte di dettaglio (i due protocolli e la durata) restano nelle
+        // Preferenze: si decidono una volta, non a ogni pausa.
+        let zen = NSMenuItem(title: L.t("Modalità Zen", "Zen mode"), action: #selector(toggleZen), keyEquivalent: "")
+        zen.state = model.settings.zenMode ? .on : .off
+        menu.addItem(zen)
+        zenItem = zen
 
         // Due pannelli invece di due sottomenu: servono due informazioni per volta (quale
         // esercizio, quante ripetizioni), e un menu sa fare una domanda sola.
@@ -1338,6 +1556,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         }
         if let hosting = menu.items.first?.view as? NSHostingView<MenuPanel> {
             hosting.rootView = MenuPanel(model: model)
+        }
+        // La spunta si rilegge a ogni apertura, non solo quando è il menu a cambiarla: la stessa
+        // impostazione si gira anche dalle Preferenze, e un segno di spunta che descrive lo stato
+        // di mezz'ora fa è peggio di nessun segno.
+        zenItem?.state = model.settings.zenMode ? .on : .off
+    }
+
+    /// **Accende e spegne la modalità Zen scrivendo sul disco subito**, come fa l'interruttore
+    /// nelle Preferenze: qui non c'è nessun «Applica» dietro cui nascondersi, e la pausa che
+    /// arriva fra due minuti deve già essere quella giusta.
+    ///
+    /// Un salvataggio fallito si dice, perché `update` cambia comunque l'impostazione viva e la
+    /// differenza si vede solo al prossimo avvio: la pausa di oggi è quella che vedi, quella di
+    /// domani no.
+    @objc private func toggleZen() {
+        var s = model.settings
+        s.zenMode.toggle()
+        let scritto = model.update(settings: s)
+        zenItem?.state = model.settings.zenMode ? .on : .off
+        // Il segno nella barra si aggiorna adesso, non al prossimo battito del secondo.
+        updateStatusTitle()
+        if !scritto {
+            model.announce(
+                title: L.t("Non sono riuscito a salvare le preferenze",
+                           "I could not save the preferences"),
+                subtitle: L.t("La modalità Zen vale adesso, ma al prossimo avvio torna com'era.",
+                              "Zen mode applies now, but it will revert on the next launch.")
+            )
         }
     }
 

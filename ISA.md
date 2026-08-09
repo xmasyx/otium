@@ -2387,3 +2387,52 @@ autosufficienza sono due esempi diversi e la riga sotto non la copriva davvero.
 `Hold.switchPrepareSeconds` e disattivando il passaggio a `warning`, **6 test diventano rossi**
 (cinque di `HoldTests`, `testAManualPostponeEndsWithTheUsualWarning`), poi ripristinati e riprovati
 verdi. Bundle ricostruito e installato: `dist/Otium.app` e `/Applications/Otium.app`.
+
+## Iterazione 28 — la modalità Zen si gira dalla barra (2026-08-09)
+
+> *«voglio che all'interno del menu a tendina ci sia la possibilità di selezionare Zen Mode»* e, un
+> giro dopo, *«voglio essere in grado di accendere o spegnere la modalità zen direttamente alla
+> barra menu»*. In mezzo, una proposta respinta con la sua ragione: **niente interruttore dentro il
+> menu**, perché in un `NSMenu` lo stato binario si scrive con la spunta, e una view dentro il
+> tracking del menu è il rettangolo che sembra premibile e risponde male, difetto già pagato due
+> volte fra Otium e Kalamos.
+
+- [x] **ISC-213** La modalità Zen si accende e si spegne **dal menu della barra**, con un clic, e la
+      voce porta la spunta quando è accesa. *Falsificatore:* `--menu-probe`, che parte da spenta,
+      gira la voce due volte e pretende ogni volta impostazione e spunta d'accordo.
+
+- [x] **ISC-214** Il clic **scrive sul disco subito**, senza «Applica», e se la scrittura fallisce lo
+      dice: l'impostazione viva è cambiata comunque, quindi la pausa di oggi è quella nuova e quella
+      di domani no. *Falsificatore:* il ramo `!scritto` di `toggleZen`, che annuncia invece di
+      tacere.
+
+- [x] **ISC-215** La spunta si allinea anche quando la modalità cambia **da un'altra parte** (le
+      Preferenze): si rilegge a ogni apertura del menu. *Falsificatore:* `--menu-probe`, che cambia
+      lo stato alle spalle del menu e stampa anche com'era **prima** di riaprirlo — se quel «prima»
+      diventasse `on`, la riga non misurerebbe più niente.
+
+- [x] **ISC-216** Con Zen accesa la **barra dei menu porta un segno** (`leaf`, da modello, quindi
+      segue chiaro e scuro), e il segno compare e sparisce **nell'istante** del clic, non al battito
+      del secondo dopo. *Falsificatore:* `--menu-probe`, tre righe sul segno; *polo negativo
+      provato:* togliendo `zen` dalla chiave di confronto di `updateStatusTitle`, due di quelle tre
+      diventano `NO` e il risultato `FAIL`.
+
+- [x] **ISC-217** `Anti:` Il **pannello disegnato in cima al menu resta informativo**: nessun
+      interruttore SwiftUI dentro una voce di menu. La spunta è la forma nativa dello stato in un
+      menu, e porta gratis tastiera, VoiceOver e chiusura al clic. *Falsificatore:* il menu è
+      ancora fatto di sole azioni più una voce a stato, verificato nella fotografia del menu aperto
+      nei due stati.
+
+- [x] **ISC-218** Il segno si **sceglie guardandolo**, non a parole: `--segno-zen=<nome|char:X>` lo
+      sovrascrive per una sonda e `--scatta-barra=<file>` fotografa la sola voce nella barra, una
+      istanza per volta. *Perché una per volta:* l'ordine degli status item dipende da chi parte
+      prima, quindi in una foto sola non sai più quale segno è quale. *Risultato:* lo yin e lo yang
+      è **impossibile** e la prova è la fotografia — un simbolo di barra è monocromatico, i due
+      punti spariscono e resta un cerchio con una goccia. Scelta la foglia, con le stelline
+      scartate perché su macOS ormai dicono Apple Intelligence.
+
+**Chiuse il 2026-08-09.** Suite piena **416 + 9 verdi**, `--menu-probe` PASS su tutte e sette le
+righe. *Poli negativi provati:* la chiave di confronto senza `zen` manda la sonda in FAIL; nella
+fotografia a modalità spenta la voce non porta la spunta e il testo non si sposta. Sonda nuova
+`--scatta-menu=<file>`, che fotografa il menu aperto — l'unica superficie che nessuna resa fuori
+schermo sa disegnare. Bundle ricostruito e installato: `dist/Otium.app` e `/Applications/Otium.app`.
