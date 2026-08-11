@@ -1706,6 +1706,12 @@ struct SegmentedChoice<Value: Hashable>: View {
     @Binding var selection: Value
     /// Le linguette delle famiglie riempiono la riga; una scelta fra due sta larga quanto le serve.
     var fillWidth = false
+    /// **Larghezza fissa per segmento.** Senza, ogni controllo è largo quanto le sue parole, e
+    /// due righe vicine finiscono su bordi destri diversi: «Italiano/English» è più largo di
+    /// «Uomo/Donna» e la colonna si vede storta. Segnalato dal principale il 2026-08-11 con la
+    /// fotografia delle due righe. Vale la regola dei pannelli: i comandi di una pagina finiscono
+    /// tutti sullo stesso bordo.
+    var segmentWidth: CGFloat? = nil
 
     var body: some View {
         HStack(spacing: 2) {
@@ -1717,7 +1723,8 @@ struct SegmentedChoice<Value: Hashable>: View {
                         .foregroundStyle(selected ? Palette.onAccentOnWindow : Palette.text)
                         .lineLimit(1)
                         .frame(maxWidth: fillWidth ? .infinity : nil)
-                        .padding(.horizontal, fillWidth ? 6 : 14)
+                        .frame(width: segmentWidth)
+                        .padding(.horizontal, fillWidth ? 6 : (segmentWidth == nil ? 14 : 0))
                         .padding(.vertical, 4)
                         .background(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
@@ -1752,6 +1759,12 @@ struct PrefsView: View {
     /// pannello: cambiando voce e tornando indietro deve ritrovarti dov'eri.
     @State private var famiglia: ExerciseCategory = .gambe
 
+    /// La misura di un segmento nelle scelte a due voci. Una costante sola, perché il punto è
+    /// che tutte queste righe finiscano sullo stesso bordo destro: se ognuna scegliesse la sua,
+    /// tornerebbe il difetto. 82 punti tengono «Italiano», che è la parola più lunga fra quelle
+    /// in gioco nelle due lingue.
+    static let segmentoScelta: CGFloat = 82
+
     /// `initialSection` esiste per la sonda: `--surface=prefs --voce=cadenza` rende il pannello
     /// che si vuole guardare. Nell'app resta il default, cioè Profilo.
     init(model: AppModel, initialSection: Section = .profilo) {
@@ -1768,7 +1781,7 @@ struct PrefsView: View {
     /// scomoda»*. Le voci ricalcano i raggruppamenti che le sezioni avevano già: non è una
     /// tassonomia nuova, è quella di prima resa navigabile.
     enum Section: String, CaseIterable, Identifiable, Hashable {
-        case profilo, cadenza, esercizi, interruzioni, aspetto, avanzate
+        case profilo, cadenza, esercizi, zen, interruzioni, aspetto, avanzate
 
         var id: String { rawValue }
 
@@ -1777,6 +1790,7 @@ struct PrefsView: View {
             case .profilo:      return L.t("Profilo", "Profile")
             case .cadenza:      return L.t("Cadenza", "Cadence")
             case .esercizi:     return L.t("Esercizi", "Exercises")
+            case .zen:          return L.t("Zen", "Zen")
             case .interruzioni: return L.t("Interruzioni", "Interruptions")
             case .aspetto:      return L.t("Aspetto", "Appearance")
             case .avanzate:     return L.t("Avanzate", "Advanced")
@@ -1793,6 +1807,7 @@ struct PrefsView: View {
             // «come vengono…», che è un sottotitolo che non dice niente. Visto nella finestra
             // vera il 2026-07-31, non nella resa.
             case .esercizi:     return L.t("rotazione e varianti", "rotation and variants")
+            case .zen:          return L.t("respiro invece di esercizio", "breathing instead of exercise")
             case .interruzioni: return L.t("call, rinvii, ore attive", "calls, postponements, active hours")
             case .aspetto:      return L.t("livrea, suono", "theme, sound")
             case .avanzate:     return L.t("avvio, fonti, registro", "startup, sources, log")
@@ -1804,6 +1819,7 @@ struct PrefsView: View {
             case .profilo:      return "person.crop.circle"
             case .cadenza:      return "metronome"
             case .esercizi:     return "figure.strengthtraining.functional"
+            case .zen:          return "leaf"
             case .interruzioni: return "bell.badge"
             case .aspetto:      return "paintpalette"
             case .avanzate:     return "wrench.and.screwdriver"
@@ -1836,6 +1852,7 @@ struct PrefsView: View {
                     case .profilo:      profiloSection
                     case .cadenza:      cadenzaSection
                     case .esercizi:     eserciziSection
+                    case .zen:          zenSection
                     case .interruzioni: interruzioniSection
                     case .aspetto:      aspettoSection
                     case .avanzate:     avanzateSection
@@ -1983,13 +2000,15 @@ struct PrefsView: View {
                     options: AppLanguage.allCases.map { ($0, $0.nativeName) },
                     selection: Binding(
                         get: { draft.language ?? AppLanguage.systemDefault },
-                        set: { draft.language = $0 }))
+                        set: { draft.language = $0 }),
+                    segmentWidth: Self.segmentoScelta)
             }
 
             LabeledContent(L.t("Sesso", "Sex")) {
                 SegmentedChoice(
                     options: [(Sex.male, L.t("Uomo", "Male")), (Sex.female, L.t("Donna", "Female"))],
-                    selection: Binding(get: { draft.sex ?? .male }, set: { draft.sex = $0 }))
+                    selection: Binding(get: { draft.sex ?? .male }, set: { draft.sex = $0 }),
+                    segmentWidth: Self.segmentoScelta)
             }
 
             Text(L.t("Il sesso decide da dove parti, cioè le ripetizioni per gruppo muscolare (Miller 1993) e la versione della spinta, sulle ginocchia invece che a terra. Non cambia la cadenza né nient'altro, e ogni esercizio resta scambiabile dentro la pausa.",
@@ -2199,43 +2218,18 @@ struct PrefsView: View {
             }
         }
 
-        // **La modalità Zen sta QUI, nel pannello degli esercizi, e non in uno suo.**
-        //
-        // Non aggiunge una funzione accanto alle altre: **sostituisce** quello che c'è in questa
-        // pagina. Metterla altrove vorrebbe dire lasciare che qualcuno scelga con cura il pool
-        // degli esercizi senza sapere che un interruttore in un'altra scheda li spegne tutti.
-        SwiftUI.Section(L.t("In ufficio", "At the office")) {
-            conNota(L.t("Le pause chiedono un respiro guidato invece di un esercizio: si fa da seduti, senza cambiarsi e senza farsi notare. Il lavoro metabolico però non c'è, perché respirare non contrae nessun muscolo. È il ripiego per quando allenarsi non è possibile, non il suo pari.",
-                        "Breaks ask for guided breathing instead of an exercise: you do it seated, without changing clothes and without being noticed. The metabolic work is absent, though, because breathing contracts no muscle. It is the fallback for when training is not possible, not its equal.")) {
-                Toggle(L.t("Modalità Zen", "Zen mode"), isOn: zenVivo(\.zenMode))
-            }
-            if draft.zenMode {
-                // **Due scelte e non una**, perché le due pause non chiedono la stessa cosa: la
-                // piena dura quanto la sessione misurata da Laborde, la micro non dura quanto
-                // niente di misurato. Il perché sta nella riga sotto ognuna, che cambia con la voce
-                // scelta come già fa il circuito.
-                conNota(draft.zenProtocolShort.explanation) {
-                    Picker(L.t("Nelle micro-pause", "In micro-breaks"), selection: zenVivo(\.zenProtocolShort)) {
-                        ForEach(BreathProtocol.allCases, id: \.self) { Text($0.localizedName).tag($0) }
-                    }
-                    .pickerStyle(.menu)
-                }
-                conNota(draft.zenProtocolLong.explanation) {
-                    Picker(L.t("Nelle pause piene", "In full breaks"), selection: zenVivo(\.zenProtocolLong)) {
-                        ForEach(BreathProtocol.allCases, id: \.self) { Text($0.localizedName).tag($0) }
-                    }
-                    .pickerStyle(.menu)
-                }
-                conNota(L.t("Le sessioni singole da 5, 10, 15 e 20 minuti danno lo stesso effetto sull'attività vagale, quindi più lungo non è meglio. Sotto i cinque minuti però non ha misurato nessuno: novanta secondi sono una scelta di comodità, non un numero preso da uno studio. Quello che avanza della pausa resta riposo.",
-                            "Single sessions of 5, 10, 15 and 20 minutes give the same effect on vagal activity, so longer is not better. Below five minutes, though, nobody has measured: ninety seconds is a comfort choice, not a number from a study. What is left of the break stays rest.")) {
-                    Picker(L.t("Per quanto", "For how long"), selection: zenVivo(\.zenBreathSeconds)) {
-                        Text(L.t("60 secondi", "60 seconds")).tag(60.0)
-                        Text(L.t("90 secondi", "90 seconds")).tag(90.0)
-                        Text(L.t("3 minuti", "3 minutes")).tag(180.0)
-                        Text(L.t("5 minuti — la dose studiata", "5 minutes — the studied dose")).tag(300.0)
-                    }
-                    .pickerStyle(.menu)
-                }
+        // **Zen ha una voce sua dal 2026-08-11**, per richiesta del principale. Qui resta solo il
+        // rimando, e non è cortesia: la ragione per cui Zen stava in questa pagina era che
+        // *sostituisce* gli esercizi invece di affiancarli, e senza questa riga si può tarare con
+        // cura la rotazione senza sapere che un interruttore in un'altra voce la spegne tutta.
+        // Compare **solo quando Zen è accesa**, perché è lì che questa pagina mente.
+        if draft.zenMode {
+            SwiftUI.Section(L.t("Attenzione", "Heads up")) {
+                Text(L.t("La modalità Zen è accesa, quindi le pause chiedono un respiro guidato e gli esercizi di questa pagina non vengono proposti. Si spegne dalla voce Zen.",
+                         "Zen mode is on, so breaks ask for guided breathing and the exercises on this page are not offered. You turn it off under Zen."))
+                    .font(.callout)
+                    .foregroundStyle(Palette.accentOnWindow)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
 
@@ -2252,6 +2246,79 @@ struct PrefsView: View {
                 }
                 .pickerStyle(.menu)
             }
+        }
+    }
+
+    /// **La voce Zen**, che dal 2026-08-11 è una pagina sua e non più una sezione dentro gli
+    /// esercizi (richiesta esplicita del principale).
+    ///
+    /// Ha una pagina perché ha bisogno di spiegare, e una sezione dentro un'altra pagina non ha
+    /// posto per farlo: il respiro non compare nell'elenco degli esercizi, quindi chi cerca lì
+    /// «e se non posso muovermi» non trova niente, e chi accende l'interruttore senza leggere non
+    /// sa perché dovrebbe funzionare. La riga di guardia sul fatto che Zen spegne gli esercizi
+    /// resta nella pagina Esercizi, dove serve.
+    @ViewBuilder
+    private var zenSection: some View {
+        SwiftUI.Section {
+            conNota(L.t("Le pause chiedono un respiro guidato invece di un esercizio: si fa da seduti, senza cambiarsi e senza farsi notare. Vale sia per le micro-pause sia per quelle piene.",
+                        "Breaks ask for guided breathing instead of an exercise: you do it seated, without changing clothes and without being noticed. It applies to both micro-breaks and full ones.")) {
+                Toggle(L.t("Modalità Zen", "Zen mode"), isOn: zenVivo(\.zenMode))
+            }
+        }
+
+        // **Il perché sta prima degli interruttori, non dopo.** Un'app che chiede di respirare
+        // novanta secondi deve dire su cosa agisce, altrimenti chiede un atto di fede. La riga
+        // non è scritta a mano: `Evidence.slowBreathing` è la stessa fonte che governa i cinque
+        // secondi del protocollo a risonanza, quindi meccanismo e numero non possono divergere.
+        SwiftUI.Section(L.t("Perché funziona", "Why it works")) {
+            Text(L.t("Il respiro è l'unica funzione automatica che puoi prendere in mano, e rallentandolo sposti l'equilibrio del sistema nervoso verso la parte che frena invece di quella che accelera. Il segnale si misura: la variabilità del battito cardiaco a mediazione vagale sale mentre respiri lento, e resta più alta anche dopo. L'espirazione lunga conta più dell'inspirazione, perché è nella fase in cui butti fuori l'aria che il freno vagale agisce di più. Attorno ai sei respiri al minuto cuore e respiro entrano in fase, ed è lì che l'effetto è più grande.",
+                     "Breathing is the one automatic function you can take over, and slowing it shifts the balance of the nervous system towards the part that brakes rather than the part that accelerates. The signal is measurable: vagally-mediated heart rate variability rises while you breathe slowly, and stays higher afterwards. The long exhale matters more than the inhale, because it is while you let the air out that the vagal brake acts most. Around six breaths a minute heart and breath fall into phase, and that is where the effect is largest."))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("\(Evidence.slowBreathing.shortCitation), \(String(Evidence.slowBreathing.year)).")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+
+        SwiftUI.Section(L.t("Quale respiro", "Which breathing")) {
+            // **Due scelte e non una**, perché le due pause non chiedono la stessa cosa: la
+            // piena dura quanto la sessione misurata da Laborde, la micro non dura quanto
+            // niente di misurato. Il perché sta nella riga sotto ognuna, che cambia con la voce
+            // scelta come già fa il circuito.
+            conNota(draft.zenProtocolShort.explanation) {
+                Picker(L.t("Nelle micro-pause", "In micro-breaks"), selection: zenVivo(\.zenProtocolShort)) {
+                    ForEach(BreathProtocol.allCases, id: \.self) { Text($0.localizedName).tag($0) }
+                }
+                .pickerStyle(.menu)
+            }
+            conNota(draft.zenProtocolLong.explanation) {
+                Picker(L.t("Nelle pause piene", "In full breaks"), selection: zenVivo(\.zenProtocolLong)) {
+                    ForEach(BreathProtocol.allCases, id: \.self) { Text($0.localizedName).tag($0) }
+                }
+                .pickerStyle(.menu)
+            }
+            conNota(L.t("Le sessioni singole da 5, 10, 15 e 20 minuti danno lo stesso effetto sull'attività vagale, quindi più lungo non è meglio. Sotto i cinque minuti però non ha misurato nessuno: novanta secondi sono una scelta di comodità, non un numero preso da uno studio. Quello che avanza della pausa resta riposo.",
+                        "Single sessions of 5, 10, 15 and 20 minutes give the same effect on vagal activity, so longer is not better. Below five minutes, though, nobody has measured: ninety seconds is a comfort choice, not a number from a study. What is left of the break stays rest.")) {
+                Picker(L.t("Per quanto", "For how long"), selection: zenVivo(\.zenBreathSeconds)) {
+                    Text(L.t("60 secondi", "60 seconds")).tag(60.0)
+                    Text(L.t("90 secondi", "90 seconds")).tag(90.0)
+                    Text(L.t("3 minuti", "3 minutes")).tag(180.0)
+                    Text(L.t("5 minuti, la dose studiata", "5 minutes, the studied dose")).tag(300.0)
+                }
+                .pickerStyle(.menu)
+            }
+        }
+
+        // Il tetto è l'ultima cosa che si legge e viene dalla fonte, non da me.
+        SwiftUI.Section(L.t("Quanto vale, e quanto no", "What it is worth, and what it is not")) {
+            Text(Evidence.breathworkCeiling.localizedClaim)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("\(Evidence.breathworkCeiling.shortCitation), \(String(Evidence.breathworkCeiling.year)).")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 

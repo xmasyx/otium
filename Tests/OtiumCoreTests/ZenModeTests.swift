@@ -464,7 +464,7 @@ final class ZenModeTests: XCTestCase {
         var zen = BreakPlan(index: 1, kind: .long, duration: 300,
                             exercise: Exercise(kind: .squat, reps: 15))
         zen.breath = .risonanza
-        XCTAssertEqual(zen.demandLabel, "six breaths a minute")
+        XCTAssertEqual(zen.demandLabel, "five seconds in, five out")
     }
 
     // MARK: - Il registro

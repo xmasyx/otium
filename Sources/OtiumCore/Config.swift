@@ -262,15 +262,11 @@ public struct Settings: Codable, Equatable, Sendable {
     public var zenProtocolShort: BreathProtocol
     /// **Il respiro delle pause piene**, di serie la risonanza a sei al minuto.
     ///
-    /// Qui la prova combacia con la durata: l'effetto vagale di Laborde è misurato su sessioni da
-    /// cinque minuti, e cinque minuti è quanto dura questa pausa.
-    ///
-    /// **Fissi e non a rotazione**, deciso con lui il 2026-08-08. Per gli esercizi alternare è
-    /// fisiologia, gruppi muscolari diversi; per il respiro non c'è niente da alternare, e l'unica
-    /// cosa che la varietà compra è non annoiarsi. Costa però due cose: ogni studio che ha misurato
-    /// un beneficio ha misurato **un protocollo solo ripetuto**, e la frequenza di risonanza è
-    /// individuale e ci si allena a trovarla, quindi alternandola quell'allenamento si diluisce.
-    /// La noia, in Zen, la rompe già la frase.
+    /// **Tolto e rimesso il 2026-08-11.** Era stato rimosso su richiesta del principale, che poi
+    /// ha ricostruito da sé il motivo per cui stava qui: la prova vagale di Laborde è misurata su
+    /// sessioni da cinque minuti in su, cioè esattamente la durata della pausa piena, e nessun
+    /// altro protocollo ha quella prova a quella durata. Il nome però resta quello nuovo, perché
+    /// «respiro a sei al minuto» costringeva a una divisione per capire cosa fare.
     public var zenProtocolLong: BreathProtocol
     /// **Quanto dura il respiro guidato dentro la pausa**, e non quanto dura la pausa.
     ///

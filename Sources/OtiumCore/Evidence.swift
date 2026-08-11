@@ -330,9 +330,10 @@ public enum Evidence {
         claim: "Meta-analisi dei soli studi randomizzati e controllati: il lavoro sul respiro "
              + "abbassa lo stress con un effetto piccolo-medio (g = −0,35 su 12 studi e 785 "
              + "adulti), e simile su ansia e sintomi depressivi. Quasi tutti gli studi hanno "
-             + "rischio di bias moderato. È un beneficio reale e misurato, non un pareggio con il "
-             + "movimento: respirare non contrae nessun muscolo, e il lavoro metabolico delle "
-             + "pause con esercizio in modalità Zen non c'è.",
+             + "rischio di bias moderato. È un beneficio reale e misurato, e agisce su un'altra "
+             + "strada: respirare contrae il diaframma e gli intercostali, non i grandi muscoli "
+             + "delle gambe, ed è la loro contrazione a tirare glucosio fuori dal sangue. Il "
+             + "lavoro metabolico delle pause con esercizio, in modalità Zen, non c'è.",
         citation: "Fincham et al., «Effect of breathwork on stress and mental health: A "
                 + "meta-analysis of randomised-controlled trials», Scientific Reports",
         year: 2023,
@@ -341,9 +342,10 @@ public enum Evidence {
         claimEN: "Meta-analysis of randomised controlled trials only: breathwork lowers stress "
                + "with a small-to-medium effect (g = −0.35 across 12 trials and 785 adults), and "
                + "similarly for anxiety and depressive symptoms. Nearly all trials carry a "
-               + "moderate risk of bias. It is a real, measured benefit, not a draw with movement: "
-               + "breathing contracts no muscle, and the metabolic work of exercise breaks is "
-               + "absent in Zen mode.",
+               + "moderate risk of bias. It is a real, measured benefit, and it works down a "
+               + "different road: breathing contracts the diaphragm and the intercostals, not the "
+               + "large leg muscles, and it is their contraction that pulls glucose out of the "
+               + "blood. The metabolic work of exercise breaks is absent in Zen mode.",
         governsEN: "The existence of Zen mode, and its stated ceiling."
     )
 

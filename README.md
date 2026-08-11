@@ -228,12 +228,23 @@ numeri grezzi fa dichiarare rotta un'app sana.
 
 ## Licenza
 
-Codice rilasciato con licenza **MIT**, testo completo in [`LICENSE`](LICENSE). Nessuna dipendenza
-di terze parti: solo Swift e i framework di sistema di macOS.
+**PolyForm Noncommercial 1.0.0**, testo completo in [`LICENSE`](LICENSE).
+
+Il codice è **a sorgente aperto ma non open source**, e la differenza è dichiarata qui invece di
+essere lasciata capire: puoi leggerlo, compilarlo, modificarlo e usarlo liberamente per te, per
+studio, per ricerca, e lo stesso vale per scuole, enti pubblici e non profit. Serve invece il mio
+permesso per usarlo a fini commerciali. Non chiamo il progetto open source perché non lo è secondo
+la definizione dell'OSI, e usare quella parola a sproposito sarebbe scorretto verso chi la rispetta.
+
+**Perché.** Otium può diventare un prodotto, e questa licenza tiene aperta quella porta senza
+chiudere l'unica cosa che conta per chi lo installa: il codice resta leggibile, quindi la promessa
+«nessuna rete, nessun permesso di sistema» si può verificare invece che credere.
+
+Nessuna dipendenza di terze parti: solo Swift e i framework di sistema di macOS.
 
 Le 338 citazioni e le 73 frasi che l'app mostra durante la pausa vengono da autori di pubblico
 dominio (Seneca, Marco Aurelio, Epitteto, Nietzsche, Montaigne, Pascal, Spinoza, Leopardi,
 Sunzi, Tao Te Ching, Dialoghi, Dhammapada, Gita). Le rese inglesi sono traduzioni storiche
 anch'esse di pubblico dominio, in 313 casi su 338: Gummere, Long, Common, Zimmern, Legge,
 Max Müller, Arnold, Cotton, Trotter, Elwes, Giles, Edwardes. Le restanti 25 sono traduzioni
-originali di questo progetto e ricadono sotto la stessa licenza MIT.
+originali di questo progetto e ricadono sotto la stessa licenza del codice.

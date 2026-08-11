@@ -356,8 +356,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             if CommandLine.arguments.contains("--inglese") { L.language = .english }
             let scelto: Sex? = CommandLine.arguments.contains("--donna") ? .female
                 : CommandLine.arguments.contains("--uomo") ? .male : nil
+            // `--passo=2` rende la pagina della modalità Zen, che nell'app si vede solo dopo
+            // aver premuto Avanti.
+            let passo = CommandLine.arguments.contains("--passo=2") ? 2 : 1
             let ob = NSHostingView(rootView: OnboardingView(model: model, onDone: {},
-                                                            preselectedSex: scelto))
+                                                            preselectedSex: scelto,
+                                                            initialStep: passo))
             size = NSSize(width: 540, height: ob.fittingSize.height)
             host = ob
         case "crescita":
@@ -642,7 +646,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             model.announceForSeconds(title: "Pausa fra un minuto", subtitle: "12 affondi",   // lingua: ok sonda di sviluppo (--demo-hud)
                                      seconds: seconds)
         }
-        let killswitch = Timer(timeInterval: seconds + 2, repeats: false) { _ in NSApp.terminate(nil) }
+        // **Il margine è largo di proposito.** Con `seconds + 2` l'app moriva subito dopo la
+        // scadenza nominale, e una sonda che verifica il passaggio del mouse — che la notifica la
+        // tiene VIVA oltre quella scadenza — misurava la morte del processo invece del
+        // comportamento. Successo davvero il 2026-08-11: due poli entrambi «SPARITO», e il difetto
+        // era nella sonda. Trenta secondi lasciano spazio per osservare, e la sonda a mano non se
+        // ne accorge.
+        let killswitch = Timer(timeInterval: seconds + 30, repeats: false) { _ in NSApp.terminate(nil) }
         RunLoop.main.add(killswitch, forMode: .common)
     }
 

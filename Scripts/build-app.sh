@@ -15,15 +15,18 @@ echo "▸ compilo (release)…"
 swift build -c release --product OtiumApp
 
 echo "▸ icona…"
+# Ogni taglia si DISEGNA, non si riduce. La frase «otium cum dignitate» sotto i
+# 256 px non è leggibile, e ridurre il 1024 la ridurrebbe a una riga sporca:
+# MakeIcon prende la taglia in argomento e sotto la soglia non la scrive.
 mkdir -p "$ROOT/.build/icon.iconset"
-swift "$ROOT/Scripts/MakeIcon.swift" "$ROOT/.build/icon-1024.png" >/dev/null
 for size in 16 32 64 128 256 512; do
-    sips -z $size $size "$ROOT/.build/icon-1024.png" \
-        --out "$ROOT/.build/icon.iconset/icon_${size}x${size}.png" >/dev/null
+    swift "$ROOT/Scripts/MakeIcon.swift" \
+        "$ROOT/.build/icon.iconset/icon_${size}x${size}.png" "$size" >/dev/null
     double=$((size * 2))
-    sips -z $double $double "$ROOT/.build/icon-1024.png" \
-        --out "$ROOT/.build/icon.iconset/icon_${size}x${size}@2x.png" >/dev/null
+    swift "$ROOT/Scripts/MakeIcon.swift" \
+        "$ROOT/.build/icon.iconset/icon_${size}x${size}@2x.png" "$double" >/dev/null
 done
+swift "$ROOT/Scripts/MakeIcon.swift" "$ROOT/.build/icon-1024.png" 1024 >/dev/null
 iconutil -c icns "$ROOT/.build/icon.iconset" -o "$ROOT/.build/Otium.icns"
 
 echo "▸ assemblo il bundle…"

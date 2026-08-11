@@ -16,8 +16,6 @@ import Foundation
 /// - `sospiro` è il vincitore dell'unico confronto testa a testa (Balban 2023): 5 minuti al giorno
 ///   per 28 giorni, e batte box breathing, iperventilazione ciclica **e** la meditazione mindfulness
 ///   su umore e frequenza respiratoria. È il default per questo, non per gusto.
-/// - `risonanza` è il respiro lento a 6 al minuto, la frequenza di risonanza che massimizza la
-///   variabilità cardiaca a mediazione vagale (Laborde 2022, 223 studi).
 /// - `quadrato` è il box breathing, uno degli altri bracci di Balban: funziona, meno del sospiro.
 public enum BreathProtocol: String, Codable, CaseIterable, Sendable {
     case sospiro
@@ -88,11 +86,11 @@ public enum BreathProtocol: String, Codable, CaseIterable, Sendable {
     /// Qui sono scelti perché il ciclo resti sotto i dieci secondi e chiunque riesca a seguirlo, e
     /// se un giorno uscisse una misura vera si cambiano **solo qui**.
     ///
-    /// La risonanza è l'eccezione: 5 dentro e 5 fuori **sono** il parametro, perché sei respiri al
+    /// **Il ciclo del sospiro esce a dieci secondi tondi**, cioè sei respiri al minuto: la
     /// minuto è esattamente ciò che la letteratura misura. Quel numero non si tocca per estetica.
     /// **La pausa a vuoto sta DENTRO i dieci secondi, non sopra.**
     ///
-    /// Per la risonanza è un vincolo, non una preferenza: sei respiri al minuto vuol dire un ciclo
+    /// frequenza di risonanza a cui cuore e respiro entrano in fase. Non è una coincidenza cercata,
     /// da dieci secondi esatti, e appiccicare mezzo secondo in fondo lo porterebbe a 5,7 al minuto,
     /// cioè fuori dal parametro che tutta la letteratura misura. Quindi l'inspirazione scende a 4,5
     /// e la pausa si ricava lì, che è anche il verso giusto: lo stesso studio che dice che le pause
@@ -121,8 +119,13 @@ public enum BreathProtocol: String, Codable, CaseIterable, Sendable {
 
     public var localizedName: String {
         switch self {
-        case .sospiro:   return L.t("respiro ciclico", "cyclic sighing")
-        case .risonanza: return L.t("respiro a sei al minuto", "six breaths a minute")
+        // **Il nome dice cosa FAI, non l'aritmetica.** «Respiro a sei al minuto» costringe chi
+        // legge a dividere sessanta per sei per capire cosa deve fare, e in un menu a tendina
+        // nessuno lo fa. I nomi scientifici (respiro ciclico, box breathing) restano
+        // nella riga di spiegazione sotto, dove servono a chi vuole cercare lo studio.
+        // Segnalato dal principale il 2026-08-11.
+        case .sospiro:   return L.t("due inspiri, una lunga espirazione", "two inhales, one long exhale")
+        case .risonanza: return L.t("cinque secondi dentro, cinque fuori", "five seconds in, five out")
         case .quadrato:  return L.t("respiro quadrato", "box breathing")
         }
     }
@@ -131,14 +134,14 @@ public enum BreathProtocol: String, Codable, CaseIterable, Sendable {
     public var explanation: String {
         switch self {
         case .sospiro:
-            return L.t("Due inspirazioni dal naso, la seconda corta sopra la prima, e una lunga espirazione dalla bocca. È l'unico protocollo che in un confronto diretto ha battuto anche la meditazione, su umore e frequenza respiratoria.",
-                       "Two inhales through the nose, the second a short one on top of the first, then a long exhale through the mouth. It is the only protocol that beat even meditation head to head, on mood and respiratory rate.")
+            return L.t("Il respiro ciclico: due inspirazioni dal naso, la seconda corta sopra la prima, e una lunga espirazione dalla bocca. È l'unico protocollo che in un confronto diretto ha battuto anche la meditazione, su umore e frequenza respiratoria.",
+                       "Cyclic sighing: two inhales through the nose, the second a short one on top of the first, then a long exhale through the mouth. It is the only protocol that beat even meditation head to head, on mood and respiratory rate.")
         case .risonanza:
-            return L.t("Cinque secondi dentro e cinque fuori, cioè sei respiri al minuto. È la frequenza a cui il cuore e il respiro entrano in fase, e la variabilità cardiaca sale di più.",
-                       "Five seconds in and five out, that is six breaths a minute. It is the rate at which heart and breath fall into phase, and heart rate variability rises the most.")
+            return L.t("Il respiro in risonanza: cinque secondi dentro e cinque fuori, cioè sei respiri al minuto invece dei dodici o quindici di solito. È la frequenza a cui il cuore e il respiro entrano in fase, e la variabilità cardiaca sale di più.",
+                       "Resonance breathing: five seconds in and five out, that is six breaths a minute instead of the usual twelve to fifteen. It is the rate at which heart and breath fall into phase, and heart rate variability rises the most.")
         case .quadrato:
-            return L.t("Quattro tempi uguali: dentro, trattieni, fuori, trattieni. Il più facile da ricordare, e infatti è il più diffuso. Funziona, meno del sospiro.",
-                       "Four equal counts: in, hold, out, hold. The easiest to remember, which is why it is everywhere. It works, less well than the sigh.")
+            return L.t("Il box breathing: quattro secondi dentro, quattro di pausa, quattro fuori, quattro di pausa. Il più facile da ricordare, e infatti è il più diffuso. Funziona, meno del sospiro.",
+                       "Box breathing: four seconds in, four holding, four out, four holding. The easiest to remember, which is why it is everywhere. It works, less well than the sigh.")
         }
     }
 

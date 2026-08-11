@@ -29,14 +29,36 @@ struct OnboardingView: View {
     /// aveva la stessa altezza di quella maschile e la domanda in più restava tagliata fuori.
     let preselectedSex: Sex?
 
-    init(model: AppModel, onDone: @escaping () -> Void, preselectedSex: Sex? = nil) {
+    /// Come `preselectedSex`, ed è lì per lo stesso motivo: la seconda pagina esiste solo dopo un
+    /// clic, e una resa che non sa arrivarci non la guarda mai nessuno.
+    init(model: AppModel, onDone: @escaping () -> Void, preselectedSex: Sex? = nil,
+         initialStep: Int = 1) {
         self.model = model
         self.onDone = onDone
         self.preselectedSex = preselectedSex
         _sex = State(initialValue: preselectedSex)
+        _passo = State(initialValue: initialStep)
     }
 
+    /// **Due passi, non uno.** Il primo avvio chiede e spiega; la modalità Zen ha una pagina sua
+    /// dal 2026-08-11, per richiesta del principale. La ragione è che Zen non compare nell'elenco
+    /// degli esercizi, perché il respiro non è un esercizio: chi cerca lì «e se non posso
+    /// muovermi» non trova niente, e una pagina che deve spiegare un meccanismo non ci sta in
+    /// coda a una schermata di domande.
+    ///
+    /// Il passo resta uno `State` e non una navigazione di sistema: sono due schermate, e una
+    /// pila di navigazione porterebbe una barra del titolo che questa finestra non ha.
+    @State private var passo = 1
+
     var body: some View {
+        Group {
+            if passo == 1 { paginaDomande } else { paginaZen }
+        }
+        .padding(34)
+        .frame(width: 540)
+    }
+
+    private var paginaDomande: some View {
         VStack(alignment: .leading, spacing: 26) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Otium")   // lingua: ok nome proprio dell'app
@@ -154,8 +176,8 @@ struct OnboardingView: View {
 
             HStack {
                 Spacer()
-                Button(action: finish) {
-                    Text(L.t("Comincia", "Start"))
+                Button { passo = 2 } label: {
+                    Text(L.t("Avanti", "Next"))
                         .font(.system(size: 16, weight: .semibold, design: .rounded))
                         .frame(width: 190, height: 44)
                         .foregroundStyle(sex == nil ? Color.secondary : Palette.onAccentOnWindow)
@@ -169,8 +191,45 @@ struct OnboardingView: View {
                 .disabled(sex == nil)
             }
         }
-        .padding(34)
-        .frame(width: 540)
+    }
+
+    /// Il secondo passo: la modalità Zen, con il suo perché e il suo tetto.
+    private var paginaZen: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(L.t("La modalità Zen", "Zen mode"))
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .foregroundStyle(Palette.accentOnWindow)
+                Text(L.t("Per i posti dove muoversi non si può.", "For the places where moving is not an option."))
+                    .font(.system(size: 14))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            laModalitaZen
+
+            HStack(spacing: 12) {
+                Button { passo = 1 } label: {
+                    Text(L.t("Indietro", "Back"))
+                        .font(.system(size: 15, design: .rounded))
+                        .frame(width: 110, height: 44)
+                        .foregroundStyle(Color.primary)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.primary.opacity(0.07)))
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                Spacer()
+                Button(action: finish) {
+                    Text(L.t("Comincia", "Start"))
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .frame(width: 190, height: 44)
+                        .foregroundStyle(Palette.onAccentOnWindow)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Palette.accentOnWindow))
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 
     /// **Cosa fa l'app, perché lo fa, e come si esce.** Non è una domanda: è l'unica cosa che
@@ -244,6 +303,90 @@ struct OnboardingView: View {
     private static let ragioni: [Study] = [
         Evidence.sittingInterval, Evidence.squatsBeatWalking, Evidence.systematicBreaks,
     ]
+
+    /// A cosa serve ciascun protocollo, letto dalle impostazioni invece che scritto a mano.
+    /// Chi non è assegnato a nessuna delle due pause resta senza etichetta: è comunque
+    /// selezionabile nelle preferenze, e dire «nessuno» sarebbe più lungo e meno vero.
+    private func ruoloZen(_ p: BreathProtocol) -> String {
+        let s = model.settings
+        if p == s.zenProtocolShort && p == s.zenProtocolLong {
+            return L.t(", su entrambe le pause", ", on both breaks")
+        }
+        if p == s.zenProtocolShort { return L.t(", sulla pausa breve", ", on the short break") }
+        if p == s.zenProtocolLong { return L.t(", sulla pausa lunga", ", on the long break") }
+        return ""
+    }
+
+    /// **La modalità Zen, spiegata prima che serva.**
+    ///
+    /// Sta nell'onboarding su richiesta del principale (2026-08-11) per un motivo preciso: Zen non
+    /// compare nell'elenco degli esercizi, perché respirare non è un esercizio. Chi cerca lì dentro
+    /// «e se non posso muovermi?» non trova niente, e conclude che l'app non ha una risposta.
+    ///
+    /// **Non è una domanda, ed è voluto.** La regola in cima al file dice due domande e non dieci:
+    /// Zen ha un default sensato, cioè spenta, e si accende dalla barra dei menu in un gesto. Qui
+    /// va detta, non chiesta.
+    ///
+    /// **Il tetto è parte della spiegazione, non una nota in fondo.** L'ultima riga viene da
+    /// `Evidence.breathworkCeiling` e dice che il respiro non pareggia il movimento. Una funzione
+    /// che si racconta per quello che non è dura finché nessuno la misura.
+    private var laModalitaZen: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Nessun titolo qui dentro: la pagina ne ha già uno grande sopra, e ripeterlo
+            // faceva leggere «La modalità Zen» due volte a due centimetri di distanza.
+            Text(L.t("Ci sono posti dove non ti metti a fare push-up: un ufficio open space, un coworking, un treno. Con la modalità Zen la pausa resta, ma al posto dell'esercizio ti guida nel respiro, con l'animazione che detta il ritmo e niente da fare con il corpo. Vale sia per la pausa breve sia per quella lunga.",
+                     "There are places where you don't drop and do push-ups: an open-plan office, a coworking space, a train. With Zen mode the break stays, but instead of the exercise it guides your breathing, with the animation setting the pace and nothing to do with your body. It applies to both the short break and the long one."))
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // I protocolli si elencano da `BreathProtocol`, non a mano: il giorno che ne
+            // aggiungiamo uno, questa schermata lo sa senza che nessuno se ne ricordi.
+            //
+            // **Accanto al nome va il RUOLO, non i respiri al minuto.** La prima stesura stampava
+            // la frequenza e usciva «respiro a sei al minuto, 6 al minuto», cioè una tautologia; e
+            // siccome il ciclo del sospiro dura anch'esso dieci secondi, due protocolli su tre
+            // mostravano lo stesso numero, che quindi non distingueva niente. Il ruolo invece si
+            // legge dalle impostazioni vere, quindi resta onesto se un domani cambiano.
+            VStack(alignment: .leading, spacing: 5) {
+                ForEach(BreathProtocol.allCases, id: \.self) { p in
+                    Text("· \(p.localizedName)\(ruoloZen(p))")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Text(L.t("Perché funziona", "Why it works"))
+                .font(.system(size: 13, weight: .semibold))
+            Text(L.t("Il respiro è l'unica funzione automatica che puoi prendere in mano, e rallentandolo sposti l'equilibrio del sistema nervoso verso la parte che frena invece di quella che accelera. Il segnale si misura: la variabilità del battito a mediazione vagale sale mentre respiri lento, e resta più alta anche dopo. L'espirazione lunga conta più dell'inspirazione, perché è mentre butti fuori l'aria che il freno vagale agisce di più. Attorno ai sei respiri al minuto cuore e respiro entrano in fase, ed è lì che l'effetto è più grande.",
+                     "Breathing is the one automatic function you can take over, and slowing it shifts the balance of the nervous system towards the part that brakes rather than the part that accelerates. The signal is measurable: vagally-mediated heart rate variability rises while you breathe slowly, and stays higher afterwards. The long exhale matters more than the inhale, because it is while you let the air out that the vagal brake acts most. Around six breaths a minute heart and breath fall into phase, and that is where the effect is largest."))
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("\(Evidence.slowBreathing.shortCitation), \(String(Evidence.slowBreathing.year)).")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+
+            Text(L.t("Si accende dalla barra dei menu, ed è spenta finché non la accendi tu.",
+                     "You switch it on from the menu bar, and it stays off until you do."))
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(Palette.accentOnWindow)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // `localizedClaim` e non `localizedGoverns`: il secondo dice a quale scelta dell'app
+            // serve lo studio («l'esistenza della modalità Zen»), che qui non informa nessuno. Il
+            // primo porta la misura e il limite, che è l'unica cosa per cui questa riga esiste.
+            Text("\(Evidence.breathworkCeiling.localizedClaim) \(Evidence.breathworkCeiling.shortCitation), \(String(Evidence.breathworkCeiling.year)).")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Palette.accentOnWindow.opacity(0.07)))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Palette.accentOnWindow.opacity(0.25)))
+    }
 
     /// **I numeri vengono dalla cadenza vera**, non da una frase scritta a mano: cambiarla nelle
     /// preferenze e leggere qui i vecchi numeri sarebbe una bugia che nessun test vedrebbe.

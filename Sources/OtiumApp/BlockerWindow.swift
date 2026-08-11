@@ -448,14 +448,40 @@ final class WarningHUD {
 
         if let sound { NSSound(named: sound)?.play() }
 
-        let t = Timer(timeInterval: seconds, repeats: false) { [weak self] _ in self?.hide() }
-        RunLoop.main.add(t, forMode: .common)
-        dismissTimer = t
+        // **Il puntatore sopra la scheda tiene viva la notifica**, come fanno quelle di macOS.
+        // Chiesto dal principale il 2026-08-11: una frase di tre righe non si legge in dodici
+        // secondi mentre stai facendo altro, e il gesto che tutti provano è appoggiarci il mouse.
+        //
+        // **Perché si guarda dove sta il mouse invece di usare `NSTrackingArea`.** La prima
+        // versione installava un'area di tracciamento e non funzionava: sonda a due poli del
+        // 2026-08-11, col mouse fermo sopra la notifica spariva lo stesso. Otium vive nella barra
+        // dei menu e il pannello è `.nonactivatingPanel`, quindi entrata e uscita del mouse non
+        // gli vengono consegnate quando l'app non è in primo piano — cioè sempre. Leggere
+        // `NSEvent.mouseLocation` non dipende da nessuna consegna di eventi.
+        scadenza = Date().addingTimeInterval(seconds)
+        let cardInSchermo = NSRect(x: origin.x, y: origin.y, width: size.width, height: size.height)
+        let vigile = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            if cardInSchermo.contains(NSEvent.mouseLocation) {
+                self.scadenza = Date().addingTimeInterval(Self.graziaDopoIlPuntatore)
+            } else if let s = self.scadenza, Date() >= s {
+                self.hide()
+            }
+        }
+        RunLoop.main.add(vigile, forMode: .common)
+        dismissTimer = vigile
     }
+
+    /// Quanto resta in vita dopo che il puntatore se n'è andato. Corto di proposito: chi ci ha
+    /// appoggiato il mouse ha già letto, e rimettere i dodici secondi pieni terrebbe in mezzo
+    /// allo schermo una notifica che ha finito il suo lavoro.
+    private static let graziaDopoIlPuntatore: Double = 4
+    private var scadenza: Date?
 
     func hide() {
         dismissTimer?.invalidate()
         dismissTimer = nil
+        scadenza = nil
         panel?.orderOut(nil)
         panel = nil
     }
