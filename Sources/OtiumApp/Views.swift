@@ -1810,7 +1810,7 @@ struct PrefsView: View {
             case .zen:          return L.t("respiro invece di esercizio", "breathing instead of exercise")
             case .interruzioni: return L.t("call, video, ore attive", "calls, video, active hours")
             case .aspetto:      return L.t("livrea, suono", "theme, sound")
-            case .avanzate:     return L.t("avvio, fonti, registro", "startup, sources, log")
+            case .avanzate:     return L.t("avvio, registro, segnalazioni", "startup, log, reporting")
             }
         }
 
@@ -2564,8 +2564,19 @@ struct PrefsView: View {
 
         SwiftUI.Section(L.t("Diagnostica", "Diagnostics")) {
             Button(L.t("Apri la diagnostica…", "Open diagnostics…")) { model.onShowDoctor?() }
-            Text(L.t("Il controllo di salute dell'app: permessi, avvio automatico, integrità del registro, orologio. È la finestra da aprire quando qualcosa non va, e il testo da copiare dentro una segnalazione.",
-                     "The app's health check: permissions, start at login, log integrity, clock. It is the window to open when something is wrong, and the text to copy into a bug report."))
+            Text(L.t("Il controllo di salute dell'app: permessi, avvio automatico, integrità del registro, orologio. È la finestra da aprire quando qualcosa non va.",
+                     "The app's health check: permissions, start at login, log integrity, clock. It is the window to open when something is wrong."))
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+
+        // **La segnalazione sta accanto alla diagnostica**, perché è il gesto dopo: si guarda cosa
+        // è rotto e lo si dice a qualcuno. La strada c'era già, ma passava dal copiare a mano un
+        // referto dentro una pagina da trovare da soli, e nessuno lo fa mentre è arrabbiato.
+        SwiftUI.Section(L.t("Segnalazioni", "Reporting")) {
+            Button(L.t("Segnala un problema…", "Report a problem…")) { model.onReportIssue?() }
+            Text(L.t("Apre su GitHub una segnalazione già compilata con versione, sistema e diagnostica: resta da scrivere cosa è successo. L'app non manda niente da sola, apre la pagina nel browser, e quello che parte lo decidi tu dopo averlo letto.",
+                     "Opens a GitHub issue already filled in with version, system and diagnostics: what is left is describing what happened. The app sends nothing by itself, it opens the page in your browser, and you decide what goes out after reading it."))
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

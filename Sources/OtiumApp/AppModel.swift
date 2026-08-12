@@ -583,6 +583,7 @@ final class AppModel: ObservableObject {
     var onShowEvidence: (() -> Void)?
     var onRevealLedger: (() -> Void)?
     var onShowDoctor: (() -> Void)?
+    var onReportIssue: (() -> Void)?
 
     /// Fa sentire un suono senza aspettare la prossima pausa: serve a sceglierlo.
     func previewSound(_ name: String) {

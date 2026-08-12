@@ -53,6 +53,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         model.onShowEvidence = { [weak self] in self?.showEvidence() }
         model.onRevealLedger = { [weak self] in self?.revealLedger() }
         model.onShowDoctor = { [weak self] in self?.showDoctor() }
+        model.onReportIssue = { Self.openIssueForm() }
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
@@ -1748,6 +1749,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     /// La diagnostica in finestra. **Stesso `Doctor.report()` del comando**, così i due non
     /// possono raccontare cose diverse.
+    /// **Apre la segnalazione già compilata**, con dentro quello che serve per capire il guasto.
+    ///
+    /// Una segnalazione senza versione e senza sistema costa tre scambi di messaggi prima di poter
+    /// guardare il problema, e chi segnala di solito si ferma al primo. Qui versione, macOS e il
+    /// referto della diagnostica sono già nel corpo: resta da scrivere cosa è successo, che è
+    /// l'unica cosa che l'app non può sapere.
+    ///
+    /// **Non manda niente in rete.** Costruisce un URL e lo apre nel browser, dove *tu* leggi il
+    /// testo e decidi se premere invio: la promessa «nessuna rete» resta vera e resta verificabile
+    /// leggendo questa funzione. Per la stessa ragione il referto non viene spedito ma mostrato.
+    ///
+    /// Il referto passa da `Doctor.senzaNome`, quindi non porta la cartella home di nessuno.
+    static func openIssueForm() {
+        let rapporto = Doctor.report().text
+        let corpo = """
+        <!-- \(L.t("Racconta cosa è successo, e cosa ti aspettavi. Il resto è già compilato.",
+                   "Tell us what happened, and what you expected. The rest is filled in already.")) -->
+
+        ### \(L.t("Cosa è successo", "What happened"))
+
+
+
+        ### \(L.t("Cosa ti aspettavi", "What you expected"))
+
+
+
+        <details><summary>\(L.t("Diagnostica", "Diagnostics"))</summary>
+
+        ```
+        \(rapporto)
+        ```
+
+        </details>
+        """
+        var url = URLComponents(string: "https://github.com/xmasyx/otium/issues/new")!
+        url.queryItems = [
+            URLQueryItem(name: "labels", value: "bug"),
+            URLQueryItem(name: "body", value: corpo),
+        ]
+        guard let indirizzo = url.url else { return }
+        NSWorkspace.shared.open(indirizzo)
+    }
+
     @objc private func showDoctor() {
         let rapporto = Doctor.report()
         let testo = NSTextView(frame: NSRect(x: 0, y: 0, width: 560, height: 380))

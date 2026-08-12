@@ -41,6 +41,22 @@ enum Doctor {
         }
     }
 
+    /// **Il nome di chi segnala fuori dal referto.**
+    ///
+    /// Questo testo nasce per essere incollato in una segnalazione pubblica — lo dice il README e
+    /// lo propone il pulsante «Segnala un problema…» — e conteneva la cartella home due volte,
+    /// cioè il nome dell'utente. Una funzione che si usa quando qualcosa è già andato storto non
+    /// deve chiedere in cambio anche il nome, quindi la home diventa `~` prima di uscire.
+    ///
+    /// **Prefisso e non regex.** `/Users/[^/]+` sembra equivalente e non lo è: la home vera la
+    /// conosce il sistema, mentre il modello indovinato sbaglia su chi ce l'ha altrove, e quel
+    /// caso fallirebbe in silenzio proprio dove il silenzio costa il nome.
+    static func senzaNome(_ percorso: String) -> String {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        guard !home.isEmpty, percorso.hasPrefix(home) else { return percorso }
+        return "~" + percorso.dropFirst(home.count)
+    }
+
     /// Il rapporto come testo, più quanti controlli **obbligatori** sono falliti.
     static func report() -> (text: String, failures: Int) {
         var lines: [String] = ["Otium — doctor", ""]
@@ -56,8 +72,9 @@ enum Doctor {
         let versione = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
         let eseguibile = Bundle.main.executablePath ?? CommandLine.arguments.first ?? "?"
         lines.append("versione   \(versione)")
-        lines.append("binario    \(eseguibile)")
-        lines.append("dati       \(Paths.supportDirectory.path)")
+        lines.append("sistema    macOS \(ProcessInfo.processInfo.operatingSystemVersionString)")
+        lines.append("binario    \(Self.senzaNome(eseguibile))")
+        lines.append("dati       \(Self.senzaNome(Paths.supportDirectory.path))")
         lines.append("")
 
         // ── La cartella dei dati: senza scrittura qui, l'app conta e non registra

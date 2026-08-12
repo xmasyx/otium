@@ -626,3 +626,48 @@ final class MuscleGroupLanguageTests: XCTestCase {
         }
     }
 }
+
+// MARK: - ISC-230 — il referto della diagnostica non porta il nome di chi segnala
+
+/// **Il testo che si incolla in una segnalazione pubblica non deve contenere la cartella home.**
+///
+/// Il 2026-08-12, progettando il pulsante «Segnala un problema…», è emerso che il referto stampava
+/// due volte `/Users/<nome>/`: la strada che l'app suggerisce per chiedere aiuto pubblicava il nome
+/// di chi la usava. La riparazione vive in `Doctor.senzaNome`, che sta nel bersaglio dell'app e
+/// quindi qui si prova la funzione pura, con i casi che contano.
+///
+/// *(La regola è dichiarata qui, in `OtiumCore`, perché è dove vivono i test: la sonda a due poli
+/// sul referto vero è `Otium --doctor | grep -c '/Users/'`, che deve stampare zero.)*
+final class DiagnosticsPrivacyTests: XCTestCase {
+
+    /// La sostituzione, riscritta con la stessa regola del tool: prefisso della home vera, mai un
+    /// modello indovinato del tipo `/Users/[^/]+`, che sbaglierebbe su chi ha la home altrove.
+    private func senzaNome(_ percorso: String, home: String) -> String {
+        guard !home.isEmpty, percorso.hasPrefix(home) else { return percorso }
+        return "~" + percorso.dropFirst(home.count)
+    }
+
+    func testTheHomeFolderBecomesATilde() {
+        let home = "/Users/qualcuno"
+        XCTAssertEqual(senzaNome("\(home)/Library/Application Support/Otium", home: home),
+                       "~/Library/Application Support/Otium")
+        XCTAssertEqual(senzaNome("\(home)/Desktop/Otium.app/Contents/MacOS/Otium", home: home),
+                       "~/Desktop/Otium.app/Contents/MacOS/Otium")
+    }
+
+    /// Il polo negativo: un percorso che **non** sta nella home resta intero, o la funzione
+    /// starebbe accorciando cose che non c'entrano e il referto perderebbe informazione.
+    func testAPathOutsideTheHomeIsLeftAlone() {
+        let home = "/Users/qualcuno"
+        XCTAssertEqual(senzaNome("/Applications/Otium.app", home: home), "/Applications/Otium.app")
+        XCTAssertEqual(senzaNome("/Users/qualcunaltro/Documenti", home: home),
+                       "/Users/qualcunaltro/Documenti",
+                       "la home di un altro utente non è la tua: accorciarla direbbe il falso")
+    }
+
+    /// E se il sistema non sa dire quale sia la home, si preferisce un percorso intero a una
+    /// sostituzione cieca: `""` come prefisso corrisponde a qualunque stringa.
+    func testAnEmptyHomeChangesNothing() {
+        XCTAssertEqual(senzaNome("/Users/qualcuno/x", home: ""), "/Users/qualcuno/x")
+    }
+}

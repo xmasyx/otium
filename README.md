@@ -1,7 +1,7 @@
 <div align="center">
   <img src="docs/icon.png" width="180" height="180" alt="Otium icon: the number 30 in sage green on night green, with otium cum dignitate beneath it">
   <h1>Otium</h1>
-  <p><strong>A macOS app that counts your <em>active</em> time at the Mac and, at intervals the literature picked, covers the screen until you have done a bodyweight exercise.</strong></p>
+  <p><strong>Hours disappear while you work. This one counts the ones you actually spent sitting, and every half hour it covers the screen until you have moved.</strong></p>
 </div>
 
 <p align="center">
@@ -12,20 +12,54 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-green?style=flat-square" alt="PolyForm Noncommercial"></a>
 </p>
 
+```bash
+curl -fsSL https://raw.githubusercontent.com/xmasyx/otium/main/Scripts/install.sh | bash
+```
+
+That is the whole install: it downloads the latest release, puts the app in `/Applications`, clears
+the quarantine flag and launches it. [Read the script](Scripts/install.sh) before piping it to a
+shell — it is short, and the one line worth confirming yourself is the `xattr` that clears
+quarantine. Building from source is [further down](#build-it-yourself).
+
 No camera. No subscription. No network. No system permissions.
+
+---
+
+## The problem this is actually about
+
+You sit down to fix one thing. The agent runs, you read what comes out, you type the next prompt, it
+runs again. It is genuinely good fun — and that is the trap. Four hours are gone, the work moved
+forward, and you have not stood up once. **The session keeps going; you are the part that gets
+skipped.**
+
+Nothing on your screen is measuring that. The terminal does not know you have been reading its
+output for forty minutes. Your calendar shows a free afternoon. The only thing that noticed is your
+body, and it will tell you about it later.
+
+What those hours actually cost, and these are the three that are measured:
+
+- **Glucose.** Sitting through a long stretch flattens nothing and spikes everything. In a
+  randomised crossover of four doses, only *five minutes every thirty* cut the post-meal glucose
+  spike — by **58%**. Smaller doses moved blood pressure but not glucose.
+- **Mortality.** Among 25,241 adults who do no exercise at all, three daily bouts of one to two
+  minutes of vigorous movement were associated with roughly **40% lower mortality** over seven
+  years. Three minutes a day, in total.
+- **Everything else.** Musculoskeletal discomfort, eye strain and falling vigour, all reduced by
+  five extra minutes of break per hour, with **no measured loss of productivity**.
+
+Otium is the thing on your screen that notices. It counts the time you are actually there, and when
+the count runs out it covers the screen until you have done a set of squats or push-ups. Every
+number it uses shows the study it came from, while it is interrupting you.
+
+<div align="center">
+  <img src="docs/break.png" width="820" alt="The break screen: 11 crunches, the cue, four alternatives, the countdown, and at the bottom the study the interval comes from">
+</div>
 
 ```
 30 min of active work  →  90 s   ·  8-15 squats or push-ups
 30 min                 →  90 s   ·  a different exercise
 30 min                 →  5 min  ·  a vigorous bout + 3 minutes away from the screen
 ```
-
-<div align="center">
-  <img src="docs/break.png" width="820" alt="The break screen: 11 crunches, the cue, four alternatives, the countdown, and at the bottom the study the interval comes from">
-</div>
-
-The line at the bottom of that screenshot is the point of the whole app: every number shows the
-study it comes from, **while** it interrupts you.
 
 ---
 
@@ -64,20 +98,23 @@ alternatives: they unlock on clock time, so a moment away is enough to find the 
 micro-break is considered done. Over 5 minutes counts as a full break. Getting up by yourself is the
 desired behaviour, not a way to cheat.
 
-**But sitting still is not getting up.** Watching a film or reading a PDF is perfect stillness,
-which is exactly the sedentary bout the studies measure. Otium tells the two apart:
+**But sitting still is not getting up**, and this is the part most break apps get wrong. Reading a
+terminal is perfect stillness — which is exactly the sedentary bout the studies measure. Otium tells
+these cases apart, and each one has a cap on how long the signal is believed with no input at all:
 
-| What you are doing | How it knows | What it does |
+| What you are doing | How it knows | Counts as sitting for up to |
 |---|---|---|
-| watching a video | a player **on a fixed list** is producing audio, attributed to the process (nested helpers included) | counts as sitting time → the break fires |
-| reading a document | the frontmost app is a reader, and `lsof` says which `.pdf`/`.docx`/`.md` it holds open | counts as sitting time → the break fires |
-| on a call | a microphone is in use, or a camera is capturing | counts as sitting time → **but the break does not fire** while the call lasts |
-| you left | no signal, no input | a natural break, no exercise |
+| **reading a terminal or an editor** | the frontmost app is a terminal or a code editor: iTerm2, Terminal, Ghostty, Warp, Alacritty, kitty, WezTerm, Hyper, VS Code, Cursor, Xcode, Zed, IntelliJ, Sublime | **5 minutes** |
+| reading a document | the frontmost app is a reader, and `lsof` says which `.pdf`/`.docx`/`.md` it holds open | **15 minutes** |
+| watching a video | a player **on a fixed list** is producing audio, attributed to the process (nested helpers included) | **45 minutes** |
+| on a call | a microphone is in use, or a camera is capturing | **no cap** — and the break does not fire while the call lasts |
+| you left | no signal, no input | not sitting: a natural break, no exercise |
 
-Every signal **expires**, or leaving a PDF open and going to lunch would make lunch count as work:
-**45 minutes** for a video, **15** for a document, without a single input. Past the cap the clock
-stops, and coming back does not gift you a break you never took: the absence only counts from the
-moment the signal expired.
+**Why the terminal gets the shortest leash.** A terminal sits in the foreground on its own for hours
+— an agent grinding away, a build, a log — while a PDF in front of you at least implies somebody
+opened it to read. "Terminal on, desk empty" is the easiest of the four false positives to trigger,
+so it pays the shortest cap. Past the cap the clock stops, and coming back does not gift you a break
+you never took: the absence only counts from the moment the signal expired.
 
 **The call is the one exception, and it never expires.** A two-hour meeting without touching the
 trackpad is the longest sit of the day: if the signal expired, those two hours would stop counting
@@ -89,14 +126,14 @@ you were in a meeting or because you postponed, what fires is the 5-minute full 
 the 90-second snack. A whole skipped cycle is not repaid with ninety seconds.
 
 The player list is deliberately closed: only browsers and video players count, never any process
-that happens to be making noise. Spotify and Music are **out** — background music while you are in
-the kitchen is not "being at the screen".
+that happens to be making noise. Spotify and Music are out, because background music while you are
+in the kitchen is not "being at the screen".
 
 One technical note that cost a field test: the first design read the system assertion *"don't sleep
-the display"*, the one players raise during a video. **Chromium browsers don't raise it at all** —
+the display"*, the one players raise during a video. **Chromium browsers don't raise it at all**:
 with YouTube playing in Brave, the full assertion list contained only `caffeinate`, `powerd` and
 WindowServer. Audio, on the other hand, is always visible. And the thing making the sound is not the
-browser: it is a helper nested inside its bundle, which the system does not consider an application,
+browser, it is a helper nested inside its bundle, which the system does not consider an application,
 so the executable path has to be walked up to the outermost `.app`.
 
 To see what it recognises right now:
@@ -109,10 +146,10 @@ To see what it recognises right now:
 (reps × seconds per rep). Without a camera this is an honour system, but honour with a stopwatch in
 front of it costs more effort than the truth.
 
-**Sixteen exercises, and variants inside the break.** The rotation offers whatever is next — squats,
-push-ups, lunges, calf raises, glute bridges, bench dips — and never the same muscle group twice in
-a row. If the break is push-ups you can switch with one click to **diamond**, **archer**, **bench
-dips**, **pike** or **incline**: the reps adjust to the difficulty, and the "done" stopwatch
+**Sixteen exercises, and variants inside the break.** The rotation offers whatever is next
+(squats, push-ups, lunges, calf raises, glute bridges, bench dips) and never the same muscle group
+twice in a row. If the break is push-ups you can switch with one click to **diamond**, **archer**,
+**bench dips**, **pike** or **incline**: the reps adjust to the difficulty, and the "done" stopwatch
 restarts on the switch, so picking the shortest variant at the last second gets you nothing.
 
 **Progression, in both directions.** Reps start at 55% of the volume and reach 100% over four weeks:
@@ -127,21 +164,58 @@ the screen covered halfway. Time keeps counting, though, and when the call ends 
 one-minute warning rather than the screen in your face.
 
 **It does not lock you out.** There is always a way out: typing an exact phrase in full. Every skip
-goes in the log — not a judgement, a data point. And if nobody is at the Mac, the block drops by
-itself.
+goes in the log, which is a data point and not a judgement. And if nobody is at the Mac, the block
+drops by itself.
 
 | What you did | What you decided |
 |---|---|
 | <img src="docs/stats.png" alt="The statistics page: reps, days, vigorous bouts, then each exercise with prescribed versus done, and reps by muscle chain"> | <img src="docs/preferences.png" alt="The Cadence panel: preset, interval, break lengths, how often a full break, warning, manual postponements"> |
 | Every bar is one break. The percentage is what you did against what was prescribed, so an honest 55% shows up as 55%. | Every number here has a default that comes from a study, and changing one tells you which preset you just left. |
 
+### When you can't do squats: Zen mode
+
+An open-plan office, a co-working desk, a hotel lobby, the third call of the morning. You are not
+going to drop and do push-ups, so most days the honest choice is between a break you skip and a
+break you can actually take. **Zen mode replaces the exercise with guided breathing**: done sitting,
+without changing clothes, without anybody noticing. It applies to micro-breaks and full breaks
+alike, and you turn it on from the menu bar in one click: the bar carries a leaf while it is on.
+
+<div align="center">
+  <img src="docs/zen.png" width="820" alt="The Zen break: a halo that grows with the inhale, the phase and its count, the protocol and the study underneath">
+</div>
+
+The halo grows and shrinks with the breath, so you can follow it with your eyes closed most of the
+time and open them only to check you are still in phase.
+
+Three protocols, named after what you do rather than the arithmetic:
+
+| Protocol | What it is | Where it comes from |
+|---|---|---|
+| **two inhales, one long exhale** *(default)* | cyclic sighing: two inhales through the nose, the second short on top of the first, then a long exhale through the mouth | [Balban et al. 2023](https://pubmed.ncbi.nlm.nih.gov/36630953/), *Cell Reports Medicine* — an RCT in 108 people: five minutes a day for 28 days beat mindfulness meditation on mood and respiratory rate, and beat the other two protocols tested |
+| **five seconds in, five out** | resonance breathing, six breaths a minute instead of the usual twelve to fifteen | [Laborde et al. 2022](https://pubmed.ncbi.nlm.nih.gov/35623448/) — a systematic review and meta-analysis of 223 studies: around six breaths a minute heart and breath fall into phase, and vagally-mediated HRV rises the most |
+| **box breathing** | four in, four hold, four out, four hold | the easiest to remember, which is why it is everywhere. It works, less well than the sigh |
+
+Length is yours: 60 seconds, 90 seconds, 3 minutes, or **5 minutes, the studied dose**. Single
+sessions of 5, 10, 15 and 20 minutes produce the same effect on vagal activity, so longer is not
+better — but below five minutes nobody has measured, and the app says so instead of implying that
+ninety seconds carry the same evidence.
+
+**And here is the ceiling, stated rather than buried.** Breathwork lowers stress with a small-to-
+medium effect (g = −0.35 across 12 randomised trials and 785 adults), and nearly all those trials
+carry a moderate risk of bias
+([Fincham et al. 2023](https://pubmed.ncbi.nlm.nih.gov/36624160/), *Scientific Reports*). It is a
+real, measured benefit — and it travels a different road: **breathing contracts the diaphragm and
+the intercostals, not the large leg muscles, and it is their contraction that pulls glucose out of
+the blood.** The metabolic work in the table at the top of this README is simply absent in Zen mode.
+It is the mode for the days you would otherwise skip the break entirely, not an equal swap.
+
 ### Honest about what the block is, and what it is not
 
 Since macOS High Sierra no window can sit above the system lock screen, and any process can be
-killed from a terminal. Otium is not a padlock: it is **strong friction**. It covers every screen at
+killed from a terminal. Otium is not a padlock, it is **strong friction**. It covers every screen at
 shielding level, hides the Dock and menu bar, disables ⌘-Tab, Exposé, Force Quit and log-out.
-Anyone who wants to get around it will — and that is fine: the point is to put the choice in front
-of your eyes, not to take it away.
+Anyone who wants to get around it will, and that is fine: the point is to put the choice in front of
+your eyes, not to take it away.
 
 ---
 
@@ -162,19 +236,9 @@ append-only JSON Lines log you can read with anything.
 
 ---
 
-## Install
+## Build it yourself
 
-One line, no Xcode, no build. It downloads the latest release, puts the app in `/Applications`,
-clears the quarantine flag (builds are unsigned) and launches it:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/xmasyx/otium/main/Scripts/install.sh | bash
-```
-
-Read [that script](Scripts/install.sh) before you pipe it to a shell. It is short, and the one step
-worth confirming yourself is the `xattr` line that clears the quarantine flag.
-
-Or build it from source — macOS 15+ and Xcode (or the Command Line Tools):
+macOS 15+ and Xcode (or the Command Line Tools):
 
 ```bash
 git clone https://github.com/xmasyx/otium.git && cd otium
@@ -227,15 +291,29 @@ on someone closing it by hand would be the perfect way to leave a Mac nailed shu
 
 ## What already exists, and what doesn't
 
-| | Otium | [Stretchly](https://github.com/hovancik/stretchly) | Time Out | [Workrave](https://workrave.org) | "unlock with push-ups" apps |
-|---|---|---|---|---|---|
-| native macOS | ✅ ~5 MB | Electron | ✅ | ❌ (port stalled) | iPhone only |
-| counts **active** time | ✅ | pauses on idle | ✅ *natural breaks* | ✅ | ❌ wall clock |
-| really blocks the screen | ✅ | partial | ❌ | ✅ | ✅ |
-| exercises with reps | ✅ | text ideas | ❌ | ✅ guided | ✅ |
-| counts the reps | ❌ (honour + stopwatch) | ❌ | ❌ | ❌ | ✅ camera |
-| shows its sources | ✅ | ❌ | ❌ | ❌ | ❌ |
-| price | free, source-available | free | free | free | $15/month |
+| | Otium | [Stretchly](https://github.com/hovancik/stretchly) | Time Out | [Workrave](https://workrave.org) |
+|---|---|---|---|---|
+| native macOS | ✅ ~5 MB | Electron | ✅ | ❌ (port stalled) |
+| counts **active** time | ✅ | pauses on idle | ✅ *natural breaks* | ✅ |
+| knows the terminal is work | ✅ | ❌ | ❌ | ❌ |
+| really blocks the screen | ✅ | partial | ❌ | ✅ |
+| exercises with reps | ✅ | text ideas | ❌ | ✅ guided |
+| a mode for when you can't move | ✅ guided breathing | ❌ | ❌ | ❌ |
+| shows its sources | ✅ | ❌ | ❌ | ❌ |
+| price | free, source-available | free | free | free |
+
+## Found a bug?
+
+**Preferences → Advanced → "Report a problem…"** opens a GitHub issue already filled in with the
+version, the macOS build and the diagnostics report — what is left is describing what happened.
+
+The app sends nothing by itself: it builds a URL and opens your browser, so you read the text and
+decide what goes out. That is the same promise as everywhere else here, and you can check it by
+reading `openIssueForm()`. The diagnostics never carry your home folder either: paths are shortened
+to `~` before they leave the app.
+
+If Otium won't start at all, the [issue template](.github/ISSUE_TEMPLATE/bug.md) asks the same three
+questions by hand.
 
 ## Planned
 
@@ -247,7 +325,7 @@ on someone closing it by hand would be the perfect way to leave a Mac nailed shu
 ## Tests
 
 ```bash
-swift test                           # 423 tests: clock, engine, ramp, rotation, ledger, wording
+swift test                           # 426 tests: clock, engine, ramp, rotation, ledger, wording
 swift Scripts/probe-blocker.swift    # checks the block covers every screen (with the app blocking)
 ```
 

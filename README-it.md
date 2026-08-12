@@ -1,7 +1,7 @@
 <div align="center">
   <img src="docs/icon.png" width="180" height="180" alt="Icona di Otium: il numero 30 in verde salvia su verde notte, con otium cum dignitate sotto">
   <h1>Otium</h1>
-  <p><strong>Un'app per macOS che conta il <em>tempo attivo</em> davanti al Mac e, a intervalli decisi dalla letteratura, copre lo schermo finché non hai fatto un esercizio a corpo libero.</strong></p>
+  <p><strong>Le ore spariscono mentre lavori. Questa conta quelle che hai passato davvero seduto, e ogni mezz'ora copre lo schermo finché non ti sei mosso.</strong></p>
 </div>
 
 <p align="center">
@@ -12,43 +12,76 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/licenza-PolyForm%20Noncommercial-green?style=flat-square" alt="PolyForm Noncommercial"></a>
 </p>
 
+```bash
+curl -fsSL https://raw.githubusercontent.com/xmasyx/otium/main/Scripts/install.sh | bash
+```
+
+L'installazione è tutta qui. Scarica l'ultima release, mette l'app in `/Applications`, toglie la
+quarantena e la avvia. [Leggi lo script](Scripts/install.sh) prima di darlo in pasto a una shell,
+perché è corto e la riga che vale la pena confermare con i tuoi occhi è l'`xattr` che toglie la
+quarantena. Chi preferisce compilare trova le istruzioni più sotto.
+
 Niente telecamera. Niente abbonamento. Niente rete. Nessun permesso di sistema.
 
-```
-30 min di lavoro attivo  →  90 s  ·  8-15 squat o push-up
-30 min                   →  90 s  ·  esercizio diverso
-30 min                   →  5 min ·  bout vigoroso + 3 min lontano dallo schermo
-```
+---
+
+## Il problema di cui si parla davvero
+
+Ti siedi per sistemare una cosa sola. L'agente gira, tu leggi quello che esce, scrivi il prompt
+dopo, e riparte. È divertente per davvero, ed è lì la trappola. Sono passate quattro ore, il lavoro
+è andato avanti e tu non ti sei alzato una volta. **La sessione continua, e la parte che salta sei
+tu.**
+
+Niente sullo schermo lo sta misurando. Il terminale non sa che stai leggendo il suo output da
+quaranta minuti. Il calendario dice che il pomeriggio era libero. L'unica cosa che se n'è accorta è
+il tuo corpo, che te lo dirà dopo.
+
+Quelle ore hanno un prezzo, e questi tre sono misurati.
+
+- **Glicemia.** Restare seduti a lungo alza i picchi e non appiattisce niente. In un crossover
+  randomizzato su quattro dosi, solo *cinque minuti ogni trenta* hanno tagliato il picco glicemico
+  dopo il pasto, del **58%**. Le dosi minori spostano la pressione, non la glicemia.
+- **Mortalità.** Su 25.241 adulti che non fanno nessuno sport, tre episodi quotidiani da uno o due
+  minuti di attività vigorosa si associano a circa il **40% di mortalità in meno** in sette anni.
+  Tre minuti al giorno, in tutto.
+- **Tutto il resto.** Dolori muscoloscheletrici, affaticamento visivo e vigore che cala, tutti
+  ridotti da cinque minuti di pausa in più ogni ora, **senza perdita di produttività misurata**.
+
+Otium è la cosa sullo schermo che se ne accorge. Conta il tempo in cui ci sei davvero, e quando il
+conto finisce copre lo schermo finché non hai fatto una serie di squat o di flessioni. Ogni numero
+che usa mostra lo studio da cui viene, **mentre** ti sta interrompendo.
 
 <div align="center">
   <img src="docs/pausa.png" width="820" alt="La schermata di pausa: 11 crunches, l'istruzione, quattro alternative, il cronometro e in fondo lo studio da cui viene l'intervallo">
 </div>
 
-La riga in fondo a quello screenshot è il punto di tutta l'app: ogni numero mostra lo studio da cui
-viene, **mentre** ti interrompe.
+```
+30 min di lavoro attivo  →  90 s   ·  8-15 squat o push-up
+30 min                   →  90 s   ·  un esercizio diverso
+30 min                   →  5 min  ·  un bout vigoroso + 3 minuti lontano dallo schermo
+```
 
 ---
 
 ## Perché questi numeri
 
-Ogni parametro risponde a uno studio, e l'app te lo mostra **mentre** ti interrompe. Questa è la
-differenza principale con tutto il resto. Le app concorrenti si dichiarano *science-backed* senza
-citare una fonte.
+Le app concorrenti si dichiarano *science-backed* senza citare una fonte. Questa mette la citazione
+sulla schermata che ti sta bloccando.
 
 | Parametro | Da dove viene |
 |---|---|
-| **Un break ogni 30 minuti** | [Duran et al. 2023](https://www.cuimc.columbia.edu/news/rx-prolonged-sitting-five-minute-stroll-every-half-hour) — crossover randomizzato su quattro dosi: solo "5 minuti ogni 30" ha appiattito i picchi glicemici (−58%). Dosi minori abbassano la pressione ma non la glicemia. |
+| **Un break ogni 30 minuti** | [Duran et al. 2023](https://www.cuimc.columbia.edu/news/rx-prolonged-sitting-five-minute-stroll-every-half-hour) — crossover randomizzato su quattro dosi: solo «5 minuti ogni 30» ha appiattito i picchi glicemici (−58%). Dosi minori abbassano la pressione ma non la glicemia. |
 | **Esercizi di forza, non una camminata** | [Gao, Li, Finni & Pesola 2024](https://onlinelibrary.wiley.com/doi/abs/10.1111/sms.14628) — 3 minuti di squat ogni 45' hanno battuto una singola camminata da 30', con circa il doppio del beneficio glicemico. Conta l'attivazione muscolare, non i passi. |
-| **La pausa piena da 5 minuti** | [Galinsky et al. 2000](https://pubmed.ncbi.nlm.nih.gov/10877480/) (+ follow-up 2007) — 5 minuti di pausa extra ogni ora riducono disturbi muscoloscheletrici e affaticamento visivo **senza perdita di produttività misurata**. |
-| **90 secondi per il micro-snack** | [Albulescu et al. 2022](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0272460) — meta-analisi di 22 studi: le micro-pause ≤10 min riducono fatica e alzano il vigore. Gli autori avvertono che dopo lavoro cognitivo pesante 10 minuti non bastano: per questo ogni 90 minuti la pausa è piena. |
-| **Il bout vigoroso, e il bersaglio di 3 al giorno** | [Stamatakis et al. 2022, *Nature Medicine*](https://www.wcrf.org/about-us/news-and-blogs/vigorous-exercise-and-the-science-behind-exercise-snacking/) — 25.241 adulti non sportivi: tre bout quotidiani da 1-2 minuti di attività vigorosa si associano a ~40% di mortalità in meno a 7 anni. |
+| **La pausa piena da 5 minuti** | [Galinsky et al. 2000](https://pubmed.ncbi.nlm.nih.gov/10877480/) (più il follow-up del 2007) — 5 minuti di pausa extra ogni ora riducono disturbi muscoloscheletrici e affaticamento visivo **senza perdita di produttività misurata**. |
+| **90 secondi per il micro-snack** | [Albulescu et al. 2022](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0272460) — meta-analisi di 22 studi: le micro-pause sotto i 10 minuti riducono la fatica e alzano il vigore. Gli autori avvertono che dopo lavoro cognitivo pesante 10 minuti non bastano, ed è per questo che ogni 90 minuti la pausa è piena. |
+| **Il bout vigoroso, e il bersaglio di 3 al giorno** | [Stamatakis et al. 2022, *Nature Medicine*](https://www.wcrf.org/about-us/news-and-blogs/vigorous-exercise-and-the-science-behind-exercise-snacking/) — 25.241 adulti non sportivi: tre bout quotidiani da 1-2 minuti di attività vigorosa si associano a circa il 40% di mortalità in meno a 7 anni. |
 
 ### E una funzione che Otium NON implementa
 
 La **regola 20-20-20** (ogni 20 minuti guarda a 6 metri per 20 secondi) è in quasi tutte le app di
 pausa. In un [trial del 2023](https://www.optometryadvisor.com/features/digital-eye-strain-may-not-be-solved-by-the-20-20-20-rule/)
 che ha confrontato pause da 20 secondi a intervalli di 5, 10 e 20 minuti non è emersa alcuna
-differenza su sintomi, velocità e accuratezza di lettura. I tre "20" furono scelti perché
+differenza su sintomi, velocità e accuratezza di lettura. I tre «20» furono scelti perché
 memorabili, non perché ottimizzati.
 
 Otium non costruisce un timer per gli occhi. La pausa motoria li riposa comunque.
@@ -58,66 +91,70 @@ Otium non costruisce un timer per gli occhi. La pausa motoria li riposa comunque
 ## Come funziona
 
 **Conta il tempo attivo, mai l'orologio a muro.** Se ti fermi più di un minuto il contatore si
-ferma; se torni prima, riprende da dov'era. È il difetto più citato nelle recensioni delle
-alternative, che sbloccano in base all'ora, così basta fermarsi un attimo per trovarsi la schermata
+ferma, se torni prima riprende da dov'era. È il difetto più citato nelle recensioni delle
+alternative, che sbloccano in base all'ora: basta fermarsi un attimo per trovarsi la schermata
 addosso.
 
 **La pausa spontanea vale.** Se ti alzi da solo per più di 90 secondi, la micro-pausa è considerata
 fatta. Oltre 5 minuti vale come pausa piena. Alzarsi da soli è il comportamento desiderato, non un
 modo di imbrogliare.
 
-**Ma stare fermo non è alzarsi.** Guardare un film o leggere un PDF è immobilità perfetta, cioè
-esattamente il bout sedentario che gli studi misurano. Otium distingue i due casi:
+**Ma stare fermo non è alzarsi**, ed è la parte che quasi tutte le app di pausa sbagliano. Leggere
+un terminale è immobilità perfetta, cioè esattamente il bout sedentario che gli studi misurano.
+Otium distingue i casi, e ognuno ha un tetto oltre il quale il segnale non viene più creduto senza
+un solo input.
 
-| Cosa stai facendo | Come lo capisce | Cosa fa |
+| Cosa stai facendo | Come lo capisce | Conta come tempo seduto fino a |
 |---|---|---|
-| guardi un video | un player **in elenco** sta producendo audio, attribuito al processo (helper annidati compresi) | conta come tempo fermo → la pausa scatta |
-| leggi un documento | l'app in primo piano è un lettore, e `lsof` dice quale `.pdf`/`.docx`/`.md` tiene aperto | conta come tempo fermo → la pausa scatta |
-| sei in call | microfono in uso, o telecamera che riprende | conta come tempo fermo → **ma la pausa non parte** finché la call dura |
-| te ne sei andato | nessun segnale, nessun input | pausa naturale, nessun esercizio |
+| **leggi un terminale o un editor** | in primo piano c'è un terminale o un editor di codice: iTerm2, Terminal, Ghostty, Warp, Alacritty, kitty, WezTerm, Hyper, VS Code, Cursor, Xcode, Zed, IntelliJ, Sublime | **5 minuti** |
+| leggi un documento | l'app in primo piano è un lettore, e `lsof` dice quale `.pdf`/`.docx`/`.md` tiene aperto | **15 minuti** |
+| guardi un video | un player **in elenco** sta producendo audio, attribuito al processo (helper annidati compresi) | **45 minuti** |
+| sei in call | microfono in uso, o telecamera che riprende | **nessun tetto**, e la pausa non parte finché la call dura |
+| te ne sei andato | nessun segnale, nessun input | non è tempo seduto: pausa naturale, nessun esercizio |
 
-Ogni segnale **scade**, o basterebbe lasciare un PDF aperto e andare a pranzo per far contare il
-pranzo come lavoro: **45 minuti** per un video, **15** per un documento, senza un solo input.
-Oltre il tetto l'orologio si ferma. Rientrando non ti viene regalata una pausa che non hai
-preso. L'assenza vale solo da quando il segnale è scaduto.
+**Perché il terminale ha il guinzaglio più corto.** Un terminale resta in primo piano da solo per
+ore, con un agente che macina, una build, un log che scorre, mentre un PDF davanti implica almeno
+che qualcuno l'abbia aperto per leggerlo. «Terminale acceso, scrivania vuota» è il più facile dei
+quattro falsi positivi da innescare, quindi paga il tetto più corto. Oltre il tetto l'orologio si
+ferma. Rientrando non ti viene regalata una pausa che non hai preso, perché l'assenza vale solo da
+quando il segnale è scaduto.
 
-**La call è l'unica eccezione, e non scade mai.** Una riunione di due ore senza toccare il
-trackpad è la seduta più lunga della giornata. Se il segnale scadesse, quelle due ore
-smetterebbero di contare a metà. Al posto del tetto c'è un richiamo. Dopo **4 ore** di microfono
-acceso senza un solo tocco l'app avvisa che qualcosa lo sta tenendo aperto. Avvisa, non blocca.
+**La call è l'unica eccezione, e non scade mai.** Una riunione di due ore senza toccare il trackpad
+è la seduta più lunga della giornata. Se il segnale scadesse, quelle due ore smetterebbero di
+contare a metà. Al posto del tetto c'è un richiamo. Dopo **4 ore** di microfono acceso senza un solo
+tocco l'app avvisa che qualcosa lo sta tenendo aperto, e avvisa, non blocca.
 
 **E la pausa arretrata arriva più grossa.** Se il tempo seduto ha superato il **doppio**
-dell'intervallo, perché eri in riunione o perché hai rinviato, quella che scatta è la pausa piena
-da 5 minuti e non lo snack da 90 secondi. Un ciclo intero saltato non si ripaga con novanta
-secondi.
+dell'intervallo, perché eri in riunione o perché hai rinviato, quella che scatta è la pausa piena da
+5 minuti e non lo snack da 90 secondi. Un ciclo intero saltato non si ripaga con novanta secondi.
 
 L'elenco dei player è chiuso di proposito: contano solo browser e riproduttori video, mai un
-processo qualsiasi che stia suonando. Spotify e Musica sono **fuori**, perché la musica di sottofondo
-mentre sei in cucina non è "essere davanti allo schermo".
+processo qualsiasi che stia suonando. Spotify e Musica sono **fuori**, perché la musica di
+sottofondo mentre sei in cucina non è «essere davanti allo schermo».
 
-Una nota tecnica che è costata una prova sul campo: il primo disegno leggeva l'asserzione di
-sistema *«non spegnere lo schermo»*, quella che i player alzano durante un video. **I browser
-Chromium non la alzano affatto**. Con YouTube in riproduzione in Brave, l'elenco completo delle
-asserzioni conteneva solo `caffeinate`, `powerd` e WindowServer. L'audio invece si vede sempre. E
-chi suona non è il browser: è un helper annidato dentro il suo bundle, che per il sistema non è
-un'applicazione, quindi va risalito il percorso dell'eseguibile fino al `.app` più esterno.
+Una nota tecnica che è costata una prova sul campo. Il primo disegno leggeva l'asserzione di sistema
+*«non spegnere lo schermo»*, quella che i player alzano durante un video. **I browser Chromium non
+la alzano affatto**: con YouTube in riproduzione in Brave, l'elenco completo delle asserzioni
+conteneva solo `caffeinate`, `powerd` e WindowServer. L'audio invece si vede sempre. E chi suona non
+è il browser, è un helper annidato dentro il suo bundle, che per il sistema non è un'applicazione,
+quindi va risalito il percorso dell'eseguibile fino al `.app` più esterno.
 
 Per vedere cosa riconosce in questo momento:
 
 ```bash
-dist/Otium.app/Contents/MacOS/Otium --presence
+/Applications/Otium.app/Contents/MacOS/Otium --presence
 ```
 
-**Il pulsante "fatto" ha un cancello.** Si sblocca solo dopo il tempo minimo plausibile per quelle
+**Il pulsante «fatto» ha un cancello.** Si sblocca solo dopo il tempo minimo plausibile per quelle
 ripetizioni (ripetizioni × secondi per ripetizione). Senza telecamera è un sistema d'onore, ma
 l'onore con un cronometro davanti costa più fatica della verità.
 
 **Sedici esercizi, e le varianti dentro la pausa.** La rotazione propone quello che tocca
 (squat, push-up, affondi, polpacci, ponte per i glutei, dip su sedia) e mai due volte di fila lo
 stesso gruppo muscolare. Se la pausa è di push-up puoi passare con un clic a **diamond**,
-**archer**, **dip su sedia**, **pike** o **inclinati**: le ripetizioni si adeguano alla
-difficoltà, e il cronometro del "fatto" riparte dal cambio, così scegliere la variante più corta
-all'ultimo secondo non serve a niente.
+**archer**, **dip su sedia**, **pike** o **inclinati**: le ripetizioni si adeguano alla difficoltà,
+e il cronometro del «fatto» riparte dal cambio, così scegliere la variante più corta all'ultimo
+secondo non serve a niente.
 
 **La progressione va in tutte e due le direzioni.** Si parte al 55% del volume e si arriva al 100%
 in quattro settimane, perché partire pieni il primo giorno è il modo più rapido per farsi male e
@@ -140,46 +177,75 @@ cade da solo.
 | <img src="docs/statistiche.png" alt="La pagina delle statistiche: ripetizioni, giorni, bout vigorosi, poi ogni esercizio con prescritto contro fatto, e le ripetizioni per catena muscolare"> | <img src="docs/preferenze.png" alt="Il pannello Cadenza: preset, intervallo, durate delle pause, ogni quanto una piena, preavviso, rinvii a mano"> |
 | Ogni barra è una pausa. La percentuale è quello che hai fatto contro quello che era prescritto, quindi un onesto 55% resta un 55%. | Ogni numero qui ha un valore di partenza che viene da uno studio, e cambiarne uno ti dice da quale preset sei appena uscito. |
 
+### Quando non puoi fare squat: la modalità Zen
+
+Un open space, una scrivania in coworking, la hall di un albergo, la terza call della mattina. Non
+ti metterai a terra a fare flessioni, quindi la scelta vera, quei giorni, è fra una pausa saltata e
+una pausa che puoi davvero prendere. **La modalità Zen sostituisce l'esercizio con un respiro
+guidato**, che si fa da seduti, senza cambiarsi e senza farsi notare. Vale per le micro-pause come
+per quelle piene, e si accende dal menu della barra con un clic: mentre è accesa la barra porta una
+foglia.
+
+<div align="center">
+  <img src="docs/zen-it.png" width="820" alt="La pausa Zen: un alone che cresce con l'inspirazione, la fase con il suo conto, il protocollo e lo studio sotto">
+</div>
+
+L'alone cresce e cala col respiro, così puoi seguirlo a occhi chiusi quasi tutto il tempo e aprirli
+solo per controllare di essere ancora in fase.
+
+Tre protocolli, chiamati con quello che devi fare invece che con l'aritmetica.
+
+| Protocollo | Cos'è | Da dove viene |
+|---|---|---|
+| **due inspiri, una lunga espirazione** *(di serie)* | il respiro ciclico: due inspirazioni dal naso, la seconda corta sopra la prima, poi una lunga espirazione dalla bocca | [Balban et al. 2023](https://pubmed.ncbi.nlm.nih.gov/36630953/), *Cell Reports Medicine* — randomizzato controllato su 108 persone: cinque minuti al giorno per 28 giorni hanno battuto la meditazione mindfulness su umore e frequenza respiratoria, e hanno battuto gli altri due protocolli provati |
+| **cinque secondi dentro, cinque fuori** | il respiro in risonanza, sei respiri al minuto invece dei soliti dodici o quindici | [Laborde et al. 2022](https://pubmed.ncbi.nlm.nih.gov/35623448/) — revisione sistematica e meta-analisi su 223 studi: attorno ai sei respiri al minuto cuore e respiro entrano in fase, ed è lì che la variabilità cardiaca a mediazione vagale sale di più |
+| **respiro quadrato** | quattro secondi dentro, quattro di pausa, quattro fuori, quattro di pausa | il più facile da ricordare, ed è per questo che è ovunque. Funziona, meno del sospiro |
+
+La durata la scegli tu: 60 secondi, 90 secondi, 3 minuti, oppure **5 minuti, la dose studiata**. Le
+sessioni singole da 5, 10, 15 e 20 minuti danno lo stesso effetto sull'attività vagale, quindi più
+lungo non è meglio. Sotto i cinque minuti però non ha misurato nessuno, e l'app lo dice invece di
+lasciar credere che novanta secondi portino le stesse prove.
+
+**E qui c'è il tetto, dichiarato invece che nascosto.** Il lavoro sul respiro abbassa lo stress con
+un effetto piccolo-medio (g = −0,35 su 12 studi randomizzati e 785 adulti), e quasi tutti quegli
+studi hanno rischio di bias moderato
+([Fincham et al. 2023](https://pubmed.ncbi.nlm.nih.gov/36624160/), *Scientific Reports*). È un
+beneficio reale e misurato, e agisce su un'altra strada: **respirare contrae il diaframma e gli
+intercostali, non i grandi muscoli delle gambe, ed è la loro contrazione a tirare il glucosio fuori
+dal sangue.** Il lavoro metabolico della tabella in cima a questo README, in modalità Zen, non c'è.
+È la modalità per i giorni in cui altrimenti salteresti la pausa del tutto, non uno scambio alla
+pari.
+
 ### Onestà su cosa il blocco è, e cosa non è
 
 Da macOS High Sierra nessuna finestra può stare sopra il lock screen di sistema, e qualunque
 processo si può uccidere da un terminale. Otium non è un lucchetto, è **attrito forte**. Copre ogni
 schermo a livello di schermatura, nasconde Dock e barra dei menu, disabilita ⌘-Tab, Exposé, uscita
-forzata e chiusura di sessione. Chi vuole aggirarla ci riesce, e va bene così: il punto è mettere
-la scelta davanti agli occhi, non toglierla.
+forzata e chiusura di sessione. Chi vuole aggirarla ci riesce, e va bene così: il punto è mettere la
+scelta davanti agli occhi, non toglierla.
 
 ---
 
 ## Privacy e permessi
 
-Otium **non compare** in Impostazioni → Privacy e sicurezza, perché non usa niente che lo richieda:
+Otium **non compare** in Impostazioni → Privacy e sicurezza, perché non usa niente che lo richieda.
 
-- l'inattività si legge da `CGEventSource`, che non richiede né Accessibilità né Input Monitoring;
-- il rilevamento delle call legge `kAudioDevicePropertyDeviceIsRunningSomewhere` e il suo gemello
-  video `kCMIODevicePropertyDeviceIsRunningSomewhere`, cioè *se* un dispositivo è in uso, senza nessuno
-  stream aperto, nessun byte di audio o di immagine, nessun permesso microfono né telecamera;
-- il preavviso è un pannello dell'app, non una notifica di sistema (che richiederebbe un permesso);
-- niente registrazione schermo, niente rete.
+- L'inattività si legge da `CGEventSource`, che non richiede né Accessibilità né Input Monitoring.
+- Il rilevamento delle call legge `kAudioDevicePropertyDeviceIsRunningSomewhere` e il suo gemello
+  video `kCMIODevicePropertyDeviceIsRunningSomewhere`, cioè *se* un dispositivo è in uso, senza
+  nessuno stream aperto, nessun byte di audio o di immagine, nessun permesso microfono né
+  telecamera.
+- Il preavviso è un pannello dell'app, non una notifica di sistema, che richiederebbe un permesso.
+- Niente registrazione schermo, niente rete.
 
 Tutto resta in `~/Library/Application Support/Otium/`: `settings.json` e `ledger.jsonl`, un registro
 append-only in JSON Lines che puoi leggere con qualsiasi cosa.
 
 ---
 
-## Installazione
+## Compilarla da sé
 
-Una riga, senza Xcode e senza compilare. Scarica l'ultima release, mette l'app in
-`/Applications`, toglie la quarantena (le build non sono firmate con un certificato Apple) e la
-avvia:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/xmasyx/otium/main/Scripts/install.sh | bash
-```
-
-[Quello script](Scripts/install.sh) va letto prima di darlo in pasto a una shell. È corto, e il
-passo che vale la pena confermare con i tuoi occhi è la riga `xattr` che toglie la quarantena.
-
-Oppure si compila dal sorgente. Serve macOS 15+ e Xcode (o i Command Line Tools):
+Serve macOS 15+ e Xcode (o i Command Line Tools):
 
 ```bash
 git clone https://github.com/xmasyx/otium.git && cd otium
@@ -187,8 +253,8 @@ Scripts/build-app.sh          # produce dist/Otium.app, firmata ad-hoc
 open dist/Otium.app
 ```
 
-Ne gira **una sola alla volta**: cercarla di nuovo da Spotlight sveglia quella che c'è e ti dice
-fra quanto arriva la prossima pausa, invece di avviare un secondo timer in parallelo.
+Ne gira **una sola alla volta**: cercarla di nuovo da Spotlight sveglia quella che c'è e ti dice fra
+quanto arriva la prossima pausa, invece di avviare un secondo timer in parallelo.
 
 L'app vive nella barra dei menu: il numero è quanti minuti di lavoro attivo mancano alla prossima
 pausa. Da lì: totali di oggi, preferenze, le fonti, il registro. L'interfaccia è in italiano e in
@@ -208,15 +274,15 @@ interruttore. Se lo spegni da lì, l'app **non** se lo rimette, ti porta all'int
 
 > **Cambiato il 2026-08-03.** Prima l'avvio automatico era un LaunchAgent scritto a mano in
 > `~/Library/LaunchAgents`, con `KeepAlive` per far ripartire Otium dopo un `kill -9`. macOS lo
-> cataloga come *legacy agent*: finiva nella sezione «Consenti in background» invece che fra le
-> app di «Apri al login», attribuito a «Unknown Developer», e faceva ricomparire l'avviso
-> «Attività app in background» a ogni ricostruzione del bundle. Il `KeepAlive` è caduto con lui,
-> e la scelta è dichiarata: sprangava la finestra sul retro lasciando aperta la porta, perché
-> «Esci da Otium» è un'uscita pulita che non faceva scattare niente. La rete che resta è il
-> ripristino a caldo. Riaperta entro la finestra di grazia, l'app riprende il conto da dov'era.
+> cataloga come *legacy agent*: finiva nella sezione «Consenti in background» invece che fra le app
+> di «Apri al login», attribuito a «Unknown Developer», e faceva ricomparire l'avviso «Attività app
+> in background» a ogni ricostruzione del bundle. Il `KeepAlive` è caduto con lui, e la scelta è
+> dichiarata: sprangava la finestra sul retro lasciando aperta la porta, perché «Esci da Otium» è
+> un'uscita pulita che non faceva scattare niente. La rete che resta è il ripristino a caldo.
+> Riaperta entro la finestra di grazia, l'app riprende il conto da dov'era.
 >
-> Chi aveva la versione precedente non deve fare niente, perché il vecchio agent viene tolto da solo al
-> primo avvio. A mano, se serve: `--remove-legacy-agent`. `--doctor` lo segnala se è sopravvissuto.
+> Chi aveva la versione precedente non deve fare niente, perché il vecchio agent viene tolto da solo
+> al primo avvio. A mano, se serve: `--remove-legacy-agent`. `--doctor` lo segnala se è sopravvissuto.
 
 ### Vedere la schermata senza aspettare mezz'ora
 
@@ -226,22 +292,36 @@ dist/Otium.app/Contents/MacOS/Otium --snapshot=out.png     # la disegna fuori sc
 ```
 
 L'auto-spegnimento non è una comodità: durante il blocco l'app disabilita l'uscita forzata, quindi
-una demo che dipendesse da qualcuno che la chiude a mano sarebbe il modo perfetto di lasciare un
-Mac inchiodato.
+una demo che dipendesse da qualcuno che la chiude a mano sarebbe il modo perfetto di lasciare un Mac
+inchiodato.
 
 ---
 
 ## Cosa c'è già, e cosa no
 
-| | Otium | [Stretchly](https://github.com/hovancik/stretchly) | Time Out | [Workrave](https://workrave.org) | app "sblocca con i push-up" |
-|---|---|---|---|---|---|
-| macOS nativo | ✅ ~5 MB | Electron | ✅ | ❌ (port fermo) | solo iPhone |
-| conta il tempo **attivo** | ✅ | pausa su idle | ✅ *natural breaks* | ✅ | ❌ orologio a muro |
-| blocca davvero lo schermo | ✅ | parziale | ❌ | ✅ | ✅ |
-| esercizi con ripetizioni | ✅ | idee testuali | ❌ | ✅ guidati | ✅ |
-| conta le ripetizioni | ❌ (onore + cronometro) | ❌ | ❌ | ❌ | ✅ telecamera |
-| mostra le fonti | ✅ | ❌ | ❌ | ❌ | ❌ |
-| prezzo | gratis, a sorgente aperto | gratis | gratis | gratis | 15 $/mese |
+| | Otium | [Stretchly](https://github.com/hovancik/stretchly) | Time Out | [Workrave](https://workrave.org) |
+|---|---|---|---|---|
+| macOS nativo | ✅ ~5 MB | Electron | ✅ | ❌ (port fermo) |
+| conta il tempo **attivo** | ✅ | pausa su idle | ✅ *natural breaks* | ✅ |
+| sa che il terminale è lavoro | ✅ | ❌ | ❌ | ❌ |
+| blocca davvero lo schermo | ✅ | parziale | ❌ | ✅ |
+| esercizi con ripetizioni | ✅ | idee testuali | ❌ | ✅ guidati |
+| una modalità per quando non puoi muoverti | ✅ respiro guidato | ❌ | ❌ | ❌ |
+| mostra le fonti | ✅ | ❌ | ❌ | ❌ |
+| prezzo | gratis, a sorgente aperto | gratis | gratis | gratis |
+
+## Hai trovato un problema?
+
+**Preferenze → Avanzate → «Segnala un problema…»** apre su GitHub una segnalazione già compilata con
+la versione, la build di macOS e il referto della diagnostica. Resta da scrivere cosa è successo.
+
+L'app non manda niente da sola: costruisce un indirizzo e apre il browser, quindi il testo lo leggi
+tu e decidi tu cosa parte. È la stessa promessa di tutto il resto, e si verifica leggendo
+`openIssueForm()`. Il referto non porta nemmeno la tua cartella home, perché i percorsi diventano
+`~` prima di uscire dall'app.
+
+Se Otium non parte proprio, il [modello di segnalazione](.github/ISSUE_TEMPLATE/bug.md) fa le stesse
+tre domande a mano.
 
 ## In programma
 
@@ -253,37 +333,37 @@ Mac inchiodato.
 ## Test
 
 ```bash
-swift test    # 423 test: orologio, motore, rampa, rotazione, registro, lingua
+swift test                           # 429 test: orologio, motore, rampa, rotazione, registro, lingua
 swift Scripts/probe-blocker.swift    # verifica che il blocco copra ogni schermo (con l'app in blocco)
 ```
 
 La sonda del blocco si tara da sola costruendo una finestra di misura nota, perché
 `kCGWindowBounds` non vive nello stesso spazio di coordinate di `NSScreen.frame`. Su un display in
-modalità scalata una finestra da 1512×982 punti viene elencata come 1362×884, e confrontare i
-numeri grezzi fa dichiarare rotta un'app sana.
+modalità scalata una finestra da 1512×982 punti viene elencata come 1362×884, e confrontare i numeri
+grezzi fa dichiarare rotta un'app sana.
 
 ## Licenza
 
 **PolyForm Noncommercial 1.0.0**, testo completo in [`LICENSE`](LICENSE).
 
 Il codice è **a sorgente aperto ma non open source**, e la differenza è dichiarata qui invece di
-essere lasciata capire: puoi leggerlo, compilarlo, modificarlo e usarlo liberamente per te, per
+essere lasciata capire. Puoi leggerlo, compilarlo, modificarlo e usarlo liberamente per te, per
 studio, per ricerca, e lo stesso vale per scuole, enti pubblici e non profit. Serve invece il mio
 permesso per usarlo a fini commerciali. Non chiamo il progetto open source perché non lo è secondo
 la definizione dell'OSI, e usare quella parola a sproposito sarebbe scorretto verso chi la rispetta.
 
 **Perché.** Otium può diventare un prodotto, e questa licenza tiene aperta quella porta senza
-chiudere l'unica cosa che conta per chi lo installa: il codice resta leggibile, quindi la promessa
+chiudere l'unica cosa che conta per chi lo installa. Il codice resta leggibile, quindi la promessa
 «nessuna rete, nessun permesso di sistema» si può verificare invece che credere.
 
 Nessuna dipendenza di terze parti: solo Swift e i framework di sistema di macOS.
 
 Le 338 citazioni e le 73 frasi che l'app mostra durante la pausa vengono da autori di pubblico
-dominio (Seneca, Marco Aurelio, Epitteto, Nietzsche, Montaigne, Pascal, Spinoza, Leopardi,
-Sunzi, Tao Te Ching, Dialoghi, Dhammapada, Gita). Le rese inglesi sono traduzioni storiche
-anch'esse di pubblico dominio, in 313 casi su 338: Gummere, Long, Common, Zimmern, Legge,
-Max Müller, Arnold, Cotton, Trotter, Elwes, Giles, Edwardes. Le restanti 25 sono traduzioni
-originali di questo progetto e ricadono sotto la stessa licenza del codice.
+dominio (Seneca, Marco Aurelio, Epitteto, Nietzsche, Montaigne, Pascal, Spinoza, Leopardi, Sunzi,
+Tao Te Ching, Dialoghi, Dhammapada, Gita). Le rese inglesi sono traduzioni storiche anch'esse di
+pubblico dominio, in 313 casi su 338: Gummere, Long, Common, Zimmern, Legge, Max Müller, Arnold,
+Cotton, Trotter, Elwes, Giles, Edwardes. Le restanti 25 sono traduzioni originali di questo progetto
+e ricadono sotto la stessa licenza del codice.
 
 ---
 
