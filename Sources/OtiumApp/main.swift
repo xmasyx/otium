@@ -146,6 +146,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         runMenuProbeIfRequested()
         captureMenuIfRequested()
         captureBarIfRequested()
+        measureBarIfRequested()
         runHotKeyProbeIfRequested()
         runPolicyProbeIfRequested()
         runCircuitProbeIfRequested()
@@ -581,6 +582,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     /// la barra sembrava più furbo e non lo è: l'ordine con cui gli status item si dispongono
     /// dipende da chi parte per primo, quindi in una foto sola non sai più quale segno è quale. Una
     /// istanza per volta, ritagliata sul proprio rettangolo, toglie l'ambiguità.
+    /// `--misura-barra` — stampa quanto è larga la voce nella barra, invece di fotografarla.
+    ///
+    /// **Serve perché la fotografia non risponde sempre.** Il 2026-08-12, verificando se stringere
+    /// la voce avesse davvero effetto, lo schermo era spento: `screencapture` restituisce un
+    /// rettangolo nero e la misura non esiste. Peggio, su Kalamos la stessa modifica era stata
+    /// *ignorata* dal sistema senza dirlo, e a saperlo era stato solo il confronto dei pixel: una
+    /// larghezza che si chiede e non si rilegge è una speranza.
+    ///
+    /// Stampa tre numeri: il contenuto disegnato, la larghezza chiesta e quella **concessa**. Se le
+    /// ultime due divergono, la richiesta è stata limitata dal minimo di sistema, e si vede qui
+    /// invece che a occhio sulla barra.
+    private func measureBarIfRequested() {
+        guard CommandLine.arguments.contains("--misura-barra") else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+            guard let self, let b = self.statusItem.button else { NSApp.terminate(nil); return }
+            let font = b.font ?? .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+            var contenuto = (b.title as NSString).size(withAttributes: [.font: font]).width
+            if let img = b.image { contenuto += img.size.width + 3 }
+            let chiesta = ceil(contenuto) + Self.respiroDellaVoce * 2
+            let concessa = b.window?.frame.width ?? self.statusItem.length
+            print(String(format: "titolo=%@  contenuto=%.1f pt  chiesta=%.1f pt  concessa=%.1f pt",
+                         b.title, contenuto, chiesta, concessa))
+            print(concessa <= chiesta + 0.5
+                  ? "RISULTATO: OK — il sistema ha concesso quello che abbiamo chiesto"
+                  : String(format: "RISULTATO: LIMITATA — %.1f pt in più del richiesto, minimo di sistema",
+                           concessa - chiesta))
+            NSApp.terminate(nil)
+        }
+    }
+
     private func captureBarIfRequested() {
         guard let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--scatta-barra=") }),
               let path = arg.split(separator: "=", maxSplits: 1).last.map(String.init)
@@ -1447,6 +1478,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         return segno
     }
 
+    /// **La voce nella barra non si può stringere, ed è misurato.**
+    ///
+    /// Richiesta del principale, 2026-08-12, guardando Kalamos, NoSleep e Otium affiancate:
+    /// *«hanno troppo bordo intorno, stringile e rendile uguali»*. Il tentativo era ovvio, cioè
+    /// chiedere una `statusItem.length` stretta invece di lasciarla a `variableLength`, e la
+    /// risposta di macOS è che quella richiesta **viene alzata in silenzio**:
+    ///
+    ///     titolo=30m  contenuto=26,2 pt  chiesta=35,0 pt  concessa=51,0 pt
+    ///
+    /// Sedici punti in più del richiesto, cioè circa otto per lato, che è il minimo che il sistema
+    /// tiene attorno a ogni voce di terze parti. Su Kalamos lo stesso tentativo non aveva spostato
+    /// la sua icona di un pixel, e a saperlo era stato solo il confronto delle fotografie: qui il
+    /// numero lo dice `--misura-barra`, che è l'unica cosa che vale la pena tenere di questo giro.
+    ///
+    /// **Quindi non si imposta nessuna `length`**: chiederne una che il sistema ignora è codice che
+    /// sembra fare una cosa e non ne fa nessuna. La costante resta perché la sonda la usa per dire
+    /// *quanto avremmo chiesto*, ed è il termine di paragone che rende leggibile il verdetto.
+    static let respiroDellaVoce: CGFloat = 4
+
     private func updateStatusTitle() {
         let titolo = model.statusTitle
         let zen = model.settings.zenMode
@@ -1470,6 +1520,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             statusItem.button?.image = nil
             statusItem.button?.imagePosition = .noImage
         }
+
 
         let base = model.phase == .paused
             ? L.t("Otium sospesa", "Otium paused")

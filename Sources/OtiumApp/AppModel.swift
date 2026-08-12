@@ -21,7 +21,7 @@ enum ProbeMode {
     private static let flags = [
         "--orphan-probe", "--sleep-probe", "--radar-probe", "--menu-probe", "--confirm-probe",
         "--flush-probe", "--window-probe", "--snapshot", "--demo-break", "--demo-hud", "--presence",
-        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo", "--demo-ritmo", "--mostra-crescita", "--demo-crescita", "--lsof-probe", "--mostra-prefs", "--scatta", "--scatta-menu", "--scatta-barra", "--segno-zen", "--stats-probe", "--registro-finto", "--cadenza-finta", "--circuito-subito", "--conto-probe",   // lingua: ok nomi di flag da riga di comando, non testo a schermo
+        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo", "--demo-ritmo", "--mostra-crescita", "--demo-crescita", "--lsof-probe", "--mostra-prefs", "--scatta", "--scatta-menu", "--scatta-barra", "--misura-barra", "--segno-zen", "--stats-probe", "--registro-finto", "--cadenza-finta", "--circuito-subito", "--conto-probe",   // lingua: ok nomi di flag da riga di comando, non testo a schermo
     ]
 
     static var active: Bool {
