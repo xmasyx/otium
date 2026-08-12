@@ -1802,13 +1802,13 @@ struct PrefsView: View {
         var subtitle: String {
             switch self {
             case .profilo:      return L.t("lingua, ripetizioni, partenza", "language, reps, ramp-up")
-            case .cadenza:      return L.t("ogni quanto, quanto dura", "how often, how long")
+            case .cadenza:      return L.t("ogni quanto, durata, rinvii", "how often, how long, postponements")
             // Corto perché la colonna è stretta: «quali girano, come vengono proposti» finiva in
             // «come vengono…», che è un sottotitolo che non dice niente. Visto nella finestra
             // vera il 2026-07-31, non nella resa.
-            case .esercizi:     return L.t("rotazione e varianti", "rotation and variants")
+            case .esercizi:     return L.t("rotazione, varianti, livello", "rotation, variants, level")
             case .zen:          return L.t("respiro invece di esercizio", "breathing instead of exercise")
-            case .interruzioni: return L.t("call, rinvii, ore attive", "calls, postponements, active hours")
+            case .interruzioni: return L.t("call, video, ore attive", "calls, video, active hours")
             case .aspetto:      return L.t("livrea, suono", "theme, sound")
             case .avanzate:     return L.t("avvio, fonti, registro", "startup, sources, log")
             }
@@ -1919,22 +1919,27 @@ struct PrefsView: View {
         .background(Palette.windowEdge)
     }
 
-    /// **I comandi della modalità Zen si applicano subito, senza «Applica».**
+    /// **Un interruttore si applica da solo, tutto il resto passa da «Applica».**
     ///
-    /// Richiesta del principale, 2026-08-08: *«modalità zen ha il togle, non deve chiedere conferma
-    /// di applica»*. E ha ragione al di là della comodità: un interruttore che *sembra* acceso
-    /// mentre il motore lo ignora è esattamente il guasto che gli è costato una pausa sbagliata la
-    /// sera prima. Qui l'unico stato è quello vero, quindi quella distanza non può più esistere.
+    /// La regola è del principale e ha due date. Il 2026-08-08, per la sola modalità Zen:
+    /// *«modalità zen ha il togle, non deve chiedere conferma di applica»*. Il 2026-08-12, estesa a
+    /// ogni interruttore della finestra: *«quando metto il toggle sono sicuro che è come dico io»*,
+    /// e nello stesso turno il verso opposto per quello che interruttore non è, cioè i menu di Zen,
+    /// che tornano sotto «Applica».
+    ///
+    /// **La linea di taglio è la forma del comando, non la sua importanza.** Un interruttore ha due
+    /// stati e li mostra entrambi: girarlo *è* la decisione, e un passaggio in più fra il gesto e
+    /// l'effetto crea la distanza fra quello che vedi e quello che fa il motore, cioè il guasto che
+    /// gli è costato una pausa sbagliata. Un menu, un campo di testo o delle frecce si attraversano
+    /// per arrivare al valore che vuoi, e scrivere ogni valore di passaggio vorrebbe dire riscrivere
+    /// il file dieci volte mentre stai ancora decidendo, e per un attimo lavorare con una cadenza
+    /// che non hai scelto.
     ///
     /// **Scrive solo il proprio campo**, prendendo le impostazioni vive e non la bozza: se hai
     /// altre modifiche in sospeso in un altro pannello, girare questo interruttore non deve
     /// applicartele di straforo. La bozza si allinea insieme, o «Modifiche non applicate» si
     /// accenderebbe per una modifica che è già sul disco.
-    ///
-    /// Resta un'eccezione dichiarata: tutto il resto della finestra continua a passare da «Applica»,
-    /// perché cambiare cadenza o pool a ogni clic vorrebbe dire riscrivere il file dieci volte
-    /// mentre stai ancora decidendo.
-    private func zenVivo<V>(_ campo: WritableKeyPath<OtiumCore.Settings, V>) -> Binding<V> {
+    private func vivo<V>(_ campo: WritableKeyPath<OtiumCore.Settings, V>) -> Binding<V> {
         Binding(
             get: { draft[keyPath: campo] },
             set: { nuovo in
@@ -2017,48 +2022,42 @@ struct PrefsView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            // Una scelta fatta al primo avvio e mai più modificabile è una trappola: la terza
-            // volta che la incontro in questo file, e la terza volta che la chiudo.
-            Picker(L.t("Livello per i push-up", "Push-up level"), selection: Binding(
-                get: { draft.pushVariant },
-                set: { draft.pushVariant = $0 }
-            )) {
-                Text(L.t("automatica", "automatic")).tag(ExerciseKind?.none)
-                Text(L.t("al muro", "wall")).tag(ExerciseKind?.some(.wallPushUp))
-                Text(L.t("sulle ginocchia", "knees")).tag(ExerciseKind?.some(.kneePushUp))
-                Text(L.t("su rialzo", "elevated")).tag(ExerciseKind?.some(.inclinePushUp))
-                Text(L.t("a terra", "floor")).tag(ExerciseKind?.some(.pushUp))
-            }
-            .pickerStyle(.menu)
         }
 
         SwiftUI.Section(L.t("Ripetizioni", "Reps")) {
             conNota(L.t("Si sale del 5% dopo due conferme piene di fila (regola 2-for-2 dell'ACSM) e si scende dopo due mancate, mai sotto il 100%. A fine esercizio l'app ti chiede se le hai fatte tutte.",
                         "It goes up 5% after two full confirmations in a row (ACSM's 2-for-2 rule) and steps back after two shortfalls, never below 100%. At the end of each exercise the app asks whether you did them all.")) {
                 Toggle(L.t("Fai crescere le ripetizioni oltre il 100%",
-                           "Let the reps grow beyond 100%"), isOn: $draft.progressBeyondFull)
+                           "Let the reps grow beyond 100%"), isOn: vivo(\.progressBeyondFull))
             }
 
             // «Rampa» era il calco di *ramp*: in italiano è la salita di un garage, non un
             // modo di allenarsi. Segnalato dal principale il 2026-07-28.
-            Stepper(L.t("Partenza graduale: \(draft.rampWeeks) settimane",
-                        "Gradual start: \(draft.rampWeeks) weeks"),
-                    value: $draft.rampWeeks, in: 1...12)
+            LabeledContent(L.t("Partenza graduale", "Gradual start")) {
+                numeroSelettore($draft.rampWeeks, in: 1...12,
+                                unità: L.t("settimane", "weeks"))
+            }
             // **La percentuale di partenza si tocca.** Il 55% viene da un default, non da una
             // misura su di te: chi riprende dopo un infortunio vuole meno, chi si allena già
             // vuole di più, e senza questo cursore l'unica alternativa era «tutto o niente».
-            Stepper(L.t("Si parte \(ItalianNumber.al(Int(draft.rampStartFactor * 100)))% delle ripetizioni",
-                        "Start at \(Int(draft.rampStartFactor * 100))% of the reps"),
-                    value: Binding(
-                        get: { Int((draft.rampStartFactor * 100).rounded()) },
-                        set: { nuovo in
-                            draft.rampStartFactor = Double(nuovo) / 100
-                            // Scendendo sotto il pieno, la data del pieno non ha più senso: se
-                            // restasse, la domanda sulla crescita oltre il 100% arriverebbe a
-                            // qualcuno che al 100% non c'è.
-                            if nuovo < 100 { draft.fullReachedAt = nil }
-                        }
-                    ), in: 20...100, step: 5)
+            //
+            // Il passo è di 5 e le frecce lo rispettano, quindi l'intervallo si esprime in gradini
+            // (4…20) e il numero si moltiplica per leggerlo: uno `Stepper` con `step:` non entra
+            // in `numeroSelettore`, e un secondo aiutante per un solo chiamante sarebbe la copia
+            // che questa modifica esiste per togliere.
+            LabeledContent(L.t("Si parte al", "Start at")) {
+                numeroSelettore(Binding(
+                    get: { Int((draft.rampStartFactor * 100).rounded()) / 5 },
+                    set: { gradino in
+                        let nuovo = gradino * 5
+                        draft.rampStartFactor = Double(nuovo) / 100
+                        // Scendendo sotto il pieno, la data del pieno non ha più senso: se
+                        // restasse, la domanda sulla crescita oltre il 100% arriverebbe a
+                        // qualcuno che al 100% non c'è.
+                        if nuovo < 100 { draft.fullReachedAt = nil }
+                    }
+                ), in: 4...20) { "\($0 * 5)%" }
+            }
             Text(L.t("Le ripetizioni partono ridotte e salgono un pochino ogni giorno, fino al 100%. Oggi sei \(ItalianNumber.al(Int(draft.rampFactor(now: Date()) * 100)))%.",
                      "The reps start reduced and go up a little every day, until 100%. Today you are at \(Int(draft.rampFactor(now: Date()) * 100))%."))
                 .font(.caption).foregroundStyle(.secondary)
@@ -2152,8 +2151,10 @@ struct PrefsView: View {
             LabeledContent(L.t("Durata pausa piena", "Full break length")) {
                 minuteField($draft.cadence.longDurationSeconds)
             }
-            Stepper(L.t("Pausa piena ogni \(draft.cadence.longEveryNBreaks) micro-pause", "Full break every \(draft.cadence.longEveryNBreaks) micro-breaks"),
-                    value: $draft.cadence.longEveryNBreaks, in: 1...8)
+            LabeledContent(L.t("Pausa piena ogni", "Full break every")) {
+                numeroSelettore($draft.cadence.longEveryNBreaks, in: 1...8,
+                                unità: L.t("micro-pause", "micro-breaks"))
+            }
             // Detto qui perché è la domanda che il principale ha fatto guardando lo schermo: la
             // prima pausa di oggi era piena, e la ragione stava in un contatore che non sapeva
             // che fosse cambiato il giorno.
@@ -2163,6 +2164,17 @@ struct PrefsView: View {
                 .fixedSize(horizontal: false, vertical: true)
             LabeledContent(L.t("Preavviso", "Warning")) {
                 secondField($draft.cadence.warningSeconds)
+            }
+            // **I rinvii stanno qui dal 2026-08-12**, per decisione del principale: *«il numero di
+            // rinvii consentiti attualmente è in interruzioni, ha più senso averlo in cadenza, lo
+            // stesso gruppo»*. È il campo di `Cadence` che viveva nel pannello sbagliato, e quella
+            // distanza costava due volte — l'aveva già trovato lui il 2026-07-31, quando toccarlo
+            // lo portò fuori dai preset senza che avesse aperto «Cadenza».
+            conNota(L.t("Un rinvio sposta la pausa di due minuti, e finiti i rinvii la pausa arriva. Il preset consigliato ne dà due.",
+                        "A postponement moves the break by two minutes, and once they are used up the break arrives. The recommended preset gives you two.")) {
+                LabeledContent(L.t("Rinvii a mano", "Manual postponements")) {
+                    numeroSelettore($draft.cadence.postponesAllowed, in: 0...3)
+                }
             }
         }
     }
@@ -2234,9 +2246,25 @@ struct PrefsView: View {
         }
 
         SwiftUI.Section(L.t("Come vengono proposti", "How they are offered")) {
+            // **Il livello della spinta sta qui dal 2026-08-12**, per decisione del principale:
+            // *«il livello per i push-ups secondo me deve andare nel gruppo esercizi e non in
+            // profilo»*. Ha ragione, ed è la stessa regola per cui i rinvii sono andati in
+            // «Cadenza»: dice quale movimento ti viene proposto, quindi appartiene agli esercizi.
+            // In «Profilo» stavano le tre risposte del primo avvio, ed è lì che si era fermato.
+            conNota(L.t("Automatica segue il sesso dichiarato in Profilo: sulle ginocchia per le donne, a terra per gli uomini. Scegliendo tu, la scelta vale sempre, anche dentro il circuito e nelle varianti.",
+                        "Automatic follows the sex declared in Profile: on the knees for women, on the floor for men. If you choose yourself, your choice always holds — inside the circuit and in the variants too.")) {
+                Picker(L.t("Livello per i push-up", "Push-up level"), selection: $draft.pushVariant) {
+                    Text(L.t("automatica", "automatic")).tag(ExerciseKind?.none)
+                    Text(L.t("al muro", "wall")).tag(ExerciseKind?.some(.wallPushUp))
+                    Text(L.t("sulle ginocchia", "knees")).tag(ExerciseKind?.some(.kneePushUp))
+                    Text(L.t("su rialzo", "elevated")).tag(ExerciseKind?.some(.inclinePushUp))
+                    Text(L.t("a terra", "floor")).tag(ExerciseKind?.some(.pushUp))
+                }
+                .pickerStyle(.menu)
+            }
             conNota(L.t("Durante una pausa push-up puoi passare a diamond, archer, dip su sedia, pike o inclinati con un clic. Le ripetizioni si adeguano alla difficoltà.",
                         "During a push-up break you can switch to diamond, archer, chair dips, pike or incline with one click. The reps adjust to the difficulty.")) {
-                Toggle(L.t("Offri le varianti dentro la pausa", "Offer variants during the break"), isOn: $draft.offerVariants)
+                Toggle(L.t("Offri le varianti dentro la pausa", "Offer variants during the break"), isOn: vivo(\.offerVariants))
             }
             // **Una scelta, non due interruttori.** La spiegazione segue la voce scelta: dire
             // tutte e tre le cose insieme costringeva a leggerne due che non riguardavano te.
@@ -2262,7 +2290,7 @@ struct PrefsView: View {
         SwiftUI.Section {
             conNota(L.t("Le pause chiedono un respiro guidato invece di un esercizio: si fa da seduti, senza cambiarsi e senza farsi notare. Vale sia per le micro-pause sia per quelle piene.",
                         "Breaks ask for guided breathing instead of an exercise: you do it seated, without changing clothes and without being noticed. It applies to both micro-breaks and full ones.")) {
-                Toggle(L.t("Modalità Zen", "Zen mode"), isOn: zenVivo(\.zenMode))
+                Toggle(L.t("Modalità Zen", "Zen mode"), isOn: vivo(\.zenMode))
             }
         }
 
@@ -2287,20 +2315,20 @@ struct PrefsView: View {
             // niente di misurato. Il perché sta nella riga sotto ognuna, che cambia con la voce
             // scelta come già fa il circuito.
             conNota(draft.zenProtocolShort.explanation) {
-                Picker(L.t("Nelle micro-pause", "In micro-breaks"), selection: zenVivo(\.zenProtocolShort)) {
+                Picker(L.t("Nelle micro-pause", "In micro-breaks"), selection: $draft.zenProtocolShort) {
                     ForEach(BreathProtocol.allCases, id: \.self) { Text($0.localizedName).tag($0) }
                 }
                 .pickerStyle(.menu)
             }
             conNota(draft.zenProtocolLong.explanation) {
-                Picker(L.t("Nelle pause piene", "In full breaks"), selection: zenVivo(\.zenProtocolLong)) {
+                Picker(L.t("Nelle pause piene", "In full breaks"), selection: $draft.zenProtocolLong) {
                     ForEach(BreathProtocol.allCases, id: \.self) { Text($0.localizedName).tag($0) }
                 }
                 .pickerStyle(.menu)
             }
             conNota(L.t("Le sessioni singole da 5, 10, 15 e 20 minuti danno lo stesso effetto sull'attività vagale, quindi più lungo non è meglio. Sotto i cinque minuti però non ha misurato nessuno: novanta secondi sono una scelta di comodità, non un numero preso da uno studio. Quello che avanza della pausa resta riposo.",
                         "Single sessions of 5, 10, 15 and 20 minutes give the same effect on vagal activity, so longer is not better. Below five minutes, though, nobody has measured: ninety seconds is a comfort choice, not a number from a study. What is left of the break stays rest.")) {
-                Picker(L.t("Per quanto", "For how long"), selection: zenVivo(\.zenBreathSeconds)) {
+                Picker(L.t("Per quanto", "For how long"), selection: $draft.zenBreathSeconds) {
                     Text(L.t("60 secondi", "60 seconds")).tag(60.0)
                     Text(L.t("90 secondi", "90 seconds")).tag(90.0)
                     Text(L.t("3 minuti", "3 minutes")).tag(180.0)
@@ -2325,17 +2353,17 @@ struct PrefsView: View {
     @ViewBuilder
     private var interruzioniSection: some View {
         SwiftUI.Section {
-            Toggle(L.t("Rimanda se un microfono è in uso (call)", "Defer while a microphone is in use (a call)"), isOn: $draft.deferWhenMicrophoneActive)
+            Toggle(L.t("Rimanda se un microfono è in uso (call)", "Defer while a microphone is in use (a call)"), isOn: vivo(\.deferWhenMicrophoneActive))
             conNota(L.t("Un film o un PDF sono immobilità perfetta, e senza questo guardare Netflix vale come una pausa ben fatta. Tetti senza un solo input: 45 min per un video, 15 per un documento. Una call non ha tetto, perché una riunione lunga è la seduta più lunga della giornata.",
                         "A film or a PDF is perfect stillness: without this, watching Netflix counts as a well-taken break. Caps without a single input: 45 min for a video, 15 for reading. A call has no cap, because a long meeting is the longest sit of the day.")) {
-                Toggle(L.t("Conta anche video e lettura come tempo fermo", "Count video and reading as sitting time too"), isOn: $draft.detectQuietPresence)
+                Toggle(L.t("Conta anche video e lettura come tempo fermo", "Count video and reading as sitting time too"), isOn: vivo(\.detectQuietPresence))
             }
         }
 
+        // I rinvii stavano qui e dal 2026-08-12 stanno in «Cadenza», che è il gruppo del campo a
+        // cui appartengono. Resta la frase per saltare, che è davvero una via d'uscita e non un
+        // parametro della cadenza.
         SwiftUI.Section(L.t("Vie d'uscita", "Ways out")) {
-            Stepper(L.t("Consenti \(draft.cadence.postponesAllowed) rinvio/i a mano",
-                        "Allow \(draft.cadence.postponesAllowed) manual postponement(s)"),
-                    value: $draft.cadence.postponesAllowed, in: 0...3)
             LabeledContent(L.t("Frase per saltare", "Skip phrase")) {
                 TextField("", text: $draft.escapePhrase).frame(width: 180)
             }
@@ -2387,12 +2415,15 @@ struct PrefsView: View {
                         .foregroundStyle(Palette.accentOnWindow)
                         .fontWeight(.medium)
                 }
+                // Rovesciato, e vivo come ogni altro interruttore: il campo dice «sempre attivo»,
+                // l'interruttore dice la cosa che *aggiunge* qualcosa.
                 Toggle(L.t("Personalizzato", "Custom"),
                        isOn: Binding(get: { !draft.activeHoursAlwaysOn },
-                                     set: { draft.activeHoursAlwaysOn = !$0 }))
+                                     set: { vivo(\.activeHoursAlwaysOn).wrappedValue = !$0 }))
                 // Il numero a sinistra e le frecce all'estremità, con otto punti in mezzo: è la
-                // stessa geometria di «Consenti 1 rinvio a mano» qui sopra. Attaccati erano il
-                // rilievo del 2026-08-04 — *«le parti sulla destra sono troppo appiccicate»*.
+                // stessa geometria dei rinvii a mano, che dal 2026-08-12 vivono in «Cadenza».
+                // Attaccati erano il rilievo del 2026-08-04 — *«le parti sulla destra sono troppo
+                // appiccicate»*.
                 LabeledContent(L.t("Dalle", "From")) {
                     oraSelettore($draft.activeFromHour)
                 }
@@ -2417,16 +2448,44 @@ struct PrefsView: View {
         return L.t("dalle \(da) alle \(a)", "from \(da) to \(a)")
     }
 
-    /// L'ora del giorno: il numero, poi le frecce all'estremità destra. Le frecce restano un
-    /// controllo di sistema — tastiera e VoiceOver ci arrivano — ma l'etichetta è nostra, perché
-    /// quella dello `Stepper` si incolla alle frecce e non si può distanziare.
-    private func oraSelettore(_ ora: Binding<Int>) -> some View {
+    /// **Il valore sta a destra, attaccato alle frecce, come ogni altro comando della finestra.**
+    ///
+    /// Richiesta del principale, 2026-08-12, guardando «Pausa piena ogni 3 micro-pause»: *«il
+    /// numero dovrebbe essere messo vicino alle frecce completamente a destra»*. Lo `Stepper` con
+    /// etichetta fa l'opposto — testo a sinistra, numero dentro il testo, frecce sole sul bordo —
+    /// quindi il numero cadeva a metà riga mentre tutti gli altri valori della pagina sono
+    /// incolonnati a destra, e nessuna spaziatura poteva ripararlo.
+    ///
+    /// Non è una forma nuova: è quella che `oraSelettore` usava già per «Dalle 07:00», ora tenuta
+    /// in un posto solo perché quattro righe la usano e quattro copie divergono.
+    ///
+    /// **Numero scuro, unità tenue**, che è la forma già usata da «Intervallo 30 min» e da
+    /// «Preavviso 60 s». `LabeledContent` dipinge da sé in secondario il proprio contenuto quando è
+    /// testo: nella prima versione «3 micro-pause» e «2» uscivano grigi in mezzo a valori neri, e
+    /// il numero che stavo spostando per renderlo leggibile era il più smorto della pagina. Visto
+    /// nella fotografia del pannello intero, non nel codice.
+    private func numeroSelettore(_ valore: Binding<Int>, in intervallo: ClosedRange<Int>,
+                                 unità: String = "",
+                                 numero: @escaping (Int) -> String = { "\($0)" }) -> some View {
         HStack(spacing: 8) {
-            Text(String(format: "%02d:00", ora.wrappedValue))
-                .monospacedDigit()
-            Stepper("", value: ora, in: 0...23)
+            HStack(spacing: 5) {
+                Text(numero(valore.wrappedValue))
+                    .monospacedDigit()
+                    .foregroundStyle(Palette.text)
+                if !unità.isEmpty {
+                    Text(unità).foregroundStyle(.secondary)
+                }
+            }
+            Stepper("", value: valore, in: intervallo)
                 .labelsHidden()
         }
+    }
+
+    /// L'ora del giorno. Le frecce restano un controllo di sistema — tastiera e VoiceOver ci
+    /// arrivano — ma l'etichetta è nostra, perché quella dello `Stepper` si incolla alle frecce e
+    /// non si può distanziare.
+    private func oraSelettore(_ ora: Binding<Int>) -> some View {
+        numeroSelettore(ora, in: 0...23) { String(format: "%02d:00", $0) }
     }
 
     @ViewBuilder
@@ -2596,28 +2655,49 @@ struct PrefsView: View {
     /// «Tutti» e «nessuno» su una famiglia intera. `nessuno` non può svuotare del tutto un pool:
     /// una rotazione senza esercizi non è una preferenza, è un'app che non fa più niente — e il
     /// modello ricadrebbe comunque sul suo default, mentendo alla casella.
+    ///
+    /// **Una scrittura sola per clic**, non una per esercizio: passando dalle singole caselle,
+    /// «nessuno» su una famiglia da sette salverebbe sette volte, e le prime sei di quelle scritture
+    /// direbbero una cosa che non hai chiesto.
     private func setAll(_ category: ExerciseCategory, on: Bool) {
         let kinds = ExerciseKind.allCases.filter { $0.category == category }
-        for kind in kinds { binding(for: kind).wrappedValue = on }
+        for pool in Set(kinds.map(poolKeyPath(for:))) {
+            var next = draft[keyPath: pool]
+            let miei = kinds.filter { poolKeyPath(for: $0) == pool }
+            if on {
+                next.append(contentsOf: miei.filter { !next.contains($0) })
+            } else {
+                next.removeAll { miei.contains($0) }
+            }
+            vivo(pool).wrappedValue = next.isEmpty ? [fallback(for: pool)] : next
+        }
     }
 
+    /// Le caselle degli esercizi sono interruttori, quindi si applicano da sole (regola del
+    /// 2026-08-12, vedi `vivo`). Il pool non resta mai vuoto: il difetto sarebbe silenzioso,
+    /// perché il modello ricadrebbe sul suo default e la casella spenta racconterebbe un'altra cosa.
     private func binding(for kind: ExerciseKind) -> Binding<Bool> {
-        Binding(
-            get: {
-                kind.isVigorous ? draft.vigorousPool.contains(kind) : draft.exercisePool.contains(kind)
-            },
+        let pool = poolKeyPath(for: kind)
+        return Binding(
+            get: { draft[keyPath: pool].contains(kind) },
             set: { on in
-                if kind.isVigorous {
-                    var pool = draft.vigorousPool
-                    if on { if !pool.contains(kind) { pool.append(kind) } } else { pool.removeAll { $0 == kind } }
-                    draft.vigorousPool = pool.isEmpty ? [.jumpingJack] : pool
+                var next = draft[keyPath: pool]
+                if on {
+                    if !next.contains(kind) { next.append(kind) }
                 } else {
-                    var pool = draft.exercisePool
-                    if on { if !pool.contains(kind) { pool.append(kind) } } else { pool.removeAll { $0 == kind } }
-                    draft.exercisePool = pool.isEmpty ? [.squat] : pool
+                    next.removeAll { $0 == kind }
                 }
+                vivo(pool).wrappedValue = next.isEmpty ? [fallback(for: pool)] : next
             }
         )
+    }
+
+    private func poolKeyPath(for kind: ExerciseKind) -> WritableKeyPath<OtiumCore.Settings, [ExerciseKind]> {
+        kind.isVigorous ? \.vigorousPool : \.exercisePool
+    }
+
+    private func fallback(for pool: WritableKeyPath<OtiumCore.Settings, [ExerciseKind]>) -> ExerciseKind {
+        pool == \OtiumCore.Settings.vigorousPool ? .jumpingJack : .squat
     }
 
     private func minuteField(_ value: Binding<Double>) -> some View {
@@ -2645,10 +2725,15 @@ struct PrefsView: View {
     /// Cosa ti ha portato fuori dai preset, campo per campo.
     ///
     /// **Esiste per un caso vero, non per completezza.** Il 2026-07-31 il principale ha trovato
-    /// «personalizzata» senza aver toccato la cadenza: la trappola è che «consenti N rinvii a
-    /// mano» vive nel pannello *Interruzioni* ma è un campo della *cadenza*, quindi cambiarlo
-    /// sposta un preset che sta due voci più in là. Invece di spostare il campo — dove starebbe
-    /// peggio, perché nessuno cerca i rinvii sotto «Cadenza» — l'app dice cos'è successo.
+    /// «personalizzata» senza aver toccato la cadenza: la trappola era che «consenti N rinvii a
+    /// mano» viveva nel pannello *Interruzioni* pur essendo un campo della *cadenza*, quindi
+    /// cambiarlo spostava un preset che stava due voci più in là.
+    ///
+    /// **Il 2026-08-12 il campo è stato spostato**, cioè la cura vera, ed è stata sua la chiamata
+    /// contro la riga che stava qui («nessuno cerca i rinvii sotto Cadenza»): un campo che governa
+    /// la cadenza sta con la cadenza, e la vicinanza rende visibile l'effetto sul preset invece di
+    /// doverlo spiegare. Questa spiegazione resta perché gli altri cinque campi possono ancora
+    /// portarti fuori dai preset, ed è giusto che l'app dica quale.
     private func differenzeDalPresetPiuVicino() -> String {
         let c = draft.cadence
 

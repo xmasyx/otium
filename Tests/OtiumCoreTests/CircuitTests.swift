@@ -78,6 +78,66 @@ final class CircuitTests: XCTestCase {
         XCTAssertEqual(ExercisePlanner.circuitFactor, 1.0)
     }
 
+    /// **Il circuito spende la progressione che hai guadagnato** (segnalato dal principale il
+    /// 2026-08-12: *«perché quando faccio il circuito non mi propone esercizi con un numero
+    /// aumentato di ripetizioni?»*).
+    ///
+    /// Il difetto era di costruzione e non di calcolo: `ExercisePlanner.circuit` non riceveva il
+    /// registro della progressione, quindi ogni stazione nasceva a livello 1.0 mentre l'esercizio
+    /// singolo, che il registro ce l'ha, saliva. Nel suo `progress.json` c'erano livelli a 1,2155,
+    /// cioè quattro aumenti guadagnati e mai spesi.
+    func testCircuitStationsSpendTheProgressionYouEarned() {
+        var engine = engineWithLevel(1.5, growing: true)
+        engine.forceBreakNow(now: Date(), kind: .long)
+        guard let plan = engine.plan, !plan.circuit.isEmpty else { return XCTFail("nessun circuito") }
+        for station in plan.circuit {
+            let cento = Ramp.reps(for: station.kind, factor: 1.0, sex: engine.settings.sex)
+            XCTAssertGreaterThan(station.reps, cento,
+                                 "\(station.kind): la stazione resta al 100% mentre il livello è 1.5")
+        }
+    }
+
+    /// Il polo negativo: a crescita **spenta** le stazioni tornano al 100% esatto, com'è giusto.
+    /// Senza questa riga il test qui sopra passerebbe anche moltiplicando sempre, cioè imponendo
+    /// la crescita a chi ha scelto di restare al programma.
+    func testWithGrowthOffTheStationsStayAtFullVolume() {
+        var engine = engineWithLevel(1.5, growing: false)
+        engine.forceBreakNow(now: Date(), kind: .long)
+        guard let plan = engine.plan, !plan.circuit.isEmpty else { return XCTFail("nessun circuito") }
+        for station in plan.circuit {
+            XCTAssertEqual(station.reps, Ramp.reps(for: station.kind, factor: 1.0, sex: engine.settings.sex),
+                           "\(station.kind): crescita spenta e stazione cresciuta lo stesso")
+        }
+    }
+
+    /// **Cambiare variante non azzera il livello.** `swapExercise` ricostruiva l'esercizio senza
+    /// `level:`, quindi passare a diamond dentro la pausa faceva sparire la progressione di quel
+    /// gesto: stesso buco del circuito, in un punto diverso.
+    func testSwappingAVariantKeepsTheProgressionOfTheNewMovement() {
+        var engine = engineWithLevel(1.5, growing: true)
+        engine.forceBreakNow(now: Date(), kind: .long)
+        guard let alternative = engine.variants(now: Date()).first else { return XCTFail("nessuna variante") }
+        XCTAssertTrue(engine.swapExercise(to: alternative.kind, now: Date()))
+        let cento = Ramp.reps(for: alternative.kind, factor: 1.0, sex: engine.settings.sex)
+        XCTAssertGreaterThan(engine.plan?.exercise.reps ?? 0, cento,
+                             "\(alternative.kind): la variante nasce al 100% e il livello sparisce")
+    }
+
+    /// Un motore a rampa finita, con lo stesso livello su ogni esercizio: qualunque stazione esca
+    /// dalla rotazione, il confronto è valido.
+    private func engineWithLevel(_ level: Double, growing: Bool) -> SessionEngine {
+        var s = Settings()
+        s.startDate = Date(timeIntervalSinceNow: -400 * 24 * 3600)
+        s.progressBeyondFull = growing
+        var engine = SessionEngine(settings: s, maxCredibleElapsed: 10_000)
+        var book = ProgressBook()
+        for kind in ExerciseKind.allCases {
+            book.byExercise[kind.rawValue] = ExerciseProgress(level: level)
+        }
+        engine.progress = book
+        return engine
+    }
+
     // MARK: - Il percorso
 
     func testConfirmingAStationAdvancesToTheNextOne() {
@@ -510,7 +570,17 @@ final class CircuitModeTests: XCTestCase {
         decoder.dateDecodingStrategy = .iso8601
         let s = try decoder.decode(Settings.self, from: Data(json.utf8))
         XCTAssertEqual(s.circuitMode, .subito, "l'impostazione che gli ho acceso non deve perdersi")
-        XCTAssertEqual(s.cadence, .optionA, "e il resto del file arriva intero")
+        // **Campo per campo, non contro il preset.** Fino al 2026-08-12 questa riga diceva
+        // `s.cadence == .optionA`, e il giorno in cui il preset A è passato a due rinvii è diventata
+        // rossa pur essendo la lettura del file ancora perfetta: confrontava un file storico con
+        // una costante viva. Il file di allora aveva un rinvio, e deve continuare a leggersi con un
+        // rinvio — è quello il senso di «arriva intero».
+        XCTAssertEqual(s.cadence.intervalSeconds, 1800)
+        XCTAssertEqual(s.cadence.microDurationSeconds, 90)
+        XCTAssertEqual(s.cadence.longDurationSeconds, 300)
+        XCTAssertEqual(s.cadence.longEveryNBreaks, 3)
+        XCTAssertEqual(s.cadence.warningSeconds, 60)
+        XCTAssertEqual(s.cadence.postponesAllowed, 1, "il file diceva uno: la storia non si riscrive")
         XCTAssertTrue(s.offerVariants)
     }
 }

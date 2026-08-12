@@ -79,6 +79,13 @@ public struct Cadence: Codable, Equatable, Sendable {
 
     /// **Opzione A** — la cadenza scelta il 2026-07-26.
     /// Micro-snack di 90 s ogni 30 minuti di lavoro attivo; ogni terzo break è pieno (≈90 min).
+    ///
+    /// **Due rinvii dal 2026-08-12**, per decisione del principale: *«una pausa breve ogni 30
+    /// minuti, una piena ogni 90, che è consigliata, però due rinvii di default»*. Era uno, ed era
+    /// l'unico campo che lo teneva fuori dai preset: usava due rinvii da settimane e la finestra
+    /// gli rispondeva «personalizzata» per un numero che non viene da nessuno studio, a differenza
+    /// dei 30 e dei 90 minuti. Il prezzo, dichiarato: chi ne teneva uno adesso legge
+    /// «personalizzata», che è vero e si annulla con un clic sul preset.
     public static let optionA = Cadence(
         intervalSeconds: 30 * 60,
         microDurationSeconds: 90,
@@ -87,7 +94,7 @@ public struct Cadence: Codable, Equatable, Sendable {
         idleThresholdSeconds: 90,
         warningSeconds: 60,
         postponeSeconds: 120,
-        postponesAllowed: 1
+        postponesAllowed: 2
     )
 
     /// **Opzione B** — deep work: una sola pausa da 5 minuti ogni 50 di lavoro attivo.

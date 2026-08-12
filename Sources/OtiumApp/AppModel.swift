@@ -815,8 +815,12 @@ final class AppModel: ObservableObject {
 
     /// Le ripetizioni che l'app proporrebbe oggi per quell'esercizio: è il valore di partenza
     /// sensato quando dichiari una pausa fatta, invece di farti digitare un numero da zero.
+    ///
+    /// Il livello ci va per la stessa ragione del circuito: «quello che l'app proporrebbe» include
+    /// la crescita guadagnata, o il numero suggerito è il tuo di due mesi fa.
     func suggestedReps(for kind: ExerciseKind) -> Int {
-        Ramp.reps(for: kind, factor: settings.rampFactor(now: Date()), sex: settings.sex)
+        Ramp.reps(for: kind, factor: settings.rampFactor(now: Date()), sex: settings.sex,
+                  level: settings.progressBeyondFull ? engine.progress.progress(for: kind).level : 1.0)
     }
 
     /// Le alternative da mostrare adesso. Vuoto se le hai spente nelle preferenze.

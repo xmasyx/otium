@@ -806,8 +806,13 @@ public struct ExercisePlanner: Sendable {
     /// questo pesca dagli stessi pool delle preferenze: se hai spento l'addome, il circuito non
     /// te lo rimette dentro dalla finestra. Ruota con `breakIndex` come tutto il resto, così due
     /// pause piene di fila non propongono lo stesso giro.
+    ///
+    /// **`progress` è arrivato il 2026-08-12, e la sua assenza era il difetto.** Il parametro non
+    /// c'era, quindi ogni stazione nasceva a livello 1.0 mentre l'esercizio singolo, che il
+    /// registro lo riceveva, saliva: la progressione si guadagnava dentro il circuito e non si
+    /// spendeva mai lì. Segnalato dal principale, che nel suo registro aveva livelli a 1,2155.
     public func circuit(breakIndex: Int, factor: Double, sex: Sex? = nil,
-                        pushVariant: ExerciseKind? = nil) -> [Exercise] {
+                        pushVariant: ExerciseKind? = nil, progress: ProgressBook? = nil) -> [Exercise] {
         let order: [ExerciseCategory] = [.gambe, .spinta, .addome, .vigorosi]
         let scaled = factor * Self.circuitFactor
         return order.compactMap { category in
@@ -818,7 +823,10 @@ public struct ExercisePlanner: Sendable {
             let offset = order.firstIndex(of: category) ?? 0
             let chosen = table[(max(0, breakIndex - 1) + offset) % table.count]
             let vero = SexCalibration.regression(for: chosen, sex: sex, chosen: pushVariant)
-            return Exercise(kind: vero, reps: Ramp.reps(for: vero, factor: scaled, sex: sex))
+            // Il livello si legge sul gesto **vero**, cioè dopo la regressione: chi fa le
+            // flessioni sulle ginocchia guadagna su quelle, non sulla versione a terra.
+            let level = progress?.progress(for: vero).level ?? 1.0
+            return Exercise(kind: vero, reps: Ramp.reps(for: vero, factor: scaled, sex: sex, level: level))
         }
     }
 }

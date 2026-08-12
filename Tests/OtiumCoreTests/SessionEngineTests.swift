@@ -320,19 +320,33 @@ final class SessionEngineTests: XCTestCase {
 
     // MARK: - Rinvii, call, orari
 
-    /// ISC-8 — un rinvio, non due.
-    func testOnlyOnePostponeIsAllowed() {
-        var engine = makeEngine()
-        advance(&engine, seconds: 30 * 60)
-        XCTAssertTrue(engine.canPostpone)
-        XCTAssertFalse(engine.postpone().isEmpty)
-        XCTAssertEqual(engine.phase, .postponed)
+    /// ISC-8 — finiti i rinvii, la pausa arriva.
+    ///
+    /// **Diceva «un rinvio, non due», e il 2026-08-12 il preset consigliato è passato a due.** Il
+    /// numero non era la regola: la regola è che i rinvii sono contati e finiscono. Scritto contro
+    /// `postponesAllowed`, il test resta vero a qualunque preset, e prova la cosa che conta — che
+    /// il rinvio successivo all'ultimo consentito non fa niente. Provato a due poli: con `1…3` in
+    /// `permessi` gira su tre configurazioni, e la riga finale diventa rossa se il conteggio smette
+    /// di fermarsi.
+    func testPostponesAreFiniteAndThenTheBreakArrives() {
+        for permessi in 1...3 {
+            var s = Settings()
+            s.cadence.postponesAllowed = permessi
+            var engine = makeEngine(s)
+            advance(&engine, seconds: 30 * 60)
 
-        advance(&engine, seconds: 130)
-        XCTAssertEqual(engine.phase, .breaking)
-        XCTAssertFalse(engine.canPostpone)
-        XCTAssertTrue(engine.postpone().isEmpty)
-        XCTAssertEqual(engine.phase, .breaking)
+            for giro in 1...permessi {
+                XCTAssertTrue(engine.canPostpone, "\(permessi) permessi: il rinvio \(giro) è negato")
+                XCTAssertFalse(engine.postpone().isEmpty)
+                XCTAssertEqual(engine.phase, .postponed)
+                advance(&engine, seconds: 130)
+                XCTAssertEqual(engine.phase, .breaking, "\(permessi) permessi: il rinvio \(giro) non è finito")
+            }
+
+            XCTAssertFalse(engine.canPostpone, "\(permessi) permessi: ne concede uno in più")
+            XCTAssertTrue(engine.postpone().isEmpty)
+            XCTAssertEqual(engine.phase, .breaking)
+        }
     }
 
     /// **Un rinvio non finisce di colpo: finisce con il suo preavviso.**

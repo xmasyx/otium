@@ -2,8 +2,8 @@
 slug: otium
 title: Otium — pause forzate con allenamento integrato per macOS
 phase: complete
-progress: 230/234
-iteration: 26
+progress: 261/265
+iteration: 29
 context_sufficient: true
 interview_invoked: false
 principal_stated_goal: "voglio creare qualcosa che sia in grado di monitorare il tempo reale che spendo davanti al computer mentre uso lifeos o altri tipi di lavori e che dopo un tempo determinato, che dobbiamo valutare insieme quale sia il miglior tempo scientificamente e con studi, obbligare a fare una pausa di un tempo altrettanto studiato e che durante questa pausa mi obblighi a fare un tot numero di squat, pushups, burpees, jumpingjacks o quello che è meglio così da integrare allenamento all'interno delle sessioni di lavoro. e che se non vengono eseguite lo schermo rimane bloccato o qualcosa del genere. non serve la telecamera, già il richiamo permette di essere in condizione di scelta"
@@ -2436,3 +2436,76 @@ righe. *Poli negativi provati:* la chiave di confronto senza `zen` manda la sond
 fotografia a modalità spenta la voce non porta la spunta e il testo non si sposta. Sonda nuova
 `--scatta-menu=<file>`, che fotografa il menu aperto — l'unica superficie che nessuna resa fuori
 schermo sa disegnare. Bundle ricostruito e installato: `dist/Otium.app` e `/Applications/Otium.app`.
+
+## Iterazione 29 — il circuito spende quello che hai guadagnato (2026-08-12)
+
+> *«perché quando faccio il circuito non mi propone esercizi con un numero aumentato di
+> ripetizioni?»*, e con la stessa domanda quattro rilievi sulle Preferenze: il livello della spinta
+> nel gruppo sbagliato, il numero dello stepper a metà riga, i rinvii nel pannello sbagliato e
+> l'interruttore che chiedeva «Applica».
+>
+> **La domanda era un difetto, non una preferenza.** Nel suo `progress.json` c'erano livelli a
+> **1,2155** — quattro aumenti da 5% guadagnati esercizio per esercizio — e il circuito li ignorava
+> tutti: `ExercisePlanner.circuit` non riceveva il registro della progressione, quindi ogni stazione
+> nasceva a livello 1.0 mentre l'esercizio singolo, che il registro ce l'aveva, saliva. La
+> progressione si guadagnava dentro il circuito e non si spendeva mai lì.
+
+- [x] **ISC-219** Le stazioni del circuito portano la crescita guadagnata su quel gesto.
+      *Falsificatore:* `testCircuitStationsSpendTheProgressionYouEarned` — con livello 1.5 ogni
+      stazione deve superare il suo 100%. *Riprodotto prima della riparazione:* `15` contro `15` su
+      squat, bench dip, leg raise e high knees.
+
+- [x] **ISC-220** `Anti:` la crescita **spenta** lascia le stazioni al 100% esatto, cioè la
+      riparazione non impone la crescita a chi ha scelto di restare al programma. *Falsificatore:*
+      `testWithGrowthOffTheStationsStayAtFullVolume`, che era verde anche prima e resta il polo
+      negativo di ISC-219.
+
+- [x] **ISC-221** Cambiare variante dentro la pausa non azzera il livello, e il numero
+      dell'anteprima è quello che ottieni cliccando. `swapExercise` ricostruiva l'esercizio senza
+      `level:` e `variants(now:)` ignorava sia il livello sia il peso del circuito. *Falsificatore:*
+      `testSwappingAVariantKeepsTheProgressionOfTheNewMovement`.
+
+- [x] **ISC-222** Il livello si legge in **un punto solo** (`level(for:)`), e il fattore della pausa
+      in corso in un altro (`swapFactor`). Tre chiamanti lo ricalcolavano per conto proprio e uno se
+      lo dimenticava: è esattamente così che il circuito è rimasto indietro senza che niente
+      fallisse. *Falsificatore:* `grep -c "Ramp.reps(" Sources` — i punti che costruiscono
+      ripetizioni per una pausa viva sono quattro e passano tutti dagli aiutanti; gli altri tre
+      (`Growth`, `OnboardingView`) confrontano di proposito col 100% e sono tombati qui.
+
+- [x] **ISC-223** Il livello per i push-up sta in **Esercizi**, non in Profilo: dice quale movimento
+      ti viene proposto. *Falsificatore:* la fotografia del pannello, sotto «Come vengono proposti».
+
+- [x] **ISC-224** Il valore di uno stepper sta a destra attaccato alle frecce, come ogni altro
+      valore della finestra, con **numero scuro e unità tenue**. Quattro righe, un aiutante solo
+      (`numeroSelettore`), e `oraSelettore` ci passa dentro. *Falsificatore:* le fotografie di
+      Cadenza e Profilo. *Difetto trovato dalla fotografia e non dal codice:* alla prima passata
+      «3 micro-pause» e «2» uscivano **grigi** in mezzo a valori neri, perché `LabeledContent`
+      dipinge da sé il proprio contenuto in secondario.
+
+- [x] **ISC-225** I rinvii a mano stanno in **Cadenza**, che è il gruppo del campo a cui
+      appartengono, e il preset A ne dà **due**. Il suo assetto torna così «A — consigliata» invece
+      di «personalizzata», che era la risposta che riceveva da settimane per l'unico campo senza uno
+      studio dietro. *Falsificatore:* la fotografia di Cadenza, riga «Rinvii a mano 2» e preset «A».
+      *Prezzo dichiarato:* chi ne teneva uno adesso legge «personalizzata».
+
+- [x] **ISC-226** Un **interruttore** si applica da solo; tutto ciò che interruttore non è passa da
+      «Applica». Sette interruttori vivi, le caselle degli esercizi comprese; i tre menu di Zen
+      tornano sotto il pulsante. *Falsificatore:* `PrefsBindingTests`, quattro righe sul sorgente.
+      *Poli provati:* legando un interruttore alla bozza e un menu a `vivo`, tre delle quattro
+      diventano rosse.
+
+- [x] **ISC-227** `Anti:` Nessun comando che si attraversa (menu, campo, frecce) scrive sul disco a
+      ogni valore di passaggio: attraversando una tendina si lavorerebbe per un attimo con una
+      cadenza che non hai scelto. *Falsificatore:* `testOnlyTogglesWriteImmediately`.
+
+- [x] **ISC-228** I sottotitoli della colonna dicono il vero **dopo** lo spostamento: «Interruzioni»
+      non promette più i rinvii, «Cadenza» li nomina, «Esercizi» nomina il livello. *Falsificatore:*
+      la fotografia della colonna, che è dove la bugia si vedeva.
+
+**Chiuse il 2026-08-12.** Suite piena **423 verdi** (erano 419: quattro righe nuove). Due test
+esistenti sono stati riscritti perché dicevano un numero invece di una regola — `ISC-8` diceva «un
+rinvio, non due» e adesso esaurisce `postponesAllowed` su tre configurazioni, e il test sul file
+storico del principale confrontava un file del 2026-07-31 con la costante viva del preset. Bundle
+ricostruito, `dist/Otium.app` alle 14:34; **`/Applications/Otium.app` è ancora quello delle 23:51
+di ieri**, perché lo script si rifiuta di sostituire un'app in esecuzione: la consegna si chiude
+quando lui esce da Otium e lo script gira una seconda volta.

@@ -751,7 +751,8 @@ public struct SessionEngine {
         // Il circuito si prepara solo dove ha senso — la pausa piena — e resta una proposta.
         let circuit = (kind == .long && settings.circuitMode.buildsCircuit)
             ? settings.planner.circuit(breakIndex: index, factor: factor, sex: settings.sex,
-                                       pushVariant: settings.pushVariant)
+                                       pushVariant: settings.pushVariant,
+                                       progress: settings.progressBeyondFull ? progress : nil)
             : []
         var piano = BreakPlan(
             index: index,
@@ -979,12 +980,30 @@ public struct SessionEngine {
     }
 
     /// Le alternative proponibili adesso, con le ripetizioni già calcolate per oggi.
+    ///
+    /// **Il numero mostrato qui è quello che ottieni cliccando**: fattore e livello si calcolano
+    /// come in `swapExercise`, non a modo loro. Prima l'anteprima ignorava sia il livello sia il
+    /// peso del circuito, cioè proponeva un numero e ne consegnava un altro.
     public func variants(now: Date) -> [Exercise] {
         guard phase == .breaking, let current = plan else { return [] }
-        let factor = settings.rampFactor(now: now)
+        let factor = swapFactor(now: now)
         return current.exercise.kind.variants.map {
-            Exercise(kind: $0, reps: Ramp.reps(for: $0, factor: factor, sex: settings.sex))
+            Exercise(kind: $0, reps: Ramp.reps(for: $0, factor: factor, sex: settings.sex,
+                                               level: level(for: $0)))
         }
+    }
+
+    /// Il fattore con cui si ricostruisce un esercizio dentro la pausa in corso.
+    private func swapFactor(now: Date) -> Double {
+        let base = settings.rampFactor(now: now)
+        return (plan?.circuitActive ?? false) ? base * ExercisePlanner.circuitFactor : base
+    }
+
+    /// **La crescita guadagnata su un gesto, letta in un punto solo.** Tre chiamanti la
+    /// ricalcolavano per conto proprio e uno se la dimenticava: è esattamente così che il circuito
+    /// è rimasto al 100% per settimane mentre il registro saliva.
+    private func level(for kind: ExerciseKind) -> Double {
+        settings.progressBeyondFull ? progress.progress(for: kind).level : 1.0
     }
 
     /// Cambia esercizio restando nella stessa pausa. Ammesso solo verso una variante di quello
@@ -996,10 +1015,10 @@ public struct SessionEngine {
     public mutating func swapExercise(to kind: ExerciseKind, now: Date, force: Bool = false) -> Bool {
         guard phase == .breaking, var current = plan else { return false }
         guard force || current.exercise.kind.variants.contains(kind) else { return false }
-        let factor = current.circuitActive
-            ? settings.rampFactor(now: now) * ExercisePlanner.circuitFactor
-            : settings.rampFactor(now: now)
-        current.exercise = Exercise(kind: kind, reps: Ramp.reps(for: kind, factor: factor, sex: settings.sex))
+        let factor = swapFactor(now: now)
+        current.exercise = Exercise(kind: kind, reps: Ramp.reps(for: kind, factor: factor,
+                                                                sex: settings.sex,
+                                                                level: level(for: kind)))
         // Dentro il circuito la stazione sostituita è quella che va nel registro: senza questa
         // riga il registro scriverebbe l'esercizio proposto e non quello davvero fatto.
         if current.circuitActive, current.circuit.indices.contains(current.stationIndex) {

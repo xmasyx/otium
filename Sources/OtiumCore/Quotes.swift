@@ -85,7 +85,14 @@ public enum Quotes {
 
     static let stoici: [Quote] = [
         q("L'ozio senza studio è morte, è tomba dell'uomo vivo.", "Leisure without study is death; it is a tomb for the living man.", "Seneca", "Lettere a Lucilio, 82"),
-        q("Tutto è d'altri, Lucilio: solo il tempo è nostro.", "Nothing, Lucilius, is ours, except time.", "Seneca", "Lettere a Lucilio, 1"),
+        // **«Niente ci appartiene», non «tutto è d'altri»** (2026-08-12, sua scelta). Il latino è
+        // *«Omnia, Lucili, aliena sunt, tempus tantum nostrum est»* (Ep. I, 3), letto sul testo e
+        // non a memoria: `aliena` vuol dire altrui, quindi la resa letterale era esatta. Si cambia
+        // per il rischio che si porta dietro, cioè che «tutto è d'altri» venga sentito come «tutto
+        // è di tutti», che è l'idea opposta a quella di Seneca. La forma negativa dice la stessa
+        // cosa senza quel passaggio, ed è la strada che prende anche l'inglese di Gummere qui
+        // accanto, che infatti `aliena` non la traduce: la rovescia.
+        q("Niente ci appartiene, Lucilio: solo il tempo è nostro.", "Nothing, Lucilius, is ours, except time.", "Seneca", "Lettere a Lucilio, 1"),
         q("Non abbiamo poco tempo, ne perdiamo molto.", "It is not that we have a short space of time, but that we waste much of it.", "Seneca", "La brevità della vita, 1"),
         q("Ogni giorno, ogni ora rivela quanto siamo nulla.", "Every day and every hour reveal to us what a nothing we are.", "Seneca", "Lettere a Lucilio, 101"),
         q("Nessun vento è favorevole per il marinaio che non sa dove andare.", "When a man does not know what harbour he is making for, no wind is the right wind.", "Seneca", "Lettere a Lucilio, 71"),
