@@ -1,250 +1,283 @@
-# Otium
+<div align="center">
+  <img src="docs/icon.png" width="180" height="180" alt="Otium icon: the number 30 in sage green on night green, with otium cum dignitate beneath it">
+  <h1>Otium</h1>
+  <p><strong>A macOS app that counts your <em>active</em> time at the Mac and, at intervals the literature picked, covers the screen until you have done a bodyweight exercise.</strong></p>
+</div>
 
-Un'app per macOS che conta il **tempo attivo** davanti al Mac e, a intervalli decisi dalla
-letteratura, copre lo schermo finché non hai fatto un esercizio a corpo libero.
+<p align="center">
+  <a href="https://github.com/xmasyx/otium/releases/latest"><img src="https://img.shields.io/github/v/release/xmasyx/otium?style=flat-square&color=2F5C8A" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%2015%2B-blue?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/permissions-none-2F5C8A?style=flat-square" alt="No system permissions">
+  <img src="https://img.shields.io/badge/network-none-2F5C8A?style=flat-square" alt="No network">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-green?style=flat-square" alt="PolyForm Noncommercial"></a>
+</p>
 
-Niente telecamera. Niente abbonamento. Niente rete. Nessun permesso di sistema.
+No camera. No subscription. No network. No system permissions.
 
 ```
-30 min di lavoro attivo  →  90 s  ·  8-15 squat o push-up
-30 min                   →  90 s  ·  esercizio diverso
-30 min                   →  5 min ·  bout vigoroso + 3 min lontano dallo schermo
+30 min of active work  →  90 s   ·  8-15 squats or push-ups
+30 min                 →  90 s   ·  a different exercise
+30 min                 →  5 min  ·  a vigorous bout + 3 minutes away from the screen
 ```
+
+<div align="center">
+  <img src="docs/break.png" width="820" alt="The break screen: 11 crunches, the cue, four alternatives, the countdown, and at the bottom the study the interval comes from">
+</div>
+
+The line at the bottom of that screenshot is the point of the whole app: every number shows the
+study it comes from, **while** it interrupts you.
 
 ---
 
-## Perché questi numeri
+## Where the numbers come from
 
-Ogni parametro risponde a uno studio, e l'app te lo mostra **mentre** ti interrompe. Questa è la
-differenza principale con tutto il resto: le app concorrenti si dichiarano *science-backed* senza
-citare una fonte.
+Competing apps call themselves *science-backed* without citing a single source. This one puts the
+citation on the screen that is blocking you.
 
-| Parametro | Da dove viene |
+| Parameter | Where it comes from |
 |---|---|
-| **Un break ogni 30 minuti** | [Duran et al. 2023](https://www.cuimc.columbia.edu/news/rx-prolonged-sitting-five-minute-stroll-every-half-hour) — crossover randomizzato su quattro dosi: solo "5 minuti ogni 30" ha appiattito i picchi glicemici (−58%). Dosi minori abbassano la pressione ma non la glicemia. |
-| **Esercizi di forza, non una camminata** | [Gao, Li, Finni & Pesola 2024](https://onlinelibrary.wiley.com/doi/abs/10.1111/sms.14628) — 3 minuti di squat ogni 45' hanno battuto una singola camminata da 30', con circa il doppio del beneficio glicemico. Conta l'attivazione muscolare, non i passi. |
-| **La pausa piena da 5 minuti** | [Galinsky et al. 2000](https://pubmed.ncbi.nlm.nih.gov/10877480/) (+ follow-up 2007) — 5 minuti di pausa extra ogni ora riducono disturbi muscoloscheletrici e affaticamento visivo **senza perdita di produttività misurata**. |
-| **90 secondi per il micro-snack** | [Albulescu et al. 2022](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0272460) — meta-analisi di 22 studi: le micro-pause ≤10 min riducono fatica e alzano il vigore. Gli autori avvertono che dopo lavoro cognitivo pesante 10 minuti non bastano: per questo ogni 90 minuti la pausa è piena. |
-| **Il bout vigoroso, e il bersaglio di 3 al giorno** | [Stamatakis et al. 2022, *Nature Medicine*](https://www.wcrf.org/about-us/news-and-blogs/vigorous-exercise-and-the-science-behind-exercise-snacking/) — 25.241 adulti non sportivi: tre bout quotidiani da 1-2 minuti di attività vigorosa si associano a ~40% di mortalità in meno a 7 anni. |
+| **A break every 30 minutes** | [Duran et al. 2023](https://www.cuimc.columbia.edu/news/rx-prolonged-sitting-five-minute-stroll-every-half-hour) — a randomised crossover of four doses: only "5 minutes every 30" flattened the glucose spikes (−58%). Smaller doses lower blood pressure but not glucose. |
+| **Strength work, not a walk** | [Gao, Li, Finni & Pesola 2024](https://onlinelibrary.wiley.com/doi/abs/10.1111/sms.14628) — 3 minutes of squats every 45' beat a single 30' walk, with roughly twice the glycaemic benefit. What counts is muscle activation, not steps. |
+| **The 5-minute full break** | [Galinsky et al. 2000](https://pubmed.ncbi.nlm.nih.gov/10877480/) (plus the 2007 follow-up) — 5 extra minutes of break per hour reduce musculoskeletal discomfort and eye strain **with no measured loss of productivity**. |
+| **90 seconds for the micro-snack** | [Albulescu et al. 2022](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0272460) — a meta-analysis of 22 studies: micro-breaks of ≤10 min reduce fatigue and raise vigour. The authors warn that after heavy cognitive work 10 minutes are not enough, which is why every 90 minutes the break is a full one. |
+| **The vigorous bout, and the target of 3 a day** | [Stamatakis et al. 2022, *Nature Medicine*](https://www.wcrf.org/about-us/news-and-blogs/vigorous-exercise-and-the-science-behind-exercise-snacking/) — 25,241 non-exercising adults: three daily bouts of 1-2 minutes of vigorous activity are associated with ~40% lower mortality over 7 years. |
 
-### E una funzione che Otium NON implementa
+### And one feature Otium does NOT implement
 
-La **regola 20-20-20** (ogni 20 minuti guarda a 6 metri per 20 secondi) è in quasi tutte le app di
-pausa. In un [trial del 2023](https://www.optometryadvisor.com/features/digital-eye-strain-may-not-be-solved-by-the-20-20-20-rule/)
-che ha confrontato pause da 20 secondi a intervalli di 5, 10 e 20 minuti non è emersa alcuna
-differenza su sintomi, velocità e accuratezza di lettura. I tre "20" furono scelti perché
-memorabili, non perché ottimizzati.
+The **20-20-20 rule** (every 20 minutes look 6 metres away for 20 seconds) is in nearly every break
+app. In a [2023 trial](https://www.optometryadvisor.com/features/digital-eye-strain-may-not-be-solved-by-the-20-20-20-rule/)
+comparing 20-second breaks at 5, 10 and 20 minute intervals, no difference emerged in symptoms,
+reading speed or accuracy. The three "20"s were chosen because they are memorable, not because they
+were optimised.
 
-Otium non costruisce un timer per gli occhi. La pausa motoria li riposa comunque.
+Otium does not build an eye timer. The movement break rests your eyes anyway.
 
 ---
 
-## Come funziona
+## How it works
 
-**Conta il tempo attivo, mai l'orologio a muro.** Se ti fermi più di un minuto il contatore si
-ferma; se torni prima, riprende da dov'era. È il difetto più citato nelle recensioni delle
-alternative: sbloccano in base all'ora, così basta fermarsi un attimo per trovarsi la schermata
-addosso.
+**It counts active time, never the wall clock.** Stop for more than a minute and the counter stops;
+come back sooner and it resumes where it was. This is the most cited complaint in reviews of the
+alternatives: they unlock on clock time, so a moment away is enough to find the screen in your face.
 
-**La pausa spontanea vale.** Se ti alzi da solo per più di 90 secondi, la micro-pausa è considerata
-fatta. Oltre 5 minuti vale come pausa piena. Alzarsi da soli è il comportamento desiderato, non un
-modo di imbrogliare.
+**A break you take yourself counts.** Get up on your own for more than 90 seconds and the
+micro-break is considered done. Over 5 minutes counts as a full break. Getting up by yourself is the
+desired behaviour, not a way to cheat.
 
-**Ma stare fermo non è alzarsi.** Guardare un film o leggere un PDF è immobilità perfetta — cioè
-esattamente il bout sedentario che gli studi misurano. Otium distingue i due casi:
+**But sitting still is not getting up.** Watching a film or reading a PDF is perfect stillness,
+which is exactly the sedentary bout the studies measure. Otium tells the two apart:
 
-| Cosa stai facendo | Come lo capisce | Cosa fa |
+| What you are doing | How it knows | What it does |
 |---|---|---|
-| guardi un video | un player **in elenco** sta producendo audio, attribuito al processo (helper annidati compresi) | conta come tempo fermo → la pausa scatta |
-| leggi un documento | l'app in primo piano è un lettore, e `lsof` dice quale `.pdf`/`.docx`/`.md` tiene aperto | conta come tempo fermo → la pausa scatta |
-| sei in call | microfono in uso, o telecamera che riprende | conta come tempo fermo → **ma la pausa non parte** finché la call dura |
-| te ne sei andato | nessun segnale, nessun input | pausa naturale, nessun esercizio |
+| watching a video | a player **on a fixed list** is producing audio, attributed to the process (nested helpers included) | counts as sitting time → the break fires |
+| reading a document | the frontmost app is a reader, and `lsof` says which `.pdf`/`.docx`/`.md` it holds open | counts as sitting time → the break fires |
+| on a call | a microphone is in use, or a camera is capturing | counts as sitting time → **but the break does not fire** while the call lasts |
+| you left | no signal, no input | a natural break, no exercise |
 
-Ogni segnale **scade**, o basterebbe lasciare un PDF aperto e andare a pranzo per far contare il
-pranzo come lavoro: **45 minuti** per un video, **15** per un documento, senza un solo input.
-Oltre il tetto l'orologio si ferma — e rientrando non ti viene regalata una pausa che non hai
-preso: l'assenza vale solo da quando il segnale è scaduto.
+Every signal **expires**, or leaving a PDF open and going to lunch would make lunch count as work:
+**45 minutes** for a video, **15** for a document, without a single input. Past the cap the clock
+stops, and coming back does not gift you a break you never took: the absence only counts from the
+moment the signal expired.
 
-**La call è l'unica eccezione, e non scade mai.** Una riunione di due ore senza toccare il
-trackpad è la seduta più lunga della giornata: se il segnale scadesse, quelle due ore
-smetterebbero di contare a metà. Al posto del tetto c'è un richiamo — dopo **4 ore** di microfono
-acceso senza un solo tocco l'app avvisa che qualcosa lo sta tenendo aperto. Avvisa, non blocca.
+**The call is the one exception, and it never expires.** A two-hour meeting without touching the
+trackpad is the longest sit of the day: if the signal expired, those two hours would stop counting
+halfway. Instead of a cap there is a nudge — after **4 hours** of an open microphone without a
+single touch the app says something is holding it open. It says, it does not block.
 
-**E la pausa arretrata arriva più grossa.** Se il tempo seduto ha superato il **doppio**
-dell'intervallo, perché eri in riunione o perché hai rinviato, quella che scatta è la pausa piena
-da 5 minuti e non lo snack da 90 secondi. Un ciclo intero saltato non si ripaga con novanta
-secondi.
+**And an overdue break arrives bigger.** If sitting time has passed **twice** the interval, because
+you were in a meeting or because you postponed, what fires is the 5-minute full break rather than
+the 90-second snack. A whole skipped cycle is not repaid with ninety seconds.
 
-L'elenco dei player è chiuso di proposito: contano solo browser e riproduttori video, mai un
-processo qualsiasi che stia suonando. Spotify e Musica sono **fuori** — la musica di sottofondo
-mentre sei in cucina non è "essere davanti allo schermo".
+The player list is deliberately closed: only browsers and video players count, never any process
+that happens to be making noise. Spotify and Music are **out** — background music while you are in
+the kitchen is not "being at the screen".
 
-Una nota tecnica che è costata una prova sul campo: il primo disegno leggeva l'asserzione di
-sistema *«non spegnere lo schermo»*, quella che i player alzano durante un video. **I browser
-Chromium non la alzano affatto** — con YouTube in riproduzione in Brave, l'elenco completo delle
-asserzioni conteneva solo `caffeinate`, `powerd` e WindowServer. L'audio invece si vede sempre. E
-chi suona non è il browser: è un helper annidato dentro il suo bundle, che per il sistema non è
-un'applicazione — va risalito il percorso dell'eseguibile fino al `.app` più esterno.
+One technical note that cost a field test: the first design read the system assertion *"don't sleep
+the display"*, the one players raise during a video. **Chromium browsers don't raise it at all** —
+with YouTube playing in Brave, the full assertion list contained only `caffeinate`, `powerd` and
+WindowServer. Audio, on the other hand, is always visible. And the thing making the sound is not the
+browser: it is a helper nested inside its bundle, which the system does not consider an application,
+so the executable path has to be walked up to the outermost `.app`.
 
-Per vedere cosa riconosce in questo momento:
+To see what it recognises right now:
 
 ```bash
-dist/Otium.app/Contents/MacOS/Otium --presence
+/Applications/Otium.app/Contents/MacOS/Otium --presence
 ```
 
-**Il pulsante "fatto" ha un cancello.** Si sblocca solo dopo il tempo minimo plausibile per quelle
-ripetizioni (ripetizioni × secondi per ripetizione). Senza telecamera è un sistema d'onore, ma
-l'onore con un cronometro davanti costa più fatica della verità.
+**The "done" button has a gate.** It unlocks only after the minimum plausible time for those reps
+(reps × seconds per rep). Without a camera this is an honour system, but honour with a stopwatch in
+front of it costs more effort than the truth.
 
-**Sedici esercizi, e le varianti dentro la pausa.** La rotazione propone quello che tocca —
-squat, push-up, affondi, polpacci, ponte per i glutei, dip su sedia — e mai due volte di fila lo
-stesso gruppo muscolare. Se la pausa è di push-up puoi passare con un clic a **diamond**,
-**archer**, **dip su sedia**, **pike** o **inclinati**: le ripetizioni si adeguano alla
-difficoltà, e il cronometro del "fatto" riparte dal cambio, così scegliere la variante più corta
-all'ultimo secondo non serve a niente.
+**Sixteen exercises, and variants inside the break.** The rotation offers whatever is next — squats,
+push-ups, lunges, calf raises, glute bridges, bench dips — and never the same muscle group twice in
+a row. If the break is push-ups you can switch with one click to **diamond**, **archer**, **bench
+dips**, **pike** or **incline**: the reps adjust to the difficulty, and the "done" stopwatch
+restarts on the switch, so picking the shortest variant at the last second gets you nothing.
 
-**Rampa progressiva.** Si parte al 55% del volume e si sale al 100% in quattro settimane. Partire
-pieni il primo giorno è il modo più rapido per farsi male e disinstallare l'app.
+**Progression, in both directions.** Reps start at 55% of the volume and reach 100% over four weeks:
+starting full on day one is the fastest way to hurt yourself and uninstall the app. After that,
+turning on growth beyond 100% raises them by 5% after two full confirmations in a row and steps them
+back after two shortfalls — the ACSM's 2-for-2 rule — and once the number no longer fits in the
+break, the app offers a harder movement instead of a bigger number.
 
-**Non ti blocca durante una call, mai.** Finché un microfono è in uso la pausa si rimanda e lo
-dichiara, senza limite di rinvii e senza limite di durata: una riunione di tre ore non finisce con
-lo schermo coperto a metà. Il tempo però continua a contare, e quando la call finisce trovi il
-preavviso di un minuto — non la schermata addosso.
+**It never blocks you during a call.** While a microphone is in use the break is postponed and says
+so, with no limit on postponements and no limit on duration: a three-hour meeting does not end with
+the screen covered halfway. Time keeps counting, though, and when the call ends you get the
+one-minute warning rather than the screen in your face.
 
-**Non ti chiude fuori.** C'è sempre un'uscita: digitare per esteso una frase esatta. Ogni salto
-finisce nel registro — non è un giudizio, è un dato. E se non c'è nessuno davanti al Mac il blocco
-cade da solo.
+**It does not lock you out.** There is always a way out: typing an exact phrase in full. Every skip
+goes in the log — not a judgement, a data point. And if nobody is at the Mac, the block drops by
+itself.
 
-### Onestà su cosa il blocco è, e cosa non è
+| What you did | What you decided |
+|---|---|
+| <img src="docs/stats.png" alt="The statistics page: reps, days, vigorous bouts, then each exercise with prescribed versus done, and reps by muscle chain"> | <img src="docs/preferences.png" alt="The Cadence panel: preset, interval, break lengths, how often a full break, warning, manual postponements"> |
+| Every bar is one break. The percentage is what you did against what was prescribed, so an honest 55% shows up as 55%. | Every number here has a default that comes from a study, and changing one tells you which preset you just left. |
 
-Da macOS High Sierra nessuna finestra può stare sopra il lock screen di sistema, e qualunque
-processo si può uccidere da un terminale. Otium non è un lucchetto: è **attrito forte**. Copre ogni
-schermo a livello di schermatura, nasconde Dock e barra dei menu, disabilita ⌘-Tab, Exposé, uscita
-forzata e chiusura di sessione. Chi vuole aggirarla ci riesce — e va bene così: il punto è mettere
-la scelta davanti agli occhi, non toglierla.
+### Honest about what the block is, and what it is not
 
----
-
-## Privacy e permessi
-
-Otium **non compare** in Impostazioni → Privacy e sicurezza, perché non usa niente che lo richieda:
-
-- l'inattività si legge da `CGEventSource`, che non richiede né Accessibilità né Input Monitoring;
-- il rilevamento delle call legge `kAudioDevicePropertyDeviceIsRunningSomewhere` e il suo gemello
-  video `kCMIODevicePropertyDeviceIsRunningSomewhere`, cioè *se* un dispositivo è in uso — nessuno
-  stream aperto, nessun byte di audio o di immagine, nessun permesso microfono né telecamera;
-- il preavviso è un pannello dell'app, non una notifica di sistema (che richiederebbe un permesso);
-- niente registrazione schermo, niente rete.
-
-Tutto resta in `~/Library/Application Support/Otium/`: `settings.json` e `ledger.jsonl`, un registro
-append-only in JSON Lines che puoi leggere con qualsiasi cosa.
+Since macOS High Sierra no window can sit above the system lock screen, and any process can be
+killed from a terminal. Otium is not a padlock: it is **strong friction**. It covers every screen at
+shielding level, hides the Dock and menu bar, disables ⌘-Tab, Exposé, Force Quit and log-out.
+Anyone who wants to get around it will — and that is fine: the point is to put the choice in front
+of your eyes, not to take it away.
 
 ---
 
-## Installazione
+## Privacy and permissions
 
-Serve macOS 15+ e Xcode (o i Command Line Tools).
+Otium **does not appear** in Settings → Privacy & Security, because it uses nothing that would
+require it:
+
+- idle time is read from `CGEventSource`, which needs neither Accessibility nor Input Monitoring;
+- call detection reads `kAudioDevicePropertyDeviceIsRunningSomewhere` and its video twin
+  `kCMIODevicePropertyDeviceIsRunningSomewhere`, that is *whether* a device is in use — no stream
+  opened, not one byte of audio or image, no microphone or camera permission;
+- the warning is a panel drawn by the app, not a system notification (which would need a permission);
+- no screen recording, no network.
+
+Everything stays in `~/Library/Application Support/Otium/`: `settings.json` and `ledger.jsonl`, an
+append-only JSON Lines log you can read with anything.
+
+---
+
+## Install
+
+One line, no Xcode, no build. It downloads the latest release, puts the app in `/Applications`,
+clears the quarantine flag (builds are unsigned) and launches it:
 
 ```bash
-git clone <questo-repo> && cd Otium
-Scripts/build-app.sh          # produce dist/Otium.app, firmata ad-hoc
+curl -fsSL https://raw.githubusercontent.com/xmasyx/otium/main/Scripts/install.sh | bash
+```
+
+Read [that script](Scripts/install.sh) before you pipe it to a shell. It is short, and the one step
+worth confirming yourself is the `xattr` line that clears the quarantine flag.
+
+Or build it from source — macOS 15+ and Xcode (or the Command Line Tools):
+
+```bash
+git clone https://github.com/xmasyx/otium.git && cd otium
+Scripts/build-app.sh          # produces dist/Otium.app, ad-hoc signed
 open dist/Otium.app
 ```
 
-Ne gira **una sola alla volta**: cercarla di nuovo da Spotlight sveglia quella che c'è e ti dice
-fra quanto arriva la prossima pausa, invece di avviare un secondo timer in parallelo.
+Only **one runs at a time**: launching it again from Spotlight wakes the one already there and tells
+you how long until the next break, instead of starting a second timer alongside the first.
 
-L'app vive nella barra dei menu: il numero è quanti minuti di lavoro attivo mancano alla prossima
-pausa. Da lì: totali di oggi, preferenze, le fonti, il registro.
+The app lives in the menu bar: the number is how many minutes of active work remain until the next
+break. From there: today's totals, preferences, the sources, the log. The interface is in English
+and Italian, switchable in Preferences.
 
-Per farla partire all'accensione, in Preferenze → *Avvio automatico*, oppure:
+To start it at login, use Preferences → *Start at login*, or:
 
 ```bash
-/Applications/Otium.app/Contents/MacOS/Otium --install-agent   # registra l'avvio al login
+/Applications/Otium.app/Contents/MacOS/Otium --install-agent   # registers start at login
 /Applications/Otium.app/Contents/MacOS/Otium --agent-status
 /Applications/Otium.app/Contents/MacOS/Otium --remove-agent
 ```
 
-L'avvio automatico passa da **`SMAppService`**, la via moderna: Otium compare fra le app di
-*Impostazioni di Sistema → Generali → Elementi login ed estensioni → Apri al login*, con il suo
-interruttore. Se lo spegni da lì, l'app **non** se lo rimette: ti porta all'interruttore e basta.
+Start at login goes through **`SMAppService`**, the modern route: Otium shows up under *System
+Settings → General → Login Items & Extensions → Open at Login*, with its own switch. If you turn it
+off there, the app does **not** put it back: it walks you to the switch and stops.
 
-> **Cambiato il 2026-08-03.** Prima l'avvio automatico era un LaunchAgent scritto a mano in
-> `~/Library/LaunchAgents`, con `KeepAlive` per far ripartire Otium dopo un `kill -9`. macOS lo
-> cataloga come *legacy agent*: finiva nella sezione «Consenti in background» invece che fra le
-> app di «Apri al login», attribuito a «Unknown Developer», e faceva ricomparire l'avviso
-> «Attività app in background» a ogni ricostruzione del bundle. Il `KeepAlive` è caduto con lui,
-> e la scelta è dichiarata: sprangava la finestra sul retro lasciando aperta la porta, perché
-> «Esci da Otium» è un'uscita pulita che non faceva scattare niente. La rete che resta è il
-> ripristino a caldo — riaperta entro la finestra di grazia, l'app riprende il conto da dov'era.
+> **Changed on 2026-08-03.** Start at login used to be a hand-written LaunchAgent in
+> `~/Library/LaunchAgents`, with `KeepAlive` to restart Otium after a `kill -9`. macOS files that as
+> a *legacy agent*: it ended up under "Allow in the Background" instead of among the "Open at Login"
+> apps, attributed to "Unknown Developer", and it made the "Background App Activity" notice reappear
+> every time the bundle was rebuilt. `KeepAlive` went with it, and the choice is declared: it barred
+> the back window while leaving the door open, because "Quit Otium" is a clean exit that triggered
+> nothing. The net that remains is warm restore — reopened within the grace window, the app picks the
+> count up where it was.
 >
-> Chi aveva la versione precedente non deve fare niente: il vecchio agent viene tolto da solo al
-> primo avvio. A mano, se serve: `--remove-legacy-agent`. `--doctor` lo segnala se è sopravvissuto.
+> Anyone on the previous version has nothing to do: the old agent is removed on first launch. By
+> hand, if needed: `--remove-legacy-agent`. `--doctor` reports it if it survived.
 
-### Vedere la schermata senza aspettare mezz'ora
+### Seeing the break screen without waiting half an hour
 
 ```bash
-dist/Otium.app/Contents/MacOS/Otium --demo-break=20        # si spegne da sola dopo 20 s
-dist/Otium.app/Contents/MacOS/Otium --snapshot=out.png     # la disegna fuori schermo
+dist/Otium.app/Contents/MacOS/Otium --demo-break=20        # closes itself after 20 s
+dist/Otium.app/Contents/MacOS/Otium --snapshot=out.png     # draws it offscreen
 ```
 
-L'auto-spegnimento non è una comodità: durante il blocco l'app disabilita l'uscita forzata, quindi
-una demo che dipendesse da qualcuno che la chiude a mano sarebbe il modo perfetto di lasciare un
-Mac inchiodato.
+The self-close is not a convenience: during the block the app disables Force Quit, so a demo relying
+on someone closing it by hand would be the perfect way to leave a Mac nailed shut.
 
 ---
 
-## Cosa c'è già, e cosa no
+## What already exists, and what doesn't
 
-| | Otium | [Stretchly](https://github.com/hovancik/stretchly) | Time Out | [Workrave](https://workrave.org) | app "sblocca con i push-up" |
+| | Otium | [Stretchly](https://github.com/hovancik/stretchly) | Time Out | [Workrave](https://workrave.org) | "unlock with push-ups" apps |
 |---|---|---|---|---|---|
-| macOS nativo | ✅ ~5 MB | Electron | ✅ | ❌ (port fermo) | solo iPhone |
-| conta il tempo **attivo** | ✅ | pausa su idle | ✅ *natural breaks* | ✅ | ❌ orologio a muro |
-| blocca davvero lo schermo | ✅ | parziale | ❌ | ✅ | ✅ |
-| esercizi con ripetizioni | ✅ | idee testuali | ❌ | ✅ guidati | ✅ |
-| conta le ripetizioni | ❌ (onore + cronometro) | ❌ | ❌ | ❌ | ✅ telecamera |
-| mostra le fonti | ✅ | ❌ | ❌ | ❌ | ❌ |
-| prezzo | gratis, open source | gratis | gratis | gratis | 15 $/mese |
+| native macOS | ✅ ~5 MB | Electron | ✅ | ❌ (port stalled) | iPhone only |
+| counts **active** time | ✅ | pauses on idle | ✅ *natural breaks* | ✅ | ❌ wall clock |
+| really blocks the screen | ✅ | partial | ❌ | ✅ | ✅ |
+| exercises with reps | ✅ | text ideas | ❌ | ✅ guided | ✅ |
+| counts the reps | ❌ (honour + stopwatch) | ❌ | ❌ | ❌ | ✅ camera |
+| shows its sources | ✅ | ❌ | ❌ | ❌ | ❌ |
+| price | free, source-available | free | free | free | $15/month |
 
-## In programma
+## Planned
 
-- Verifica reale delle ripetizioni **senza telecamera**: movimento della testa dagli AirPods
-  (`CMHeadphoneMotionManager`) o Apple Watch.
-- Interfaccia in inglese (oggi è in italiano) e notarizzazione per la distribuzione fuori dal
-  repo.
-- Report settimanale: ripetizioni, pause rispettate, tempo davanti al Mac.
+- Real rep verification **without a camera**: head motion from AirPods
+  (`CMHeadphoneMotionManager`) or Apple Watch.
+- Notarisation, so the download opens without clearing quarantine by hand.
+- A weekly report: reps, breaks kept, time at the Mac.
 
-## Test
+## Tests
 
 ```bash
-swift test    # 52 test sulla logica pura: orologio, motore, rampa, rotazione, registro
-swift Scripts/probe-blocker.swift    # verifica che il blocco copra ogni schermo (con l'app in blocco)
+swift test                           # 423 tests: clock, engine, ramp, rotation, ledger, wording
+swift Scripts/probe-blocker.swift    # checks the block covers every screen (with the app blocking)
 ```
 
-La sonda del blocco si tara da sola costruendo una finestra di misura nota, perché
-`kCGWindowBounds` non vive nello stesso spazio di coordinate di `NSScreen.frame`: su un display in
-modalità scalata una finestra da 1512×982 punti viene elencata come 1362×884, e confrontare i
-numeri grezzi fa dichiarare rotta un'app sana.
+The block probe calibrates itself by building a window of known size, because `kCGWindowBounds` does
+not live in the same coordinate space as `NSScreen.frame`: on a scaled display a 1512×982-point
+window is listed as 1362×884, and comparing the raw numbers declares a healthy app broken.
 
-## Licenza
+## Licence
 
-**PolyForm Noncommercial 1.0.0**, testo completo in [`LICENSE`](LICENSE).
+**PolyForm Noncommercial 1.0.0**, full text in [`LICENSE`](LICENSE).
 
-Il codice è **a sorgente aperto ma non open source**, e la differenza è dichiarata qui invece di
-essere lasciata capire: puoi leggerlo, compilarlo, modificarlo e usarlo liberamente per te, per
-studio, per ricerca, e lo stesso vale per scuole, enti pubblici e non profit. Serve invece il mio
-permesso per usarlo a fini commerciali. Non chiamo il progetto open source perché non lo è secondo
-la definizione dell'OSI, e usare quella parola a sproposito sarebbe scorretto verso chi la rispetta.
+The code is **source-available, not open source**, and the difference is stated here rather than
+left to be inferred: you may read it, build it, modify it and use it freely for yourself, for study
+and for research, and the same goes for schools, public bodies and non-profits. Using it
+commercially needs my permission. I don't call the project open source because it isn't, by the OSI
+definition, and using that word loosely would be unfair to the people who respect it.
 
-**Perché.** Otium può diventare un prodotto, e questa licenza tiene aperta quella porta senza
-chiudere l'unica cosa che conta per chi lo installa: il codice resta leggibile, quindi la promessa
-«nessuna rete, nessun permesso di sistema» si può verificare invece che credere.
+**Why.** Otium could become a product, and this licence keeps that door open without closing the
+only thing that matters to whoever installs it: the code stays readable, so the promise of "no
+network, no system permissions" can be verified instead of believed.
 
-Nessuna dipendenza di terze parti: solo Swift e i framework di sistema di macOS.
+No third-party dependencies: only Swift and the macOS system frameworks.
 
-Le 338 citazioni e le 73 frasi che l'app mostra durante la pausa vengono da autori di pubblico
-dominio (Seneca, Marco Aurelio, Epitteto, Nietzsche, Montaigne, Pascal, Spinoza, Leopardi,
-Sunzi, Tao Te Ching, Dialoghi, Dhammapada, Gita). Le rese inglesi sono traduzioni storiche
-anch'esse di pubblico dominio, in 313 casi su 338: Gummere, Long, Common, Zimmern, Legge,
-Max Müller, Arnold, Cotton, Trotter, Elwes, Giles, Edwardes. Le restanti 25 sono traduzioni
-originali di questo progetto e ricadono sotto la stessa licenza del codice.
+The 338 quotations and 73 lines the app shows during a break come from public-domain authors
+(Seneca, Marcus Aurelius, Epictetus, Nietzsche, Montaigne, Pascal, Spinoza, Leopardi, Sun Tzu, Tao
+Te Ching, the Analects, the Dhammapada, the Gita). The English renderings are historical
+translations, also public domain, in 313 cases out of 338: Gummere, Long, Common, Zimmern, Legge,
+Max Müller, Arnold, Cotton, Trotter, Elwes, Giles, Edwardes. The remaining 25 are this project's own
+translations and fall under the same licence as the code.
+
+---
+
+*[Leggi questo README in italiano](README-it.md).*

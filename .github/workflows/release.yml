@@ -1,0 +1,73 @@
+name: Release
+
+# Tag a commit and the release builds itself:
+#
+#   git tag v1.0.0 && git push origin v1.0.0
+#
+# Produces Otium.zip and attaches it to a GitHub Release, which is what
+# Scripts/install.sh downloads. Also runnable by hand from the Actions tab
+# (without a tag it builds and uploads an artifact but publishes nothing).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write        # needed to create the release
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      # The tests are the gate, not a formality: they cover the engine, the
+      # progression, the ledger and the wording of every user-facing string.
+      - name: Run tests
+        run: swift test
+
+      - name: Build Otium.app
+        env:
+          OTIUM_SKIP_INSTALL: "1"        # a CI runner has no /Applications to own
+        run: |
+          # On a tag, the tag IS the version — the app must not be free to say
+          # something else. Off a tag there is no version to claim.
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            export OTIUM_VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          ./Scripts/build-app.sh
+
+      # A bundle that cannot start is indistinguishable from a healthy one until
+      # someone downloads it. Ask the binary itself before shipping it.
+      - name: Verify the bundle
+        run: |
+          APP=dist/Otium.app
+          test -x "$APP/Contents/MacOS/Otium"     || { echo "::error::no executable in the bundle"; exit 1; }
+          test -f "$APP/Contents/Resources/Otium.icns" || { echo "::error::the bundle has no icon"; exit 1; }
+          VERSION_SAID="$("$APP/Contents/MacOS/Otium" --version)"
+          echo "the bundle says: ${VERSION_SAID}"
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            EXPECTED="${GITHUB_REF_NAME#v}"
+            grep -q "${EXPECTED}" <<< "${VERSION_SAID}" \
+              || { echo "::error::tag says ${EXPECTED}, the binary says ${VERSION_SAID}"; exit 1; }
+          fi
+
+      - name: Zip it
+        run: ditto -c -k --keepParent dist/Otium.app Otium.zip
+
+      - name: Upload the artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Otium
+          path: Otium.zip
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Otium.zip
+          generate_release_notes: true

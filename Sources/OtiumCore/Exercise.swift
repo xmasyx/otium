@@ -230,9 +230,20 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     /// la usa `spreadByMuscleGroup` per non far lavorare due volte di fila la stessa zona, e la
     /// usa `SexCalibration` per scegliere il coefficiente. Tradurre la chiave significherebbe far
     /// dipendere la rotazione degli esercizi dalla lingua dell'interfaccia.
-    public var localizedMuscleGroup: String {
-        guard L.language == .english else { return muscleGroup }
-        switch muscleGroup {
+    public var localizedMuscleGroup: String { ExerciseKind.localizedGroup(muscleGroup) }
+
+    /// La traduzione parte dalla **chiave**, non dall'esercizio, perché la pagina delle statistiche
+    /// raggruppa per chiave e poi deve scrivere quel gruppo a schermo: senza questa funzione
+    /// l'unica strada era mostrare la chiave grezza, ed è quello che faceva. Trovato il 2026-08-12
+    /// fotografando la pagina in inglese, dove le barre dicevano «addome», «gambe», «petto».
+    ///
+    /// **`dorso` diceva «total body», che è falso**, ed era il `default` a dirlo: un ramo di
+    /// scarto che risponde per un caso vero produce una traduzione plausibile e sbagliata, cioè il
+    /// guasto peggiore. Adesso ogni chiave ha la sua riga e il default resta per l'unica che lo
+    /// merita.
+    public static func localizedGroup(_ key: String) -> String {
+        guard L.language == .english else { return key }
+        switch key {
         case "gambe": return "legs"
         case "glutei": return "glutes"
         case "polpacci": return "calves"
@@ -240,6 +251,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case "spalle": return "shoulders"
         case "tricipiti": return "triceps"
         case "addome": return "core"
+        case "dorso": return "back"
         default: return "total body"
         }
     }

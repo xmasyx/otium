@@ -3213,7 +3213,12 @@ struct StatsView: View {
                             .padding(.leading, 4)
                         } label: {
                             HStack(spacing: 12) {
-                                Text(g.group).font(.system(size: 12, weight: .medium))
+                                // `g.group` è la **chiave** con cui `Stats` raggruppa, e resta
+                                // italiana per costruzione: qui va tradotta, o in inglese la pagina
+                                // scrive «addome, gambe, petto». Era così, e l'ha trovato la
+                                // fotografia della pagina in inglese, non un test.
+                                Text(ExerciseKind.localizedGroup(g.group))
+                                    .font(.system(size: 12, weight: .medium))
                                     .frame(width: 84, alignment: .leading)
                                 GeometryReader { geo in
                                     ZStack(alignment: .leading) {

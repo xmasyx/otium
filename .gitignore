@@ -3,3 +3,11 @@ dist/
 *.xcuserdatad
 .DS_Store
 Scripts/citazioni/fonti/
+
+# I file di lavoro della sessione, che non appartengono a un repo pubblico:
+# vivono in ~/Desktop/lifeos/03-Plans/Otium/repo-worklog/
+Decisioni/
+RESUME.md
+PROSSIMA-CHAT.md
+RIPRENDI-FRASI.md
+HANDOFF-CITAZIONI.md

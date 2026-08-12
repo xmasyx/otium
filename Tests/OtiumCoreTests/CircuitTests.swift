@@ -584,3 +584,45 @@ final class CircuitModeTests: XCTestCase {
         XCTAssertTrue(s.offerVariants)
     }
 }
+
+// MARK: - ISC-229 — il gruppo muscolare a schermo parla la lingua dell'interfaccia
+
+/// **La chiave resta italiana, il testo a schermo no.** `muscleGroup` è una chiave: la usano la
+/// rotazione (per non caricare due volte la stessa catena) e la calibrazione per sesso, quindi
+/// tradurla farebbe dipendere gli esercizi proposti dalla lingua. Ma la pagina delle statistiche
+/// raggruppa per quella chiave e poi la **scriveva così com'era**: in inglese le barre dicevano
+/// «addome», «gambe», «petto». Trovato il 2026-08-12 fotografando la pagina, non da un test.
+final class MuscleGroupLanguageTests: XCTestCase {
+
+    override func tearDown() { L.language = .italian; super.tearDown() }
+
+    func testEveryGroupKeyHasAnEnglishName() {
+        L.language = .english
+        let chiavi = Set(ExerciseKind.allCases.map(\.muscleGroup))
+        for chiave in chiavi {
+            let tradotto = ExerciseKind.localizedGroup(chiave)
+            XCTAssertFalse(tradotto.isEmpty, "\(chiave): nessun nome inglese")
+            // «total body» è uguale nelle due lingue ed è l'unica coincidenza ammessa: ogni altra
+            // chiave che torna identica a sé stessa è una traduzione che manca.
+            if chiave != "total body" {
+                XCTAssertNotEqual(tradotto, chiave, "\(chiave): a schermo resta italiano")
+            }
+        }
+    }
+
+    /// Il caso che il ramo di scarto sbagliava: `dorso` rispondeva «total body», che è un'altra
+    /// cosa. Una traduzione plausibile e falsa è peggio di una mancante, perché nessuno la guarda.
+    func testTheBackIsNotTheWholeBody() {
+        L.language = .english
+        XCTAssertEqual(ExerciseKind.localizedGroup("dorso"), "back")
+        XCTAssertEqual(ExerciseKind.superman.localizedMuscleGroup, "back")
+    }
+
+    /// E in italiano la chiave si mostra tale e quale, cioè la traduzione non inventa niente.
+    func testInItalianTheKeyIsAlreadyTheName() {
+        L.language = .italian
+        for kind in ExerciseKind.allCases {
+            XCTAssertEqual(kind.localizedMuscleGroup, kind.muscleGroup)
+        }
+    }
+}
