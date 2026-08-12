@@ -49,13 +49,13 @@ giusto**, misurando il lavoro vero e non l'orologio a muro.
 
 ## Vision
 
-l'autore lavora. In alto a destra un'icona conta in silenzio. Dopo 30 minuti di lavoro *vero* —
-non 30 minuti di orologio — arriva un preavviso di 60 secondi, poi lo schermo si copre: un
+Stai lavorando. In alto a destra un'icona conta in silenzio. Dopo 30 minuti di lavoro *vero*,
+non 30 minuti di orologio, arriva un preavviso di 60 secondi, poi lo schermo si copre: un
 esercizio, un conteggio, 90 secondi, e si torna al lavoro. Ogni terza volta la pausa è piena: 5
 minuti, un bout vigoroso, e tre minuti lontano dallo schermo. A fine giornata il registro dice
 quanti squat, quante flessioni, quante pause saltate. Ogni numero dell'app ha accanto lo studio
-da cui viene, leggibile dall'app stessa. Se si alza da solo, il timer se ne accorge e non lo
-punisce. Se è in call, la pausa aspetta.
+da cui viene, leggibile dall'app stessa. Se ti alzi da solo, il timer se ne accorge e non ti
+punisce. Se sei in call, la pausa aspetta.
 
 ## Out of Scope
 
