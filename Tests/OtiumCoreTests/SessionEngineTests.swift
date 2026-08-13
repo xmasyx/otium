@@ -195,6 +195,42 @@ final class SessionEngineTests: XCTestCase {
         XCTAssertTrue(natural.isEmpty, "assenza senza sedentarietà contata come interruzione")
     }
 
+    // MARK: - La pausa che chiedi tu
+
+    /// **Il tipo lo scegli tu, non il contatore.** Chiedendo una pausa dal menu se ne poteva
+    /// ricevere una piena da cinque minuti con esercizio vigoroso, perché toccava alla terza.
+    func testRequestedBreakHonoursTheKindYouAskedFor() {
+        var engine = makeEngine()
+        // Porta il contatore al punto in cui la prossima toccherebbe piena, facendogliele fare:
+        // due micro chiuse, e la terza sarebbe piena.
+        for _ in 0..<2 {
+            reachBreak(&engine)
+            performExercise(&engine)
+        }
+        XCTAssertEqual(engine.microsSinceLong, 2, "premessa: la prossima sarebbe piena")
+        engine.forceBreakNow(now: Self.workingHour, kind: .micro)
+        XCTAssertEqual(engine.plan?.kind, .micro, "ho chiesto una micro e ne è arrivata una piena")
+
+        var other = makeEngine()
+        other.forceBreakNow(now: Self.workingHour, kind: .long)
+        XCTAssertEqual(other.plan?.kind, .long)
+    }
+
+    /// E il registro deve poter dire **perché** quella pausa è comparsa: senza, la domanda
+    /// «me ne ha proposta un'altra, perché?» non ha risposta nemmeno con il file davanti.
+    func testARequestedBreakIsMarkedAsSuchInTheLedger() {
+        var engine = makeEngine()
+        engine.forceBreakNow(now: Self.workingHour, kind: .micro)
+        XCTAssertEqual(engine.plan?.requested, true)
+
+        var scheduled = makeEngine()
+        reachBreak(&scheduled)
+        XCTAssertEqual(scheduled.plan?.requested, false, "una pausa arrivata da sola non è richiesta")
+
+        let entry = Ledger.entry(for: .breakCompleted(engine.plan!), now: Date())
+        XCTAssertEqual(entry?.reason, "richiesta")
+    }
+
     /// Un'assenza troppo breve non compra niente.
     func testShortAbsenceDoesNotCreditABreak() {
         var engine = makeEngine()

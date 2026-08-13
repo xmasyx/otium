@@ -1270,6 +1270,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
               ? "RISULTATO: PASS — nessuna voce promette una scorciatoia globale che l'app non ha"
               : "RISULTATO: FAIL — promettono ⌘ senza poterlo mantenere: \(promesse.joined(separator: ", "))")
 
+        // **Il sottomenu della pausa a richiesta, che nessun test può vedere.** Il difetto che
+        // guarda questa riga è del 2026-07-28: «Fai una pausa adesso» era una voce sola e il tipo
+        // lo decideva il contatore «ogni terza è piena», quindi chiedendo una pausa se ne poteva
+        // prendere in faccia una da cinque minuti senza averla chiesta. La riparazione vive
+        // **solo** nella costruzione del menu, cioè nel posto dove `swift test` non arriva: fusa
+        // dal vecchio ramo il 2026-08-13, e senza questa riga tornerebbe a perdersi in silenzio.
+        //
+        // Ha il suo polo negativo accanto, e non per cerimonia: «Sospendi» è una voce senza
+        // sottomenu, quindi se un giorno il controllo dicesse sì anche per lei vorrebbe dire che
+        // non sta guardando niente.
+        func sottomenu(_ titolo: String) -> [String]? {
+            menu?.items.first { $0.title == titolo }?.submenu?.items.map(\.title)
+        }
+        let voci = sottomenu(L.t("Fai una pausa adesso", "Take a break now"))
+        let azioni = menu?.items.first { $0.title == L.t("Fai una pausa adesso", "Take a break now") }?
+            .submenu?.items.compactMap(\.action) ?? []
+        let dueVoci = voci?.count == 2
+        let dueAzioni = azioni.contains(#selector(breakNowMicro)) && azioni.contains(#selector(breakNowLong))
+        print("pausa a richiesta · due voci nel sottomenu: \(dueVoci ? "sì" : "NO") \(voci ?? [])")
+        print("pausa a richiesta · una chiede la micro e l'altra la piena: \(dueAzioni ? "sì" : "NO")")
+        let controllo = sottomenu(L.t("Sospendi", "Pause")) == nil
+        print("pausa a richiesta · polo negativo, «Sospendi» non ha sottomenu: \(controllo ? "sì" : "NO")")
+        print(dueVoci && dueAzioni && controllo
+              ? "RISULTATO PAUSA A RICHIESTA: PASS — il tipo di pausa lo scegli tu"
+              : "RISULTATO PAUSA A RICHIESTA: FAIL")
+
         // **La spunta della modalità Zen, e ha due poli.** Non basta che il clic accenda: la
         // stessa impostazione si gira anche dalle Preferenze, quindi la sonda cambia lo stato
         // **alle spalle del menu** e chiede al menu di riaprirsi. Il giorno in cui la
@@ -1553,7 +1579,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: L.t("Sospendi", "Pause"), action: #selector(togglePause), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: L.t("Fai una pausa adesso", "Take a break now"), action: #selector(breakNow), keyEquivalent: ""))
+
+        // **Quale pausa la scegli tu.** Prima la voce era una sola e il tipo lo decideva il
+        // contatore «ogni terza è piena»: chiedendo una pausa se ne poteva prendere in faccia una
+        // da cinque minuti con esercizio vigoroso senza averlo chiesto. Segnalato dal principale
+        // il 2026-07-28. Stesso schema del sottomenu di «Togli l'ultima pausa segnata».
+        let breakNowItem = NSMenuItem(title: L.t("Fai una pausa adesso", "Take a break now"),
+                                      action: nil, keyEquivalent: "")
+        let breakNowMenu = NSMenu()
+        let micro = NSMenuItem(title: L.t("micro-pausa", "micro-break"),
+                               action: #selector(breakNowMicro), keyEquivalent: "")
+        let full = NSMenuItem(title: L.t("pausa piena", "full break"),
+                              action: #selector(breakNowLong), keyEquivalent: "")
+        for item in [micro, full] { item.target = self; breakNowMenu.addItem(item) }
+        breakNowItem.submenu = breakNowMenu
+        menu.addItem(breakNowItem)
 
         // **La modalità Zen si accende da qui, oltre che dalle Preferenze** (sua richiesta,
         // 2026-08-09). Sta accanto a «Fai una pausa adesso» perché risponde alla stessa domanda —
@@ -1655,8 +1695,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     }
 
     /// Utile la prima volta, per vedere com'è fatta la schermata senza aspettare mezz'ora.
+    /// Senza tipo esplicito resta la regola del contatore: la usa il secondo avvio dell'app.
     @objc private func breakNow() {
         model.forceBreakNow()
+        updateStatusTitle()
+    }
+
+    @objc private func breakNowMicro() {
+        model.forceBreakNow(kind: .micro)
+        updateStatusTitle()
+    }
+
+    @objc private func breakNowLong() {
+        model.forceBreakNow(long: true)
         updateStatusTitle()
     }
 
@@ -2174,6 +2225,54 @@ if CommandLine.arguments.contains("--tagli") {
     for colonna in QuoteWrap.colonne {
         let (a, s) = totali[colonna.nome] ?? (0, 0)
         print("\(colonna.nome)\tavido: \(a) difetti\tscelto: \(s) difetti")
+    }
+    exit(0)
+}
+
+// `--verdict[=giorni]` — il verdetto sulla cadenza, letto dal registro.
+//
+// Esiste perché ISC-28 non si chiude con un test ma con l'uso, e «come è andata la settimana?»
+// non deve diventare un'impressione. Il falsificatore è scritto da prima: **se le pause saltate
+// superano quelle fatte, è la cadenza a essere sbagliata, non tu.**
+//
+// Usa `Stats.compute`, cioè **lo stesso codice del recap**: una seconda implementazione darebbe
+// due numeri diversi per la stessa domanda, e a quel punto non ci si crede più.
+//
+// **Sta qui e non nell'AppDelegate, ed è una riparazione del 2026-08-13.** Arrivando dal vecchio
+// `main` viveva dentro il ciclo di avvio, cioè **dopo** la guardia dell'istanza unica: siccome
+// Otium vive nella barra dei menu ed è sempre in esecuzione, il comando rispondeva «Otium è già
+// in esecuzione» e non stampava mai un verdetto. Un referto in sola lettura non ha motivo di
+// aprire l'interfaccia, quindi legge le impostazioni dal disco ed esce.
+if CommandLine.arguments.contains(where: { $0.hasPrefix("--verdict") }) {
+    let arg = CommandLine.arguments.first { $0.hasPrefix("--verdict") } ?? "--verdict"
+    let days = arg.split(separator: "=").last.flatMap { Int($0) } ?? 7
+    let adesso = Date()
+    let from = Calendar.current.date(byAdding: .day, value: -days, to: adesso) ?? adesso
+    // `--ledger=` esiste per una ragione sola: provare che questo verdetto sa anche dire di no.
+    // Un giudizio che non si è mai visto ribaltare è un'asserzione travestita da misura.
+    let ledgerURL = CommandLine.arguments.first { $0.hasPrefix("--ledger=") }?
+        .split(separator: "=", maxSplits: 1).last.map { URL(fileURLWithPath: String($0)) }
+    let entries = (ledgerURL.map { Ledger(url: $0) } ?? Ledger()).entries()
+    let s = Stats.compute(entries: entries, period: .week, now: adesso, from: from)
+
+    let cadenza = SettingsStore.load().cadence
+    print("ultimi \(days) giorni · cadenza: \(Int(cadenza.intervalSeconds / 60)) min, "
+        + "micro \(Int(cadenza.microDurationSeconds)) s, "
+        + "piena \(Int(cadenza.longDurationSeconds / 60)) min ogni \(cadenza.longEveryNBreaks)")
+    print("fatte: \(s.completed) · saltate: \(s.skipped) · d'emergenza: \(s.emergency) "
+        + "· spontanee: \(s.natural)")
+    print("tasso di rispetto: \(Int(s.complianceRate * 100))%")
+    print("interruzioni: \(s.interruptions) · ripetizioni: \(s.totalReps) "
+        + "· sessioni intense: \(s.vigorousBouts)")
+
+    let proposte = s.completed + s.skipped + s.emergency
+    if proposte < 10 {
+        print("VERDETTO: dati insufficienti — \(proposte) pause proposte, ne servono almeno 10")
+    } else if s.skipped + s.emergency > s.completed {
+        print("VERDETTO: CADENZA SBAGLIATA — ne salti più di quante ne fai. Allungala nelle "
+            + "preferenze, non è colpa tua.")
+    } else {
+        print("VERDETTO: CADENZA BUONA — tenila.")
     }
     exit(0)
 }

@@ -43,6 +43,13 @@ public struct BreakPlan: Equatable, Sendable {
         return exercise.label
     }
 
+    /// L'hai chiesta tu dal menu, invece di riceverla dal contatore.
+    ///
+    /// Serve al registro, non alla logica: senza, una riga dice *che* una pausa è avvenuta ma non
+    /// *perché*, e la domanda «perché me ne ha proposta un'altra?» resta senza risposta anche
+    /// avendo tutti i dati davanti. Difetto di osservabilità visto il 2026-07-28.
+    public var requested: Bool = false
+
     public init(index: Int, kind: BreakKind, duration: Double, exercise: Exercise,
                 circuit: [Exercise] = []) {
         self.index = index
@@ -1091,13 +1098,17 @@ public struct SessionEngine {
         // preso: chiedere «adesso» invece di aspettare sessanta secondi salterebbe un esercizio.
         // `overdueUpgrade` resta perché la promozione a pausa piena dipende da quanto tempo hai
         // accumulato **ora**, ed è lo stesso passaggio che fa `startBreak`.
-        let newPlan: BreakPlan
+        var newPlan: BreakPlan
         if let pending = plan, phase == .warning || phase == .postponed {
             newPlan = kind.map { buildPlan(index: pending.index, kind: $0, now: now) }
                 ?? overdueUpgrade(pending, now: now)
         } else {
             newPlan = planNextBreak(now: now, forcedKind: kind)
         }
+        // Il registro deve poter distinguere una pausa chiesta da una proposta: vale per tutte e
+        // tre le fasi, non solo per `working`, perché anche cliccare durante il preavviso è una
+        // richiesta esplicita.
+        newPlan.requested = true
         plan = newPlan
         postponesUsed = 0
         autoDefersUsed = 0

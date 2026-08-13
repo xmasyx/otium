@@ -1517,6 +1517,34 @@ per le regole.
 - **Anti-claim** — nessuna frase rientra perché «era bella». Chi ha un autore va da lui, chi
   ripete un fatto già in `Facts.swift` con la fonte esce, e chi contraddice un fatto sorgente del
   corpus esce comunque.
+### Decisione del 2026-07-28 — la cadenza resta 30/90s/5min ogni 3, e si giudica il 4 agosto
+
+Il principale ha chiesto se «ogni quarta piena» non fosse meglio per la concentrazione, visto che
+Pomodoro mette la pausa lunga dopo quattro blocchi. La risposta è no, e il motivo è aritmetico:
+Pomodoro lavora a blocchi da **25** minuti e mette la lunga dopo quattro, cioè dopo **100 minuti**
+di lavoro; Otium lavora a blocchi da **30** e la mette dopo tre, cioè dopo **90**. «Ogni terza» *è
+già* la spaziatura di Pomodoro; «ogni quarta» sarebbe 120, cioè un quinto oltre.
+
+In tempo d'orologio la distanza cresce, perché Otium conta solo il tempo attivo. Misurato sul suo
+registro: il 27/07 4,5 h attive su una finestra di 10,2 h (**44%**), il 28/07 2,2 h su 3,5 h
+(**62%**). A quei rapporti 90 minuti attivi sono **2h25m-3h24m** di orologio, contro le 2 ore
+esatte di Pomodoro.
+
+C'è anche un vincolo di fonte: la pausa piena ogni 90 minuti è agganciata all'avvertenza di
+Albulescu 2022 (dopo lavoro cognitivo pesante dieci minuti di micro-pause non bastano). Spostarla
+a 120 la scollegherebbe dallo studio che l'app cita accanto.
+
+**Deciso: si tiene tutto com'è per una settimana, verdetto il 2026-08-04.** La leva che resta, se
+la settimana dice che qualcosa non va, non è la frequenza ma la **durata** della pausa piena: 5
+minuti contro i 15-30 della pausa lunga di Pomodoro.
+
+- [x] **ISC-57** Il verdetto sulla cadenza si legge, non si sente. — `--verdict[=giorni]` usa
+      `Stats.compute`, lo **stesso** codice del recap, perché due implementazioni della stessa
+      domanda darebbero due risposte e nessuno crederebbe più a entrambe. Sotto le 10 pause
+      proposte dichiara *dati insufficienti* invece di produrre un giudizio. **Sondato a due
+      poli**: sul registro vero dice CADENZA BUONA (11 fatte, 2 saltate, 78%), su un registro
+      finto con 3 fatte e 9 saltate dice CADENZA SBAGLIATA. Il secondo polo esiste perché un
+      giudizio che non si è mai visto ribaltare è un'asserzione travestita da misura.
 
 ## Test Strategy
 

@@ -992,9 +992,12 @@ final class AppModel: ObservableObject {
     var secondsLeftOfBreak: Double { engine.secondsLeftOfBreak }
     var exerciseDone: Bool { engine.exerciseDone }
 
-    func forceBreakNow(long: Bool = false) {
+    /// `kind` esplicito quando l'hai scelto tu dal menu; `nil` lascia decidere al contatore
+    /// «ogni terza è piena», che è il comportamento di quando la pausa arriva da sola.
+    func forceBreakNow(long: Bool = false, kind: BreakKind? = nil) {
         if engine.phase == .paused { engine.setPaused(false) }
-        let events = engine.forceBreakNow(now: Date(), kind: long ? .long : nil)
+        let chosen: BreakKind? = kind ?? (long ? .long : nil)
+        let events = engine.forceBreakNow(now: Date(), kind: chosen)
         for event in events { handle(event, now: Date()) }
         objectWillChange.send()
     }

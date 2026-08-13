@@ -242,12 +242,18 @@ public final class Ledger: @unchecked Sendable {
             return LedgerEntry(
                 timestamp: now, type: .completed, breakKind: plan.kind,
                 exercise: plan.exercise.kind, reps: nil,
-                reason: plan.circuitActive ? "circuito" : nil
+                // Chi l'ha chiesta finisce nel motivo: senza, il registro dice *che* una pausa
+                // è avvenuta ma non *perché*, e «me ne ha proposta un'altra, perché?» resta
+                // senza risposta anche avendo il file davanti.
+                reason: [plan.circuitActive ? "circuito" : nil,
+                         plan.requested ? "richiesta" : nil]
+                        .compactMap { $0 }.joined(separator: "+").nilIfEmpty
             )
         case .breakSkipped(let plan, let reason):
             return LedgerEntry(
                 timestamp: now, type: .skipped, breakKind: plan.kind,
-                exercise: plan.exercise.kind, reps: nil, seconds: nil, reason: reason.rawValue
+                exercise: plan.exercise.kind, reps: nil, seconds: nil,
+                reason: plan.requested ? "\(reason.rawValue)+richiesta" : reason.rawValue
             )
         case .naturalBreak(let seconds, let creditedLong):
             return LedgerEntry(
@@ -262,4 +268,9 @@ public final class Ledger: @unchecked Sendable {
             )
         }
     }
+}
+
+extension String {
+    /// Una stringa vuota nel registro è rumore: meglio l'assenza del campo.
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }
