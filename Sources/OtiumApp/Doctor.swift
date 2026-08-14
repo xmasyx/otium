@@ -192,15 +192,58 @@ enum Doctor {
     /// così tutta la classe di guasti che questa sonda cercava — bersaglio inesistente, bersaglio
     /// dentro `.build/` — e restano due domande vere: **è registrato?** e **l'hai spento tu?**
     ///
+    /// **Correzione del 2026-08-14: le domande vere erano tre, e la terza mancava.** Registrare
+    /// il bundle toglie il percorso dal *plist*, non dal *record*: quel record contiene comunque
+    /// una cartella, e il registro la aggiorna seguendo l'ultima copia aperta. Aperta una volta
+    /// una copia scompattata in `/var/folders/`, l'avvio al login è rimasto agganciato lì; poi
+    /// la cartella temporanea è sparita, e al login macOS ha aperto un percorso inesistente
+    /// senza dire niente. `status` continuava a rispondere `.enabled`, e questa riga scriveva
+    /// «attivo» leggendo il nome del bundle **che stava girando**, cioè un'altra cosa da quella
+    /// che le veniva chiesta. Adesso la terza domanda è esplicita: **quale copia?**
+    ///
     /// Il doctor si lancia quasi sempre dal terminale, cioè dal binario di sviluppo, che non sta
     /// dentro un `.app`: lì lo stato è `notFound` e la risposta onesta è «non misurabile da qui»,
     /// non «rotto». È la stessa trappola già pagata: una sonda che risponde a una domanda più
     /// debole di quella che le hai fatto.
     private static func avvioAutomatico() -> Verdict {
         let dentroUnBundle = Bundle.main.bundleURL.pathExtension == "app"
+
+        // **L'ordine di queste due righe è il controllo, non uno stile.**
+        //
+        // Misurato il 2026-08-14: **leggere `SMAppService.mainApp.status` riscrive il record**,
+        // e lo fa puntare al bundle che sta chiedendo. Provato isolando la lettura in
+        // `--agent-status`, che non registra niente: eseguito da una copia in `/tmp` il record è
+        // passato dalla generazione 33, su `/Applications`, alla 34 su quella copia. Un
+        // `--version` dalla stessa copia non lo muove, quindi è la lettura dello stato a farlo.
+        //
+        // La conseguenza è che una sonda scritta nell'ordine naturale non può essere rossa: il
+        // gesto di chiedere «dove punta?» sposta la risposta su di sé, e ogni copia si vede
+        // sempre registrata. È la sonda che diventa la mutazione. Si legge prima il record, poi
+        // si interroga lo stato, e la divergenza torna osservabile.
+        let primaDiChiedere = LoginItem.registeredBundleURL()
+
         switch LoginItem.state() {
         case .enabled:
-            return .ok("attivo: macOS avvia \(Bundle.main.bundleURL.lastPathComponent) all'accensione")
+            guard let registrato = primaDiChiedere else {
+                return .warn("registrato, ma quale copia non è misurabile: sfltool non ha risposto")
+            }
+            let dove = registrato.standardizedFileURL
+            guard FileManager.default.fileExists(atPath: dove.path) else {
+                // Il guasto vero del 2026-08-14: il record puntava a una copia scompattata in
+                // `/var/folders/`, cancellata da giorni. Al login macOS apriva un percorso
+                // inesistente e taceva. Leggendo lo stato qui sopra il record è già tornato su
+                // questa copia, quindi la riga dice che cosa ho trovato e che cosa ho rimesso.
+                return .fail("puntava a una copia che non esiste più: \(senzaNome(dove.path)) — riportato su questa",
+                             fix: "nessuno: è già a posto, ma tieni una sola Otium sul disco perché non ricapiti")
+            }
+            // Dal binario di sviluppo il confronto non ha senso (non sta dentro un `.app`), e
+            // rispondere «divergono» sarebbe un falso rosso: lì si riporta solo dove puntava.
+            let mio = Bundle.main.bundleURL.standardizedFileURL
+            if dentroUnBundle, dove.path != mio.path {
+                return .fail("al login partiva un'altra copia: \(senzaNome(dove.path)) — adesso parte questa",
+                             fix: "tieni una sola Otium sul disco: cancella le copie fuori da /Applications")
+            }
+            return .ok("attivo: macOS avvia \(senzaNome(dove.path))")
         case .notRegistered:
             return .warn("non registrato: Otium non riparte da sola all'accensione")
         case .requiresApproval:

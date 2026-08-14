@@ -495,6 +495,93 @@ public enum LoginItem {
         }
     }
 
+    /// **Quale copia farà partire macOS**, che non è la domanda a cui risponde `state()`.
+    ///
+    /// `SMAppService.mainApp.status` cerca un record per l'**identificativo** del bundle e dice
+    /// se c'è. Non dice *quale* cartella quel record contiene, e le due cose divergono: il
+    /// registro segue l'ultima copia aperta, quindi basta aprire una volta un `Otium.app`
+    /// scompattato in una cartella temporanea perché l'avvio al login resti agganciato lì.
+    ///
+    /// **Il caso vero, il 2026-08-14.** Il record puntava a
+    /// `/private/var/folders/…/T/tmp.9i98uuXsau/unpacked/Otium.app`, cancellata da giorni. Al
+    /// login macOS apriva un percorso inesistente e taceva; `status` rispondeva `.enabled` e il
+    /// doctor scriveva «attivo». Nel log unificato di quel boot non c'è una riga che nomini
+    /// Otium: non è partita perché nessuno ci ha provato, e nessun controllo se n'è accorto.
+    ///
+    /// **Perché un sottoprocesso.** Il registro degli elementi in background non ha un'API
+    /// pubblica di lettura: `sfltool dumpbtm` è l'unica strada. È l'eccezione dichiarata alla
+    /// regola «un fatto leggibile dal sistema non si va a cercare fuori», perché qui il sistema
+    /// non lo espone.
+    ///
+    /// **`nil` vuol dire non misurabile, mai sano.** Se `sfltool` manca, esce male o cambia
+    /// formato, questa torna `nil` e chi chiama lo riporta come tale invece di dedurne che va
+    /// tutto bene. Il ramo muto è il guasto che questa funzione esiste per togliere.
+    ///
+    /// **Va chiamata PRIMA di `state()`, e non è una preferenza.** Leggere
+    /// `SMAppService.mainApp.status` riscrive il record sul bundle che chiede: misurato lo stesso
+    /// giorno isolando la lettura in `--agent-status`, eseguito da una copia in `/tmp` il record
+    /// è passato dalla generazione 33 su `/Applications` alla 34 su quella copia, mentre un
+    /// `--version` dalla stessa copia non lo muove. Chiamata dopo, questa funzione risponde
+    /// sempre «sei tu», cioè misura l'effetto della domanda invece dello stato che precedeva.
+    public static func registeredBundleURL() -> URL? {
+        let tool = "/usr/bin/sfltool"
+        guard FileManager.default.isExecutableFile(atPath: tool) else { return nil }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: tool)
+        process.arguments = ["dumpbtm"]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+        do { try process.run() } catch { return nil }
+
+        // **Due secondi e poi si molla, perché `sfltool` si pianta davvero.**
+        //
+        // Successo il 2026-08-14, mentre provavo questa stessa funzione: dopo qualche decina di
+        // interrogazioni `sfltool dumpbtm` ha smesso di rispondere, a riga di comando come da
+        // qui, e `--doctor` è rimasto appeso per sempre invece di riferire. Un diagnostico che si
+        // pianta è peggio di uno che dice «non lo so»: si usa quando qualcosa è già rotto, e in
+        // quel momento deve rispondere comunque.
+        //
+        // Il ramo di scadenza non tocca il buffer letto dall'altra coda: sul percorso buono è il
+        // semaforo a garantire l'ordine, su quello di scadenza il dato non si guarda proprio.
+        final class Buffer: @unchecked Sendable { var dati: Data? }
+        let buffer = Buffer()
+        let letto = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            buffer.dati = pipe.fileHandleForReading.readDataToEndOfFile()
+            letto.signal()
+        }
+        guard letto.wait(timeout: .now() + .seconds(2)) == .success else {
+            process.terminate()
+            return nil
+        }
+        process.waitUntilExit()
+        guard process.terminationStatus == 0,
+              let data = buffer.dati,
+              let dump = String(data: data, encoding: .utf8) else { return nil }
+
+        let cercato = Bundle.main.bundleIdentifier ?? legacyLabel
+
+        // Dentro un record `URL:` precede `Bundle Identifier:`, quindi si tiene l'ultimo URL
+        // visto e lo si restituisce quando l'identificativo combacia. Se combacia un altro
+        // identificativo, l'URL tenuto da parte si butta: appartiene a quel record, non al
+        // prossimo, e riportarlo avanti farebbe rispondere il percorso di un'altra app.
+        var ultimoURL: URL?
+        for riga in dump.split(separator: "\n", omittingEmptySubsequences: false) {
+            let linea = riga.trimmingCharacters(in: .whitespaces)
+            if linea.hasPrefix("URL:") {
+                let valore = linea.dropFirst("URL:".count).trimmingCharacters(in: .whitespaces)
+                ultimoURL = URL(string: valore)
+            } else if linea.hasPrefix("Bundle Identifier:") {
+                let valore = linea.dropFirst("Bundle Identifier:".count).trimmingCharacters(in: .whitespaces)
+                if valore == cercato { return ultimoURL }
+                ultimoURL = nil
+            }
+        }
+        return nil
+    }
+
     /// Registra l'avvio al login. `false` se macOS rifiuta, e il motivo va nel log invece di
     /// sparire: un fallimento silenzioso qui è indistinguibile da un successo.
     @discardableResult

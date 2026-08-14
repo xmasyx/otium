@@ -11,6 +11,7 @@ APP="$DEST/Otium.app"
 # versione, e un binario libero di dire un altro numero è un binario che mente
 # nella pagina della release. In locale resta il valore scritto qui.
 VERSION="${OTIUM_VERSION:-1.0.0}"
+LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 
 cd "$ROOT"
 
@@ -34,6 +35,28 @@ iconutil -c icns "$ROOT/.build/icon.iconset" -o "$ROOT/.build/Otium.icns"
 
 echo "▸ assemblo il bundle…"
 mkdir -p "$DEST"
+
+# ── Nessuna seconda Otium apribile (2026-08-14)
+#
+# **Il caso.** `dist/Otium.app` e `/Applications/Otium.app` sono lo stesso binario, stesso nome,
+# stessa icona: digitando «Otium» in Spotlight non c'è modo di distinguerle, e aprendo quella
+# sbagliata il registro degli elementi in background la segue, perché segue l'ultima copia
+# aperta. Quel giorno la copia registrata stava in una cartella temporanea poi cancellata, e
+# Otium ha smesso di partire all'accensione senza che niente lo dicesse.
+#
+# **`.metadata_never_index` è stato provato qui e NON funziona**, quindi non è rimasto: quel file
+# vale sulla radice di un volume, non su una cartella qualsiasi. Provato lo stesso giorno con la
+# copia di staging in `dist/`, `mdfind "kMDItemFSName == 'Otium.app'"` continuava a restituirla.
+# Una guardia che non guarda è peggio che nessuna guardia, perché sembra protezione.
+#
+# Quello che regge è togliere il bersaglio: dopo l'installazione la copia di staging si cancella
+# (più sotto), e quando l'installazione non può avvenire perché l'app è viva il bundle nuovo si
+# **parcheggia** con un nome che non finisce in `.app`. Una cartella che non è un bundle non la
+# apre né Spotlight né Launchpad né `open -a`, e allo script serve comunque solo come artefatto
+# intermedio: alla prossima esecuzione lo ricostruisce da capo.
+PARCHEGGIO="$DEST/Otium.app.attesa"
+rm -rf "$PARCHEGGIO"
+
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$ROOT/.build/release/OtiumApp" "$APP/Contents/MacOS/Otium"
@@ -94,10 +117,13 @@ fi
 # destinazione è una sola, `/Applications`, che è anche dove `SMAppService` si aspetta di
 # trovare un'app registrata all'avvio.
 #
-# `OTIUM_SKIP_INSTALL=1` salta il passo, per provare una build senza toccare l'installata.
+# `OTIUM_SKIP_INSTALL=1` salta il passo, per provare una build senza toccare l'installata. È
+# l'unico caso in cui in `dist/` resta di proposito un `.app` apribile, perché è esattamente
+# quello che hai chiesto: qui la seconda Otium sul disco è voluta, non un incidente.
 INSTALLED="/Applications/Otium.app"
 if [[ "${OTIUM_SKIP_INSTALL:-0}" == "1" ]]; then
     echo "▸ installazione saltata (OTIUM_SKIP_INSTALL=1)"
+    echo "  attenzione: in $DEST resta una seconda Otium apribile"
 # `pgrep -f` confronta il modello con **l'intera riga di comando di qualunque processo**, quindi
 # senza àncore basta un `grep`, un editor o una sonda che nominano quel percorso per far credere
 # che l'app sia viva. Successo il 2026-08-03, e il salto dell'installazione è passato inosservato
@@ -106,7 +132,18 @@ if [[ "${OTIUM_SKIP_INSTALL:-0}" == "1" ]]; then
 elif pgrep -f "^$INSTALLED/Contents/MacOS/Otium( |\$)" >/dev/null; then
     # Sostituire il bundle sotto un processo vivo non si fa: si dice e ci si ferma qui.
     echo "⚠︎ Otium è in esecuzione da $INSTALLED — esci dall'app e rilancia questo script"
-    echo "  (il bundle nuovo resta pronto in $APP)"
+    # Il bundle appena costruito non resta come `.app`: sarebbe una seconda Otium apribile per
+    # sbaglio proprio nella finestra in cui l'app installata è viva, cioè il caso in cui una
+    # copia di troppo fa più danno. Parcheggiato con un nome che non è un bundle, e tolto dal
+    # registro di LaunchServices, che l'aveva preso in carico alla firma.
+    if [[ "$DEST" == "$ROOT/dist" ]]; then
+        "$LSREGISTER" -u "$APP" >/dev/null 2>&1 || true
+        mv "$APP" "$PARCHEGGIO"
+        STAGING_RIMOSSA=1
+        echo "  (il bundle nuovo è parcheggiato in $PARCHEGGIO: non è apribile, lo ricostruisco io al prossimo giro)"
+    else
+        echo "  (il bundle nuovo resta pronto in $APP)"
+    fi
 else
     # Graffe obbligatorie anche qui: i puntini di sospensione sono un carattere multibyte
     # attaccato al nome, e con `set -u` `$INSTALLED…` muore su una variabile che esiste
@@ -116,9 +153,34 @@ else
     echo "▸ installo in ${INSTALLED}…"
     rm -rf "$INSTALLED"
     ditto "$APP" "$INSTALLED"
+
+    # ── Il doppione di staging non sopravvive all'installazione (2026-08-14)
+    #
+    # Installata la copia buona, quella in `dist/` non serve più a niente e diventa solo una
+    # seconda Otium apribile per sbaglio. Si cancella qui, cioè **solo nel ramo che ha davvero
+    # installato**: se la copia installata era viva lo script si è già fermato sopra e il bundle
+    # resta dov'è, che è la ragione per cui `dist/` esiste.
+    #
+    # Il vincolo sulla destinazione non è prudenza generica: `build-app.sh <cartella>` serve a
+    # produrre un artefatto altrui (la CI di una release), e cancellare ciò che il chiamante ha
+    # chiesto sarebbe cancellare il suo lavoro.
+    #
+    # `lsregister -u` prima di cancellare: un bundle registrato e poi sparito fa annunciare a
+    # macOS un'app disinstallata a ogni login, ed è da lì che tornava l'avviso «Attività app in
+    # background».
+    if [[ "$DEST" == "$ROOT/dist" ]]; then
+        "$LSREGISTER" -u "$APP" >/dev/null 2>&1 || true
+        rm -rf "$APP"
+        STAGING_RIMOSSA=1
+        echo "▸ tolta la copia di staging da ${DEST}"
+    fi
 fi
 
-echo "✓ pronto: $APP"
+if [[ "${STAGING_RIMOSSA:-0}" == "1" ]]; then
+    echo "✓ pronto"
+else
+    echo "✓ pronto: $APP"
+fi
 echo "  installata:  $INSTALLED"
 echo "  apri con:  open \"$INSTALLED\""
 echo "  registro:  ~/Library/Application Support/Otium/ledger.jsonl"
