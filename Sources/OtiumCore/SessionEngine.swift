@@ -75,8 +75,8 @@ public enum SkipReason: String, Codable, Equatable, Sendable {
 ///
 /// Senza, ogni avvio riparte da `breakIndex = 0` e la prima pausa è **sempre** lo stesso
 /// esercizio. Il difetto è invisibile finché non lo vivi: chi chiude e riapre il Mac ogni giorno
-/// vede squat, squat, squat, e conclude che l'app conosca un esercizio solo. Segnalato dal
-/// principale il 2026-07-26 guardando la schermata — «break n. 1» ogni volta.
+/// vede squat, squat, squat, e conclude che l'app conosca un esercizio solo. Visto all'uso
+/// il 2026-07-26 guardando la schermata — «break n. 1» ogni volta.
 public struct EngineSnapshot: Codable, Equatable, Sendable {
     public var breakIndex: Int
     public var microsSinceLong: Int
@@ -93,7 +93,7 @@ public struct EngineSnapshot: Codable, Equatable, Sendable {
     ///
     /// Esiste perché il tipo della pausa in attesa non si può ricalcolare dopo: dipende
     /// dall'orologio del momento in cui è stata scritta, e chiudere l'app quell'orologio lo
-    /// riporta indietro. Il caso vero, dal registro del principale il 2026-08-04: pausa **piena**
+    /// riporta indietro. Il caso vero, dal registro vero il 2026-08-04: pausa **piena**
     /// rinviata alle 18:20:28, app chiusa e riaperta, e alle 18:22:26 è tornata una **micro**.
     /// La piena non era stata fatta e non è più arrivata.
     ///
@@ -151,7 +151,7 @@ public enum EngineEvent: Equatable, Sendable {
     ///
     /// **Serve perché un rinvio non può finire di colpo.** Premevi «rinvia», passavano due minuti
     /// muti e lo schermo si copriva senza un gradino: la scala `60s · 30s · 5-4-3-2-1` esisteva
-    /// solo sulla porta principale. Chiesto dal principale il 2026-08-08. È un evento a sé e non
+    /// solo sulla porta principale. Deciso il 2026-08-08. È un evento a sé e non
     /// `warningStarted` per una ragione sola: questo preavviso è **muto**, perché il rinvio l'hai
     /// chiesto tu e sai che la pausa sta tornando.
     case postponeWarning(BreakPlan)
@@ -161,13 +161,13 @@ public enum EngineEvent: Equatable, Sendable {
     /// **Non aspetta la scadenza del rinvio.** Rimandare di cinque minuti era la scelta giusta per
     /// non piombare addosso durante una riunione, ma se la call finisce dopo quaranta secondi
     /// quei cinque minuti diventano un'attesa che non serve a nessuno — e nel frattempo la pausa
-    /// arretrata non la sa più nessuno. Chiesto dal principale il 2026-07-31.
+    /// arretrata non la sa più nessuno. Deciso il 2026-07-31.
     case deferredBreakDue(BreakPlan)
     /// Il tempo della pausa è passato.
     ///
     /// **Serve perché durante una pausa piena non sei davanti al Mac** — l'app te lo chiede
     /// espressamente, tre minuti lontano dallo schermo — e da lontano non c'è modo di sapere che
-    /// il tempo è finito. Chiesto dal principale il 2026-07-31.
+    /// il tempo è finito. Deciso il 2026-07-31.
     ///
     /// **Dice «la pausa è finita», non «puoi tornare»**, e la differenza non è di parole: la
     /// prima versione lo agganciava al pulsante, cioè taceva se l'esercizio non era ancora fatto.
@@ -338,7 +338,7 @@ public struct SessionEngine {
     /// lo prenderebbe, perché non c'è niente di rotto: c'è solo un'app che non interrompe più.
     ///
     /// Quello che fa questo richiamo è **dirlo**, non ripararlo. Bloccare lo schermo qui
-    /// riaprirebbe la porta che il principale ha chiesto di chiudere a chiave.
+    /// riaprirebbe la porta che ho chiesto di chiudere a chiave.
     public static let callWatchdogSeconds: Double = 4 * 60 * 60
 
     private mutating func callWatchdog(
@@ -399,7 +399,7 @@ public struct SessionEngine {
 
         // **Il preavviso sta DENTRO l'intervallo, non dopo.** Scattava a 30:00 esatti e la pausa
         // arrivava a 31:00: «prossima fra 30 min» prometteva una cosa e ne consegnava un'altra,
-        // e l'intervallo vero era 31 minuti mentre Duran 2023 dice 30. Segnalato dal principale
+        // e l'intervallo vero era 31 minuti mentre Duran 2023 dice 30. Visto all'uso
         // il 2026-07-31: *«il warning viene quando sono gia' passati 30 minuti»*.
         //
         // Il `max` serve a un preavviso piu' lungo dell'intervallo — configurazione assurda ma
@@ -488,7 +488,7 @@ public struct SessionEngine {
         // **La pausa dura quanto dichiarato.** La prima versione lasciava finire il micro appena
         // l'esercizio era fatto: 7 dip su sedia sono 18 secondi, e una "micro-pausa da 90
         // secondi" ne durava 18. Il numero nelle preferenze e il numero vissuto devono essere lo
-        // stesso, o le preferenze mentono — notato dal principale al primo uso vero.
+        // stesso, o le preferenze mentono — notato al primo uso vero.
         //
         // I secondi che restano dopo l'esercizio non sono tempo sprecato: sono l'unico momento
         // della giornata in cui non guardi lo schermo.
@@ -511,7 +511,7 @@ public struct SessionEngine {
         // **Rinviata non vuol dire ferma.** Fino al 2026-08-04 l'orologio si fermava per tutta la
         // durata del rinvio: una riunione di due ore rinviava la pausa e nel frattempo quelle due
         // ore non venivano contate da nessuno, quindi al rientro il conto diceva mezz'ora. È la
-        // metà nascosta del difetto segnalato dal principale — la prima metà era la call che non
+        // metà nascosta del difetto visto all'uso — la prima metà era la call che non
         // faceva presenza, questa è il rinvio che congelava tutto. Adesso il tempo cammina, ed è
         // ciò che permette alla pausa arretrata di arrivare **lunga** invece che da 90 secondi.
         let clockEvent = clock.tick(
@@ -605,7 +605,7 @@ public struct SessionEngine {
         // è un difetto, per quanto ben motivato sia l'esercizio.
         //
         // **Il rinvio per microfono non ha più un tetto, ed è una decisione, non una svista**
-        // (principale, 2026-08-04: *«finché il microfono è attivo non può bloccarsi lo schermo»*).
+        // (2026-08-04: *«finché il microfono è attivo non può bloccarsi lo schermo»*).
         // Prima la condizione portava anche `autoDefersUsed < settings.maxAutoDefers`, cioè sei
         // rinvii da cinque minuti: dopo mezz'ora di riunione la schermata partiva **in piena
         // call**, che è esattamente il caso che questo ramo esiste per impedire. Un limite ai
@@ -698,7 +698,7 @@ public struct SessionEngine {
         // **Giorno nuovo, ciclo nuovo.** Il conto delle micro viveva solo in `rotation.json` e
         // non sapeva che fosse cambiato il giorno: chiudendo il 30 luglio con due micro alle
         // spalle, la prima pausa del 31 è arrivata piena — cinque minuti come primo gesto della
-        // giornata. Segnalato dal principale guardando lo schermo, e ricostruito dal registro.
+        // giornata. Visto guardando lo schermo, e ricostruito dal registro.
         //
         // La lettura scelta è **il giorno di calendario**, non lo stacco vero: con la finestra di
         // grazia a cinque minuti, ogni caffè varrebbe uno stacco e la pausa piena non arriverebbe
@@ -727,7 +727,7 @@ public struct SessionEngine {
     /// **Quanto sei in ritardo conta più di che turno è.** La rotazione micro-micro-lunga presume
     /// che le pause arrivino tutte: se ne salti una intera — perché eri in call, perché hai
     /// rinviato — arrivare con novanta secondi dopo un'ora seduto è la risposta sbagliata alla
-    /// domanda giusta. Chiesto dal principale il 2026-08-04: *«quando c'è troppo tempo senza
+    /// domanda giusta. Deciso il 2026-08-04: *«quando c'è troppo tempo senza
     /// pause, la pausa è subito una pausa lunga invece di essere una pausa da 90 secondi»*.
     ///
     /// La soglia è **il doppio dell'intervallo**, cioè un ciclo intero saltato, e sta in una
@@ -805,7 +805,7 @@ public struct SessionEngine {
     /// già a zero, non c'è niente da azzerare. La primissima pausa in assoluto è breve perché il
     /// ciclo parte da zero, non perché sia scattata la mezzanotte.
     ///
-    /// **`Calendar.current`, non un fuso scritto a mano.** Il principale viaggia: il giorno è
+    /// **`Calendar.current`, non un fuso scritto a mano.** Viaggio spesso: il giorno è
     /// quello del suo orologio adesso, e cambiando fuso cambia con lui.
     private func crossedIntoNewDay(now: Date) -> Bool {
         guard let last = lastBreakAt else { return false }
@@ -1082,7 +1082,7 @@ public struct SessionEngine {
     /// Pausa a richiesta, dal menu. Salta l'attesa dell'intervallo, l'orario e il radar delle
     /// call: l'hai chiesta tu, e una richiesta esplicita batte ogni euristica.
     ///
-    /// **Anche l'attesa la scavalca, ed è il punto** (principale, 2026-08-04: *«il microfono si è
+    /// **Anche l'attesa la scavalca, ed è il punto** (2026-08-04: *«il microfono si è
     /// chiuso e devo aspettare che passi il minuto»*). Prima il cancello era `phase == .working`,
     /// quindi durante il preavviso e durante un rinvio — a mano o per microfono — la voce del menu
     /// non faceva **niente**, in silenzio: cliccavi e restavi a guardare il minuto scorrere. Ma

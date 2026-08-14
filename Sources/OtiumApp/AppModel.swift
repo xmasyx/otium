@@ -7,7 +7,7 @@ import ServiceManagement
 ///
 /// Serve a una cosa sola, e l'ho pagata sondando: `AppModel.init` tocca com'è configurata la
 /// macchina. Il 2026-07-28 le mie sonde su `.build/debug/OtiumApp` hanno riscritto l'avvio
-/// automatico del principale dal bundle al binario di sviluppo, che ogni `swift build`
+/// automatico dal bundle al binario di sviluppo, che ogni `swift build`
 /// sovrascrive. Al login sarebbe partita una copia di lavoro, in silenzio, e nessuno l'avrebbe
 /// saputo.
 ///
@@ -427,7 +427,7 @@ final class AppModel: ObservableObject {
             // **Muto: l'hai premuto tu.** Il suono avvisa di qualcosa che non ti aspetti, e il
             // rinvio l'hai appena chiesto — la riga che compare basta a dire che e' stato preso.
             // La regola era gia' scritta per la chiusura della pausa (`announce(silent:)`) e qui
-            // non era stata applicata. Chiesto dal principale il 2026-07-31: *«non mi piace il
+            // non era stata applicata. Deciso il 2026-07-31: *«non mi piace il
             // suono quando posticipo la pausa. togliamolo»*.
             hud.show(title: L.t("Rinviata di 2 minuti", "Postponed by 2 minutes"),
                      subtitle: upcomingTarget(plan, capitalized: true), sound: nil)
@@ -480,14 +480,14 @@ final class AppModel: ObservableObject {
     /// È il gemello mancante di `completionSubtitle`, e mancava dalla parte che conta di più: alla
     /// fine la notifica elencava già tutte le stazioni, all'inizio nominava solo la prima. Con il
     /// circuito acceso di serie il preavviso prometteva «16 squat» e lo schermo si copriva su
-    /// quattro esercizi. Segnalato dal principale il 2026-08-04, prima di una pausa piena.
+    /// quattro esercizi. Visto all'uso il 2026-08-04, prima di una pausa piena.
     ///
     /// **Non elenca le stazioni, dice una parola sola** (sua indicazione, stessa segnalazione): il
     /// pannello del preavviso non deve crescere di quattro righe per dire una cosa che si legge in
     /// tre parole. I nomi restano dove servono, cioè dentro la pausa e nel complimento finale.
     func upcomingSubtitle(_ plan: BreakPlan) -> String {
         // **In Zen il preavviso nominava l'esercizio del turno**, cioè una cosa che quella pausa
-        // non ti chiederà mai. Segnalato dal principale il 2026-08-08: *«mi ha detto che avrei
+        // non ti chiederà mai. Visto all'uso il 2026-08-08: *«mi ha detto che avrei
         // dovuto fare il ponte per i glutei, anche se ho messo la modalità Zen»*. Il piano portava
         // già la risposta giusta (`plan.breath`), erano le tre righe che lo raccontano a non
         // saperlo. Il campo `exercise` resta popolato apposta — vedi la nota in `buildPlan` — e
@@ -526,7 +526,7 @@ final class AppModel: ObservableObject {
     /// **Sul circuito diceva solo l'ultima stazione.** Finivi quattro esercizi e la notifica
     /// annunciava «10 jumping jack», perché il piano tiene *l'esercizio corrente* e alla fine
     /// l'esercizio corrente è l'ultimo: la riga era vera e insieme falsa, nominava un quarto del
-    /// lavoro fatto. Segnalato dal principale il 2026-07-28, subito dopo un giro completo.
+    /// lavoro fatto. Visto all'uso il 2026-07-28, subito dopo un giro completo.
     ///
     /// Le stazioni si elencano tutte. Il pannello cresce in altezza da solo, quindi quattro nomi
     /// non tagliano niente — e vedere le quattro righe che hai fatto è metà del premio.
@@ -1074,8 +1074,8 @@ final class AppModel: ObservableObject {
         case .breaking: return "●"
         // **L'unità va detta, o il numero mente.** Nel preavviso c'era un `!`, che non dice
         // niente; e il numero nudo delle altre fasi ha lo stesso difetto al contrario — un `23`
-        // da solo può essere qualunque cosa. Scrivere `60` nel preavviso l'ha scartato il
-        // principale stesso, per il motivo giusto: si legge come sessanta minuti. Con la lettera
+        // da solo può essere qualunque cosa. Scrivere `60` nel preavviso l'ho scartato io
+        // stesso, per il motivo giusto: si legge come sessanta minuti. Con la lettera
         // attaccata `47s` e `23m` non si confondono, e il salto fra le due scale si legge per
         // quello che è — il conto è passato ai secondi perché ci siamo.
         // **E il conto non scorre, sale per gradini** (60s, 30s, poi 5-4-3-2-1): un numero che

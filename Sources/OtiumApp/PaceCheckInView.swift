@@ -44,7 +44,7 @@ struct PaceCheckInView: View {
             }
 
             // Prima diceva «è quello a cui la salita arriva da sola», che è contorto e non
-            // significa niente a prima lettura. Segnalato dal principale il 2026-07-28.
+            // significa niente a prima lettura. Visto all'uso il 2026-07-28.
             Text(L.t("Non c'è una risposta giusta. Se rispondi «non ancora», al 100% ci arrivi comunque fra qualche settimana.",
                      "There is no right answer: if you say «not yet», you get to 100% anyway in a few weeks."))
                 .font(.system(size: 11))

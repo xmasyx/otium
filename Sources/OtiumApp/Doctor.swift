@@ -17,7 +17,7 @@ import OtiumCore
 /// fallire: sono scelte, non guasti.
 ///
 /// La ragione per cui esiste, con una data: il 2026-07-28 le mie sonde hanno dirottato l'avvio
-/// automatico del principale su `.build/debug/OtiumApp`, un binario che ogni `swift build`
+/// automatico su `.build/debug/OtiumApp`, un binario che ogni `swift build`
 /// sovrascrive. Al login sarebbe partita una copia di lavoro, in silenzio, e l'ho scoperto per
 /// caso mezz'ora dopo. Un `--doctor` lo diceva in due secondi.
 enum Doctor {

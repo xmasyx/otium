@@ -281,7 +281,7 @@ public enum Stats {
     ///
     /// **Era italiano e basta, come `Praise`.** Queste parole arrivano a schermo dentro una
     /// struttura dati, non dentro una `Text`, e il lettore della lingua guarda le viste: è la
-    /// stessa specie di difetto segnalata dal principale il 2026-07-29, trovata lo stesso giorno
+    /// stessa specie di difetto vista all'uso il 2026-07-29, trovata lo stesso giorno
     /// rendendo la finestra delle statistiche in inglese e guardandola.
     private static func plural(_ n: Int, it one: String, _ many: String,
                                en oneEN: String, _ manyEN: String) -> String {

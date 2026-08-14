@@ -160,7 +160,7 @@ public enum Evidence {
     )
 
 
-    /// La domanda del principale: c'entra anche la concentrazione, o solo il fisico?
+    /// La mia domanda: c'entra anche la concentrazione, o solo il fisico?
     public static let systematicBreaks = Study(
         id: "biwer-2023",
         claim: "Confronto diretto fra pause decise in anticipo e pause prese quando capita. "

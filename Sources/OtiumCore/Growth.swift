@@ -7,7 +7,7 @@ import Foundation
 /// ripetizioni erano diventate. Il registro invece ha ogni conferma con la sua data e il suo
 /// numero, e quella è la storia. Qui le due cose si incontrano.
 ///
-/// Chiesta dal principale il 2026-08-04: *«sarebbe carino far vedere, quando uno attiva
+/// Decisa il 2026-08-04: *«sarebbe carino far vedere, quando uno attiva
 /// l'incremento oltre il 100%, come quei numeri stanno aumentando … e dato che comunque li stai
 /// registrando, mostrami il miglioramento ad oggi»*.
 ///
@@ -70,7 +70,7 @@ public struct GrowthLine: Equatable, Sendable {
     /// anche la rampa iniziale e i cambi di variante. Quando divergono, quello vero è questo.
     /// **Dove sei rispetto al pieno, non rispetto a dove sei partito.**
     ///
-    /// Correzione del principale, 2026-08-04: *«il 100% di partenza per i push-up era 8, quindi
+    /// Mia correzione, 2026-08-04: *«il 100% di partenza per i push-up era 8, quindi
     /// se adesso ne faccio 8 sono a livello base, non ho un incremento»*. Misurare dalla prima
     /// conferma era doppiamente sbagliato: la prima conferma cadeva dentro la rampa, quindi
     /// tornare al pieno si leggeva come un miglioramento, e ogni esercizio aveva uno zero
@@ -91,7 +91,7 @@ public struct GrowthLine: Equatable, Sendable {
     /// della progressione si applica alle ripetizioni *di base*, che nel frattempo cambiano da
     /// sole — la rampa dei primi giorni parte al 55% e sale, e ogni variante ha il suo carico.
     /// Risultato a schermo: `archer push-up 6 → 4` con la pastiglia «110%», e `crunch 11 → 20`
-    /// con «105%». Il principale li ha letti uno accanto all'altro: *«perché Archer mi dice 110%
+    /// con «105%». Li ho letti uno accanto all'altro: *«perché Archer mi dice 110%
     /// ma passa da 6 a 4? Crunch sono quasi al 200%, non è un incremento del 5%»*. Aveva ragione:
     /// due numeri sulla stessa riga che si contraddicono sono un numero sbagliato, non due punti
     /// di vista.

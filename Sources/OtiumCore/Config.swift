@@ -29,7 +29,7 @@ public struct Cadence: Codable, Equatable, Sendable {
     public var longEveryNBreaks: Int
     /// Oltre questa inattività l'orologio si ferma e la pausa diventa "naturale".
     ///
-    /// **90 e non 60 dal 2026-08-05**, su richiesta del principale: *«non dovrebbe essere 60
+    /// **90 e non 60 dal 2026-08-05**, per mia scelta: *«non dovrebbe essere 60
     /// secondi ma 90 come una vera pausa naturale»*. Un minuto senza toccare niente è un
     /// paragrafo letto, non una pausa, e accreditarlo regalava riposo mai fatto. Il numero da
     /// solo non basta e non era pensato per bastare: le pause fantasma misurate quel giorno
@@ -80,7 +80,7 @@ public struct Cadence: Codable, Equatable, Sendable {
     /// **Opzione A** — la cadenza scelta il 2026-07-26.
     /// Micro-snack di 90 s ogni 30 minuti di lavoro attivo; ogni terzo break è pieno (≈90 min).
     ///
-    /// **Due rinvii dal 2026-08-12**, per decisione del principale: *«una pausa breve ogni 30
+    /// **Due rinvii dal 2026-08-12**, per mia decisione: *«una pausa breve ogni 30
     /// minuti, una piena ogni 90, che è consigliata, però due rinvii di default»*. Era uno, ed era
     /// l'unico campo che lo teneva fuori dai preset: usava due rinvii da settimane e la finestra
     /// gli rispondeva «personalizzata» per un numero che non viene da nessuno studio, a differenza
@@ -126,8 +126,8 @@ public struct Cadence: Codable, Equatable, Sendable {
 ///
 /// Erano due interruttori — «proponi il microcircuito» e «comincia già in circuito» — e due
 /// interruttori dipendenti producono stati che non esistono: spento il primo, il secondo comanda
-/// una cosa che non c'è, e l'interfaccia doveva disabilitarlo per difendersi da sé stessa. Il
-/// principale ci ha sbattuto contro il 2026-07-31 e ha descritto il modello giusto in una riga:
+/// una cosa che non c'è, e l'interfaccia doveva disabilitarlo per difendersi da sé stessa. Ci
+/// ho sbattuto contro il 2026-07-31, e il modello giusto sta in una riga:
 /// *«io non voglio una proposta di microcircuito, io voglio cominciare con il microcircuito e la
 /// proposta di fare esercizio singolo»*. Sono tre alternative su un asse solo, e su un asse solo
 /// non si può scegliere l'impossibile.
@@ -142,7 +142,7 @@ public enum CircuitMode: String, Codable, CaseIterable, Sendable {
     /// **Le tre voci si leggono in fila, quindi devono essere corte.** Erano frasi — «solo
     /// l'esercizio del turno», «comincia in circuito» — e in un menu a tendina una frase è
     /// rumore: il verbo lo dice già il contesto («nelle pause piene»), e quello che cambia fra
-    /// le tre è una parola sola. Accorciate su indicazione del principale il 2026-07-31. Il
+    /// le tre è una parola sola. Accorciate su mia indicazione il 2026-07-31. Il
     /// *cosa succede* sta nella riga sotto, che cambia con la voce scelta.
     public var localizedName: String {
         switch self {
@@ -269,15 +269,15 @@ public struct Settings: Codable, Equatable, Sendable {
     public var zenProtocolShort: BreathProtocol
     /// **Il respiro delle pause piene**, di serie la risonanza a sei al minuto.
     ///
-    /// **Tolto e rimesso il 2026-08-11.** Era stato rimosso su richiesta del principale, che poi
-    /// ha ricostruito da sé il motivo per cui stava qui: la prova vagale di Laborde è misurata su
+    /// **Tolto e rimesso il 2026-08-11.** Era stato tolto, e poi
+    /// ho ricostruito da me il motivo per cui stava qui: la prova vagale di Laborde è misurata su
     /// sessioni da cinque minuti in su, cioè esattamente la durata della pausa piena, e nessun
     /// altro protocollo ha quella prova a quella durata. Il nome però resta quello nuovo, perché
     /// «respiro a sei al minuto» costringeva a una divisione per capire cosa fare.
     public var zenProtocolLong: BreathProtocol
     /// **Quanto dura il respiro guidato dentro la pausa**, e non quanto dura la pausa.
     ///
-    /// Prima riempiva tutto, quindi cinque minuti su una pausa piena, e il principale ha segnalato
+    /// Prima riempiva tutto, quindi cinque minuti su una pausa piena, e l'ho visto
     /// il 2026-08-08 che è troppo. Ha ragione, e gli studi non lo contraddicono: Laborde e colleghi
     /// hanno confrontato sessioni singole da 5, 10, 15 e 20 minuti a sei respiri al minuto e **non
     /// hanno trovato differenze** nell'attività vagale fra le durate; la meta-analisi di Fincham non
@@ -308,7 +308,7 @@ public struct Settings: Codable, Equatable, Sendable {
     /// Nasceva col contrario, 7→23, e la scelta era ragionevole ma non era una misura: nessuno
     /// studio dice che alle 23:01 stare seduti smetta di far male. Chi lavora la notte veniva
     /// lasciato scoperto proprio nelle ore in cui è più fermo, e per accorgersene doveva
-    /// sospettare che una finestra esistesse. Richiesta del principale, 2026-08-04:
+    /// sospettare che una finestra esistesse. Mia richiesta, 2026-08-04:
     /// *«mettiamo di default che è sempre attivo e la possibilità di settare il tempo a
     /// preferenza»*. Il silenzio notturno resta a un interruttore di distanza.
     public var activeHoursAlwaysOn: Bool
@@ -554,11 +554,11 @@ public enum Paths {
     /// Dove vivono i dati quando **non** sono i dati veri: una cartella usa e getta, impostata
     /// all'avvio se l'app parte per una sonda o per una resa.
     ///
-    /// Esiste perché una sonda che scrive nel registro, nella rotazione e nei mazzi del principale
+    /// Esiste perché una sonda che scrive nel registro, nella rotazione e nei mazzi veri
     /// non sta misurando l'app, la sta modificando. Prima ci si compensava a mano, con un backup
     /// prima e un ripristino dopo, cioè con la disciplina di chi lancia il comando — la garanzia
     /// più fragile che ci sia, e il 2026-07-28 ha ceduto: le sonde hanno riscritto l'avvio
-    /// automatico del principale. Con la deviazione qui la sonda è ermetica per costruzione, e per
+    /// automatico. Con la deviazione qui la sonda è ermetica per costruzione, e per
     /// giunta può girare mentre l'app vera lavora, perché anche il lock dell'istanza unica finisce
     /// nella cartella usa e getta.
     public static var overrideDirectory: URL?

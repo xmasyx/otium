@@ -9,7 +9,7 @@ public enum ExerciseCategory: String, Codable, CaseIterable, Sendable {
     case gambe
     case spinta
     case addome
-    /// **Aggiunta il 2026-07-31**, su richiesta del principale: *«peccato che non ci sia niente
+    /// **Aggiunta il 2026-07-31**, per mia scelta: *«peccato che non ci sia niente
     /// da fare per il dorso»*. A corpo libero e senza barra la trazione vera non c'è — e le
     /// alternative che circolano (rematore allo stipite, auto-resistenza) hanno tutte lo stesso
     /// difetto: il carico dipende da quanto tiri, quindi non è misurabile, quindi non è
@@ -443,7 +443,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
                        "Back flat and pressed to the floor, arms and legs lifted. If your lower back lifts, raise your legs.")
         // **Il piegamento mancava, ed è il pezzo che rende il burpee un burpee.** Diceva «squat,
         // gambe indietro, torna su, salto», che è lo *squat thrust*: il burpee senza push-up,
-        // cioè un esercizio diverso e più facile. Segnalato dal principale il 2026-07-31
+        // cioè un esercizio diverso e più facile. Visto all'uso il 2026-07-31
         // raccontando come lo fa lui — *«squat, piegamento di push up, salto»*. Scritta per
         // intero perché è il gesto più complesso che l'app propone, e saltarne un passaggio
         // significa farne un altro senza accorgersene.
@@ -497,7 +497,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
                 .filter { $0 != self }
         // **I sollevamenti sulle punte per ultimi, ma ci sono.** Le altre alternative dello squat
         // chiedono tutte spazio o pavimento — affondi, split squat, ponte — e in treno, in coda,
-        // in ascensore non ne fai nessuna: restava solo saltare la pausa. Il principale li ha
+        // in ascensore non ne fai nessuna: restava solo saltare la pausa. Li ho
         // fatti lo stesso il 2026-08-04, fuori menu, e il registro ha scritto squat.
         case .squat:
             return [.splitSquat, .jumpSquat, .lunge, .gluteBridge, .calfRaise]
@@ -537,7 +537,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
 /// Come si dispongono le alternative sotto l'esercizio della pausa.
 ///
 /// Il push-up ne offre **sette**, e sette pulsanti in una fila sola si leggono come un muro:
-/// segnalato dal principale il 2026-07-31 — *«sono tutti su una linea, risultano appiccicati»*.
+/// visto all'uso il 2026-07-31 — *«sono tutti su una linea, risultano appiccicati»*.
 /// La stessa fila con lo squat ne ha quattro e col muro tre, quindi il numero non è mai lo
 /// stesso e una riga scritta a mano non esiste.
 ///
@@ -552,7 +552,7 @@ public enum VariantLayout {
     ///
     /// **Era 3, è 4 dal 2026-08-04.** Il numero che conta è quattro perché quattro è il caso più
     /// frequente nel corpus (lo squat, la sedia, il polpaccio), e spezzato 2+2 dava una griglia
-    /// invece di una scelta. Segnalato dal principale guardando la schermata: *«voglio che siano
+    /// invece di una scelta. Visto guardando la schermata: *«voglio che siano
     /// messe in fila, non due sopra e due sotto, risulta brutto così»*. Il push-up con le sue
     /// sette varianti resta su due righe, 4+3, perché sette in fila non ci starebbero.
     public static let singleRowLimit = 4
@@ -633,7 +633,7 @@ public enum Ramp {
     /// Prima saliva a scatti settimanali, e lo scatto era grosso: dal 55% al 70% da un giorno
     /// all'altro è un +27% di ripetizioni comparso durante la notte, senza che niente lo
     /// annunciasse. Giorno per giorno la stessa salita è invisibile mentre la vivi, ed è il modo
-    /// in cui il principale credeva già che funzionasse — cioè quello che una persona si aspetta
+    /// in cui credevo già che funzionasse — cioè quello che una persona si aspetta
     /// leggendo «partenza graduale».
     ///
     /// I valori ai confini non cambiano: giorno 0 → 55%, giorno 7 → 70%, giorno 14 → 85%,
@@ -680,7 +680,7 @@ public enum Ramp {
     ///
     /// Serve dove il numero **non** nasce qui ma lo scrivi tu: dichiarando una pausa già fatta si
     /// poteva salire di uno alla volta e fermarsi su 7 affondi, che a schermo diventavano «3 per
-    /// lato» — un lato scoperto e un totale che non torna. Segnalato dal principale il 28 luglio
+    /// lato» — un lato scoperto e un totale che non torna. Visto all'uso il 28 luglio
     /// 2026. Si arrotonda per eccesso: chi ha fatto sette affondi ne ha fatti quattro di qua e
     /// tre di là, e il lato lungo è quello che comanda.
     public static func evenIfPerSide(_ reps: Int, for kind: ExerciseKind) -> Int {
@@ -710,7 +710,7 @@ public struct ExercisePlanner: Sendable {
     /// **Si prende sempre dal gruppo più numeroso rimasto**, purché diverso dal precedente. La
     /// prima versione prendeva il *primo* disponibile, e su un pool sbilanciato falliva in modo
     /// prevedibile: il gruppo dominante non veniva speso finché c'era altro, e i suoi si
-    /// ammucchiavano tutti in coda. Trovato il 2026-07-31 sul pool **vero** del principale —
+    /// ammucchiavano tutti in coda. Trovato il 2026-07-31 sul pool **vero** —
     /// diciotto esercizi di cui **sette d'addome** — dove uscivano `russian twist → plank
     /// laterale → hollow hold → sit-up`, quattro addominali di fila. Il pool di serie non lo
     /// mostrava: è abbastanza equilibrato da non far emergere il difetto, ed è esattamente il
@@ -791,7 +791,7 @@ public struct ExercisePlanner: Sendable {
     /// Quanto vale una stazione dentro il circuito rispetto allo stesso esercizio da solo.
     ///
     /// **Uno, dal 2026-08-04.** Era tre quarti, con la motivazione che quattro esercizi al volume
-    /// pieno non stanno in cinque minuti. Il principale l'ha ribaltata con un argomento che vale
+    /// pieno non stanno in cinque minuti. L'ho ribaltata con un argomento che vale
     /// più del mio: *«quegli esercizi sono singoli per ogni gruppo muscolare»*, cioè le quattro
     /// stazioni non si sommano sullo stesso muscolo — gambe, spinta, addome, esplosivo — quindi
     /// non c'è un affaticamento da ripartire, e ridurre toglieva lavoro senza una ragione
@@ -822,7 +822,7 @@ public struct ExercisePlanner: Sendable {
     /// **`progress` è arrivato il 2026-08-12, e la sua assenza era il difetto.** Il parametro non
     /// c'era, quindi ogni stazione nasceva a livello 1.0 mentre l'esercizio singolo, che il
     /// registro lo riceveva, saliva: la progressione si guadagnava dentro il circuito e non si
-    /// spendeva mai lì. Segnalato dal principale, che nel suo registro aveva livelli a 1,2155.
+    /// spendeva mai lì. Visto all'uso, con livelli a 1,2155 nel registro.
     public func circuit(breakIndex: Int, factor: Double, sex: Sex? = nil,
                         pushVariant: ExerciseKind? = nil, progress: ProgressBook? = nil) -> [Exercise] {
         let order: [ExerciseCategory] = [.gambe, .spinta, .addome, .vigorosi]

@@ -186,7 +186,7 @@ public enum PresenceRadar {
     ///
     /// La prima versione provava l'audio per primo e si fermava lì. Con una scheda di Brave che
     /// suonava dietro, un PDF aperto davanti non veniva mai nemmeno guardato — misurato il
-    /// 2026-07-26 sul Mac del principale, che se n'è accorto guardando l'output. Due difetti in
+    /// 2026-07-26 sul Mac di sviluppo, e me ne sono accorto guardando l'output. Due difetti in
     /// uno: la lettura restava invisibile, e la musica di sottofondo bastava a dichiarare "sta
     /// guardando un video", col tetto largo dei 45 minuti, anche mentre nessuno era in stanza.
     ///
@@ -434,8 +434,8 @@ public enum PresenceRadar {
 /// `~/Library/LaunchAgents` e lo caricava con `launchctl`. Funzionava, ma macOS lo cataloga come
 /// *legacy agent*: nel registro degli elementi in background (`sfltool dumpbtm`) il record esce
 /// `Type: legacy agent (0x10008)`, `Parent Identifier: Unknown Developer`, finisce nella sezione
-/// «Consenti in background» e **non compare fra le app di «Apri al login»**, che è dove il
-/// principale è andato a cercarlo senza trovarlo.
+/// «Consenti in background» e **non compare fra le app di «Apri al login»**, che è dove
+/// sono andato a cercarlo senza trovarlo.
 ///
 /// **La colpa non era della firma**, ed è la prova che ha chiuso il caso: Kalamos è firmata allo
 /// stesso modo, senza Team ID e con `Developer Name: (null)`, e usa questa API. È l'API a decidere

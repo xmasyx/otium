@@ -2,7 +2,7 @@ import Foundation
 
 /// Il conto alla rovescia di una **tenuta**: plank, plank laterale, hollow hold.
 ///
-/// Nasce da una richiesta precisa del principale (2026-07-31): *«45 secondi di plank, e vorrei che
+/// Nasce da una mia richiesta precisa (2026-07-31): *«45 secondi di plank, e vorrei che
 /// il tempo vada all'indietro, così so quanto devo tenere. Non lo posso far partire perché sono
 /// già giù»*. Da lì scendono tutte le scelte qui dentro.
 ///
@@ -21,13 +21,13 @@ public struct Hold: Equatable, Sendable {
     public static let prepareSeconds: Double = 5
     /// Quanto prima si avvisa del cambio di lato. Tre secondi perché **in plank non guardi lo
     /// schermo**: l'avviso deve arrivare in tempo per finire il lato e girarsi, non nell'istante
-    /// in cui è già ora. Il principale l'ha chiesto con due parole, «detto prima».
+    /// in cui è già ora. L'ho chiesto con due parole, «detto prima».
     public static let switchWarningSeconds: Double = 3
     /// Il tempo per girarsi, **fra un lato e l'altro**.
     ///
     /// Prima non c'era: il secondo lato cominciava nell'istante stesso in cui finiva il primo, e i
     /// secondi che passavi a rimetterti in posizione se li mangiava il lato nuovo. Venti secondi
-    /// per lato diventavano venti di qua e sedici di là, in silenzio. Chiesto dal principale il
+    /// per lato diventavano venti di qua e sedici di là, in silenzio. Deciso il
     /// 2026-08-08: *«al cambio lato deve darmi 5 secondi per mettermi in posizione, ma senza dover
     /// cliccare, automaticamente»* — ed è la stessa finestra che c'è già all'inizio, per lo stesso
     /// motivo. **La tenuta si allunga di cinque secondi, il lavoro no**: venti per lato restano

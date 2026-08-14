@@ -2,7 +2,7 @@ import Foundation
 
 /// **La modalità Zen: in ufficio non ci si allena, ma si respira.**
 ///
-/// Chiesta dal principale il 2026-08-08 con la ragione dentro la richiesta: *«in ufficio magari non
+/// Decisa il 2026-08-08 con la ragione dentro la richiesta: *«in ufficio magari non
 /// ci si può allenare»*. La pausa resta, il blocco resta, la frase resta; cambia solo il lavoro
 /// richiesto, che da contrazione muscolare diventa respiro guidato.
 ///
@@ -35,7 +35,7 @@ public enum BreathProtocol: String, Codable, CaseIterable, Sendable {
             case espira
             /// **La pausa a polmoni vuoti, fra un'espirazione e l'inspirazione dopo.**
             ///
-            /// Chiesta dal principale il 2026-08-08 con l'istinto giusto e una motivazione che va
+            /// Decisa il 2026-08-08 con l'istinto giusto e una motivazione che va
             /// corretta: *«non dovrebbe esserci una pausa, anche se breve, tra espirazione ed
             /// inspirazione?»*. **Fisiologicamente no**, o meglio non serve: Laborde e colleghi
             /// (Sustainability, 2021) hanno provato proprio questo, sei al minuto con e senza pause
@@ -123,7 +123,7 @@ public enum BreathProtocol: String, Codable, CaseIterable, Sendable {
         // legge a dividere sessanta per sei per capire cosa deve fare, e in un menu a tendina
         // nessuno lo fa. I nomi scientifici (respiro ciclico, box breathing) restano
         // nella riga di spiegazione sotto, dove servono a chi vuole cercare lo studio.
-        // Segnalato dal principale il 2026-08-11.
+        // Visto all'uso il 2026-08-11.
         case .sospiro:   return L.t("due inspiri, una lunga espirazione", "two inhales, one long exhale")
         case .risonanza: return L.t("cinque secondi dentro, cinque fuori", "five seconds in, five out")
         case .quadrato:  return L.t("respiro quadrato", "box breathing")

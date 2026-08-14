@@ -86,6 +86,6 @@ luglio due sono state strette proprio per questo.
 
 Una parola giusta nel dizionario può essere sbagliata a schermo. *Circumscribe* non è «restringi»
 ma «traccia un confine intorno»; *Vernunft* è la facoltà di ragionare, e «il corpo è una grande
-ragione», da sola, in italiano si legge «motivo». Le ha viste tutte e due il principale, non il
+ragione», da sola, in italiano si legge «motivo». Le ho viste tutte e due io, non il
 cancello. Il controllo finale è come suona la frase in italiano, da sola, a chi la legge durante
 una pausa.

@@ -6,7 +6,7 @@ import AppKit
 
 /// Dove va a capo una frase quando è lei la pagina.
 ///
-/// **Il difetto che ha aperto questo file** (segnalato dal principale il 2026-08-07, schermata di
+/// **Il difetto che ha aperto questo file** (visto all'uso il 2026-08-07, schermata di
 /// pausa): la frase zen andava a capo dopo «Dopo», che è la **prima parola del secondo periodo**.
 /// Il taglio cadeva nel punto di massima coesione del testo — fra un soggetto e il suo verbo —
 /// mentre un centimetro prima c'era il punto fermo, cioè il punto di minima. Non è un difetto del
@@ -61,8 +61,8 @@ public enum QuoteWrap {
                                           corpoRidotto: nil)
     /// La geometria del pannello della frase d'avvio, **in un posto solo**.
     ///
-    /// **Perché sta qui e non nella vista** (2026-08-14, segnalato dal principale con una
-    /// fotografia). La colonna era scritta come `470 - 36 - 4 - 14` qui, e la scatola era
+    /// **Perché sta qui e non nella vista** (2026-08-14, visto
+    /// in una fotografia). La colonna era scritta come `470 - 36 - 4 - 14` qui, e la scatola era
     /// costruita a mano nella vista con gli stessi numeri: due copie della stessa aritmetica, e
     /// la copia nella vista aveva **uno spazio in più**. L'`HStack` conteneva barretta, testo e
     /// uno `Spacer`, cioè **tre** elementi e quindi **due** intervalli da 14, mentre il conto qui

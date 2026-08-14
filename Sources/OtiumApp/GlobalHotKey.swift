@@ -11,7 +11,7 @@ import Carbon.HIToolbox
 /// **Quello che una scorciatoia globale porta con sé, detto qui e non nascosto:** il tasto viene
 /// tolto a tutte le altre app. ⌃S in un terminale è XOFF, il tasto che congela l'output, e in
 /// Emacs è la ricerca incrementale. Da quando questa registrazione è viva, in quelle due situazioni
-/// ⌃S apre le statistiche invece di fare quello che facevano prima. È una scelta del principale
+/// ⌃S apre le statistiche invece di fare quello che facevano prima. È una mia scelta
 /// (2026-07-28), e si cambia da una sola costante in `AppDelegate`.
 final class GlobalHotKey {
 

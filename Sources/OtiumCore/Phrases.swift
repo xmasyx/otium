@@ -139,7 +139,7 @@ public struct PhraseDeck: Codable, Equatable, Sendable {
         // successive erano `q m q q t f m f q q m q` — ma un mescolamento uniforme produce
         // grappoli, ed è così che nasce l'impressione che l'app «dia solo studi»: quattro fatti
         // consecutivi sono normalissimi in 480 estrazioni, e li vivi tutti in una mattina.
-        // Segnalato dal principale, che aveva torto sul meccanismo e ragione su quello che
+        // Visto all'uso: torto sul meccanismo, ragione su quello che si
         // vedeva.
         //
         // Qui il grappolo si rompe: se il tipo è lo stesso dell'ultima uscita, si cerca più giù
@@ -231,7 +231,7 @@ public enum PhraseLibrary {
 
     /// **Il pool della modalità Zen: citazioni e pensieri, niente fisiologia.**
     ///
-    /// Deciso dal principale il 2026-08-08: *«per la zen mode usiamo solo le frasi zen, citazioni
+    /// Deciso il 2026-08-08: *«per la zen mode usiamo solo le frasi zen, citazioni
     /// dei libri etc.»*. La ragione si vede meglio nel caso peggiore: stai facendo sei respiri al
     /// minuto per calmarti, e lo schermo ti dice che stare seduti otto ore equivale al fumo. È vero,
     /// è una nostra frase, ed è esattamente la cosa da non leggere in quel momento.

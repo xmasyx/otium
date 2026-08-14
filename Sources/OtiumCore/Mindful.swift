@@ -53,7 +53,7 @@ public enum Mindful {
         v("Anche gli occhi hanno un muscolo, e lo tieni contratto da un'ora.", "Your eyes have a muscle too, and you've been clenching it for an hour."),
         v("Guarda qualcosa di lontano. I tuoi occhi si sono dimenticati che la distanza esiste.", "Look at something far away. Your eyes have forgotten that distance exists."),
         v("Sciogli le spalle. Le tieni contratte da tanto che non te ne accorgi più.", "Drop your shoulders. You've held them clenched so long you no longer notice."),
-        // Rimessa il 2026-08-01 su richiesta del principale, che aveva visto la logica rovesciata
+        // Rimessa il 2026-08-01: la logica era rovesciata
         // nella versione affermativa («il muscolo che **usi** adesso è quello che avrai»): vera
         // anche quella, ma è la perdita a mordere, non la conservazione.
         v("Il muscolo che non usi adesso è quello che non avrai fra vent'anni.", "The muscle you don't use now is the one you won't have in twenty years."),

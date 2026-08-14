@@ -41,7 +41,7 @@ struct OnboardingView: View {
     }
 
     /// **Due passi, non uno.** Il primo avvio chiede e spiega; la modalità Zen ha una pagina sua
-    /// dal 2026-08-11, per richiesta del principale. La ragione è che Zen non compare nell'elenco
+    /// dal 2026-08-11, per mia scelta. La ragione è che Zen non compare nell'elenco
     /// degli esercizi, perché il respiro non è un esercizio: chi cerca lì «e se non posso
     /// muovermi» non trova niente, e una pagina che deve spiegare un meccanismo non ci sta in
     /// coda a una schermata di domande.
@@ -243,7 +243,7 @@ struct OnboardingView: View {
     ///
     /// L'uscita d'emergenza sta qui per una ragione diversa e più seria: è una schermata che
     /// copre tutto e disabilita ⌘Q, e scoprire come uscirne **mentre** ti serve uscire è troppo
-    /// tardi. Richiesta esplicita del principale, 2026-07-29.
+    /// tardi. Scelta esplicita, 2026-07-29.
     private var primaDiCominciare: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(L.t("Prima di cominciare", "Before you start"))
@@ -319,7 +319,7 @@ struct OnboardingView: View {
 
     /// **La modalità Zen, spiegata prima che serva.**
     ///
-    /// Sta nell'onboarding su richiesta del principale (2026-08-11) per un motivo preciso: Zen non
+    /// Sta nell'onboarding per mia scelta (2026-08-11) per un motivo preciso: Zen non
     /// compare nell'elenco degli esercizi, perché respirare non è un esercizio. Chi cerca lì dentro
     /// «e se non posso muovermi?» non trova niente, e conclude che l'app non ha una risposta.
     ///
@@ -474,7 +474,7 @@ struct OnboardingView: View {
                 // che regge su quel verde — bianco su fondo chiaro, verde notte su fondo scuro.
                 // Non scelto: il testo sta sulla finestra, quindi è il colore normale del testo,
                 // nero di giorno e bianco di notte. Bianco fisso era il difetto: su una finestra
-                // chiara spariva, ed è esattamente quello che il principale ha visto.
+                // chiara spariva, ed è esattamente quello che ho visto.
                 .foregroundStyle(selected ? Palette.onAccentOnWindow : Color.primary)
                 .background(
                     RoundedRectangle(cornerRadius: 10)

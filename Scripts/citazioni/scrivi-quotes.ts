@@ -12,7 +12,10 @@ import { readFileSync, writeFileSync } from "node:fs";
 type C = { it: string; originale: string; autore: string; opera: string; fonte: string };
 
 const passate: C[] = JSON.parse(readFileSync(process.argv[2] ?? "passate.json", "utf8"));
-const FILE = `${process.env.HOME}/Desktop/lifeos/05-Tools/Otium/Sources/OtiumCore/Quotes.swift`;
+// Il percorso si ricava da dove sta questo file, non dalla home: scritto come
+// `$HOME/Desktop/...` funzionava su una macchina sola e raccontava a un repo pubblico
+// com'è fatta quella scrivania.
+const FILE = new URL("../../Sources/OtiumCore/Quotes.swift", import.meta.url).pathname;
 
 const STOICI = new Set(["Seneca", "Marco Aurelio", "Epitteto", "Cicerone"]);
 const ORIENTALI = new Set(["Laozi", "Confucio", "Buddha", "Bhagavad Gita", "Zhuangzi"]);

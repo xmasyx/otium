@@ -6,7 +6,7 @@ import Foundation
 /// precisa — autore, rivista, anno — si scrive **solo** quando è davvero quella. Dove il fatto è
 /// consolidato ma la citazione puntuale non la conosco con certezza, l'attribuzione dice cos'è:
 /// «fisiologia dell'esercizio, consenso scientifico», «linee guida OMS». **«Consenso» da solo non
-/// basta:** in italiano è la parola dei moduli della privacy, e il 2026-07-31 il principale ha
+/// basta:** in italiano è la parola dei moduli della privacy, e il 2026-07-31 ho
 /// dovuto chiedere cosa volesse dire. La forma è `<campo>, consenso scientifico`, sempre in
 /// quest'ordine. Una citazione inventata bene è più
 /// dannosa di nessuna citazione: è esattamente il difetto che l'app rimprovera ai concorrenti che
@@ -224,7 +224,7 @@ public enum Facts {
         // riguarda le interruzioni **subite** — la notifica, il collega, il messaggio. Ma questa
         // frase compariva sulla schermata di blocco, cioè nell'unico istante in cui l'app sta
         // interrompendo di proposito: letta lì diventava un argomento contro il gesto che stavi
-        // per fare. Segnalata dal principale guardando lo schermo: *«va contro lo scopo
+        // per fare. Vista guardando lo schermo: *«va contro lo scopo
         // dell'app»*. Al suo posto c'è il fatto che la stessa letteratura sostiene davvero,
         // e che è la tesi su cui Otium è costruito.
         f("Una pausa programmata non è un'interruzione subita. La prima la decidi tu, la seconda ti arriva addosso mentre lavori.",
@@ -418,7 +418,7 @@ public enum Facts {
           "Standing up immediately changes blood distribution and heart rate.",
           "cardiovascular physiology, basic knowledge"),
         // La versione precedente diceva che «la sedia ha meno di duecento anni di storia diffusa»
-        // sotto la firma «antropologia della postura, consenso scientifico», e il principale l'ha
+        // sotto la firma «antropologia della postura, consenso scientifico», e l'ho
         // contestata il 2026-08-08: le sedie egizie sono del terzo millennio a.C. La frase confondeva
         // l'oggetto, antichissimo e di rango, con il suo uso di massa, che è davvero recente. Adesso
         // dice la seconda cosa e porta una data verificabile invece di una firma vaga.

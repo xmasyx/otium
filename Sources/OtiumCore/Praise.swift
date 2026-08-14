@@ -11,9 +11,9 @@ import Foundation
 ///
 /// **Sta in un file suo dal 2026-07-29, e non è una questione di ordine.** Finché viveva in
 /// fondo a `Quotes.swift` era coperto dall'esenzione che quel file ha come tabella bilingue,
-/// cioè la guardia della lingua non lo guardava — proprio il difetto che il principale ha
+/// cioè la guardia della lingua non lo guardava — proprio il difetto che ho
 /// visto. Qui dentro invece la guardia lo legge, e un ritorno dell'errore diventa rosso.
-/// **Erano solo italiane, e uscivano così anche nell'app inglese.** Segnalato dal principale il
+/// **Erano solo italiane, e uscivano così anche nell'app inglese.** Visto all'uso il
 /// 2026-07-29, subito dopo una pausa da cinque minuti: gli esercizi sopra erano in inglese e il
 /// complimento sotto no. Nessuna traduzione mancava per distrazione: mancava la *forma* che
 /// costringe a scriverla, perché una riga qui è un dato di un `enum` e non una `Text` nella vista,

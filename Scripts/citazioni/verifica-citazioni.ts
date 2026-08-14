@@ -34,7 +34,10 @@ const contesto = Number(rest[rest.indexOf("--contesto") + 1]) || 0;
 
 const QUI = dirname(new URL(import.meta.url).pathname);
 const FONTI = join(QUI, "fonti");
-const OTIUM = `${process.env.HOME}/Desktop/lifeos/05-Tools/Otium/Sources/OtiumCore`;
+// Il percorso si ricava da dove sta questo file, non dalla home: scritto come
+// `$HOME/Desktop/...` funzionava su una macchina sola e raccontava a un repo pubblico
+// com'è fatta quella scrivania.
+const OTIUM = new URL("../../Sources/OtiumCore/", import.meta.url).pathname;
 
 const candidati: Candidato[] = JSON.parse(readFileSync(file, "utf8"));
 

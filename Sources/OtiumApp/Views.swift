@@ -125,8 +125,8 @@ struct BreakView: View {
                 // spento che diceva «ancora 3:28»: tempo vuoto, e l'unico momento della giornata
                 // in cui una frase la leggeresti davvero. Prima la citazione stava a metà della
                 // colonna dell'esercizio, fra l'elenco del circuito e il cronometro, nello stesso
-                // grigio di tutto il resto — settima di dodici cose impilate. Segnalata dal
-                // principale il 2026-07-29 con le parole giuste: «lì sembra persa».
+                // grigio di tutto il resto — settima di dodici cose impilate. Vista all'uso
+                // il 2026-07-29 con le parole giuste: «lì sembra persa».
                 // **Le due facce condividono lo scheletro, o cambiare faccia sembra cambiare app.**
                 //
                 // Intestazione in alto, contenuto al centro, comandi in basso — e la parte bassa
@@ -452,7 +452,7 @@ struct BreakView: View {
     @ViewBuilder
     private func breathCircle(_ protocollo: BreathProtocol) -> some View {
         let now = Date()
-        // **Il respiro quadrato ha un disegno suo, e non è un vezzo.** Il principale ha mandato la
+        // **Il respiro quadrato ha un disegno suo, e non è un vezzo.** Ho mandato la
         // sua animazione a parte, il 2026-08-08, e aveva ragione a distinguerla: una sfera che
         // pulsa non sa mostrare i due «trattieni», perché in quei quattro secondi non succede
         // niente e l'animazione si ferma. Il quadrato invece li mostra come lati, e i quattro tempi
@@ -619,7 +619,7 @@ struct BreakView: View {
 
     /// **L'alone che respira**: sale e si illumina inspirando, scende e si spegne espirando.
     ///
-    /// Nasce dalle tredici registrazioni che il principale ha messo in `~/Desktop/breath` il
+    /// Nasce da tredici registrazioni di respiro fatte il
     /// 2026-08-08, e soprattutto dallo screenshot che le riassume: un alone radiale con il cuore
     /// scuro, la corona luminosa e **una parola sola al centro**. In nessuno dei riferimenti c'è un
     /// bordo netto, e infatti il cerchio con il contorno che c'era prima si leggeva come un anello
@@ -869,7 +869,7 @@ struct BreakView: View {
     /// **Due numeri accanto devono parlare dello stesso periodo.** Qui c'era `plan.index`, che è
     /// il contatore di sempre — serve alla rotazione degli esercizi, non a te — messo accanto
     /// alle ripetizioni **di oggi**: si leggeva «sessanta pause oggi», e non erano sessanta.
-    /// Segnalato dal principale il 2026-07-28, quando il numero era 60 e le pause della giornata
+    /// Visto all'uso il 2026-07-28, quando il numero era 60 e le pause della giornata
     /// due.
     ///
     /// **Il conto dell'esercizio in corso sta davanti al totale** (2026-07-31, sua richiesta).
@@ -1019,7 +1019,7 @@ struct BreakView: View {
             //
             // Nella fase di riposo diceva «ancora 2:11» mentre il cronometro sopra diceva 2:11:
             // lo stesso numero due volte, a dodici punti di distanza, e nessuno dei due che
-            // spiegasse cosa succede quando arriva a zero. Segnalato dal principale il
+            // spiegasse cosa succede quando arriva a zero. Visto all'uso il
             // 2026-07-30 con la soluzione già dentro la domanda — l'etichetta resta ferma sulla
             // destinazione, ed è lo stato spento a dire «non ancora». Il tempo lo racconta
             // l'orologio, che è lì apposta.
@@ -1046,7 +1046,7 @@ struct BreakView: View {
                 // quel punto non c'è nessuno che possa premere, perché sei a terra.
                 // **L'etichetta dice cosa fa il dito e cosa succede dopo.** «Pronto» chiedeva una
                 // dichiarazione di stato — e la risposta onesta, a terra non ancora, era no.
-                // Riscritta dal principale il 2026-08-04: prima l'azione, poi il tempo che
+                // Riscritta il 2026-08-04: prima l'azione, poi il tempo che
                 // regala, così premi anche se non sei ancora giù.
                 primary(L.t("Premi per iniziare, poi hai \(Int(Hold.prepareSeconds)) s per metterti in posizione",
                             "Press to start, then you have \(Int(Hold.prepareSeconds)) s to get into position"),
@@ -1162,7 +1162,7 @@ struct BreakView: View {
                 // **Il testo detta la misura, non il contrario.** Con `frame(width:height:)` fisso
                 // un'etichetta lunga andava a capo e usciva dal rettangolo ambra, finendo sopra la
                 // linea del piede: «3 archer push-ups per side — 17 s to go» tagliata a metà,
-                // vista dal principale il 2026-07-30. Il minimo tiene la forma quando l'etichetta
+                // vista il 2026-07-30. Il minimo tiene la forma quando l'etichetta
                 // è corta, il resto lo decide il contenuto.
                 .padding(.horizontal, 26)
                 .padding(.vertical, 15)
@@ -1312,8 +1312,8 @@ struct BreakView: View {
 /// La frase **quando è lei la pagina**, cioè nella fase di riposo della pausa.
 ///
 /// Il corpo è grande sul serio: a quaranta punti su nero una riga di Seneca ti ferma, a diciotto
-/// in mezzo agli esercizi sembrava una didascalia — che è esattamente il difetto segnalato dal
-/// principale il 2026-07-29.
+/// in mezzo agli esercizi sembrava una didascalia — che è esattamente il difetto visto all'uso
+/// il 2026-07-29.
 ///
 /// **La misura scende sulle frasi lunghe.** Il mazzo ne ammette fino a 145 caratteri, e una da 145
 /// a quaranta punti mangerebbe l'altezza del cronometro. La soglia non si stima: sta qui perché il
@@ -1465,7 +1465,7 @@ struct HUDView: View {
                 // **Il pannello si allarga in altezza, il testo non si taglia.**
                 // Con un'altezza fissa a 84 punti «prossima pausa fra 30 min di lavoro attivo»
                 // finiva in «…di lavoro att…», e la parola tagliata era proprio quella che
-                // distingue il tempo di lavoro vero dall'orologio a muro. Segnalato dal principale
+                // distingue il tempo di lavoro vero dall'orologio a muro. Visto all'uso
                 // il 2026-07-28, guardando la notifica. Accorciare la frase avrebbe curato questa
                 // e lasciato in piedi la prossima: qui cede il pannello, non il significato.
                 Text(subtitle)
@@ -1723,7 +1723,7 @@ struct SegmentedChoice<Value: Hashable>: View {
     var fillWidth = false
     /// **Larghezza fissa per segmento.** Senza, ogni controllo è largo quanto le sue parole, e
     /// due righe vicine finiscono su bordi destri diversi: «Italiano/English» è più largo di
-    /// «Uomo/Donna» e la colonna si vede storta. Segnalato dal principale il 2026-08-11 con la
+    /// «Uomo/Donna» e la colonna si vede storta. Visto all'uso il 2026-08-11 con la
     /// fotografia delle due righe. Vale la regola dei pannelli: i comandi di una pagina finiscono
     /// tutti sullo stesso bordo.
     var segmentWidth: CGFloat? = nil
@@ -1792,7 +1792,7 @@ struct PrefsView: View {
     ///
     /// **Sei, non una lista sola.** Le preferenze erano un modulo unico da scorrere: cambiavi la
     /// cadenza, scendevi agli esercizi, e il pulsante che salva era già uscito dallo schermo.
-    /// Segnalato dal principale il 2026-07-31 — *«la lista unica da scorrere è brutta e
+    /// Visto all'uso il 2026-07-31 — *«la lista unica da scorrere è brutta e
     /// scomoda»*. Le voci ricalcano i raggruppamenti che le sezioni avevano già: non è una
     /// tassonomia nuova, è quella di prima resa navigabile.
     enum Section: String, CaseIterable, Identifiable, Hashable {
@@ -1850,7 +1850,7 @@ struct PrefsView: View {
         // **Niente `NavigationSplitView`, e non è una questione di gusto.**
         //
         // La vista divisa di sistema disegna la barra laterale come un pannello che galleggia:
-        // angoli arrotondati, ombra, staccato dal bordo della finestra. Segnalato dal principale
+        // angoli arrotondati, ombra, staccato dal bordo della finestra. Visto all'uso
         // il 2026-07-31 con Kalamos accanto, dove la colonna è piena e arriva ai bordi. E porta
         // dietro la seconda cosa che non va, cioè la **selezione blu di sistema**: quel blu è
         // l'accento del Mac, non quello dell'app, e `tint` sulla lista non lo tocca.
@@ -1936,7 +1936,7 @@ struct PrefsView: View {
 
     /// **Un interruttore si applica da solo, tutto il resto passa da «Applica».**
     ///
-    /// La regola è del principale e ha due date. Il 2026-08-08, per la sola modalità Zen:
+    /// La regola è mia e ha due date. Il 2026-08-08, per la sola modalità Zen:
     /// *«modalità zen ha il togle, non deve chiedere conferma di applica»*. Il 2026-08-12, estesa a
     /// ogni interruttore della finestra: *«quando metto il toggle sono sicuro che è come dico io»*,
     /// e nello stesso turno il verso opposto per quello che interruttore non è, cioè i menu di Zen,
@@ -2047,7 +2047,7 @@ struct PrefsView: View {
             }
 
             // «Rampa» era il calco di *ramp*: in italiano è la salita di un garage, non un
-            // modo di allenarsi. Segnalato dal principale il 2026-07-28.
+            // modo di allenarsi. Visto all'uso il 2026-07-28.
             LabeledContent(L.t("Partenza graduale", "Gradual start")) {
                 numeroSelettore($draft.rampWeeks, in: 1...12,
                                 unità: L.t("settimane", "weeks"))
@@ -2082,7 +2082,7 @@ struct PrefsView: View {
             // «si parte al…» — parla di com'è cominciata, non di adesso — e chi vuole il numero
             // pieno oggi non ha motivo di leggerlo come la risposta alla sua domanda. L'unica
             // altra via era la finestra che l'app propone da sé dopo una settimana: una domanda
-            // che arriva quando decide lei. Chiesto dal principale il 2026-07-31.
+            // che arriva quando decide lei. Deciso il 2026-07-31.
             if draft.rampFactor(now: Date()) < 1.0 {
                 Button(L.t("Passa subito al 100%", "Go to 100% now")) {
                     draft.rampStartFactor = 1.0
@@ -2106,7 +2106,7 @@ struct PrefsView: View {
     @ViewBuilder
     private var cadenzaSection: some View {
         // **Dire di cosa si parla.** «30 min + pausa piena ogni 90» non dice *di che cosa* —
-        // ogni quanto cosa, quanto dura cosa. Segnalato dal principale il 2026-07-31: *«ogni
+        // ogni quanto cosa, quanto dura cosa. Visto all'uso il 2026-07-31: *«ogni
         // quanto, quanto dura, ma cosa?»*. La risposta e' una riga in cima, non un nome di
         // preset piu' lungo.
         SwiftUI.Section {
@@ -2170,7 +2170,7 @@ struct PrefsView: View {
                 numeroSelettore($draft.cadence.longEveryNBreaks, in: 1...8,
                                 unità: L.t("micro-pause", "micro-breaks"))
             }
-            // Detto qui perché è la domanda che il principale ha fatto guardando lo schermo: la
+            // Detto qui perché è la domanda che ho fatto guardando lo schermo: la
             // prima pausa di oggi era piena, e la ragione stava in un contatore che non sapeva
             // che fosse cambiato il giorno.
             Text(L.t("Il conto riparte ogni giorno: la prima pausa della giornata è sempre breve.",
@@ -2180,7 +2180,7 @@ struct PrefsView: View {
             LabeledContent(L.t("Preavviso", "Warning")) {
                 secondField($draft.cadence.warningSeconds)
             }
-            // **I rinvii stanno qui dal 2026-08-12**, per decisione del principale: *«il numero di
+            // **I rinvii stanno qui dal 2026-08-12**, per mia decisione: *«il numero di
             // rinvii consentiti attualmente è in interruzioni, ha più senso averlo in cadenza, lo
             // stesso gruppo»*. È il campo di `Cadence` che viveva nel pannello sbagliato, e quella
             // distanza costava due volte — l'aveva già trovato lui il 2026-07-31, quando toccarlo
@@ -2198,7 +2198,7 @@ struct PrefsView: View {
     private var eserciziSection: some View {
         // **Una famiglia per volta, scelta in alto.** Erano quattro sezioni impilate in un
         // pannello che scorreva per tre schermate: per arrivare agli esplosivi passavi davanti a
-        // venticinque caselle che non stavi cercando. Chiesto dal principale il 2026-07-31.
+        // venticinque caselle che non stavi cercando. Deciso il 2026-07-31.
         //
         // Il contatore dentro la linguetta — «Gambe 4/5» — e' quello che rende il cambio un
         // guadagno netto invece di uno scambio: la lista lunga aveva un vantaggio, che si vedeva
@@ -2245,7 +2245,7 @@ struct PrefsView: View {
             }
         }
 
-        // **Zen ha una voce sua dal 2026-08-11**, per richiesta del principale. Qui resta solo il
+        // **Zen ha una voce sua dal 2026-08-11**, per mia scelta. Qui resta solo il
         // rimando, e non è cortesia: la ragione per cui Zen stava in questa pagina era che
         // *sostituisce* gli esercizi invece di affiancarli, e senza questa riga si può tarare con
         // cura la rotazione senza sapere che un interruttore in un'altra voce la spegne tutta.
@@ -2261,7 +2261,7 @@ struct PrefsView: View {
         }
 
         SwiftUI.Section(L.t("Come vengono proposti", "How they are offered")) {
-            // **Il livello della spinta sta qui dal 2026-08-12**, per decisione del principale:
+            // **Il livello della spinta sta qui dal 2026-08-12**, per mia decisione:
             // *«il livello per i push-ups secondo me deve andare nel gruppo esercizi e non in
             // profilo»*. Ha ragione, ed è la stessa regola per cui i rinvii sono andati in
             // «Cadenza»: dice quale movimento ti viene proposto, quindi appartiene agli esercizi.
@@ -2293,7 +2293,7 @@ struct PrefsView: View {
     }
 
     /// **La voce Zen**, che dal 2026-08-11 è una pagina sua e non più una sezione dentro gli
-    /// esercizi (richiesta esplicita del principale).
+    /// esercizi (mia richiesta esplicita).
     ///
     /// Ha una pagina perché ha bisogno di spiegare, e una sezione dentro un'altra pagina non ha
     /// posto per farlo: il respiro non compare nell'elenco degli esercizi, quindi chi cerca lì
@@ -2386,7 +2386,7 @@ struct PrefsView: View {
 
         // **La sezione ha un titolo, e dentro una riga dice lo stato a parole.** Con il solo
         // interruttore spento la pagina non affermava niente: bisognava dedurre «allora è sempre
-        // attivo» dall'assenza di una finestra, e dedurre non è leggere. Segnalato dal principale
+        // attivo» dall'assenza di una finestra, e dedurre non è leggere. Visto all'uso
         // il 2026-08-04: *«non dice che è sempre attivo»*. La riga è **derivata**, non un'altra
         // impostazione — dice cosa farà il motore, e si riscrive da sola quando cambi le ore.
         SwiftUI.Section(L.t("Quando interrompe", "When it interrupts")) {
@@ -2404,7 +2404,7 @@ struct PrefsView: View {
                 // **Una riga per comando, tutte allineate sullo stesso bordo destro.** La prima
                 // versione metteva un interruttore e due frecce a distanze diverse dal margine, e
                 // il risultato non era brutto per gusto: era brutto perché *niente* era in linea
-                // con niente. Segnalato dal principale il 2026-08-04: *«troppo attaccato, non è
+                // con niente. Visto all'uso il 2026-08-04: *«troppo attaccato, non è
                 // armonioso»*.
                 //
                 // Il selettore a due caselle è la stessa forma di Lingua e Sesso, che sono già
@@ -2465,7 +2465,7 @@ struct PrefsView: View {
 
     /// **Il valore sta a destra, attaccato alle frecce, come ogni altro comando della finestra.**
     ///
-    /// Richiesta del principale, 2026-08-12, guardando «Pausa piena ogni 3 micro-pause»: *«il
+    /// Mia richiesta, 2026-08-12, guardando «Pausa piena ogni 3 micro-pause»: *«il
     /// numero dovrebbe essere messo vicino alle frecce completamente a destra»*. Lo `Stepper` con
     /// etichetta fa l'opposto — testo a sinistra, numero dentro il testo, frecce sole sul bordo —
     /// quindi il numero cadeva a metà riga mentre tutti gli altri valori della pagina sono
@@ -2550,11 +2550,11 @@ struct PrefsView: View {
     ///
     /// Stavano nel menu della barra di stato, che è la lista delle cose che fai spesso, e due su
     /// tre erano nomi senza spiegazione: «Apri il registro» non dice a nessuno cosa ci trova
-    /// dentro. Spostate qui il 2026-07-31 su richiesta del principale.
+    /// dentro. Spostate qui il 2026-07-31 per mia scelta.
     @ViewBuilder
     private var avanzateSection: some View {
         // **L'avvio automatico stava da solo in una voce sua** e la riempiva per un quarto, con
-        // una riga di stato in mezzo a tanto vuoto. Segnalato dal principale il 2026-07-31: una
+        // una riga di stato in mezzo a tanto vuoto. Visto all'uso il 2026-07-31: una
         // voce di menu che contiene una cosa sola è una voce che fa perdere tempo a chi la cerca.
         // Qui sta con le altre cose di macchina, prima delle fonti perché è l'unica che si tocca.
         sistemaSection
@@ -2610,8 +2610,8 @@ struct PrefsView: View {
             case .enabled:
                 HStack {
                     // Il verde di sistema qui era l'unico colore della finestra che non veniva
-                    // dalla livrea: verde mela accanto al verde alloro, e si vedeva. Segnalato
-                    // dal principale il 2026-07-31. L'arancione degli avvisi qui sotto resta,
+                    // dalla livrea: verde mela accanto al verde alloro, e si vedeva. Visto all'uso
+                    // il 2026-07-31. L'arancione degli avvisi qui sotto resta,
                     // perché quello non è una livrea, è un semaforo.
                     Label(L.t("Attivo: Otium parte all'accensione", "On: Otium starts at login"), systemImage: "checkmark.seal")
                         .foregroundStyle(Palette.accentOnWindow)
@@ -2651,7 +2651,7 @@ struct PrefsView: View {
     /// In un `Form` raggruppato ogni figlio diretto della `Section` diventa una riga, e fra due
     /// righe macOS disegna un divisore. Interruttore e nota erano due figli, quindi c'era una
     /// linea in mezzo: la nota sembrava riferita a quello **sotto** invece che a quello sopra.
-    /// Segnalato dal principale il 2026-07-31 guardando le preferenze — *«tra parti dello stesso
+    /// Visto all'uso il 2026-07-31 guardando le preferenze — *«tra parti dello stesso
     /// contesto non deve esserci quella linea»*.
     ///
     /// Non si toglie il divisore, si smette di produrlo: i due stanno in una `VStack`, cioè in un
@@ -2750,7 +2750,7 @@ struct PrefsView: View {
 
     /// Cosa ti ha portato fuori dai preset, campo per campo.
     ///
-    /// **Esiste per un caso vero, non per completezza.** Il 2026-07-31 il principale ha trovato
+    /// **Esiste per un caso vero, non per completezza.** Il 2026-07-31 ho trovato
     /// «personalizzata» senza aver toccato la cadenza: la trappola era che «consenti N rinvii a
     /// mano» viveva nel pannello *Interruzioni* pur essendo un campo della *cadenza*, quindi
     /// cambiarlo spostava un preset che stava due voci più in là.
@@ -2933,7 +2933,7 @@ struct StatsView: View {
     /// la stessa cosa detta da chi le ha fatte. Quando i due numeri divergono ha ragione il
     /// secondo, e vederli insieme è tutto il punto della pagina.
     ///
-    /// Chiesta dal principale il 2026-08-04: *«far vedere come quei numeri stanno aumentando»*.
+    /// Decisa il 2026-08-04: *«far vedere come quei numeri stanno aumentando»*.
     @ViewBuilder
     private var growthPage: some View {
         let report = model.growth()
@@ -2954,7 +2954,7 @@ struct StatsView: View {
                      L.t("oltre il 100%", "past 100%"), delta: nil, riservaSpazioDelta: false)
             }
             // **Una legenda, perché il grafico non si spiegava da solo.** Le barre erano lì e
-            // basta, e il principale ha chiesto cosa fossero: *«non capisco le barre che sono in
+            // basta, e ho chiesto cosa fossero: *«non capisco le barre che sono in
             // mezzo»*. Un grafico che ha bisogno di essere chiesto è un grafico senza etichetta,
             // non un grafico difficile.
             Text(L.t("Ogni barra è una pausa, in ordine di tempo: l'altezza sono le ripetizioni di quella volta. La percentuale dice dove sei rispetto a quante ne erano previste.",
@@ -3136,7 +3136,7 @@ struct StatsView: View {
     /// - Parameter riservaSpazioDelta: nel riepilogo la riga del confronto c'è quasi sempre, e
     ///   quando manca si tiene uno spazio vuoto per non far ballare le tessere vicine. Nella
     ///   pagina dell'andamento **non c'è mai**, e quello spazio spingeva tutto il contenuto in
-    ///   alto: la tessera sembrava scentrata, ed era vero. Rilievo del principale, 2026-08-04.
+    ///   alto: la tessera sembrava scentrata, ed era vero. Mio rilievo, 2026-08-04.
     private func tile(_ value: String, _ caption: String, delta: Int?,
                       riservaSpazioDelta: Bool = true) -> some View {
         VStack(spacing: 4) {

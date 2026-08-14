@@ -150,7 +150,7 @@ public enum ThemeName: String, Codable, CaseIterable, Sendable {
 
     /// **La stessa livrea in modalità Zen: cambia l'accento, non la stanza.**
     ///
-    /// Chiesto dal principale il 2026-08-08 insieme alla modalità: *«utilizza anche colori diversi
+    /// Deciso il 2026-08-08 insieme alla modalità: *«utilizza anche colori diversi
     /// quando si attiva la zen mode»*. La tentazione era una quarta livrea, ed è stata scartata per
     /// una regola che questa app ha già scritto: le tre livree si distinguono per **accento**, e
     /// carta e inchiostro sono la famiglia. Una palette nuova avrebbe rotto quella regola e avrebbe

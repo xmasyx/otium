@@ -12,10 +12,10 @@ public enum PresenceKind: String, Codable, Equatable, Sendable {
     case reading
     /// In primo piano c'è un terminale o un editor di codice: stai leggendo l'output.
     ///
-    /// **È il caso più frequente della giornata del principale, ed era l'unico invisibile.** Un
+    /// **È il caso più frequente della mia giornata, ed era l'unico invisibile.** Un
     /// agente che gira per minuti si guarda a mani ferme, e fino al 2026-08-05 l'app leggeva
     /// quell'immobilità come assenza: cinque pause mai fatte accreditate in una mattina, due
-    /// delle quali da 14 e 18 minuti. Segnalato dal principale dopo due ore senza un'interruzione:
+    /// delle quali da 14 e 18 minuti. Visto dopo due ore senza un'interruzione:
     /// *«ero al PC in realtà, quindi credo che non mi abbia visto»*.
     ///
     /// Il tetto è **il più stretto dei quattro**, e il numero è suo (2026-08-05): *«mettiamo che
@@ -27,7 +27,7 @@ public enum PresenceKind: String, Codable, Equatable, Sendable {
     /// **È il caso che mancava, e mancava proprio dove pesa di più.** Una riunione di due ore
     /// senza toccare il trackpad è la seduta più lunga della giornata, e fino al 2026-08-04
     /// l'app la leggeva come assenza: il contatore si fermava al primo minuto di silenzio e il
-    /// tempo di quella riunione non è mai esistito. Segnalato dal principale dopo esserci stato
+    /// tempo di quella riunione non è mai esistito. Visto dopo esserci stato
     /// dentro: *«Otium ha smesso di monitorare il tempo che ero davanti allo schermo»*.
     case call
 }
@@ -53,7 +53,7 @@ public struct PresenceSignal: Equatable, Sendable {
 /// un quarto d'ora no.
 /// **La call è l'unica eccezione, ed è voluta.** Un tetto sulla call riporterebbe esattamente il
 /// difetto che questa versione ripara: a riunione ancora aperta il contatore si fermerebbe di
-/// nuovo, e chi ci sta dentro tre ore vedrebbe contata solo la prima. Decisione del principale,
+/// nuovo, e chi ci sta dentro tre ore vedrebbe contata solo la prima. Mia decisione,
 /// 2026-08-04: *«non deve smettere di contare, se sono in call continuo a contare quanto tempo
 /// sono stato al computer»*. Il prezzo, dichiarato: un microfono lasciato aperto mentre esci di
 /// casa accumula ore che non hai passato seduto. È il motivo per cui esiste il richiamo delle 4
@@ -64,7 +64,7 @@ public enum PresenceCap {
     /// Più stretto della lettura, e non per simmetria. Un terminale resta in primo piano da solo
     /// per ore, mentre un PDF davanti implica almeno che qualcuno l'abbia aperto per leggerlo: il
     /// falso positivo «terminale acceso, scrivania vuota» è il più facile dei quattro da innescare,
-    /// quindi paga il tetto più corto. Cinque minuti è il numero del principale, non una stima.
+    /// quindi paga il tetto più corto. Cinque minuti è un numero mio, non una stima.
     public static let terminal: Double = 5 * 60
     public static let call: Double = .infinity
 

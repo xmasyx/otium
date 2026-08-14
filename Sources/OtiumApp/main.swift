@@ -24,7 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private weak var zenItem: NSMenuItem?
     private var statsHotKey: GlobalHotKey?
 
-    /// La scorciatoia globale delle statistiche, scelta dal principale il 2026-07-28: **⌃S**.
+    /// La scorciatoia globale delle statistiche, scelta il 2026-07-28: **⌃S**.
     /// Una costante sola perché cambiarla resti un gesto, non una caccia nel file.
     /// Prezzo dichiarato in `GlobalHotKey`: ⌃S smette di arrivare alle altre app (XOFF nei
     /// terminali, ricerca incrementale in Emacs).
@@ -532,7 +532,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     /// finestra con la barra del titolo, e lo fa apposta: `keyWindow` era una lotteria e finiva
     /// per fotografare proprio questo pannello al posto della finestra chiesta. Ma così il
     /// pannello della frase restava **l'unica superficie senza fotografia**, ed è esattamente
-    /// quella in cui il principale ha trovato una frase spezzata male: le righe erano giuste
+    /// quella in cui ho trovato una frase spezzata male: le righe erano giuste
     /// sulla carta e sbagliate a schermo, e nessuna sonda guardava lo schermo.
     ///
     /// Si usa con `--demo-hud=<secondi> --quote`, e con `--indice=N` per una frase precisa:
@@ -741,7 +741,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                 : model.launchPhrase
         }()
         // `--circuito` mostra il preavviso **vero** di una pausa piena in circuito, costruito dal
-        // motore e scritto da `upcomingSubtitle`. Serve a guardare la riga che il principale ha
+        // motore e scritto da `upcomingSubtitle`. Serve a guardare la riga che ho
         // visto sbagliata il 2026-08-04: una stringa giusta in un test può ancora entrare storta
         // nel pannello, e il pannello si guarda.
         let circuito = CommandLine.arguments.contains("--circuito")
@@ -1057,7 +1057,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     ///
     /// Simula un'installazione di due settimane fa ancora in partenza graduale, che è l'unico
     /// stato in cui quella finestra compare nella vita vera. Gira dentro `ProbeMode`, quindi i
-    /// dati veri del principale non li tocca: se premi un pulsante, la scelta finisce in una
+    /// dati veri non li tocca: se premi un pulsante, la scelta finisce in una
     /// cartella usa e getta. È il motivo per cui una demo può essere premuta davvero.
     private func runPaceDemoIfRequested() {
         guard CommandLine.arguments.contains("--demo-ritmo") else { return }
@@ -1170,7 +1170,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     /// `--circuit-probe` — alla fine di un circuito la notifica dice **tutto** il giro?
     ///
-    /// Il difetto era reale e visto dal principale: quattro stazioni fatte, e il banner ne
+    /// Il difetto era reale e visto: quattro stazioni fatte, e il banner ne
     /// nominava una. La sonda costruisce una pausa piena col circuito attraverso il motore vero e
     /// legge la riga che finirebbe nella notifica, invece di fidarsi del codice che la compone.
     private func runCircuitProbeIfRequested() {
@@ -1211,7 +1211,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     ///
     /// Il difetto era il gemello di quello sopra, e più caro: con il circuito acceso di serie il
     /// preavviso prometteva un esercizio solo — «16 squat» — e lo schermo si copriva su quattro.
-    /// Segnalato dal principale il 2026-08-04, prima di una pausa piena.
+    /// Visto all'uso il 2026-08-04, prima di una pausa piena.
     ///
     /// Due poli, perché uno solo non misura niente: **acceso di serie** deve nominare il circuito,
     /// e **proposto** deve nominare l'esercizio del turno, dove il circuito è un sì che devi dare
@@ -1258,8 +1258,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private func runPolicyProbeIfRequested() {
         guard CommandLine.arguments.contains("--policy-probe") else { return }
         // **Le Preferenze, non le Statistiche.** La sonda apriva la finestra che nessuno lascia
-        // aperta; quella che il principale tiene davanti mentre lavora e' questa, ed e' quella su
-        // cui ha visto l'icona. Una sonda che prova una finestra diversa da quella del difetto
+        // aperta; quella che tengo davanti mentre lavoro e' questa, ed e' quella su
+        // cui ho visto l'icona. Una sonda che prova una finestra diversa da quella del difetto
         // risponde a una domanda piu' debole di quella che le hai fatto.
         let allAvvio = NSApp.activationPolicy()
         showPrefs()
@@ -1591,7 +1591,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     /// **La voce nella barra non si può stringere, ed è misurato.**
     ///
-    /// Richiesta del principale, 2026-08-12, guardando Kalamos, NoSleep e Otium affiancate:
+    /// Mia richiesta, 2026-08-12, guardando Kalamos, NoSleep e Otium affiancate:
     /// *«hanno troppo bordo intorno, stringile e rendile uguali»*. Il tentativo era ovvio, cioè
     /// chiedere una `statusItem.length` stretta invece di lasciarla a `variableLength`, e la
     /// risposta di macOS è che quella richiesta **viene alzata in silenzio**:
@@ -1653,7 +1653,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // **L'altezza la detta il contenuto, non una costante.** Erano 260 punti scritti a mano
         // contro un pannello che ne occupa una sessantina di meno: sotto «sessioni intense»
         // restava una fascia vuota grande quanto tre voci di menu, e sembrava che mancasse
-        // qualcosa. Segnalato dal principale il 2026-07-31 guardando il menu aperto. Stessa cura
+        // qualcosa. Visto all'uso il 2026-07-31 guardando il menu aperto. Stessa cura
         // gia' applicata alla notifica il 28 luglio, e stesso motivo: una costante scritta a mano
         // scommette sull'altezza del contenuto, e la scommessa si perde al primo cambiamento.
         hosting.frame = NSRect(origin: .zero,
@@ -1666,7 +1666,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
         // **Quale pausa la scegli tu.** Prima la voce era una sola e il tipo lo decideva il
         // contatore «ogni terza è piena»: chiedendo una pausa se ne poteva prendere in faccia una
-        // da cinque minuti con esercizio vigoroso senza averlo chiesto. Segnalato dal principale
+        // da cinque minuti con esercizio vigoroso senza averlo chiesto. Visto all'uso
         // il 2026-07-28. Stesso schema del sottomenu di «Togli l'ultima pausa segnata».
         let breakNowItem = NSMenuItem(title: L.t("Fai una pausa adesso", "Take a break now"),
                                       action: nil, keyEquivalent: "")
@@ -1710,7 +1710,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // nessun monitor globale — verificato sul sorgente il 2026-07-28). Le sue combinazioni
         // valgono **solo mentre il menu è aperto**. Scriverci accanto ⌘S significava promettere
         // una scorciatoia globale che non esiste, e prendersi per giunta il tasto di Salva:
-        // segnalato dal principale, che se l'è trovato addosso in un'altra app.
+        // visto all'uso, trovandomelo addosso in un'altra app.
         //
         // Restano lettere nude, che a menu aperto funzionano davvero e non promettono niente
         // altrove. ⌘Q su «Esci» sopravvive perché lì il simbolo non si legge come una promessa:
@@ -2028,7 +2028,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     /// Qui c'era `setActivationPolicy(.regular)`, e faceva esattamente quello: apri le Preferenze,
     /// e per tutto il tempo che restano aperte Otium compare nel Dock con la sua icona. Il 28
     /// luglio avevo curato la meta' peggiore del difetto — ci restava **per sempre** — lasciando
-    /// in piedi la premessa, cioe' che una finestra valga un posto nel Dock. Il principale l'ha
+    /// in piedi la premessa, cioe' che una finestra valga un posto nel Dock. L'ho
     /// visto il 2026-07-31 e la sua frase e' la specifica: *«e' ricomparsa l'icona
     /// dell'applicazione nel dock. Non dovrebbe.»*
     ///

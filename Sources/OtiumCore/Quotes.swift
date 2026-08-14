@@ -12,7 +12,7 @@ import Foundation
 /// Le frasi belle **senza** fonte tracciabile non si buttano più: vivono in `Mindful`, dove
 /// compaiono come anonime. Perdere l'autore è onesto; inventarlo no.
 ///
-/// **Revisione del 2026-07-28, aperta da un errore che il principale ha visto a schermo** («toglie
+/// **Revisione del 2026-07-28, aperta da un errore che ho visto a schermo** («toglie
 /// il giudizio» invece di «togli»). Rilette tutte, e tolte queste, con la fonte del verdetto:
 /// - *«Non c'è nulla fuori di te…»*, Musashi — **inventata**: viene dalla riscrittura di Steve
 ///   Kaufman del 1994, venduta da Tuttle come se fosse il testo di Musashi. Nel Go Rin No Sho non
@@ -125,7 +125,7 @@ public enum Quotes {
         q("Alcune cose dipendono da noi, altre no.", "Of things some are in our power, and others are not.", "Epitteto", "Manuale, 1"),
         // **Non era italiano, ed era italiano tradotto dall'inglese.** «Ma vogli che vadano come
         // vanno» ricalca parola per parola il «but wish the things which happen» di George Long,
-        // e `vogli` è un imperativo che in italiano vivo non esiste più. Segnalato dal principale
+        // e `vogli` è un imperativo che in italiano vivo non esiste più. Visto all'uso
         // il 2026-08-04 leggendolo a schermo: *«non sembra italiano»*. Adesso l'italiano viene da
         // un'edizione pubblicata del Manuale e l'inglese dalla traduzione Carter: nessuno dei due
         // passa dall'altro.

@@ -14,7 +14,7 @@ extension Notification.Name {
 /// in condizione di scelta"*.
 ///
 /// **È un `NSPanel` non-attivante, e non è un dettaglio: è l'unica classe che entra nello Space
-/// di un'altra app a schermo intero.** Misurato il 2026-08-03 sul Mac del principale (macOS 26)
+/// di un'altra app a schermo intero.** Misurato il 2026-08-03 sul Mac di sviluppo (macOS 26)
 /// con iTerm a schermo intero nativo: la vecchia `NSWindow`, alzata dopo
 /// `setActivationPolicy(.regular)` + `activate(ignoringOtherApps:)`, **non entrava in quello
 /// Space** — zero pixel sullo schermo, e il server grafico non la elencava nemmeno fra le
@@ -451,7 +451,7 @@ final class WarningHUD {
         if let sound { NSSound(named: sound)?.play() }
 
         // **Il puntatore sopra la scheda tiene viva la notifica**, come fanno quelle di macOS.
-        // Chiesto dal principale il 2026-08-11: una frase di tre righe non si legge in dodici
+        // Deciso il 2026-08-11: una frase di tre righe non si legge in dodici
         // secondi mentre stai facendo altro, e il gesto che tutti provano è appoggiarci il mouse.
         //
         // **Perché si guarda dove sta il mouse invece di usare `NSTrackingArea`.** La prima
