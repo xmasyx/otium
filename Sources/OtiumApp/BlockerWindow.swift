@@ -275,7 +275,9 @@ final class WarningHUD {
             // scatola sembrava vuota e grossa il doppio del necessario. Adesso 92 è solo il
             // **minimo** — `present` prende comunque il massimo fra questo e l'altezza vera del
             // contenuto, quindi una frase lunga alza il pannello invece di essere tagliata.
-            size: NSSize(width: 470, height: 92),
+            // La larghezza viene da `QuoteWrap.Pannello`: la scatola e la colonna del testo devono
+            // nascere dallo stesso numero, o tornano a divergere come il 2026-08-14.
+            size: NSSize(width: QuoteWrap.Pannello.scatola, height: 92),
             sound: nil,
             seconds: seconds
         )

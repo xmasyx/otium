@@ -59,9 +59,36 @@ public enum QuoteWrap {
     /// La frase durante l'esercizio, in sordina sotto il conteggio.
     public static let esercizio = Colonna(nome: "esercizio", larghezza: 620, corpoBase: 18,   // lingua: ok nome di sonda, non va a schermo
                                           corpoRidotto: nil)
-    /// Il pannello: 470 di scatola meno i 18+18 di respiro, la barretta d'accento (4) e lo spazio
-    /// che la stacca (14).
-    public static let pannello = Colonna(nome: "pannello", larghezza: 470 - 36 - 4 - 14,
+    /// La geometria del pannello della frase d'avvio, **in un posto solo**.
+    ///
+    /// **Perché sta qui e non nella vista** (2026-08-14, segnalato dal principale con una
+    /// fotografia). La colonna era scritta come `470 - 36 - 4 - 14` qui, e la scatola era
+    /// costruita a mano nella vista con gli stessi numeri: due copie della stessa aritmetica, e
+    /// la copia nella vista aveva **uno spazio in più**. L'`HStack` conteneva barretta, testo e
+    /// uno `Spacer`, cioè **tre** elementi e quindi **due** intervalli da 14, mentre il conto qui
+    /// ne sottraeva uno solo. La colonna dichiarata era 416, quella disegnata 402.
+    ///
+    /// **Come si presentava, ed è il motivo per cui nessun controllo lo prendeva.** Le righe
+    /// erano giuste per 416 e `Text` le riceveva già tagliate, quindi `--tagli` diceva zero
+    /// difetti; poi a schermo la riga da 405,9 punti non ci stava in 402 e SwiftUI la spezzava di
+    /// nuovo. Il risultato erano **tre** righe visibili dove ne erano state calcolate due, con il
+    /// taglio nel punto peggiore, che è esattamente il difetto che `QuoteWrap` esiste per
+    /// togliere. La sonda misurava la cosa giusta con il righello sbagliato.
+    ///
+    /// Adesso i quattro numeri stanno qui e la vista li legge: non può più esistere una seconda
+    /// aritmetica che diverge in silenzio. Lo `Spacer` è stato tolto, e la sua funzione (tenere
+    /// il testo a sinistra) la fa un `frame(maxWidth:alignment:)`, che non aggiunge intervalli.
+    public enum Pannello {
+        public static let scatola: CGFloat = 470
+        public static let respiro: CGFloat = 18
+        public static let barra: CGFloat = 4
+        public static let stacco: CGFloat = 14
+        /// Quel che resta per il testo, ed è **la stessa sottrazione** che disegna la scatola.
+        public static let colonna: CGFloat = scatola - respiro * 2 - barra - stacco
+    }
+
+    /// Il pannello della frase d'avvio. La larghezza viene da `Pannello`, mai riscritta a mano.
+    public static let pannello = Colonna(nome: "pannello", larghezza: Pannello.colonna,
                                          corpoBase: 15, corpoRidotto: nil)
 
     public static let colonne: [Colonna] = [riposo, esercizio, pannello]
@@ -92,6 +119,16 @@ public enum QuoteWrap {
         guard greedy.count > 1 else { return [words.joined(separator: " ")] }
         let chosen = balancedBreaks(words: words, width: width, lineCount: greedy.count, m: m) ?? greedy
         return chosen.map { words[$0].joined(separator: " ") }
+    }
+
+    /// Quanto misura davvero una riga, con il carattere che la disegna.
+    ///
+    /// Diagnostica, non decide niente: serve a `--tagli --verboso` per far vedere **quanto vicina
+    /// al bordo** sta ogni riga. Una riga che riempie la colonna al 99,9% supera ogni controllo e
+    /// poi a schermo va a capo lo stesso, perché chi disegna non è chi ha misurato.
+    public static func larghezzaRiga(_ riga: String, font: NSFont) -> CGFloat {
+        let attr = NSAttributedString(string: riga, attributes: [.font: font])
+        return CGFloat(CTLineGetTypographicBounds(CTLineCreateWithAttributedString(attr), nil, nil, nil))
     }
 
     /// La frase con i tagli dentro, pronta da dare a `Text`.

@@ -1534,8 +1534,14 @@ struct QuoteHUDView: View {
     }
 
     var body: some View {
-        HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 2).fill(Palette.accent).frame(width: 4)
+        // **Ogni numero di questa scatola viene da `QuoteWrap.Pannello`, nessuno è scritto qui.**
+        // Erano scritti in due posti, e le due copie divergevano: qui c'erano tre elementi
+        // nell'`HStack`, cioè due intervalli da 14, mentre il calcolo della colonna ne toglieva
+        // uno solo. Quattordici punti di differenza bastavano a far spezzare di nuovo a `Text`
+        // righe già impaginate. La storia per esteso sta accanto alle costanti.
+        HStack(spacing: QuoteWrap.Pannello.stacco) {
+            RoundedRectangle(cornerRadius: 2).fill(Palette.accent)
+                .frame(width: QuoteWrap.Pannello.barra)
             VStack(alignment: .leading, spacing: 6) {
                 // **Il blocco si centra come un tutt'uno, e va bene così.**
                 //
@@ -1557,9 +1563,18 @@ struct QuoteHUDView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 if phrase.kind != .voce { credito }
             }
-            Spacer(minLength: 0)
+            // **La colonna del testo è dichiarata, non dedotta.** Prima c'era uno `Spacer` a
+            // spingere il blocco a sinistra: essendo un terzo elemento aggiungeva un secondo
+            // intervallo da 14 che il calcolo della colonna non contava, e le righe già
+            // impaginate venivano spezzate di nuovo da `Text`.
+            //
+            // Nemmeno `maxWidth: .infinity` va bene, provato qui lo stesso giorno: rende il
+            // contenuto avido, la `fittingSize` della vista ospitata schizza a 930 punti e il
+            // pannello esce largo il doppio. Un numero esatto non ha nessuna di queste due
+            // ambiguità, ed è **lo stesso** su cui sono stati calcolati i tagli.
+            .frame(width: QuoteWrap.Pannello.colonna, alignment: .leading)
         }
-        .padding(18)
+        .padding(QuoteWrap.Pannello.respiro)
         // **Nessuna altezza scritta qui.** Erano 132 punti fissi: una frase di due righe ci
         // ballava dentro, e una lunga sarebbe stata tagliata. Ora la detta il contenuto, con il
         // solo minimo del pannello — la stessa regola che `WarningHUD` applica già alle altre.
@@ -1568,7 +1583,7 @@ struct QuoteHUDView: View {
         // mazzo (Dhammapada, 137 caratteri) in 380 punti andava a tre righe strette e si leggeva
         // come un blocco compatto. Quaranta punti in più le tolgono una riga senza far invadere
         // al pannello mezzo schermo.
-        .frame(width: 470, alignment: .leading)
+        .frame(width: QuoteWrap.Pannello.scatola, alignment: .leading)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }

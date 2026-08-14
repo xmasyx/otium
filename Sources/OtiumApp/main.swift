@@ -139,6 +139,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         runHudDemoIfRequested()
         renderSnapshotIfRequested()
         captureWindowIfRequested()
+        printQuotePanelRegionIfRequested()
         runWindowProbeIfRequested()
         runConfirmProbeIfRequested()
         runFlushProbeIfRequested()
@@ -525,6 +526,78 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         }
     }
 
+    /// `--regione-frase` — stampa **dove** sta il pannello della frase, perché lo fotografi tu.
+    ///
+    /// **Perché serviva una sonda per questa superficie** (2026-08-14). `--scatta` cerca una
+    /// finestra con la barra del titolo, e lo fa apposta: `keyWindow` era una lotteria e finiva
+    /// per fotografare proprio questo pannello al posto della finestra chiesta. Ma così il
+    /// pannello della frase restava **l'unica superficie senza fotografia**, ed è esattamente
+    /// quella in cui il principale ha trovato una frase spezzata male: le righe erano giuste
+    /// sulla carta e sbagliate a schermo, e nessuna sonda guardava lo schermo.
+    ///
+    /// Si usa con `--demo-hud=<secondi> --quote`, e con `--indice=N` per una frase precisa:
+    ///
+    /// ```sh
+    /// OtiumApp --demo-hud=10 --quote --indice=299 --regione-frase &   # stampa x,y,w,h
+    /// sleep 3 && screencapture -x -R"<x,y,w,h>" pannello.png
+    /// ```
+    ///
+    /// Riconosce il pannello dalla larghezza, che è `QuoteWrap.Pannello.scatola`, cioè lo stesso
+    /// numero che lo disegna.
+    private func printQuotePanelRegionIfRequested() {
+        guard CommandLine.arguments.contains("--regione-frase") else { return }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            // **La finestra è più larga della scatola, e cercarla uguale non la trova.** Il
+            // pannello si porta dietro lo spazio in cui scorre via quando lo scarti, quindi la
+            // finestra misura 930 dove la scheda ne occupa 470: la prima versione di questa
+            // sonda cercava esattamente 470 e non trovava niente. Si cerca «almeno la scatola».
+            //
+            // Si prende l'ULTIMA aperta, perché un pannello già nascosto resta un oggetto
+            // finestra e supererebbe comunque il filtro. Provato e scartato `occlusionState`,
+            // che sembrava la domanda giusta: un pannello che non prende il fuoco non risulta
+            // `.visible` per il server delle finestre, e il filtro scartava proprio la finestra
+            // da misurare.
+            guard let panel = NSApp.windows.filter({
+                $0.isVisible && $0.contentView != nil
+                    && $0.frame.width >= QuoteWrap.Pannello.scatola
+            }).max(by: { $0.windowNumber < $1.windowNumber })
+            else {
+                // Elenca cosa c'era davvero: un «non trovato» senza l'elenco manda a cercare il
+                // guasto nel posto sbagliato, ed è successo la prima volta che questa è girata.
+                let viste = NSApp.windows.map { "\($0.frame.width)x\($0.frame.height) visibile=\($0.isVisible)" }
+                FileHandle.standardError.write(
+                    "regione-frase: nessun pannello largo \(QuoteWrap.Pannello.scatola). Finestre: \(viste)\n"
+                        .data(using: .utf8)!)
+                NSApp.terminate(nil); return
+            }
+            // **L'app dice DOVE guardare, la fotografia la scatta chi ha il permesso.**
+            //
+            // Provato e buttato, il 2026-08-14, lo scatto fatto da qui: `screencapture` chiede il
+            // permesso di Registrazione schermo, e chi lo esercita è il processo che lo lancia.
+            // Il Terminale ce l'ha, Otium no e non l'avrà mai, perché il suo vincolo è zero
+            // permessi. Da dentro l'app lo scatto è quindi uscito «could not create image from
+            // window» sia per numero di finestra sia per regione, con l'app viva e ferma, dal
+            // bundle e dal binario di sviluppo, mentre dalla stessa shell uno scatto riusciva
+            // sempre. Chiedere un permesso solo per la sonda avrebbe barattato l'unica promessa
+            // dell'app contro la comodità di una riga in meno.
+            //
+            // Quindi qui si stampa solo il rettangolo, nelle coordinate che vuole `-R`: origine
+            // in alto a sinistra, mentre AppKit la tiene in basso, da cui il ribaltamento. La
+            // larghezza è la **scheda**, non la finestra, perché gli altri 460 punti sono lo
+            // spazio trasparente in cui il pannello scorre via quando lo scarti.
+            let schermo = (panel.screen ?? NSScreen.main)?.frame ?? .zero
+            let f = panel.frame
+            let regione = "\(Int(f.minX)),\(Int(schermo.height - f.maxY)),"
+                + "\(Int(QuoteWrap.Pannello.scatola)),\(Int(f.height))\n"
+            // Scritto sul descrittore, non con `print`: verso una pipe lo stdout di Swift è a
+            // buffer pieno, e chi legge il rettangolo per fotografare sta appunto leggendo una
+            // pipe. Con `print` il file resta vuoto finché il processo non muore, cioè proprio
+            // fino a quando la fotografia non serve più.
+            FileHandle.standardOutput.write(regione.data(using: .utf8)!)
+        }
+    }
+
     /// `--scatta-menu=<file.png>` — fotografa il **menu della barra aperto**, che è l'unica
     /// superficie dell'app che nessuna resa fuori schermo sa disegnare: lo compone il server delle
     /// finestre quando lo apri, e `--scatta` non lo vede perché non è una finestra dell'app.
@@ -653,9 +726,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // caso non risponde: se esce corta si vede una scatola sana e si conclude che va tutto
         // bene. Il caso peggiore va **scelto**, non sperato.
         let piuLunga = CommandLine.arguments.contains("--lunga")
-        let scelta = piuLunga
-            ? PhraseLibrary.launchPool().max { $0.localizedText.count < $1.localizedText.count }
-            : model.launchPhrase
+        // `--indice=N` pesca una frase **precisa**, numerata come le numera `--tagli`. Senza, la
+        // frase che la sonda dichiara a posto e la frase che si guarda a schermo sono due frasi
+        // diverse, e il confronto fra il numero e la fotografia non si può fare.
+        let indice = CommandLine.arguments.first { $0.hasPrefix("--indice=") }
+            .flatMap { Int($0.dropFirst("--indice=".count)) }
+        let scelta: Phrase? = {
+            if let i = indice {
+                let mazzo = PhraseLibrary.breakPool(includingUser: false)
+                return mazzo.indices.contains(i) ? mazzo[i] : nil
+            }
+            return piuLunga
+                ? PhraseLibrary.launchPool().max { $0.localizedText.count < $1.localizedText.count }
+                : model.launchPhrase
+        }()
         // `--circuito` mostra il preavviso **vero** di una pausa piena in circuito, costruito dal
         // motore e scritto da `upcomingSubtitle`. Serve a guardare la riga che il principale ha
         // visto sbagliata il 2026-08-04: una stringa giusta in un test può ancora entrare storta
@@ -2216,7 +2300,14 @@ if CommandLine.arguments.contains("--tagli") {
             if !da.isEmpty || !ds.isEmpty || righeDiverse || verboso {
                 print("\n[\(nome) #\(i)] avido \(avido.count) righe \(da.map(\.rawValue)) · scelto \(scelto.count) righe \(ds.map(\.rawValue))")
                 for r in avido { print("  avido  | \(r)") }
-                for r in scelto { print("  scelto | \(r)") }
+                // La percentuale accanto a ogni riga scelta: è il numero che ha smascherato il
+                // difetto del 2026-08-14, una riga quasi al bordo della colonna che a schermo
+                // andava a capo lo stesso. Senza, «zero difetti» e la fotografia si
+                // contraddicono e non si sa da che parte guardare.
+                for r in scelto {
+                    let lw = QuoteWrap.larghezzaRiga(r, font: font)
+                    print(String(format: "  scelto | %@   [%.1f/%.0f = %.1f%%]", r, lw, w, lw / w * 100))
+                }
             }
         }
         totali[nome] = (difettiAvido, difettiScelto)
