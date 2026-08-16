@@ -279,17 +279,21 @@ final class WarningHUD {
             // nascere dallo stesso numero, o tornano a divergere come il 2026-08-14.
             size: NSSize(width: QuoteWrap.Pannello.scatola, height: 92),
             sound: nil,
+            volume: 0,
             seconds: seconds
         )
     }
 
-    func show(title: String, subtitle: String, sound: String? = "Tink", seconds: Double = 8) {  // lingua: ok "Tink" è il nome di un suono di sistema, non un testo
+    /// - Parameter volume: il pannello suona per conto suo, quindi il livello glielo passa chi lo
+    ///   apre. Arriva da `Settings.soundVolume`; il valore di serie serve solo ai richiami muti.
+    func show(title: String, subtitle: String, sound: String? = "Tink", volume: Double = 1, seconds: Double = 8) {  // lingua: ok "Tink" è il nome di un suono di sistema, non un testo
         present(
             NSHostingView(rootView: Dismissible(onDismiss: { [weak self] in self?.hide() }) {
                 HUDView(title: title, subtitle: subtitle)
             }),
             size: NSSize(width: 320, height: 84),
             sound: (sound?.isEmpty ?? true) ? nil : sound,
+            volume: volume,
             seconds: seconds
         )
     }
@@ -407,7 +411,7 @@ final class WarningHUD {
         }
     }
 
-    private func present(_ content: NSView, size richiesta: NSSize, sound: String?, seconds: Double) {
+    private func present(_ content: NSView, size richiesta: NSSize, sound: String?, volume: Double, seconds: Double) {
         hide()
         guard let screen = NSScreen.main else { return }
         // **La misura la detta il contenuto, non una costante.** L'altezza passata è un minimo:
@@ -448,7 +452,7 @@ final class WarningHUD {
         p.orderFrontRegardless()
         panel = p
 
-        if let sound { NSSound(named: sound)?.play() }
+        Suono.play(sound, volume: volume)
 
         // **Il puntatore sopra la scheda tiene viva la notifica**, come fanno quelle di macOS.
         // Deciso il 2026-08-11: una frase di tre righe non si legge in dodici

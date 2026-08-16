@@ -300,6 +300,23 @@ public struct Settings: Codable, Equatable, Sendable {
     /// quando è finito, un suono diverso però»*. Mentre sei sotto sforzo non guardi lo schermo,
     /// quindi la fine te la dice l'orecchio, e un orecchio distingue due suoni solo se sono due.
     public var holdEndSound: String
+    /// **Quanto forte suonano**, da 0 (muto) a 1, di serie pieno.
+    ///
+    /// Sua richiesta, 2026-08-16: *«il livello di volume della notifica, che non dipenda unicamente
+    /// dal volume generale del Mac»*. Prima ogni suono usciva al volume di sistema e basta, quindi
+    /// alzare la musica alzava anche Otium.
+    ///
+    /// **È una quota del volume del Mac, non un volume assoluto**, e la differenza va detta a chi
+    /// lo sposta: si può stare più piano di quello che stai ascoltando, non più forte. Col Mac muto
+    /// non si sente niente comunque, e salire sopra il pieno vorrebbe dire amplificare un campione
+    /// già al massimo, cioè distorcerlo.
+    public var soundVolume: Double
+    /// L'unico posto dove il volume viene limitato: l'init, la decodifica e chi suona chiamano
+    /// **questa**, invece di ricopiarsi un `min`/`max` a testa e divergere in silenzio.
+    public static func clampSoundVolume(_ value: Double) -> Double {
+        guard value.isFinite else { return 1 }
+        return min(1, max(0, value))
+    }
     /// Riaprendo l'app entro questo tempo, il conto riprende da dov'era. Di serie vale quanto
     /// una pausa piena (5 min): sotto è un riavvio, sopra è già una pausa vera.
     public var resumeGraceSeconds: Double
@@ -361,6 +378,7 @@ public struct Settings: Codable, Equatable, Sendable {
         theme: ThemeName = .alloro,
         notificationSound: String = "Tink",
         holdEndSound: String = "Glass",
+        soundVolume: Double = 1.0,
         resumeGraceSeconds: Double = 5 * 60,
         activeHoursAlwaysOn: Bool = true,
         activeFromHour: Int = 7,
@@ -396,6 +414,7 @@ public struct Settings: Codable, Equatable, Sendable {
         self.theme = theme
         self.notificationSound = notificationSound
         self.holdEndSound = holdEndSound
+        self.soundVolume = Settings.clampSoundVolume(soundVolume)
         self.resumeGraceSeconds = max(0, resumeGraceSeconds)
         self.activeHoursAlwaysOn = activeHoursAlwaysOn
         self.activeFromHour = activeFromHour
@@ -537,6 +556,12 @@ public struct Settings: Codable, Equatable, Sendable {
         theme = (try? c.decode(ThemeName.self, forKey: .theme)) ?? d.theme
         notificationSound = (try? c.decode(String.self, forKey: .notificationSound)) ?? d.notificationSound
         holdEndSound = (try? c.decode(String.self, forKey: .holdEndSound)) ?? d.holdEndSound
+        // Chiave assente nei file scritti prima del 2026-08-16: chi aggiorna ritrova i suoi suoni
+        // com'erano, cioè al pieno. Il limite si riapplica qui perché i `didSet` non scattano
+        // dentro un inizializzatore e un file scritto a mano scavalcherebbe l'init.
+        soundVolume = Settings.clampSoundVolume(
+            (try? c.decode(Double.self, forKey: .soundVolume)) ?? d.soundVolume
+        )
         resumeGraceSeconds = (try? c.decode(Double.self, forKey: .resumeGraceSeconds)) ?? d.resumeGraceSeconds
         // **Assente vuol dire acceso, di proposito.** Un file scritto prima di questo campo
         // porta una finestra che l'utente non ha quasi mai scelto: era il valore di serie.

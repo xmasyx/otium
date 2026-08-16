@@ -21,7 +21,7 @@ enum ProbeMode {
     private static let flags = [
         "--orphan-probe", "--sleep-probe", "--radar-probe", "--menu-probe", "--confirm-probe",
         "--flush-probe", "--window-probe", "--snapshot", "--demo-break", "--demo-hud", "--presence",
-        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo", "--demo-ritmo", "--mostra-crescita", "--demo-crescita", "--lsof-probe", "--mostra-prefs", "--scatta", "--scatta-menu", "--scatta-barra", "--misura-barra", "--segno-zen", "--stats-probe", "--registro-finto", "--cadenza-finta", "--circuito-subito", "--conto-probe",   // lingua: ok nomi di flag da riga di comando, non testo a schermo
+        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo", "--demo-ritmo", "--mostra-crescita", "--demo-crescita", "--lsof-probe", "--mostra-prefs", "--scatta", "--scatta-menu", "--scatta-barra", "--misura-barra", "--segno-zen", "--stats-probe", "--registro-finto", "--cadenza-finta", "--circuito-subito", "--conto-probe", "--prova-suono",   // lingua: ok nomi di flag da riga di comando, non testo a schermo
     ]
 
     static var active: Bool {
@@ -344,7 +344,8 @@ final class AppModel: ObservableObject {
                 title: plan.kind == .long ? L.t("Pausa piena fra un minuto", "Full break in one minute")
                           : L.t("Pausa fra un minuto", "Break in one minute"),
                 subtitle: upcomingSubtitle(plan),
-                sound: settings.notificationSound
+                sound: settings.notificationSound,
+                volume: settings.soundVolume
             )
         case .deferredBreakDue(let plan):
             // **L'avviso è tutto il punto.** Senza, la pausa arretrata riparte in silenzio e tu
@@ -359,7 +360,8 @@ final class AppModel: ObservableObject {
                           "the deferred full break resumes in one minute — \(upcomingTarget(plan))")
                     : L.t("la pausa rimandata riparte fra un minuto — \(upcomingTarget(plan))",
                           "the deferred break resumes in one minute — \(upcomingTarget(plan))"),
-                sound: settings.notificationSound
+                sound: settings.notificationSound,
+                volume: settings.soundVolume
             )
         case .postponeWarning(let plan):
             // **Muto, per la stessa ragione per cui è muto il rinvio**: la pausa che torna l'hai
@@ -383,7 +385,8 @@ final class AppModel: ObservableObject {
                            "Microphone on for \(Int(seconds / 3600)) hours"),
                 subtitle: L.t("nessuna pausa può partire mentre è in uso — se non sei in call, controlla quale app lo tiene aperto",
                               "no break can start while it is in use — if you are not on a call, check which app is holding it"),
-                sound: settings.notificationSound
+                sound: settings.notificationSound,
+                volume: settings.soundVolume
             )
         case .breakTimeOver:
             // **Solo suono, nessun pannello, e niente si chiude.** Lo schermo è coperto dal
@@ -568,7 +571,9 @@ final class AppModel: ObservableObject {
     ///   niente da avvisare — la riga che compare basta a dire che è stata registrata. Il suono
     ///   resta dov'è utile: il preavviso, che arriva mentre stai facendo altro.
     func announce(title: String, subtitle: String, silent: Bool = false) {
-        hud.show(title: title, subtitle: subtitle, sound: silent ? nil : settings.notificationSound)
+        hud.show(title: title, subtitle: subtitle,
+                 sound: silent ? nil : settings.notificationSound,
+                 volume: settings.soundVolume)
     }
 
     /// Le tre finestre che le Preferenze devono poter aprire: le fonti, il registro nel Finder,
@@ -586,9 +591,10 @@ final class AppModel: ObservableObject {
     var onReportIssue: (() -> Void)?
 
     /// Fa sentire un suono senza aspettare la prossima pausa: serve a sceglierlo.
-    func previewSound(_ name: String) {
-        guard !name.isEmpty else { return }
-        NSSound(named: name)?.play()
+    /// - Parameter volume: quello che stai spostando nelle Preferenze, che non è ancora salvato.
+    ///   Senza, la prova uscirebbe al volume vecchio e la manopola sembrerebbe non fare niente.
+    func previewSound(_ name: String, volume: Double? = nil) {
+        Suono.play(name, volume: volume ?? settings.soundVolume)
     }
 
     // MARK: - La tenuta a tempo
@@ -658,8 +664,8 @@ final class AppModel: ObservableObject {
         // ascoltare. Il secondo lato ha il suo perché i cinque secondi del cambio li passi girato
         // dall'altra parte, e lo schermo da lì non lo vedi.
         case .start, .switchSide, .secondSideStart:
-            NSSound(named: "Pop")?.play()   // lingua: ok nome di un suono di sistema
-        case .switchWarning:      NSSound(named: "Morse")?.play() // lingua: ok nome di un suono di sistema
+            Suono.play("Pop", volume: settings.soundVolume)   // lingua: ok nome di un suono di sistema
+        case .switchWarning:      Suono.play("Morse", volume: settings.soundVolume) // lingua: ok nome di un suono di sistema
         // La fine è l'unico suono che scegli tu, ed è l'unico che devi riconoscere da un'altra
         // stanza mentale: sei sotto sforzo e stai contando i tuoi secondi, non i miei.
         case .end:                previewSound(settings.holdEndSound)
@@ -733,7 +739,7 @@ final class AppModel: ObservableObject {
         // Il via è lo stesso tocco secco delle tenute: dice «adesso», e non si fa ascoltare.
         // Il via è lo stesso tocco secco delle tenute: dice «adesso», e non si fa ascoltare. La
         // fine non c'è, e il perché sta scritto accanto a `Breath.Cue`.
-        case .start: NSSound(named: "Pop")?.play()   // lingua: ok nome di un suono di sistema
+        case .start: Suono.play("Pop", volume: settings.soundVolume)   // lingua: ok nome di un suono di sistema
         }
     }
 

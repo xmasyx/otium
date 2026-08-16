@@ -71,7 +71,13 @@ public enum Mindful {
         // bene così» accetta e basta, che è il registro di tutto il gruppo. In inglese la chiusa
         // originale è inglese vero e resta.
         v("Chiudi gli occhi per dieci secondi. Non succede niente, e va bene così.", "Close your eyes for ten seconds. Nothing happens, and that's the good news."),
-        v("Sentire i piedi appoggiati per terra è il modo più veloce di tornare nel corpo.", "Feeling your feet on the floor is the fastest way back into your body."),
+        // Sua riscrittura, 16/08. La versione di prima («Sentire i piedi appoggiati per terra è il
+        // modo più veloce di tornare nel corpo») era una constatazione: descriveva una cosa vera
+        // invece di chiederti di farla. Divisa in due, la prima frase è il gesto e la seconda il
+        // motivo, che è il ritmo di tutto il gruppo. L'inglese diventa un imperativo per la stessa
+        // ragione, invece di ricalcare l'infinito italiano.
+        v("Focalizzarsi sull'appoggio dei piedi per terra. È il modo più veloce per tornare nel corpo.",
+          "Focus on your feet resting on the floor. It is the fastest way back into your body."),
         v("Guarda una cosa sola per dieci secondi, senza nominarla.", "Look at one thing for ten seconds without naming it."),
         v("Le mani sono contratte sul mouse da un'ora. Aprile.", "Your hands have been clamped on the mouse for an hour. Open them."),
     ]

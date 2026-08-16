@@ -135,6 +135,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             updateStatusTitle()
         }
 
+        // `--volume-finto=0.35` mette il volume dei suoni nella cartella usa e getta della sonda.
+        // Serve a due cose che a volume pieno non si vedono e non si sentono: fotografare la riga
+        // con il cursore a metà corsa e un numero di due cifre, e sentire la differenza senza
+        // toccare le impostazioni vere. Solo sonde.
+        if ProbeMode.active,
+           let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--volume-finto=") }),
+           let valore = Double(arg.split(separator: "=", maxSplits: 1).last.map(String.init) ?? "") {
+            var s = model.settings
+            s.soundVolume = Settings.clampSoundVolume(valore)
+            model.update(settings: s)
+        }
+
         runDemoIfRequested()
         runHudDemoIfRequested()
         renderSnapshotIfRequested()
@@ -156,6 +168,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         runPaceDemoIfRequested()
         runGrowthDemoIfRequested()
         runPrefsDemoIfRequested()
+        runSoundVolumeProbeIfRequested()
         runLsofProbeIfRequested()
         runRadarProbeIfRequested()
         runCountdownProbeIfRequested()
@@ -1094,6 +1107,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     /// Nato dall'audit: chiedere quale documento hai aperto costa un `lsof`, ed era l'operazione
     /// più cara che Otium facesse. Adesso si chiede solo nel preavviso. La sonda conta i lanci
     /// veri in tutte e due le fasi, invece di fidarsi del ramo `if`.
+    /// `--prova-suono` — la stessa nota a tre volumi, con il livello **riletto dall'oggetto che
+    /// sta suonando**.
+    ///
+    /// Sono i due poli del volume, e nessuno dei due basta da solo: la rilettura prova che il
+    /// numero è arrivato fino a `NSSound` invece di fermarsi nelle impostazioni, l'orecchio prova
+    /// che la differenza si sente. Un test non può fare la seconda metà e un orecchio non può fare
+    /// la prima.
+    private func runSoundVolumeProbeIfRequested() {
+        guard CommandLine.arguments.contains("--prova-suono") else { return }
+        let nome = model.settings.notificationSound.isEmpty ? "Tink" : model.settings.notificationSound  // lingua: ok nome di un suono di sistema
+        let livelli: [Double] = [1.0, 0.4, 0.1]
+        for (i, livello) in livelli.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 1.6) {
+                let suonato = Suono.play(nome, volume: livello)
+                let riletto = suonato.map { String($0.volume) } ?? "niente"
+                print("\(nome): chiesto \(livello) — riletto \(riletto)")
+                if i == livelli.count - 1 {
+                    // Il polo negativo, e va nella stessa corsa: a zero non deve uscire nessun
+                    // oggetto, cioè la funzione non ha suonato affatto.
+                    let muto = Suono.play(nome, volume: 0)
+                    print("\(nome): chiesto 0 — \(muto == nil ? "non ha suonato" : "HA SUONATO, ed è un difetto")")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { exit(0) }
+                }
+            }
+        }
+    }
+
     private func runLsofProbeIfRequested() {
         guard CommandLine.arguments.contains("--lsof-probe") else { return }
         Thread.detachNewThread {

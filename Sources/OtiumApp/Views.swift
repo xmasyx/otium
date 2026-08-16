@@ -2520,8 +2520,10 @@ struct PrefsView: View {
                     .labelsHidden()
                     .frame(width: 150)
                     // Sceglierlo senza sentirlo è come scegliere un colore al buio.
-                    Button(L.t("ascolta", "play")) { model.previewSound(draft.notificationSound) }
-                        .disabled(draft.notificationSound.isEmpty)
+                    Button(L.t("ascolta", "play")) {
+                        model.previewSound(draft.notificationSound, volume: draft.soundVolume)
+                    }
+                    .disabled(draft.notificationSound.isEmpty)
                 }
             }
             // **Un secondo suono, perché sono due momenti diversi.** Il preavviso arriva mentre
@@ -2538,12 +2540,54 @@ struct PrefsView: View {
                         }
                         .labelsHidden()
                         .frame(width: 150)
-                        Button(L.t("ascolta", "play")) { model.previewSound(draft.holdEndSound) }
-                            .disabled(draft.holdEndSound.isEmpty)
+                        Button(L.t("ascolta", "play")) {
+                            model.previewSound(draft.holdEndSound, volume: draft.soundVolume)
+                        }
+                        .disabled(draft.holdEndSound.isEmpty)
+                    }
+                }
+            }
+            // **Il volume sta sotto i due suoni perché vale per tutti e due**, più i tocchi del
+            // cambio lato e il via del respiro. Sopra sarebbe una manopola che governa qualcosa
+            // che non hai ancora scelto.
+            conNota(L.t("Vale per il preavviso, la fine della tenuta e i tocchi durante gli esercizi. È una quota del volume del Mac: puoi stare più piano di quello che stai ascoltando, non più forte, e col Mac muto non si sente niente.",
+                        "Applies to the warning, the hold end and the taps during exercises. It is a share of your Mac's volume: you can stay quieter than what you are listening to, not louder, and with the Mac muted nothing comes through.")) {
+                LabeledContent(L.t("Volume dei suoni", "Sound volume")) {
+                    HStack(spacing: 8) {
+                        // Numero prima del comando, come nei selettori numerici delle altre
+                        // pagine: il valore si legge senza doverlo dedurre dalla posizione.
+                        Text(percentuale(draft.soundVolume))
+                            .monospacedDigit()
+                            .foregroundStyle(Palette.text)
+                            // Allineato a destra: così il numero sta sempre alla stessa distanza
+                            // dal cursore e le cifre non ballano quando passa da 100% a 5%.
+                            .frame(width: 44, alignment: .trailing)
+                        // Il cursore è dell'app, non del Mac: senza la tinta arriverebbe col blu
+                        // di sistema in mezzo a una livrea che ha il suo accento.
+                        Slider(value: $draft.soundVolume, in: 0...1, step: 0.05)
+                            .tint(Palette.accent)
+                            .frame(width: 98)
+                        Button(L.t("ascolta", "play")) {
+                            model.previewSound(suonoDiProva, volume: draft.soundVolume)
+                        }
+                        .disabled(suonoDiProva.isEmpty)
                     }
                 }
             }
         }
+    }
+
+    /// Il suono con cui si prova il volume: il preavviso, o la fine tenuta se il preavviso è muto.
+    /// Provare il volume con un suono spento non direbbe niente, e a suoni entrambi spenti il
+    /// pulsante si spegne invece di non fare niente quando lo premi.
+    private var suonoDiProva: String {
+        draft.notificationSound.isEmpty ? draft.holdEndSound : draft.notificationSound
+    }
+
+    /// Il volume scritto come lo leggi tu. `0,05` di passo non produce mai decimali, quindi
+    /// l'arrotondamento non nasconde nulla.
+    private func percentuale(_ valore: Double) -> String {
+        "\(Int((valore * 100).rounded()))%"
     }
 
     /// Le tre cose che si aprono una volta ogni tanto, con accanto la riga che dice cosa sono.
