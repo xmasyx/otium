@@ -320,10 +320,22 @@ public struct SessionEngine {
             return callWatchdog(elapsed: elapsed, idle: idle, environment: environment)
                 + tickWorking(elapsed: elapsed, idle: idle, now: now, environment: environment)
         case .warning:
+            // **Il segnale si rilegge fino all'ultimo istante prima del blocco**, e nella fase
+            // di rinvio pure. Prima veniva scritto solo mentre lavoravi, e nel caso che conta
+            // quella scrittura era già scaduta quando la vedevi: la pausa rinviata **perché il
+            // microfono era in uso** si apre esattamente quando il microfono si libera, quindi
+            // la riga in alto a sinistra diceva «in conversazione: microfono in uso» proprio nel
+            // momento in cui non era più vero. Visto all'uso il 2026-08-19.
+            //
+            // Durante `.breaking` invece non si tocca: lì il segnale è la ragione per cui ti ho
+            // interrotto, ed è giusto che resti quella di un minuto fa. Riscriverlo mentre lo
+            // schermo è coperto significherebbe leggere l'ambiente della pausa e non del lavoro.
+            lastPresence = environment.presence
             return tickWarning(elapsed: elapsed, now: now, environment: environment)
         case .breaking:
             return tickBreaking(elapsed: elapsed, idle: idle)
         case .postponed:
+            lastPresence = environment.presence
             return callWatchdog(elapsed: elapsed, idle: idle, environment: environment)
                 + tickPostponed(elapsed: elapsed, idle: idle, now: now, environment: environment)
         }

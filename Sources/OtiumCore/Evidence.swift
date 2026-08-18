@@ -374,13 +374,27 @@ public enum Evidence {
     /// funzione che non c'è non interrompe nessuno. Restano dove hanno senso, nella finestra
     /// «Da dove vengono questi numeri», che si apre quando sei tu a volerle leggere.
     ///
+    /// **E nemmeno quelle sul respiro, quando non stai respirando** (2026-08-19, visto all'uso).
+    /// Il filtro contrario esisteva già da un pezzo: in Zen girano solo le fonti di Zen, perché
+    /// citare il crollo glicemico mentre respiri spiega un lavoro che non stai facendo. Lo
+    /// specchio mancava, e si è visto su una micro-pausa di russian twists che portava sotto
+    /// «L'esistenza della modalità Zen, e il suo tetto dichiarato». È lo stesso difetto delle due
+    /// voci «non promesso», con la stessa riparazione: la riga dice perché ti sto interrompendo
+    /// adesso, e adesso non ti sto chiedendo di respirare.
+    ///
     /// Deterministica, così non se ne perde nessuna e non se ne ripetono due di fila.
     public static func study(forBreak breakIndex: Int) -> Study {
-        let list = implemented
+        let list = exercise
         let i = ((breakIndex - 1) % list.count + list.count) % list.count
         return list[i]
     }
 
     /// Le fonti che giustificano una funzione presente (esclusa quella che ne giustifica l'assenza).
+    ///
+    /// Resta l'elenco di **cosa l'app fa davvero**, e come tale non cambia: è il giro della
+    /// pausa con esercizio che si è stretto, non questo.
     public static let implemented: [Study] = all.filter { s in !disclaimers.contains { $0.id == s.id } }
+
+    /// Il giro della pausa **con esercizio**: quello che resta togliendo il respiro.
+    public static let exercise: [Study] = implemented.filter { s in !zen.contains { $0.id == s.id } }
 }

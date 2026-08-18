@@ -425,13 +425,31 @@ final class RotatingTextTests: XCTestCase {
     /// Ogni pausa mostra una fonte diversa, e il giro si chiude sulle sole fonti che
     /// giustificano qualcosa che sta accadendo.
     func testTheStudyChangesAtEveryBreak() {
-        let shown = (1...Evidence.implemented.count).map { Evidence.study(forBreak: $0).id }
-        XCTAssertEqual(Set(shown).count, Evidence.implemented.count, "nessuna fonte ripetuta nel giro")
+        let shown = (1...Evidence.exercise.count).map { Evidence.study(forBreak: $0).id }
+        XCTAssertEqual(Set(shown).count, Evidence.exercise.count, "nessuna fonte ripetuta nel giro")
         for (a, b) in zip(shown, shown.dropFirst()) {
             XCTAssertNotEqual(a, b, "due pause di fila con lo stesso testo")
         }
         XCTAssertEqual(Evidence.study(forBreak: 1).id,
-                       Evidence.study(forBreak: 1 + Evidence.implemented.count).id, "il giro si chiude")
+                       Evidence.study(forBreak: 1 + Evidence.exercise.count).id, "il giro si chiude")
+    }
+
+    /// **Il gemello del test qui sotto, ed è il difetto visto il 2026-08-19**: una micro-pausa di
+    /// russian twists che porta sotto «L'esistenza della modalità Zen, e il suo tetto
+    /// dichiarato». Vero anche quello, e fuori luogo per la stessa ragione: mentre fai gli
+    /// addominali non stai respirando su comando.
+    ///
+    /// Due poli, perché togliere una fonte dal giro è facile e svuotarlo è lo stesso gesto: le
+    /// tre fonti sul respiro non devono uscire in nessun giro completo della pausa con
+    /// esercizio, **e** devono restare tutte e tre nel giro della modalità Zen.
+    func testNoBreathingStudyEverAppearsDuringAnExerciseBreak() {
+        let giro = (1...(Evidence.exercise.count * 3)).map { Evidence.study(forBreak: $0).id }
+        for z in Evidence.zen {
+            XCTAssertFalse(giro.contains(z.id),
+                           "«\(z.governs)» non spiega un esercizio")
+        }
+        XCTAssertEqual(Evidence.zen.count, 3, "il polo opposto: in Zen restano tutte")
+        XCTAssertFalse(Evidence.exercise.isEmpty, "e il giro dell'esercizio non si è svuotato")
     }
 
     /// Segnalato guardando lo schermo il 2026-07-27: durante un esercizio era comparso

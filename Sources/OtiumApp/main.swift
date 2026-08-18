@@ -246,6 +246,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // guardarlo. Un `if let` senza `else` non si vede leggendo il codice: si vede nei pixel.
         if !CommandLine.arguments.contains("--orfana") {
             model.forceBreakNow(long: long)
+            // `--circuito` fotografa la pausa **con il giro gia' cominciato**: la fila delle
+            // stazioni in alto, la stazione in corso accesa. Nella vita quella faccia si vede
+            // solo dopo aver detto si' al circuito dentro una pausa piena vera, cioe' mai
+            // durante una verifica. Va prima di `--esercizio`, perche' con il circuito acceso
+            // l'esercizio da guardare e' la stazione in corso.
+            if CommandLine.arguments.contains("--circuito") {
+                var s = model.settings
+                s.circuitMode = .proposto
+                model.update(settings: s)
+                model.forceBreakNow(long: true)
+                model.startCircuit()
+            }
             // `--esercizio=<nome>` rende la pausa con l'esercizio che si vuole **guardare**.
             // Senza, la resa mostra sempre quello che tocca alla rotazione, e un esercizio nuovo
             // — le cui istruzioni sono il prodotto, perche' nessuno sa cosa sia un Y-T-W — si

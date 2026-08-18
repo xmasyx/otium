@@ -278,12 +278,26 @@ struct BreakView: View {
         .buttonStyle(.plain)
     }
 
+    /// **Quanto dura questa pausa, non come la chiamiamo noi** (2026-08-19, sua richiesta
+    /// guardando il circuito).
+    ///
+    /// «PAUSA PIENA» è una categoria del motore: dice a quale ramo appartiene la pausa, che è
+    /// una cosa che interessa a chi l'ha scritta. Mentre la pausa la stai facendo, l'unica cosa
+    /// che vuoi sapere in alto a sinistra è quanto dura. Il numero viene da `plan.duration` e
+    /// non dalle preferenze lette adesso, per la stessa ragione per cui ci sta l'esercizio: il
+    /// piano è la fotografia di cosa ti è stato chiesto, e cambiare impostazione a metà pausa
+    /// non deve riscrivere la pausa in corso.
+    private static func durationLabel(_ plan: BreakPlan) -> String {
+        let minuti = max(1, Int((plan.duration / 60).rounded()))
+        return L.t("PAUSA \(minuti)'", "BREAK \(minuti)'")
+    }
+
     private func header(_ plan: BreakPlan) -> some View {
         VStack(spacing: 10) {
             HStack {
                 Text(plan.isZen
                      ? L.t("PAUSA ZEN", "ZEN BREAK")
-                     : (plan.kind == .long ? L.t("PAUSA PIENA", "FULL BREAK") : L.t("MICRO-PAUSA", "MICRO-BREAK")))
+                     : (plan.kind == .long ? Self.durationLabel(plan) : L.t("MICRO-PAUSA", "MICRO-BREAK")))
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .tracking(2)
                     .foregroundStyle(Palette.accent)
@@ -381,7 +395,7 @@ struct BreakView: View {
 
             // Mentre il conto gira le alternative spariscono: sei a terra, non stai scegliendo.
             if model.hold == nil {
-                variantRow
+                variantRow(singleLine: plan.circuitActive)
                 circuitOffer(plan)
             }
         }
@@ -937,8 +951,14 @@ struct BreakView: View {
     /// decide `VariantLayout`, che è nel nucleo e ha il suo test; qui restano solo gli spazi.
     /// Fra i pulsanti 12 punti invece di 8, e 10 fra le due righe: la lamentela era che si
     /// toccavano, e una riga in più senza aria intorno l'avrebbe spostata invece di toglierla.
+    ///
+    /// **Dentro il circuito invece la fila è una sola** (2026-08-19, sua richiesta guardando la
+    /// schermata del circuito). Lì sopra le alternative c'è già una riga di pastiglie — le
+    /// stazioni — e due blocchi impilati di pastiglie diverse si leggono come una griglia: non
+    /// si capisce più quale riga risponde a quale domanda. La faccia a esercizio singolo, che
+    /// quella riga non ce l'ha, tiene il layout del 31 luglio finché non la guardiamo insieme.
     @ViewBuilder
-    private var variantRow: some View {
+    private func variantRow(singleLine: Bool) -> some View {
         let options = model.variants
         if !options.isEmpty {
             VStack(spacing: 8) {
@@ -947,7 +967,8 @@ struct BreakView: View {
                     .tracking(1.5)
                     .foregroundStyle(Palette.dim)
                 VStack(spacing: 10) {
-                    ForEach(Array(VariantLayout.rows(options).enumerated()), id: \.offset) { riga in
+                    let righe: [[Exercise]] = singleLine ? [options] : VariantLayout.rows(options)
+                    ForEach(Array(righe.enumerated()), id: \.offset) { riga in
                         HStack(spacing: 12) {
                             ForEach(riga.element, id: \.kind) { option in
                                 variantButton(option)

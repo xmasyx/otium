@@ -224,6 +224,47 @@ final class CallPresenceTests: XCTestCase {
                        "chi tocca il Mac non è sparito")
     }
 
+    // MARK: - La riga della presenza non racconta una call gia' finita (2026-08-19)
+
+    /// **Il difetto visto all'uso**: la pausa rinviata perche' il microfono era in uso si apre
+    /// esattamente quando il microfono si libera, e in alto a sinistra c'era scritto «in
+    /// conversazione: microfono in uso». La riga esiste per dirti *cosa ho riconosciuto* e
+    /// darti modo di darmi torto: se descrive una condizione finita, fa l'opposto.
+    ///
+    /// I due poli stanno in questo test, perche' uno solo non misurerebbe niente. Finche' la
+    /// call e' in piedi la riga deve esserci — cancellarla sempre sarebbe un verde comprato
+    /// togliendo la funzione — e appena il microfono si libera deve sparire.
+    func testThePresenceLineDropsWhenTheCallEnds() {
+        var engine = makeEngine()
+        stayOnTheCall(&engine, seconds: 35 * 60, step: 30)
+
+        // Polo positivo: la pausa e' in attesa **per via del microfono**, e la riga lo dice.
+        XCTAssertEqual(engine.phase, .postponed, "il microfono acceso rinvia la pausa")
+        XCTAssertEqual(engine.lastPresence?.kind, .call,
+                       "mentre la call e' in piedi la riga deve nominarla")
+
+        // Il microfono si libera: la stessa porta da cui entra ogni pausa, cioe' il preavviso.
+        var idle = 0.0
+        for _ in 0..<10 {
+            idle += 10
+            engine.tick(elapsed: 10, idle: idle, now: Self.workingHour,
+                        environment: EngineEnvironment(microphoneActive: false, presence: nil))
+        }
+
+        // Polo negativo: da qui in avanti la riga non deve piu' esistere, ne' nel preavviso ne'
+        // sotto lo schermo coperto, che e' il punto esatto in cui lui l'ha letta.
+        XCTAssertNil(engine.lastPresence,
+                     "a microfono libero la riga non puo' ancora dire «microfono in uso»")
+
+        while engine.phase != .breaking, idle < 40 * 60 {
+            idle += 10
+            engine.tick(elapsed: 10, idle: idle, now: Self.workingHour,
+                        environment: EngineEnvironment(microphoneActive: false, presence: nil))
+        }
+        XCTAssertEqual(engine.phase, .breaking, "senza microfono la pausa arretrata deve aprirsi")
+        XCTAssertNil(engine.lastPresence, "e lo schermo coperto non racconta la call di prima")
+    }
+
     // MARK: - ISC-164 · `Anti:` il microfono non fa arretrare il contatore
 
     func testTurningTheMicrophoneOnNeverRewindsTheClock() {
