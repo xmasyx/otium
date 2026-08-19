@@ -67,6 +67,11 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     case splitSquat
     case gluteBridge
     case calfRaise
+    /// **La sedia al muro**, cioè lo squat isometrico. Aggiunta il 2026-08-19, e il posto che
+    /// copre non e' un muscolo: e' una situazione. Tutte le altre gambe chiedono di muoversi in
+    /// modo visibile o di andare a terra, e vestito bene, in un posto pubblico o davanti a
+    /// qualcuno la pausa si saltava. Questa si fa contro un muro senza che nessuno se ne accorga.
+    case wallSit
     // Spinta
     case pushUp
     case diamondPushUp
@@ -86,12 +91,25 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     case bicycleCrunch
     case deadBug
     case russianTwist
+    /// **Il bird-dog**: il core lento, che si fa senza sudare e senza rumore. Braccio e gamba
+    /// opposti, e il lavoro vero e' il bacino che **non** deve ruotare.
+    case birdDog
     case plank
+    /// Il plank **a braccia tese**, cioè sulle mani invece che sui gomiti. Aggiunto il
+    /// 2026-08-19 come regressione del plank: alzarsi sulle mani accorcia la leva fra le spalle
+    /// e i piedi, quindi lo stesso addome regge più a lungo. È la versione facile, e si chiama
+    /// così perché è quello che deve capire chi la sceglie.
+    /// **Non entra nel giro di serie**: è una via d'uscita e una scelta, non un turno.
+    case easyPlank
     case sidePlank
     case hollowHold
     // Posturali — aggiunti il 2026-07-31: la schiena alta era l'unica zona senza niente.
     case superman
     case ytw
+    /// **Gli angeli al muro**: e' l'esercizio della postura da schermo, e i due posturali che
+    /// c'erano chiedono entrambi di stendersi per terra. In piedi contro un muro si fa ovunque,
+    /// e lavora esattamente cio' che lo schermo spegne: le scapole e i rotatori della spalla.
+    case wallAngel
     // Vigorosi — sono questi che contano verso i 3 sessione intensa VILPA al giorno
     case burpee
     /// Il burpee **senza il piegamento**: squat, gambe indietro, gambe avanti, in piedi.
@@ -106,7 +124,16 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     case jumpingJack
     case jumpSquat
     case mountainClimber
+    /// Il mountain climber **incrociato**: il ginocchio destro va verso il gomito sinistro, e
+    /// viceversa. Chiesto il 2026-08-19. Non è un mountain climber più veloce: la diagonale
+    /// chiede agli obliqui di fermare la rotazione del bacino, quindi è più lento per
+    /// ripetizione e lavora un pezzo che il classico non tocca.
+    case crossMountainClimber
     case highKnees
+    /// **Le salite sulla sedia**: l'unico vigoroso che non salta. Serve la sera in appartamento,
+    /// dove burpee e jump squat sono un rumore che non puoi fare, e serve a chi le ginocchia le
+    /// ha stanche. La sedia c'e' gia', ed e' l'unico attrezzo che l'app si permette.
+    case stepUp
 
     /// Ripetizioni a regime, cioè a rampa completata. Scalano con la difficoltà: un archer
     /// push-up non si fa dieci volte come un push-up normale.
@@ -117,6 +144,9 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .splitSquat: return 10
         case .gluteBridge: return 15
         case .calfRaise: return 20
+        // Secondi, come le altre tenute. Un minuto e' il traguardo classico della sedia al muro,
+        // e regge dentro la micro-pausa da 90 secondi senza mangiarsela tutta.
+        case .wallSit: return 60
         case .pushUp: return 10
         case .diamondPushUp: return 8
         case .archerPushUp: return 6
@@ -131,20 +161,32 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .bicycleCrunch: return 24
         case .deadBug: return 16
         case .russianTwist: return 24
+        // Dodici in tutto, cioe' sei per lato: e' lento, e un numero alto qui premierebbe
+        // proprio la fretta che rovina l'esercizio.
+        case .birdDog: return 12
         // Per i tre esercizi a tempo questo numero è **secondi**, non ripetizioni: vedi `isTimed`.
         case .plank: return 45
+        case .easyPlank: return 50
         case .sidePlank: return 40
         case .hollowHold: return 30
         case .superman: return 12
         // Una ripetizione è **un ciclo intero**: Y, poi T, poi W. Contare le lettere separate
         // darebbe un numero tre volte più alto per lo stesso lavoro.
         case .ytw: return 8
+        // Dieci cicli lenti: qui il numero alto non serve a niente, la qualita' e' restare
+        // attaccato al muro con polsi e gomiti per tutta la salita.
+        case .wallAngel: return 10
         case .burpee: return 8
         case .squatThrust: return 12
         case .jumpingJack: return 25
         case .jumpSquat: return 10
         case .mountainClimber: return 24
+        // Meno del classico perche' una ripetizione costa piu' tempo, non perche' sia piu' facile.
+        case .crossMountainClimber: return 20
         case .highKnees: return 30
+        // Venti salite, cioe' dieci per gamba: e' la dose che alza il battito in un minuto
+        // senza chiedere di saltare.
+        case .stepUp: return 20
         }
     }
 
@@ -156,7 +198,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     /// dire la verità: 45 significa 45 secondi.
     public var isTimed: Bool {
         switch self {
-        case .plank, .sidePlank, .hollowHold: return true
+        case .plank, .easyPlank, .sidePlank, .hollowHold, .wallSit: return true
         default: return false
         }
     }
@@ -184,22 +226,27 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .bicycleCrunch: return 1.4
         case .deadBug: return 2.5
         case .russianTwist: return 1.2
-        case .plank, .sidePlank, .hollowHold: return 1.0   // un "rep" è un secondo di tenuta
+        case .birdDog: return 3.0        // due secondi di tenuta piu' il cambio, per lato
+        case .plank, .easyPlank, .sidePlank, .hollowHold, .wallSit: return 1.0   // un "rep" è un secondo di tenuta
         case .superman: return 3.5      // due secondi di tenuta più la discesa controllata
         case .ytw: return 6.0           // tre lettere, due secondi l'una: il ciclo è lungo
+        case .wallAngel: return 3.0     // sale e scende lento, altrimenti stacca dal muro
         case .burpee: return 4.5
         case .squatThrust: return 3.0   // senza il piegamento il ciclo è più corto
         case .jumpingJack: return 1.2
         case .jumpSquat: return 2.2
         case .mountainClimber: return 0.8
+        case .crossMountainClimber: return 1.1   // la diagonale non si fa di slancio
         case .highKnees: return 0.6
+        case .stepUp: return 2.0        // sali, sali, scendi, scendi: due secondi pieni
         }
     }
 
     /// Vigoroso nel senso di Stamatakis 2022: alza la frequenza cardiaca in 60-90 secondi.
     public var isVigorous: Bool {
         switch self {
-        case .burpee, .squatThrust, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return true
+        case .burpee, .squatThrust, .jumpingJack, .jumpSquat, .mountainClimber,
+             .crossMountainClimber, .highKnees, .stepUp: return true
         default: return false
         }
     }
@@ -212,17 +259,21 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     /// «tricipiti». Il pike push-up sta a parte perché di petto ne fa poco: sono spalle.
     public var muscleGroup: String {
         switch self {
-        case .squat, .lunge, .splitSquat: return "gambe"
+        // Le salite stanno con le gambe e non con il «total body» degli altri vigorosi: e' cio'
+        // che lavora davvero, ed e' quello che serve alla regola che non carica due volte di
+        // fila la stessa catena.
+        case .squat, .lunge, .splitSquat, .wallSit, .stepUp: return "gambe"
         case .gluteBridge: return "glutei"
         case .calfRaise: return "polpacci"
         case .pushUp, .diamondPushUp, .archerPushUp, .inclinePushUp,
              .kneePushUp, .wallPushUp: return "petto"
         case .pikePushUp: return "spalle"
         case .benchDip: return "tricipiti"
-        case .crunch, .sitUp, .legRaise, .bicycleCrunch, .deadBug, .russianTwist,
-             .plank, .sidePlank, .hollowHold: return "addome"
-        case .superman, .ytw: return "dorso"
-        case .burpee, .squatThrust, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return "total body"
+        case .crunch, .sitUp, .legRaise, .bicycleCrunch, .deadBug, .russianTwist, .birdDog,
+             .plank, .easyPlank, .sidePlank, .hollowHold: return "addome"
+        case .superman, .ytw, .wallAngel: return "dorso"
+        case .burpee, .squatThrust, .jumpingJack, .jumpSquat, .mountainClimber,
+             .crossMountainClimber, .highKnees: return "total body"
         }
     }
 
@@ -264,7 +315,8 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     /// l'unico numero che sai usare mentre li fai.
     public var isPerSide: Bool {
         switch self {
-        case .archerPushUp, .lunge, .splitSquat, .bicycleCrunch, .russianTwist, .sidePlank:
+        case .archerPushUp, .lunge, .splitSquat, .bicycleCrunch, .russianTwist, .sidePlank,
+             .birdDog, .stepUp:
             return true
         default:
             return false
@@ -279,13 +331,14 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     /// far scegliere in fretta a un umano, e "glutei" e "polpacci" sono gambe.
     public var category: ExerciseCategory {
         switch self {
-        case .squat, .lunge, .splitSquat, .gluteBridge, .calfRaise: return .gambe
+        case .squat, .lunge, .splitSquat, .gluteBridge, .calfRaise, .wallSit: return .gambe
         case .pushUp, .diamondPushUp, .archerPushUp, .inclinePushUp, .pikePushUp, .benchDip,
              .kneePushUp, .wallPushUp: return .spinta
-        case .crunch, .sitUp, .legRaise, .bicycleCrunch, .deadBug, .russianTwist,
-             .plank, .sidePlank, .hollowHold: return .addome
-        case .superman, .ytw: return .posturali
-        case .burpee, .squatThrust, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees: return .vigorosi
+        case .crunch, .sitUp, .legRaise, .bicycleCrunch, .deadBug, .russianTwist, .birdDog,
+             .plank, .easyPlank, .sidePlank, .hollowHold: return .addome
+        case .superman, .ytw, .wallAngel: return .posturali
+        case .burpee, .squatThrust, .jumpingJack, .jumpSquat, .mountainClimber,
+             .crossMountainClimber, .highKnees, .stepUp: return .vigorosi
         }
     }
 
@@ -296,6 +349,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .splitSquat: return "split squats"
         case .gluteBridge: return "ponte per i glutei"
         case .calfRaise: return "sollevamenti sui polpacci"
+        case .wallSit: return "sedia al muro"
         case .pushUp: return "push-ups"
         case .diamondPushUp: return "diamond push-ups"
         case .archerPushUp: return "archer push-ups"
@@ -310,17 +364,22 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .bicycleCrunch: return "crunch bicicletta"
         case .deadBug: return "dead bugs"
         case .russianTwist: return "russian twists"
+        case .birdDog: return "bird-dog"
         case .plank: return "plank"
+        case .easyPlank: return "easy plank"
         case .sidePlank: return "plank laterale"
         case .hollowHold: return "hollow hold"
         case .superman: return "superman"
         case .ytw: return "Y-T-W"
+        case .wallAngel: return "angeli al muro"
         case .burpee: return "burpees"
         case .squatThrust: return "squat thrusts"
         case .jumpingJack: return "jumping jacks"
         case .jumpSquat: return "jump squats"
         case .mountainClimber: return "mountain climbers"
+        case .crossMountainClimber: return "mountain climbers incrociati"
         case .highKnees: return "corsa sul posto"
+        case .stepUp: return "salite sulla sedia"
         }
     }
 
@@ -346,6 +405,7 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .deadBug: return "dead bugs"
         case .russianTwist: return "russian twists"
         case .plank: return "plank"
+        case .easyPlank: return "easy plank"
         case .sidePlank: return "side plank"
         case .hollowHold: return "hollow hold"
         case .superman: return "superman"
@@ -355,7 +415,12 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .jumpingJack: return "jumping jacks"
         case .jumpSquat: return "jump squats"
         case .mountainClimber: return "mountain climbers"
+        case .crossMountainClimber: return "cross-body mountain climbers"
         case .highKnees: return "high knees"
+        case .wallSit: return "wall sit"
+        case .wallAngel: return "wall angels"
+        case .birdDog: return "bird-dog"
+        case .stepUp: return "chair step-ups"
         }
     }
 
@@ -435,6 +500,9 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .plank:
             return L.t("Gomiti sotto le spalle, corpo in linea, glutei stretti. Se la schiena si inarca, fermati.",
                        "Elbows under your shoulders, body in line, glutes tight. If your back arches, stop.")
+        case .easyPlank:
+            return L.t("Il plank sulle mani invece che sui gomiti: polsi sotto le spalle, braccia tese, corpo in linea dalle spalle ai talloni. Braccia tese vuol dire leva più corta, quindi si tiene più a lungo.",
+                       "The plank on your hands instead of your elbows: wrists under your shoulders, arms straight, body in line from shoulders to heels. Straight arms mean a shorter lever, so you hold it longer.")
         case .sidePlank:
             return L.t("Su un gomito, corpo in linea vista di lato. Metà del tempo per lato, cambia a metà.",
                        "On one elbow, body in line seen from the side. Half the time per side, switch halfway.")
@@ -468,6 +536,21 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         case .mountainClimber:
             return L.t("In appoggio sulle mani, ginocchia al petto alternate, veloce. Bacino basso.",
                        "In a plank on your hands, knees to your chest alternating, fast. Hips low.")
+        case .crossMountainClimber:
+            return L.t("In appoggio sulle mani, porta il ginocchio destro verso il gomito sinistro e viceversa, alternando. Bacino basso, senza ruotare le anche.",
+                       "In a plank on your hands, drive your right knee towards your left elbow and vice versa, alternating. Hips low, without rotating them.")
+        case .wallSit:
+            return L.t("Schiena piatta al muro, scendi finché le cosce sono parallele, ginocchia sopra le caviglie. Il peso sui talloni, le mani lontane dalle gambe.",
+                       "Back flat against the wall, slide down until your thighs are parallel, knees above your ankles. Weight on your heels, hands off your legs.")
+        case .wallAngel:
+            return L.t("Schiena, testa e braccia al muro, gomiti a novanta gradi. Sali e scendi lento tenendo polsi e gomiti attaccati al muro: dove si staccano, fermati.",
+                       "Back, head and arms against the wall, elbows at ninety degrees. Slide up and down slowly keeping wrists and elbows on the wall: where they lift off, stop.")
+        case .birdDog:
+            return L.t("A quattro zampe, allunga braccio e gamba opposti fino alla linea del corpo, tieni un secondo, cambia lato. Il bacino resta fermo, non ruota.",
+                       "On all fours, extend the opposite arm and leg in line with your body, hold a second, switch sides. Your hips stay still, no rotation.")
+        case .stepUp:
+            return L.t("Sali sulla sedia con un piede, poi con l'altro, e scendi nello stesso ordine. Sedia stabile e senza rotelle, piede tutto in appoggio, alterna la gamba che guida.",
+                       "Step onto the chair with one foot, then the other, and step down in the same order. A stable chair with no wheels, the whole foot on the seat, alternate the leading leg.")
         case .highKnees:
             return L.t("Sul posto, ginocchia all'altezza del bacino, ritmo alto.",
                        "On the spot, knees up to hip height, high tempo.")
@@ -499,36 +582,45 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         // chiedono tutte spazio o pavimento — affondi, split squat, ponte — e in treno, in coda,
         // in ascensore non ne fai nessuna: restava solo saltare la pausa. Li ho
         // fatti lo stesso il 2026-08-04, fuori menu, e il registro ha scritto squat.
+        // La sedia al muro entra fra le alternative delle gambe per lo stesso motivo dei
+        // polpacci: e' quella che si puo' fare quando non puoi ne' muoverti ne' andare a terra.
         case .squat:
-            return [.splitSquat, .jumpSquat, .lunge, .gluteBridge, .calfRaise]
+            return [.splitSquat, .jumpSquat, .lunge, .gluteBridge, .calfRaise, .wallSit]
         case .lunge:
             return [.splitSquat, .squat, .gluteBridge, .calfRaise]
         case .splitSquat:
             return [.lunge, .squat, .gluteBridge, .calfRaise]
         case .gluteBridge:
-            return [.squat, .splitSquat, .lunge, .calfRaise]
+            return [.squat, .splitSquat, .lunge, .calfRaise, .wallSit]
+        case .wallSit:
+            return [.squat, .splitSquat, .calfRaise, .gluteBridge]
         case .calfRaise:
             return [.jumpingJack, .squat]
         case .crunch, .sitUp, .bicycleCrunch, .russianTwist:
             return [.crunch, .sitUp, .bicycleCrunch, .russianTwist, .legRaise].filter { $0 != self }
-        case .legRaise, .deadBug:
-            return [.legRaise, .deadBug, .hollowHold, .crunch].filter { $0 != self }
+        case .legRaise, .deadBug, .birdDog:
+            return [.legRaise, .deadBug, .birdDog, .hollowHold, .crunch].filter { $0 != self }
         // Le tenute stanno fra loro: passare da un plank a un crunch a metà pausa cambia il
         // mestiere dell'esercizio, non la sua difficoltà.
-        case .plank, .sidePlank, .hollowHold:
-            return [.plank, .sidePlank, .hollowHold, .deadBug].filter { $0 != self }
+        // Il plank sulle ginocchia sta **con le tenute**, e in tutti e due i sensi: chi non
+        // regge il plank lo trova dentro la pausa senza cercarlo nelle preferenze, e chi lo ha
+        // scelto per prudenza puo' risalire lo stesso giorno, non alla prossima.
+        case .plank, .easyPlank, .sidePlank, .hollowHold:
+            return [.plank, .easyPlank, .sidePlank, .hollowHold, .deadBug].filter { $0 != self }
         // Fra loro: sono due modi di fare la stessa cosa, uno più facile da tenere e uno più
         // preciso sulle scapole.
-        case .superman, .ytw:
-            return [.superman, .ytw].filter { $0 != self }
+        case .superman, .ytw, .wallAngel:
+            return [.superman, .ytw, .wallAngel].filter { $0 != self }
         // Lo squat thrust **per primo**: è lo stesso gesto con un pezzo in meno, quindi è la
         // sostituzione che chiedi quando il piegamento a terra oggi non c'è.
         case .burpee:
-            return [.squatThrust, .jumpSquat, .mountainClimber, .highKnees]
+            return [.squatThrust, .jumpSquat, .mountainClimber, .crossMountainClimber, .highKnees]
         case .squatThrust:
-            return [.burpee, .jumpSquat, .mountainClimber, .highKnees]
-        case .jumpingJack, .jumpSquat, .mountainClimber, .highKnees:
-            return [.burpee, .squatThrust, .jumpingJack, .jumpSquat, .mountainClimber, .highKnees]
+            return [.burpee, .jumpSquat, .mountainClimber, .crossMountainClimber, .highKnees]
+        case .jumpingJack, .jumpSquat, .mountainClimber, .crossMountainClimber, .highKnees,
+             .stepUp:
+            return [.burpee, .squatThrust, .jumpingJack, .jumpSquat, .mountainClimber,
+                    .crossMountainClimber, .highKnees, .stepUp]
                 .filter { $0 != self }
         }
     }

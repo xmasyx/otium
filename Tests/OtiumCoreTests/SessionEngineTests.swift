@@ -1246,9 +1246,14 @@ final class PosturalTests: XCTestCase {
     }
 
     /// Si sostituiscono a vicenda dentro la pausa: chi non regge il Y-T-W ha dove andare.
+    ///
+    /// **Dal 2026-08-19 sono tre.** Gli angeli al muro sono l'unico posturale che si fa in
+    /// piedi, quindi non sono solo un terzo esercizio: sono la via d'uscita quando andare a
+    /// terra non si puo' — vestito bene, in ufficio, sul pavimento sbagliato.
     func testTheyAreEachOthersVariant() {
-        XCTAssertEqual(ExerciseKind.superman.variants, [.ytw])
-        XCTAssertEqual(ExerciseKind.ytw.variants, [.superman])
+        XCTAssertEqual(ExerciseKind.superman.variants, [.ytw, .wallAngel])
+        XCTAssertEqual(ExerciseKind.ytw.variants, [.superman, .wallAngel])
+        XCTAssertEqual(ExerciseKind.wallAngel.variants, [.superman, .ytw])
     }
 
     /// **Il superman è fuori dalla rotazione di serie ma resta raggiungibile.** È la regola

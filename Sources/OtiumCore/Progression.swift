@@ -105,9 +105,21 @@ public enum Progression {
         case .sitUp: return .hollowHold
         case .legRaise: return .hollowHold
         case .benchDip: return .diamondPushUp
+        // Il gradino piu' basso dei vigorosi: le salite non saltano, i jumping jack si'.
+        case .stepUp: return .jumpingJack
         case .jumpingJack: return .highKnees
         case .highKnees: return .mountainClimber
-        case .mountainClimber: return .burpee
+        // L'incrociato sta **fra** il classico e il burpee, e non e' un gradino di comodo: la
+        // diagonale aggiunge il lavoro degli obliqui contro la rotazione del bacino, che il
+        // classico non chiede. Chi ha finito i secondi del mountain climber ha ancora questo
+        // prima di trovarsi davanti un burpee.
+        case .mountainClimber: return .crossMountainClimber
+        case .crossMountainClimber: return .burpee
+        // Il bird-dog e il dead bug sono lo stesso mestiere in due posizioni: il primo a
+        // quattro zampe, il secondo a terra e piu' duro da tenere onesto.
+        case .birdDog: return .deadBug
+        // La regressione del plank risale al plank, come le ginocchia risalgono al push-up.
+        case .easyPlank: return .plank
         default: return nil
         }
     }

@@ -278,8 +278,8 @@ struct BreakView: View {
         .buttonStyle(.plain)
     }
 
-    /// **Quanto dura questa pausa, non come la chiamiamo noi** (2026-08-19, sua richiesta
-    /// guardando il circuito).
+    /// **Quanto dura questa pausa, non come la chiamiamo noi** (2026-08-19, chiesto guardando
+    /// il circuito).
     ///
     /// «PAUSA PIENA» è una categoria del motore: dice a quale ramo appartiene la pausa, che è
     /// una cosa che interessa a chi l'ha scritta. Mentre la pausa la stai facendo, l'unica cosa
@@ -952,8 +952,8 @@ struct BreakView: View {
     /// Fra i pulsanti 12 punti invece di 8, e 10 fra le due righe: la lamentela era che si
     /// toccavano, e una riga in più senza aria intorno l'avrebbe spostata invece di toglierla.
     ///
-    /// **Dentro il circuito invece la fila è una sola** (2026-08-19, sua richiesta guardando la
-    /// schermata del circuito). Lì sopra le alternative c'è già una riga di pastiglie — le
+    /// **Dentro il circuito invece la fila è una sola** (2026-08-19, chiesto guardando la schermata
+    /// del circuito). Lì sopra le alternative c'è già una riga di pastiglie — le
     /// stazioni — e due blocchi impilati di pastiglie diverse si leggono come una griglia: non
     /// si capisce più quale riga risponde a quale domanda. La faccia a esercizio singolo, che
     /// quella riga non ce l'ha, tiene il layout del 31 luglio finché non la guardiamo insieme.

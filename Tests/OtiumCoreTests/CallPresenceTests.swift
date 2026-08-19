@@ -252,7 +252,7 @@ final class CallPresenceTests: XCTestCase {
         }
 
         // Polo negativo: da qui in avanti la riga non deve piu' esistere, ne' nel preavviso ne'
-        // sotto lo schermo coperto, che e' il punto esatto in cui lui l'ha letta.
+        // sotto lo schermo coperto, che e' il punto esatto in cui quella riga si legge.
         XCTAssertNil(engine.lastPresence,
                      "a microfono libero la riga non puo' ancora dire «microfono in uso»")
 

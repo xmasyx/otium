@@ -386,6 +386,31 @@ final class CircuitTests: XCTestCase {
         }
     }
 
+    /// **Un esercizio nuovo si aggiunge in undici punti, e il compilatore ne controlla nove.**
+    /// I due che non controlla sono quelli che l'utente legge: il nome e l'istruzione. Uno
+    /// `switch` esaustivo obbliga a scrivere *un* ramo, non a scriverne uno diverso dagli altri,
+    /// quindi un copia-incolla lascia due esercizi con lo stesso nome e nessuno se ne accorge —
+    /// e sullo schermo sono due pastiglie identiche fra cui scegliere.
+    ///
+    /// Nato aggiungendo il mountain climber incrociato e il plank sulle ginocchia (2026-08-19).
+    func testEveryExerciseHasItsOwnNameAndCue() {
+        var nomiIT: [String: ExerciseKind] = [:]
+        var nomiEN: [String: ExerciseKind] = [:]
+        for kind in ExerciseKind.allCases {
+            XCTAssertFalse(kind.cue.trimmingCharacters(in: .whitespaces).isEmpty,
+                           "\(kind): nessuna istruzione da leggere")
+            if let gia = nomiIT[kind.italianName] {
+                XCTFail("\(kind) e \(gia) hanno lo stesso nome italiano: «\(kind.italianName)»")
+            }
+            if let gia = nomiEN[kind.englishName] {
+                XCTFail("\(kind) e \(gia) hanno lo stesso nome inglese: «\(kind.englishName)»")
+            }
+            nomiIT[kind.italianName] = kind
+            nomiEN[kind.englishName] = kind
+        }
+        XCTAssertEqual(nomiIT.count, ExerciseKind.allCases.count)
+    }
+
     /// Ogni esercizio appartiene a una famiglia e a una sola.
     func testEveryExerciseHasExactlyOneCategory() {
         for kind in ExerciseKind.allCases {
