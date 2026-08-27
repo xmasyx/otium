@@ -535,7 +535,7 @@ public struct Settings: Codable, Equatable, Sendable {
             let vecchio = try? decoder.container(keyedBy: ChiaviRitirate.self)
             let offriva = (try? vecchio?.decode(Bool.self, forKey: .offerCircuit)) ?? true
             let subito = (try? vecchio?.decode(Bool.self, forKey: .startLongInCircuit)) ?? false
-            circuitMode = (offriva ?? true) ? ((subito ?? false) ? .subito : .proposto) : .singolo
+            circuitMode = offriva ? (subito ? .subito : .proposto) : .singolo
         }
         autoStartAtLogin = (try? c.decode(Bool.self, forKey: .autoStartAtLogin)) ?? d.autoStartAtLogin
         maxAutoDefers = (try? c.decode(Int.self, forKey: .maxAutoDefers)) ?? d.maxAutoDefers
