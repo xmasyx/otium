@@ -21,6 +21,20 @@ quarantena e la avvia. [Leggi lo script](Scripts/install.sh) prima di darlo in p
 perché è corto e la riga che conviene guardare con i tuoi occhi è l'`xattr` che toglie la
 quarantena. Chi preferisce compilare trova le istruzioni più sotto.
 
+**Se preferisci scaricare a mano** invece di dare uno script in pasto a una shell, prendi l'archivio
+da [Releases](../../releases). Otium è firmata con un certificato stabile mio ma **non notarizzata**:
+la notarizzazione vuol dire iscriversi all'Apple Developer Program a 99 $ l'anno, e questo è un
+progetto MIT gratuito.
+macOS mette un flag di *quarantena* su tutto quello che arriva da internet, e su un'app che Apple non
+ha notarizzato Gatekeeper non ti dà una scelta: rifiuta la prima apertura. Il flag si toglie a mano,
+ed è la stessa cosa che fa l'installatore al posto tuo:
+
+```sh
+# metti Otium.app in /Applications, poi:
+xattr -dr com.apple.quarantine /Applications/Otium.app
+open /Applications/Otium.app
+```
+
 Niente telecamera. Niente abbonamento. Niente rete. Nessun permesso di sistema.
 
 ---
