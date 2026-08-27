@@ -59,6 +59,34 @@ jobs:
       - name: Zip it
         run: ditto -c -k --keepParent dist/Otium.app Otium.zip
 
+      # Il DMG, per chi scarica a mano invece di usare l'installatore.
+      #
+      # Costruito qui dentro con `hdiutil` e non da uno strumento di sistema: un runner GitHub è
+      # una macchina nuda, e un passo che dipende da qualcosa fuori dal repo è un passo che
+      # funziona solo sul Mac di chi l'ha scritto.
+      - name: Make the DMG
+        run: |
+          VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' \
+            "dist/Otium.app/Contents/Info.plist")"
+          DMG="Otium-${VERSION}.dmg"
+          STAGE="$(mktemp -d)"
+          cp -R "dist/Otium.app" "$STAGE/"
+          ln -s /Applications "$STAGE/Applications"
+          hdiutil create -volname "Otium ${VERSION}" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
+
+          # Un DMG che si crea senza errori può contenere un bundle rotto, e la differenza si vede
+          # solo montandolo. Meglio qui che nella cartella Download di chi lo scarica.
+          MNT="$(hdiutil attach "$DMG" -nobrowse -readonly | grep -o '/Volumes/.*' | head -1)"
+          # Si smonta SEMPRE, anche quando il controllo boccia: uscire prima del `detach` lascia un
+          # volume montato in giro, e su una macchina che non è un runner usa-e-getta resta lì.
+          trap 'hdiutil detach "$MNT" -quiet 2>/dev/null || true' EXIT
+          test -x "$MNT/Otium.app/Contents/MacOS/Otium" \
+            || { echo "::error::no executable inside the DMG"; exit 1; }
+          codesign --verify --deep --strict "$MNT/Otium.app" \
+            || { echo "::error::the signature does not hold inside the DMG"; exit 1; }
+          echo "DMG=$DMG" >> "$GITHUB_ENV"
+          echo "the DMG is $DMG"
+
       - name: Upload the artifact
         uses: actions/upload-artifact@v4
         with:
@@ -69,5 +97,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: Otium.zip
+          files: |
+            Otium.zip
+            ${{ env.DMG }}
           generate_release_notes: true
