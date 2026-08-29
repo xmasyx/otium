@@ -5,7 +5,8 @@
 #   curl -fsSL https://raw.githubusercontent.com/xmasyx/otium/main/Scripts/install.sh | bash
 #
 # Downloads the latest release, puts Otium.app in /Applications, clears the
-# quarantine flag (builds are unsigned) and launches it.
+# quarantine flag (release builds are signed ad-hoc, never notarized) and
+# launches it.
 #
 #   install.sh              install or update to the latest release
 #   install.sh --version X  install a specific tag (e.g. v1.0.0)
@@ -80,9 +81,16 @@ case "${1:-}" in
     *)           die "unknown option: $1" ;;
 esac
 
-# ── Requirements. Only one, and it is a real one: Otium is built against the
-#    macOS 15 SDK. No Apple Silicon requirement — nothing here runs on the GPU
-#    or the Neural Engine, so an Intel Mac is fine.
+# ── Requirements. Otium is built against the macOS 15 SDK, so macOS 15 is the
+#    one hard requirement checked here.
+#
+#    About the processor: nothing in Otium runs on the GPU or the Neural Engine,
+#    and the release is built as a universal binary (arm64 + x86_64), so both
+#    Apple Silicon and Intel Macs are served. That used to be written here as a
+#    promise while the shipped binary carried an arm64 slice only — `lipo -archs`
+#    on the v1.1.0 download says `arm64` and nothing else. A promise is not a
+#    check, so the architecture is no longer argued about up here: the downloaded
+#    bundle is asked to run, before anything is copied. See the probe below.
 say "checking this Mac…"
 
 [ "$(uname -s)" = "Darwin" ] || die "Otium is macOS only."
@@ -129,6 +137,25 @@ SRC="${TMP}/unpacked/${APP_NAME}.app"
 [ -d "${SRC}" ] || die "the archive does not contain ${APP_NAME}.app."
 [ -x "${SRC}/Contents/MacOS/${APP_NAME}" ] || die "the downloaded bundle has no executable."
 
+# ── Does this build run on THIS Mac? Asked before /Applications is touched.
+#
+# The check that answers this used to live at the very end, after the copy, and when it failed
+# it blamed the quarantine flag: "the installed app does not run. Try: xattr -cr". On an Intel
+# Mac downloading an Apple-Silicon-only release that message named the wrong cause and left a
+# broken bundle installed. Moved up here it costs nothing and answers honestly, and the
+# post-install check further down keeps its own job — a copy that went wrong.
+#
+# The quarantine flag is cleared on the temp copy first, so this probe answers one question
+# only ("does this binary run on this processor?") instead of two. A probe that can fail for
+# two reasons reports the wrong one half the time.
+xattr -dr com.apple.quarantine "${SRC}" 2>/dev/null || true
+if ! "${SRC}/Contents/MacOS/${APP_NAME}" --version >/dev/null 2>&1; then
+    if [ "$(sysctl -n hw.optional.arm64 2>/dev/null || echo 0)" = "1" ]; then
+        die "the ${VERSION} build did not start on this Mac, and nothing was installed. Please open an issue at https://github.com/${REPO}/issues with your macOS version and the release you tried."
+    fi
+    die "the ${VERSION} build did not start on this Intel Mac, and nothing was installed. Releases up to v1.1.0 carry an Apple Silicon binary only; later ones are universal (arm64 + x86_64). Install the latest release, or build from source: https://github.com/${REPO}"
+fi
+
 # ── Install
 DEST_DIR="$(install_dir)"
 quit_running
@@ -141,9 +168,13 @@ cp -R "${SRC}" "${DEST_DIR}/" || die "could not copy into ${DEST_DIR}."
 xattr -dr com.apple.quarantine "${DEST_DIR}/${APP_NAME}.app" 2>/dev/null || true
 ok "installed ${DEST_DIR}/${APP_NAME}.app"
 
-# ── Verify what we just installed rather than assuming it works
+# ── Verify what we just installed rather than assuming it works.
+#
+# The same binary already ran from the temp directory a few lines up, so an architecture
+# mismatch is ruled out by the time we get here: what is left is the copy and the quarantine
+# flag, which is exactly what this message may now blame.
 if ! "${DEST_DIR}/${APP_NAME}.app/Contents/MacOS/${APP_NAME}" --version >/dev/null 2>&1; then
-    die "the installed app does not run. Try: xattr -cr ${DEST_DIR}/${APP_NAME}.app"
+    die "the copy in ${DEST_DIR} does not run, though the downloaded one did. Try: xattr -cr ${DEST_DIR}/${APP_NAME}.app"
 fi
 
 open "${DEST_DIR}/${APP_NAME}.app"

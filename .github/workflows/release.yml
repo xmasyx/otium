@@ -48,6 +48,15 @@ jobs:
           APP=dist/Otium.app
           test -x "$APP/Contents/MacOS/Otium"     || { echo "::error::no executable in the bundle"; exit 1; }
           test -f "$APP/Contents/Resources/Otium.icns" || { echo "::error::the bundle has no icon"; exit 1; }
+          # The README and the installer both promise an Intel Mac is served. That promise is
+          # a fact about the file being published, so it is checked on the file being
+          # published — v1.1.0 shipped an arm64-only binary under that same promise.
+          ARCHS="$(lipo -archs "$APP/Contents/MacOS/Otium")"
+          echo "the bundle carries: ${ARCHS}"
+          for a in arm64 x86_64; do
+            grep -qw "$a" <<< "${ARCHS}" \
+              || { echo "::error::the bundle is not universal (it carries: ${ARCHS})"; exit 1; }
+          done
           VERSION_SAID="$("$APP/Contents/MacOS/Otium" --version)"
           echo "the bundle says: ${VERSION_SAID}"
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then

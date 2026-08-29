@@ -1,5 +1,8 @@
 #!/bin/bash
-# Costruisce Otium.app — bundle avviabile con doppio clic, firmato ad-hoc.
+# Costruisce Otium.app — bundle avviabile con doppio clic, universale (arm64 + x86_64),
+# firmato ad-hoc, oppure con l'identità locale «Otium Dev» se l'hai creata con
+# Scripts/make-signing-cert.sh. Sul runner di GitHub quell'identità non c'è, quindi le
+# release pubblicate sono firmate ad-hoc: è il ramo `else` qui sotto.
 # Uso: Scripts/build-app.sh [cartella-destinazione]   (default: ./dist)
 
 set -euo pipefail
@@ -15,8 +18,26 @@ LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchSe
 
 cd "$ROOT"
 
-echo "▸ compilo (release)…"
-swift build -c release --product OtiumApp
+# ── Universale, non solo arm64 (2026-08-29)
+#
+# **Il caso.** La v1.1.0 spedita porta una fetta sola — `lipo -archs` sul binario dentro
+# `Otium.zip` risponde `arm64` — mentre `install.sh` scriveva che un Mac Intel va bene e
+# controllava solo la versione di macOS. Su un Intel l'installatore copiava l'app e poi moriva
+# sull'ultimo controllo dando la colpa alla quarantena, che non c'entrava niente.
+#
+# Delle due strade possibili — ritirare la promessa o mantenerla — si mantiene: la build
+# universale compila e i test restano verdi, quindi non c'è niente da guadagnare a togliere
+# metà del parco Mac. Il costo è il tempo di compilazione, che si paga sul runner.
+#
+# Il percorso del prodotto **cambia** quando si passano le architetture (`.build/apple/Products`
+# invece di `.build/release`), e scriverlo a mano è il modo di copiare per mesi il binario
+# vecchio senza accorgersene: lo si chiede a swift build con `--show-bin-path`.
+ARCHITETTURE=(--arch arm64 --arch x86_64)
+
+echo "▸ compilo (release, universale: arm64 + x86_64)…"
+swift build -c release --product OtiumApp "${ARCHITETTURE[@]}"
+BIN="$(swift build -c release --product OtiumApp "${ARCHITETTURE[@]}" --show-bin-path)/OtiumApp"
+[[ -x "$BIN" ]] || { echo "✗ il binario non è dove swift build dice: $BIN"; exit 1; }
 
 echo "▸ icona…"
 # Ogni taglia si DISEGNA, non si riduce. La frase «otium cum dignitate» sotto i
@@ -59,8 +80,20 @@ rm -rf "$PARCHEGGIO"
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$ROOT/.build/release/OtiumApp" "$APP/Contents/MacOS/Otium"
+cp "$BIN" "$APP/Contents/MacOS/Otium"
 cp "$ROOT/.build/Otium.icns" "$APP/Contents/Resources/Otium.icns"
+
+# ── Le due architetture si verificano, non si sperano
+#
+# Un binario che ne dichiara due e ne porta una è esattamente la bugia che questa modifica
+# chiude, e `swift build` non fallisce se una fetta non si costruisce come credi: fallisce qui,
+# prima che il bundle esista, invece di farlo scoprire a chi lo scarica.
+ARCHI_DENTRO="$(lipo -archs "$APP/Contents/MacOS/Otium")"
+for a in arm64 x86_64; do
+    grep -qw "$a" <<< "$ARCHI_DENTRO" \
+        || { echo "✗ il binario non contiene $a (contiene: $ARCHI_DENTRO)"; exit 1; }
+done
+echo "▸ architetture: $ARCHI_DENTRO"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
