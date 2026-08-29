@@ -21,10 +21,16 @@ the quarantine flag and launches it. [Read the script](Scripts/install.sh) befor
 shell — it is short, and the one line worth confirming yourself is the `xattr` that clears
 quarantine. Building from source is [further down](#build-it-yourself).
 
+**What it needs:** macOS 15 or newer, on either processor. The release is a universal binary, so
+`lipo -archs Otium.app/Contents/MacOS/Otium` answers `x86_64 arm64`, and the installer asks the
+downloaded app to run on your Mac before it copies anything into `/Applications`.
+
 **If you prefer to download by hand** rather than pipe a script into a shell, grab the archive from
-[Releases](../../releases). Otium is signed with a stable certificate of mine but **not notarized**:
-notarization means enrolling in the Apple Developer Program at $99 a year, and this is a free MIT
-project. macOS puts a
+[Releases](../../releases). Otium is **signed ad-hoc and not notarized**: an ad-hoc signature
+carries no certificate and no Team ID, and its identity changes with every build. Check it on the
+file you downloaded — `codesign -dvv Otium.app` answers `Signature=adhoc` and
+`TeamIdentifier=not set`. Notarization means enrolling in the Apple Developer Program at $99 a
+year, and this is a free project under a [noncommercial licence](LICENSE). macOS puts a
 *quarantine* flag on anything downloaded from the internet, and on an app Apple has not notarized
 Gatekeeper does not offer you a choice: it refuses the first launch. Clear the flag yourself, which
 is the same thing the installer does for you:
@@ -206,7 +212,7 @@ macOS 15+ and Xcode (or the Command Line Tools):
 
 ```bash
 git clone https://github.com/xmasyx/otium.git && cd otium
-Scripts/build-app.sh          # produces dist/Otium.app, ad-hoc signed
+Scripts/build-app.sh          # dist/Otium.app: universal (arm64 + x86_64), ad-hoc signed
 open dist/Otium.app
 ```
 
