@@ -68,60 +68,73 @@ enum Doctor {
             if case .fail(_, let fix) = v { failures += 1; fixes.append(fix) }
         }
 
+        func intestazione(_ etichetta: String, _ valore: String) {
+            lines.append("\(etichetta.padding(toLength: max(etichetta.count, 10), withPad: " ", startingAt: 0)) \(valore)")
+        }
+
         // ── Quale copia sta parlando, e quale girerà al prossimo avvio
         let versione = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
         let eseguibile = Bundle.main.executablePath ?? CommandLine.arguments.first ?? "?"
-        lines.append("versione   \(versione)")
-        lines.append("sistema    macOS \(ProcessInfo.processInfo.operatingSystemVersionString)")
-        lines.append("binario    \(Self.senzaNome(eseguibile))")
-        lines.append("dati       \(Self.senzaNome(Paths.supportDirectory.path))")
+        intestazione(L.t("versione", "version"), versione)
+        intestazione(L.t("sistema", "system"), "macOS \(ProcessInfo.processInfo.operatingSystemVersionString)")
+        intestazione(L.t("binario", "binary"), Self.senzaNome(eseguibile))
+        intestazione(L.t("dati", "data"), Self.senzaNome(Paths.supportDirectory.path))
         lines.append("")
 
         // ── La cartella dei dati: senza scrittura qui, l'app conta e non registra
-        riga("cartella dei dati", cartellaScrivibile())
+        riga(L.t("cartella dei dati", "data folder"), cartellaScrivibile())
 
         // ── I cinque file di stato, uno per uno. Il caso che conta davvero è il file
         // ESISTENTE ma non scrivibile: da lì nasceva la perdita del registro.
         for (nome, url, obbligatorio) in [
-            ("registro", Paths.ledgerFile, true),
-            ("impostazioni", Paths.settingsFile, true),
-            ("rotazione", Paths.rotationFile, false),
-            ("mazzi delle frasi", Paths.decksFile, false),
-            ("progressione", Paths.progressFile, false),
+            (L.t("registro", "ledger"), Paths.ledgerFile, true),
+            (L.t("impostazioni", "settings"), Paths.settingsFile, true),
+            (L.t("rotazione", "rotation"), Paths.rotationFile, false),
+            (L.t("mazzi delle frasi", "phrase decks"), Paths.decksFile, false),
+            (L.t("progressione", "progression"), Paths.progressFile, false),
         ] {
             riga(nome, statoFile(url, obbligatorio: obbligatorio))
         }
 
         // ── Righe illeggibili: il registro sopravvive, ma i numeri sarebbero più bassi del vero
-        riga("integrità del registro", integritaRegistro())
+        riga(L.t("integrità del registro", "ledger integrity"), integritaRegistro())
 
         // ── Due istanze contano lo stesso tempo due volte
-        riga("istanza unica", istanzaUnica())
+        riga(L.t("istanza unica", "single instance"), istanzaUnica())
 
         // ── L'avvio automatico, il controllo per cui questo comando esiste
-        riga("avvio automatico", avvioAutomatico())
+        riga(L.t("avvio automatico", "automatic startup"), avvioAutomatico())
 
         // ── Il residuo della vecchia via, che ne farebbe partire due
-        riga("vecchio LaunchAgent", vecchioAgent())
+        riga(L.t("vecchio LaunchAgent", "old LaunchAgent"), vecchioAgent())
 
         // ── Le due risposte del primo avvio
-        riga("primo avvio", primoAvvio())
+        riga(L.t("primo avvio", "first launch"), primoAvvio())
 
         // ── La scorciatoia globale
-        riga("scorciatoia ⌃S", scorciatoia())
+        riga(L.t("scorciatoia ⌃S", "⌃S shortcut"), scorciatoia())
 
         if !fixes.isEmpty {
             lines.append("")
-            lines.append("Da fare:")
+            lines.append(L.t("Da fare:", "To do:"))
             for f in fixes { lines.append("  · \(f)") }
         }
         lines.append("")
         lines.append(failures == 0
-                     ? "Tutto a posto."
-                     : "\(failures) controll\(failures == 1 ? "o" : "i") da sistemare.")
+                     ? L.t("Tutto a posto.", "Everything is fine.")
+                     : L.plural(failures,
+                                it: "controllo da sistemare.", "controlli da sistemare.",
+                                en: "check to fix.", "checks to fix."))
         return (lines.joined(separator: "\n"), failures)
     }
 
+    /// **La lingua la sceglie chi chiama, non questo metodo.**
+    ///
+    /// La risoluzione vive in `impostaLinguaDaTerminale()`, accanto agli altri comandi da riga di
+    /// comando: è la stessa regola dell'app — impostazioni, altrimenti la lingua del Mac — e
+    /// tenerla in un posto solo evita che due percorsi rispondano in due lingue diverse. Scritta
+    /// qui dentro, per giunta, ignorerebbe `--inglese`, che è il modo di guardare l'altra lingua
+    /// senza toccare le impostazioni vere.
     static func run() -> Int32 {
         let r = report()
         print(r.text)
@@ -135,14 +148,16 @@ enum Doctor {
         Paths.ensureDirectory()
         var isDir: ObjCBool = false
         guard FileManager.default.fileExists(atPath: dir.path, isDirectory: &isDir), isDir.boolValue else {
-            return .fail("non esiste e non si è potuta creare",
-                         fix: "controlla i permessi di ~/Library/Application Support")
+            return .fail(L.t("non esiste e non si è potuta creare",
+                             "does not exist and could not be created"),
+                         fix: L.t("controlla i permessi di ~/Library/Application Support",
+                                  "check the permissions of ~/Library/Application Support"))
         }
         guard FileManager.default.isWritableFile(atPath: dir.path) else {
-            return .fail("esiste ma non è scrivibile",
+            return .fail(L.t("esiste ma non è scrivibile", "exists but is not writable"),
                          fix: "chmod u+w \"\(dir.path)\"")
         }
-        return .ok("scrivibile")
+        return .ok(L.t("scrivibile", "writable"))
     }
 
     /// **Esistente e non scrivibile è il caso peggiore**, e non si vede da fuori: l'app continua a
@@ -151,26 +166,42 @@ enum Doctor {
         let fm = FileManager.default
         guard fm.fileExists(atPath: url.path) else {
             return obbligatorio
-                ? .warn("non c'è ancora (si crea al primo uso)")
-                : .ok("non c'è ancora")
+                ? .warn(L.t("non c'è ancora (si crea al primo uso)",
+                            "not there yet (created on first use)"))
+                : .ok(L.t("non c'è ancora", "not there yet"))
         }
         let size = (try? fm.attributesOfItem(atPath: url.path))?[.size] as? Int ?? 0
         guard fm.isReadableFile(atPath: url.path) else {
-            return .fail("non leggibile", fix: "chmod u+r \"\(url.path)\"")
+            return .fail(L.t("non leggibile", "not readable"),
+                         fix: "chmod u+r \"\(url.path)\"")
         }
         guard fm.isWritableFile(atPath: url.path) else {
-            return .fail("NON SCRIVIBILE: l'app conta e non registra",
+            return .fail(L.t("NON SCRIVIBILE: l'app conta e non registra",
+                             "NOT WRITABLE: the app counts but does not record"),
                          fix: "chmod u+w \"\(url.path)\"")
         }
-        return .ok("\(size) byte, leggibile e scrivibile")
+        let dimensione = L.plural(size, it: "byte", "byte", en: "byte", "bytes")
+        return .ok(L.t("\(dimensione), leggibile e scrivibile",
+                       "\(dimensione), readable and writable"))
     }
 
     private static func integritaRegistro() -> Verdict {
         let ledger = Ledger(url: Paths.ledgerFile)
         let righe = ledger.entries()
         let rotte = ledger.unreadableLines
-        if rotte == 0 { return .ok("\(righe.count) righe, nessuna illeggibile") }
-        return .warn("\(righe.count) righe buone, \(rotte) illeggibili — le statistiche le escludono")
+        if rotte == 0 {
+            let conteggio = L.plural(righe.count, it: "riga", "righe", en: "line", "lines")
+            return .ok(L.t("\(conteggio), nessuna illeggibile",
+                           "\(conteggio), none unreadable"))
+        }
+        let buone = L.plural(righe.count,
+                             it: "riga buona", "righe buone",
+                             en: "good line", "good lines")
+        let illeggibili = L.plural(rotte,
+                                   it: "riga illeggibile", "righe illeggibili",
+                                   en: "unreadable line", "unreadable lines")
+        return .warn(L.t("\(buone), \(illeggibili) — le statistiche le escludono",
+                         "\(buone), \(illeggibili) — statistics exclude them"))
     }
 
     private static func istanzaUnica() -> Verdict {
@@ -178,10 +209,12 @@ enum Doctor {
             .runningApplications(withBundleIdentifier: SingleInstance.bundleIdentifier)
             .filter { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }
         switch altre.count {
-        case 0: return .ok("nessun'altra copia in esecuzione")
-        case 1: return .ok("una copia viva, com'è giusto")
-        default: return .fail("\(altre.count) copie vive: contano lo stesso tempo più volte",
-                              fix: "pkill -f 'Otium.app/Contents/MacOS/Otium' e riapri l'app")
+        case 0: return .ok(L.t("nessun'altra copia in esecuzione", "no other copy is running"))
+        case 1: return .ok(L.t("una copia viva, com'è giusto", "one live copy, as expected"))
+        default: return .fail(L.t("\(altre.count) copie vive: contano lo stesso tempo più volte",
+                                  "\(altre.count) live copies: they count the same time more than once"),
+                              fix: L.t("pkill -f 'Otium.app/Contents/MacOS/Otium' e riapri l'app",
+                                       "pkill -f 'Otium.app/Contents/MacOS/Otium' and reopen the app"))
         }
     }
 
@@ -225,7 +258,8 @@ enum Doctor {
         switch LoginItem.state() {
         case .enabled:
             guard let registrato = primaDiChiedere else {
-                return .warn("registrato, ma quale copia non è misurabile: sfltool non ha risposto")
+                return .warn(L.t("registrato, ma quale copia non è misurabile: sfltool non ha risposto",
+                                 "registered, but its copy cannot be determined: sfltool did not respond"))
             }
             let dove = registrato.standardizedFileURL
             guard FileManager.default.fileExists(atPath: dove.path) else {
@@ -233,28 +267,39 @@ enum Doctor {
                 // `/var/folders/`, cancellata da giorni. Al login macOS apriva un percorso
                 // inesistente e taceva. Leggendo lo stato qui sopra il record è già tornato su
                 // questa copia, quindi la riga dice che cosa ho trovato e che cosa ho rimesso.
-                return .fail("puntava a una copia che non esiste più: \(senzaNome(dove.path)) — riportato su questa",
-                             fix: "nessuno: è già a posto, ma tieni una sola Otium sul disco perché non ricapiti")
+                return .fail(L.t("puntava a una copia che non esiste più: \(senzaNome(dove.path)) — riportato su questa",
+                                 "pointed to a copy that no longer exists: \(senzaNome(dove.path)) — reset to this one"),
+                             fix: L.t("nessuno: è già a posto, ma tieni una sola Otium sul disco perché non ricapiti",
+                                      "none: it is already fixed, but keep only one Otium on disk to prevent it happening again"))
             }
             // Dal binario di sviluppo il confronto non ha senso (non sta dentro un `.app`), e
             // rispondere «divergono» sarebbe un falso rosso: lì si riporta solo dove puntava.
             let mio = Bundle.main.bundleURL.standardizedFileURL
             if dentroUnBundle, dove.path != mio.path {
-                return .fail("al login partiva un'altra copia: \(senzaNome(dove.path)) — adesso parte questa",
-                             fix: "tieni una sola Otium sul disco: cancella le copie fuori da /Applications")
+                return .fail(L.t("al login partiva un'altra copia: \(senzaNome(dove.path)) — adesso parte questa",
+                                 "another copy launched at login: \(senzaNome(dove.path)) — now this one launches"),
+                             fix: L.t("tieni una sola Otium sul disco: cancella le copie fuori da /Applications",
+                                      "keep only one Otium on disk: delete copies outside /Applications"))
             }
-            return .ok("attivo: macOS avvia \(senzaNome(dove.path))")
+            return .ok(L.t("attivo: macOS avvia \(senzaNome(dove.path))",
+                           "active: macOS launches \(senzaNome(dove.path))"))
         case .notRegistered:
-            return .warn("non registrato: Otium non riparte da sola all'accensione")
+            return .warn(L.t("non registrato: Otium non riparte da sola all'accensione",
+                             "not registered: Otium does not restart automatically at login"))
         case .requiresApproval:
-            return .fail("registrato ma spento in Impostazioni di Sistema",
-                         fix: "Impostazioni di Sistema ▸ Generali ▸ Elementi login ed estensioni ▸ riaccendi Otium")
+            return .fail(L.t("registrato ma spento in Impostazioni di Sistema",
+                             "registered but disabled in System Settings"),
+                         fix: L.t("Impostazioni di Sistema ▸ Generali ▸ Elementi login ed estensioni ▸ riaccendi Otium",
+                                  "System Settings ▸ General ▸ Login Items & Extensions ▸ turn Otium back on"))
         case .notFound:
             guard dentroUnBundle else {
-                return .warn("non misurabile da qui: stai eseguendo il binario di sviluppo, fuori da un .app")
+                return .warn(L.t("non misurabile da qui: stai eseguendo il binario di sviluppo, fuori da un .app",
+                                 "cannot be measured from here: you are running the development binary, outside an .app"))
             }
-            return .fail("macOS non riconosce questo bundle come registrabile",
-                         fix: "sposta Otium.app in /Applications e riaprila")
+            return .fail(L.t("macOS non riconosce questo bundle come registrabile",
+                             "macOS does not recognize this bundle as registerable"),
+                         fix: L.t("sposta Otium.app in /Applications e riaprila",
+                                  "move Otium.app to /Applications and reopen it"))
         }
     }
 
@@ -265,22 +310,29 @@ enum Doctor {
     /// contano lo stesso tempo, e l'avviso «Attività app in background» che continua a tornare.
     private static func vecchioAgent() -> Verdict {
         guard LoginItem.legacyAgentInstalled() else {
-            return .ok("nessun residuo del vecchio avvio automatico")
+            return .ok(L.t("nessun residuo del vecchio avvio automatico",
+                           "no remnants of the old automatic startup"))
         }
-        return .fail("il vecchio LaunchAgent è ancora installato: \(LoginItem.legacyPlistURL.path)",
-                     fix: "apri Otium.app una volta — lo toglie da sola — oppure: launchctl bootout gui/$(id -u)/\(LoginItem.legacyLabel) && rm \(LoginItem.legacyPlistURL.path)")
+        return .fail(L.t("il vecchio LaunchAgent è ancora installato: \(LoginItem.legacyPlistURL.path)",
+                         "the old LaunchAgent is still installed: \(LoginItem.legacyPlistURL.path)"),
+                     fix: L.t("apri Otium.app una volta — lo toglie da sola — oppure: launchctl bootout gui/$(id -u)/\(LoginItem.legacyLabel) && rm \(LoginItem.legacyPlistURL.path)",
+                              "open Otium.app once — it removes it automatically — or run: launchctl bootout gui/$(id -u)/\(LoginItem.legacyLabel) && rm \(LoginItem.legacyPlistURL.path)"))
     }
 
     private static func primoAvvio() -> Verdict {
         let s = SettingsStore.load()
         switch (s.language, s.sex) {
         case (nil, _), (_, nil):
-            return .warn("non completato: l'app lo chiederà al prossimo avvio")
+            return .warn(L.t("non completato: l'app lo chiederà al prossimo avvio",
+                             "not completed: the app will ask at the next launch"))
         case (let lingua?, let sesso?):
             let ritmo = s.rampFactor(now: Date())
             let quota = Int((ritmo * 100).rounded())
-            let crescita = s.progressBeyondFull ? "crescita accesa" : "ferma al 100%"
-            return .ok("\(lingua.nativeName), \(sesso.rawValue), oggi al \(quota)%, \(crescita)")
+            let crescita = s.progressBeyondFull
+                ? L.t("crescita accesa", "growth on")
+                : L.t("ferma al 100%", "stopped at 100%")
+            return .ok(L.t("\(lingua.nativeName), \(sesso.rawValue), oggi al \(quota)%, \(crescita)",
+                           "\(lingua.nativeName), \(sesso.rawValue), today at \(quota)%, \(crescita)"))
         }
     }
 
@@ -294,7 +346,9 @@ enum Doctor {
                                         GetApplicationEventTarget(), 0, &ref)
         if let ref { UnregisterEventHotKey(ref) }
         return esito == noErr
-            ? .ok("registrabile: apre le statistiche da qualunque app")
-            : .warn("il sistema l'ha rifiutata (codice \(esito)): la scorciatoia globale non è attiva")
+            ? .ok(L.t("registrabile: apre le statistiche da qualunque app",
+                      "registerable: opens statistics from any app"))
+            : .warn(L.t("il sistema l'ha rifiutata (codice \(esito)): la scorciatoia globale non è attiva",
+                        "the system rejected it (code \(esito)): the global shortcut is not active"))
     }
 }

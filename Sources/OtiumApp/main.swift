@@ -2134,6 +2134,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 // dell'app faccia la stessa cosa.
 let arguments = CommandLine.arguments
 
+/// **La lingua delle risposte da terminale.**
+///
+/// `--doctor` usciva in italiano su qualunque Mac, perché `L.language` nasce a `.italian` e
+/// nessuno la impostava prima di stampare: l'app la sceglie in `AppModel`, che su questo
+/// percorso non viene mai costruito. Su un repo, un README e una segnalazione tutti in inglese,
+/// il referto era leggibile solo da chi già parla italiano.
+///
+/// La regola è **la stessa dell'app**, non una seconda: la lingua scelta nelle impostazioni, e
+/// se non c'è ancora quella del Mac (`AppLanguage.systemDefault`, che risponde inglese a
+/// chiunque non abbia un sistema in italiano). `--inglese` la forza, com'è già vero per ogni
+/// altra sonda: è il modo di guardare l'altra lingua senza cambiare le impostazioni vere.
+func impostaLinguaDaTerminale() {
+    L.language = arguments.contains("--inglese")
+        ? .english
+        : (SettingsStore.load().language ?? AppLanguage.systemDefault)
+}
+
 // **Prima di qualunque altra cosa**, perché il lock dell'istanza unica e il primo `AppModel`
 // vengono dopo: se questa esecuzione è una sonda o una resa, i dati veri non si toccano.
 if ProbeMode.active {
@@ -2288,6 +2305,7 @@ if arguments.contains("--presence") {
 // cartella usa e getta, o direbbe che va tutto bene guardando altrove. E prima del lock
 // dell'istanza unica, perché il caso in cui serve di più è proprio «ce n'è già una viva».
 if arguments.contains("--doctor") {
+    impostaLinguaDaTerminale()
     exit(Doctor.run())
 }
 
@@ -2297,33 +2315,45 @@ if arguments.contains("--version") {
 }
 
 if arguments.contains("--agent-status") {
+    impostaLinguaDaTerminale()
     print(LoginItem.state())
     if LoginItem.legacyAgentInstalled() {
-        print("residuo: il vecchio LaunchAgent è ancora installato in \(LoginItem.legacyPlistURL.path)")
+        print(L.t("residuo: il vecchio LaunchAgent è ancora installato in \(LoginItem.legacyPlistURL.path)",
+                  "left over: the old LaunchAgent is still installed in \(LoginItem.legacyPlistURL.path)",
+                  interpolated: true))
     }
     exit(0)
 }
 if arguments.contains("--install-agent") {
+    impostaLinguaDaTerminale()
     let ok = LoginItem.enable()
-    print(ok ? "registrato" : "registrazione fallita")
+    print(ok ? L.t("registrato", "registered")
+             : L.t("registrazione fallita", "registration failed"))
     print(LoginItem.state())
     exit(ok ? 0 : 1)
 }
 if arguments.contains("--remove-agent") {
+    impostaLinguaDaTerminale()
     let ok = LoginItem.disable()
-    print(ok ? "rimosso" : "rimozione fallita (forse non era registrato)")
+    print(ok ? L.t("rimosso", "removed")
+             : L.t("rimozione fallita (forse non era registrato)",
+                   "removal failed (it may not have been registered)"))
     print(LoginItem.state())
     exit(ok ? 0 : 1)
 }
 // La migrazione a mano, per il caso in cui l'app non venga aperta: `--doctor` la segnala, questo
 // la esegue. Da sola l'app la fa al primo avvio.
 if arguments.contains("--remove-legacy-agent") {
+    impostaLinguaDaTerminale()
     guard LoginItem.legacyAgentInstalled() else {
-        print("nessun vecchio LaunchAgent da togliere")
+        print(L.t("nessun vecchio LaunchAgent da togliere", "no old LaunchAgent to remove"))
         exit(0)
     }
     let ok = LoginItem.removeLegacyAgent()
-    print(ok ? "vecchio LaunchAgent rimosso: \(LoginItem.legacyPlistURL.path)" : "rimozione fallita")
+    print(ok ? L.t("vecchio LaunchAgent rimosso: \(LoginItem.legacyPlistURL.path)",
+                   "old LaunchAgent removed: \(LoginItem.legacyPlistURL.path)",
+                   interpolated: true)
+             : L.t("rimozione fallita", "removal failed"))
     exit(ok ? 0 : 1)
 }
 

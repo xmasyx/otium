@@ -16,11 +16,24 @@ public enum AppLanguage: String, Codable, CaseIterable, Sendable {
     case italian = "it"
     case english = "en"
 
-    /// Quella del Mac, se è una che sappiamo parlare. Serve come proposta all'onboarding, non
-    /// come decisione: la scelta resta di chi installa.
+    /// Quella del Mac, se è una che sappiamo parlare. Serve come proposta all'onboarding e come
+    /// ripiego per il referto di `--doctor`, non come decisione: la scelta resta di chi installa.
     public static var systemDefault: AppLanguage {
-        let preferred = Locale.preferredLanguages.first ?? "en"
-        return preferred.hasPrefix("it") ? .italian : .english
+        from(preferredLanguages: Locale.preferredLanguages)
+    }
+
+    /// La regola, staccata da chi la interroga.
+    ///
+    /// Serve a poterla **provare**: `systemDefault` legge la lingua del Mac su cui gira, quindi
+    /// un test che lo interroga asserisce la macchina e non il codice — sul Mac italiano di chi
+    /// scrive sarebbe verde comunque, e lo sarebbe anche se la regola dicesse «sempre italiano».
+    /// Qui l'ingresso lo passa il chiamante, e i due poli si scrivono per davvero.
+    ///
+    /// Fuori dall'italiano si risponde inglese, che è la scelta giusta per un'app pubblicata in
+    /// inglese: chi ha il Mac in tedesco legge una lingua che non è la sua in entrambi i casi, e
+    /// fra le due gli serve quella che il README e le segnalazioni parlano già.
+    public static func from(preferredLanguages: [String]) -> AppLanguage {
+        (preferredLanguages.first ?? "en").hasPrefix("it") ? .italian : .english
     }
 
     public var nativeName: String {

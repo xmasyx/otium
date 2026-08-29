@@ -9,6 +9,32 @@ final class ProfileTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - La lingua di ripiego
+
+    /// **L'inglese è il ripiego, e questo test esiste perché il difetto era invisibile da qui.**
+    ///
+    /// `Otium --doctor` stampava in italiano su qualunque Mac: `L.language` nasce a `.italian` e
+    /// sul percorso da terminale nessuno la impostava. Sul Mac di chi sviluppa — italiano — non
+    /// c'era nulla da vedere, ed è la ragione per cui la regola si prova passandole l'ingresso
+    /// invece di interrogare `systemDefault`, che risponderebbe italiano comunque.
+    func testTheFallbackLanguageIsEnglishOutsideItalian() {
+        XCTAssertEqual(AppLanguage.from(preferredLanguages: ["it-IT"]), .italian)
+        XCTAssertEqual(AppLanguage.from(preferredLanguages: ["it"]), .italian)
+        XCTAssertEqual(AppLanguage.from(preferredLanguages: ["en-US"]), .english)
+        XCTAssertEqual(AppLanguage.from(preferredLanguages: ["de-DE", "it-IT"]), .english,
+                       "conta la prima preferenza, non la presenza dell'italiano più in basso")
+        XCTAssertEqual(AppLanguage.from(preferredLanguages: []), .english,
+                       "senza preferenze si risponde inglese, non si sceglie l'italiano per abitudine")
+    }
+
+    /// Un Mac in italiano non perde l'italiano: è la metà della regola che si rompe per prima
+    /// quando qualcuno «internazionalizza» un'app.
+    func testSystemDefaultStillAgreesWithTheRuleOnThisMac() {
+        XCTAssertEqual(AppLanguage.systemDefault,
+                       AppLanguage.from(preferredLanguages: Locale.preferredLanguages),
+                       "systemDefault ha smesso di passare dalla regola provata qui sopra")
+    }
+
     /// Senza scelta, niente calibrazione: chi non ha risposto vede il numero pieno, non uno
     /// dedotto per lui.
     func testNoSexMeansNoCalibration() {

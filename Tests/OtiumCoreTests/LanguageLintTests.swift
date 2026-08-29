@@ -208,6 +208,31 @@ final class LanguageLintTests: XCTestCase {
                       "`plural` non prende più l'inglese, ma il lettore continua ad assolverlo")
     }
 
+    // MARK: - Le risposte da terminale
+
+    /// **Il referto di `--doctor` non deve poter tornare monolingue.**
+    ///
+    /// Il difetto del 2026-08-29 non era una frase non tradotta: era che **nessuno sceglieva la
+    /// lingua** prima di stampare. `L.language` nasce a `.italian`, l'app la imposta in
+    /// `AppModel`, e il percorso da riga di comando esce prima che un `AppModel` esista — quindi
+    /// ogni Mac del mondo leggeva il referto in italiano. Tradurre le stringhe senza fissare
+    /// questa riga lascerebbe il difetto identico, con il doppio delle parole.
+    ///
+    /// È un controllo sul sorgente, come quello sulla firma di `plural` qui sopra, e per la stessa
+    /// ragione: la scelta della lingua vive in un percorso che i test non possono eseguire (esce
+    /// con `exit()` prima di tornare), quindi la si guarda dove è scritta.
+    func testTheTerminalReportChoosesItsLanguage() throws {
+        let main = Self.packageRoot().appendingPathComponent("Sources/OtiumApp/main.swift")
+        let testo = try String(contentsOf: main, encoding: .utf8)
+
+        XCTAssertTrue(testo.contains("func impostaLinguaDaTerminale()"),
+                      "la risoluzione della lingua da terminale è sparita")
+        XCTAssertTrue(testo.contains("SettingsStore.load().language ?? AppLanguage.systemDefault"),
+                      "la regola non è più «impostazioni, altrimenti la lingua del Mac»: una costante al suo posto è il difetto che questo test guarda")
+        XCTAssertTrue(testo.contains("if arguments.contains(\"--doctor\") {\n    impostaLinguaDaTerminale()"),
+                      "`--doctor` stampa senza aver scelto la lingua")
+    }
+
     // MARK: - Lo strato dei dati
 
     /// **Il difetto del 2026-07-29 non stava in una vista: stava in un dato.**
@@ -251,9 +276,14 @@ final class LanguageLintTests: XCTestCase {
         "Evidence.swift": "ogni Study porta claimEN e governsEN",
         "QuoteNames.swift": "è la tabella di traduzione italiano → inglese: le chiavi sono italiane",
         "Exercise.swift": "italianName ed englishName sono due funzioni gemelle",
-        // Righe da terminale, non interfaccia: le legge chi lancia una sonda o `--doctor`.
+        // Righe da terminale, non interfaccia: le legge chi lancia una sonda.
         "main.swift": "sonde da riga di comando: stampano su stdout, non a schermo",
-        "Doctor.swift": "referto da terminale (`Otium --doctor`)",
+        // **`Doctor.swift` era qui dentro, ed è uscito il 2026-08-29.** L'esenzione diceva
+        // «referto da terminale», come se un terminale non avesse lettori: il referto usciva in
+        // italiano su un repo, un README e un modulo di segnalazione tutti inglesi, e nessun
+        // controllo poteva accorgersene perché l'esenzione lo copriva per nome. Tolta
+        // l'esenzione, il lettore qui sotto è il cancello di quella traduzione: una riga italiana
+        // rimessa lì dentro senza il suo inglese fa rosso.
     ]
 
     func testNoItalianProseHidesInTheDataLayer() throws {
