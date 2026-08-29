@@ -155,6 +155,7 @@ fi
 # quello che hai chiesto: qui la seconda Otium sul disco è voluta, non un incidente.
 INSTALLED="/Applications/Otium.app"
 if [[ "${OTIUM_SKIP_INSTALL:-0}" == "1" ]]; then
+    ESITO="saltata"
     echo "▸ installazione saltata (OTIUM_SKIP_INSTALL=1)"
     echo "  attenzione: in $DEST resta una seconda Otium apribile"
 # `pgrep -f` confronta il modello con **l'intera riga di comando di qualunque processo**, quindi
@@ -164,6 +165,7 @@ if [[ "${OTIUM_SKIP_INSTALL:-0}" == "1" ]]; then
 # esattamente questo eseguibile?*
 elif pgrep -f "^$INSTALLED/Contents/MacOS/Otium( |\$)" >/dev/null; then
     # Sostituire il bundle sotto un processo vivo non si fa: si dice e ci si ferma qui.
+    ESITO="rifiutata"
     echo "⚠︎ Otium è in esecuzione da $INSTALLED — esci dall'app e rilancia questo script"
     # Il bundle appena costruito non resta come `.app`: sarebbe una seconda Otium apribile per
     # sbaglio proprio nella finestra in cui l'app installata è viva, cioè il caso in cui una
@@ -183,6 +185,7 @@ else
     # (successo il 2026-08-03: il bundle veniva costruito e non installato mai). È la stessa
     # lezione scritta venti righe più su per il caporale — la trappola non è il carattere, è
     # scrivere una variabile nuda accanto a un segno non ASCII.
+    ESITO="installata"
     echo "▸ installo in ${INSTALLED}…"
     rm -rf "$INSTALLED"
     ditto "$APP" "$INSTALLED"
@@ -209,11 +212,38 @@ else
     fi
 fi
 
-if [[ "${STAGING_RIMOSSA:-0}" == "1" ]]; then
-    echo "✓ pronto"
-else
-    echo "✓ pronto: $APP"
-fi
-echo "  installata:  $INSTALLED"
-echo "  apri con:  open \"$INSTALLED\""
+# ── Il riassunto dice quale copia esiste DAVVERO adesso (2026-08-29)
+#
+# **Il caso.** Le ultime righe stampavano «installata: /Applications/Otium.app» in tutti e tre i
+# rami, cioè anche nei due che non installano niente: con `OTIUM_SKIP_INSTALL=1` e quando l'app
+# installata è viva. Chi legge conclude di aver appena sovrascritto l'app che sta usando, e per
+# due minuti l'ha creduto qualcuno che stava proprio verificando questo ramo. `/Applications`
+# era rimasta a giorni prima, quindi non è il file ad aver mentito: è la riga.
+#
+# È lo stesso difetto dell'installatore che dava la colpa alla quarantena — una riga che afferma
+# un fatto che il ramo eseguito non ha compiuto — e si chiude allo stesso modo: **è il ramo a
+# dichiarare cos'è successo**, invece di una riga sola scritta fuori dai rami, che non può
+# saperlo.
+case "${ESITO}" in
+    installata)
+        echo "✓ pronto"
+        echo "  installata:  $INSTALLED"
+        echo "  apri con:  open \"$INSTALLED\""
+        [[ "${STAGING_RIMOSSA:-0}" == "1" ]] || echo "  il bundle costruito resta in $APP"
+        ;;
+    saltata)
+        echo "✓ pronto: $APP"
+        echo "  NON installata: $INSTALLED non è stata toccata, è quella di prima"
+        echo "  apri QUESTA con:  open \"$APP\""
+        ;;
+    rifiutata)
+        echo "✓ costruita, non installata"
+        echo "  NON installata: $INSTALLED è viva e non si sostituisce sotto un processo"
+        if [[ "${STAGING_RIMOSSA:-0}" == "1" ]]; then
+            echo "  il bundle nuovo è parcheggiato in $PARCHEGGIO: esci da Otium e rilancia"
+        else
+            echo "  il bundle nuovo è in $APP: esci da Otium e rilancia"
+        fi
+        ;;
+esac
 echo "  registro:  ~/Library/Application Support/Otium/ledger.jsonl"
