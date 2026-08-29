@@ -1,5 +1,5 @@
 #!/bin/bash
-# Costruisce Otium.app — bundle avviabile con doppio clic, universale (arm64 + x86_64),
+# Costruisce Otium.app — bundle arm64 per Apple Silicon, avviabile con doppio clic,
 # firmato ad-hoc, oppure con l'identità locale «Otium Dev» se l'hai creata con
 # Scripts/make-signing-cert.sh. Sul runner di GitHub quell'identità non c'è, quindi le
 # release pubblicate sono firmate ad-hoc: è il ramo `else` qui sotto.
@@ -18,25 +18,27 @@ LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchSe
 
 cd "$ROOT"
 
-# ── Universale, non solo arm64 (2026-08-29)
+# ── Apple Silicon, dichiarato e verificato (2026-08-30)
 #
 # **Il caso.** La v1.1.0 spedita porta una fetta sola — `lipo -archs` sul binario dentro
-# `Otium.zip` risponde `arm64` — mentre `install.sh` scriveva che un Mac Intel va bene e
-# controllava solo la versione di macOS. Su un Intel l'installatore copiava l'app e poi moriva
-# sull'ultimo controllo dando la colpa alla quarantena, che non c'entrava niente.
+# `Otium.zip` risponde `arm64` — mentre `install.sh` prometteva falsamente il supporto Intel e
+# controllava solo la versione di macOS. Su un Mac Intel, che Otium non supporta, l'installatore
+# copiava l'app e poi moriva sull'ultimo controllo dando la colpa alla quarantena.
 #
-# Delle due strade possibili — ritirare la promessa o mantenerla — si mantiene: la build
-# universale compila e i test restano verdi, quindi non c'è niente da guadagnare a togliere
-# metà del parco Mac. Il costo è il tempo di compilazione, che si paga sul runner.
+# **La riparazione.** Otium resta arm64 e gira su Apple Silicon. Si ritira la promessa Intel:
+# build, installatore, documentazione e release ora dichiarano la stessa architettura che il
+# file spedito contiene. `--arch arm64` è esplicito perché il risultato non dipenda dal processore
+# della macchina che compila.
 #
-# Il percorso del prodotto **cambia** quando si passano le architetture (`.build/apple/Products`
-# invece di `.build/release`), e scriverlo a mano è il modo di copiare per mesi il binario
-# vecchio senza accorgersene: lo si chiede a swift build con `--show-bin-path`.
-ARCHITETTURE=(--arch arm64 --arch x86_64)
+# **La sonda.** Il percorso del prodotto cambia quando si passa `--arch` (`.build/apple/Products`
+# invece di `.build/release`), e scriverlo a mano è il modo di copiare per mesi il binario vecchio
+# senza accorgersene. Lo si chiede a `swift build` con `--show-bin-path`, usando gli stessi flag
+# della compilazione.
+ARCHITETTURA=(--arch arm64)
 
-echo "▸ compilo (release, universale: arm64 + x86_64)…"
-swift build -c release --product OtiumApp "${ARCHITETTURE[@]}"
-BIN="$(swift build -c release --product OtiumApp "${ARCHITETTURE[@]}" --show-bin-path)/OtiumApp"
+echo "▸ compilo (release, arm64 per Apple Silicon)…"
+swift build -c release --product OtiumApp "${ARCHITETTURA[@]}"
+BIN="$(swift build -c release --product OtiumApp "${ARCHITETTURA[@]}" --show-bin-path)/OtiumApp"
 [[ -x "$BIN" ]] || { echo "✗ il binario non è dove swift build dice: $BIN"; exit 1; }
 
 echo "▸ icona…"
@@ -83,17 +85,15 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Otium"
 cp "$ROOT/.build/Otium.icns" "$APP/Contents/Resources/Otium.icns"
 
-# ── Le due architetture si verificano, non si sperano
+# ── L'architettura spedita si verifica, non si spera
 #
-# Un binario che ne dichiara due e ne porta una è esattamente la bugia che questa modifica
-# chiude, e `swift build` non fallisce se una fetta non si costruisce come credi: fallisce qui,
-# prima che il bundle esista, invece di farlo scoprire a chi lo scarica.
+# Il contratto è una fetta sola, arm64. Il confronto esatto rifiuta sia una fetta mancante sia
+# qualunque fetta in più: una build diversa da quella dichiarata fallisce qui, prima della firma,
+# invece di farsi scoprire da chi la scarica.
 ARCHI_DENTRO="$(lipo -archs "$APP/Contents/MacOS/Otium")"
-for a in arm64 x86_64; do
-    grep -qw "$a" <<< "$ARCHI_DENTRO" \
-        || { echo "✗ il binario non contiene $a (contiene: $ARCHI_DENTRO)"; exit 1; }
-done
-echo "▸ architetture: $ARCHI_DENTRO"
+[[ "$ARCHI_DENTRO" == "arm64" ]] \
+    || { echo "✗ il binario deve contenere solo arm64 (contiene: $ARCHI_DENTRO)"; exit 1; }
+echo "▸ architettura: $ARCHI_DENTRO"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

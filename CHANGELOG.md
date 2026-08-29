@@ -7,14 +7,12 @@ move. This file records what changed between released versions, newest first.
 
 ### Fixed
 
-- **An Intel Mac can now actually install it.** The installer promised that "an Intel Mac is
-  fine" and checked only the macOS version, while the binary inside `Otium.zip` carried an
-  Apple Silicon slice only — `lipo -archs` on the v1.1.0 download answers `arm64`. An Intel user
-  got the app copied into `/Applications` and then an error blaming quarantine, which was the
-  wrong cause. The build is universal now (`arm64` + `x86_64`), the release workflow refuses to
-  publish a bundle that is not, and the installer asks the downloaded app to run **before** it
-  copies anything: a build that cannot run on your Mac now leaves `/Applications` untouched and
-  says why.
+- **Intel Macs are refused before download.** The installer falsely promised that "an Intel Mac
+  is fine" and checked only the macOS version, while the binary inside `Otium.zip` carried arm64
+  only. An affected user got the app copied into `/Applications` and then an error blaming
+  quarantine, which was the wrong cause. The installer now says up front that Otium needs Apple
+  Silicon and installs nothing on an Intel Mac. It still asks the downloaded app to run **before**
+  it copies anything, so a broken arm64 build also leaves `/Applications` untouched and says why.
 - **The README claimed a stable certificate.** Releases are signed ad-hoc: `codesign -dvv`
   answers `Signature=adhoc` and `TeamIdentifier=not set`. The stable certificate exists only on
   the maintainer's Mac, and the runner that builds the release does not have it, so it takes the

@@ -81,25 +81,26 @@ case "${1:-}" in
     *)           die "unknown option: $1" ;;
 esac
 
-# ── Requirements. Otium is built against the macOS 15 SDK, so macOS 15 is the
-#    one hard requirement checked here.
+# ── Requirements. Otium is built against the macOS 15 SDK and for arm64, so
+#    macOS 15 and Apple Silicon are the two hard requirements checked here.
 #
-#    About the processor: nothing in Otium runs on the GPU or the Neural Engine,
-#    and the release is built as a universal binary (arm64 + x86_64), so both
-#    Apple Silicon and Intel Macs are served. That used to be written here as a
-#    promise while the shipped binary carried an arm64 slice only — `lipo -archs`
-#    on the v1.1.0 download says `arm64` and nothing else. A promise is not a
-#    check, so the architecture is no longer argued about up here: the downloaded
-#    bundle is asked to run, before anything is copied. See the probe below.
+#    About the processor: the release carries exactly arm64 and Otium runs on
+#    Apple Silicon. Intel Macs are refused here, before any release is looked up
+#    or downloaded. The downloaded bundle is still asked to run before anything
+#    is copied; that probe catches a broken build on a supported Mac.
 say "checking this Mac…"
 
 [ "$(uname -s)" = "Darwin" ] || die "Otium is macOS only."
+
+if [ "$(sysctl -n hw.optional.arm64 2>/dev/null || echo 0)" != "1" ]; then
+    die "Otium needs Apple Silicon (M1 or newer). This Mac is Intel; Otium runs on Apple Silicon only."
+fi
 
 macos_major="$(sw_vers -productVersion | cut -d. -f1)"
 if [ "${macos_major}" -lt 15 ]; then
     die "Otium needs macOS 15 or newer (this Mac runs $(sw_vers -productVersion))."
 fi
-ok "$(sw_vers -productVersion)"
+ok "$(sw_vers -productVersion), Apple Silicon"
 
 # ── Find the release
 if [ -n "${TAG}" ]; then
@@ -140,20 +141,18 @@ SRC="${TMP}/unpacked/${APP_NAME}.app"
 # ── Does this build run on THIS Mac? Asked before /Applications is touched.
 #
 # The check that answers this used to live at the very end, after the copy, and when it failed
-# it blamed the quarantine flag: "the installed app does not run. Try: xattr -cr". On an Intel
-# Mac downloading an Apple-Silicon-only release that message named the wrong cause and left a
-# broken bundle installed. Moved up here it costs nothing and answers honestly, and the
-# post-install check further down keeps its own job — a copy that went wrong.
+# it blamed the quarantine flag: "the installed app does not run. Try: xattr -cr". On an
+# unsupported Intel Mac downloading an arm64 release that message named the wrong cause, and
+# left a broken bundle installed. Moved up here it costs nothing and answers honestly, and the
+# post-install check further down keeps its own job: detecting a copy that went wrong.
 #
 # The quarantine flag is cleared on the temp copy first, so this probe answers one question
-# only ("does this binary run on this processor?") instead of two. A probe that can fail for
-# two reasons reports the wrong one half the time.
+# only ("does this binary run on this supported Mac?") instead of two. The requirements already
+# refuse Intel before any download, so an Intel-specific branch here would be unreachable; one
+# honest failure message covers every machine that can reach the probe.
 xattr -dr com.apple.quarantine "${SRC}" 2>/dev/null || true
 if ! "${SRC}/Contents/MacOS/${APP_NAME}" --version >/dev/null 2>&1; then
-    if [ "$(sysctl -n hw.optional.arm64 2>/dev/null || echo 0)" = "1" ]; then
-        die "the ${VERSION} build did not start on this Mac, and nothing was installed. Please open an issue at https://github.com/${REPO}/issues with your macOS version and the release you tried."
-    fi
-    die "the ${VERSION} build did not start on this Intel Mac, and nothing was installed. Releases up to v1.1.0 carry an Apple Silicon binary only; later ones are universal (arm64 + x86_64). Install the latest release, or build from source: https://github.com/${REPO}"
+    die "the ${VERSION} build did not start on this Mac, and nothing was installed. Please open an issue at https://github.com/${REPO}/issues with your macOS version and the release you tried."
 fi
 
 # ── Install

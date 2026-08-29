@@ -21,10 +21,10 @@ quarantena e la avvia. [Leggi lo script](Scripts/install.sh) prima di darlo in p
 perché è corto e la riga che conviene guardare con i tuoi occhi è l'`xattr` che toglie la
 quarantena. Chi preferisce compilare trova le istruzioni più sotto.
 
-**Cosa serve:** macOS 15 o più recente, con qualunque processore. La release è un binario
-universale, quindi `lipo -archs Otium.app/Contents/MacOS/Otium` risponde `x86_64 arm64`, e
-l'installatore chiede all'app scaricata di partire su questo Mac prima di copiare qualcosa in
-`/Applications`.
+**Cosa serve:** macOS 15 o più recente su un Mac con Apple Silicon. Il binario della release
+contiene soltanto arm64, quindi `lipo -archs Otium.app/Contents/MacOS/Otium` risponde `arm64`. Su
+un Mac Intel l'installatore si ferma prima di scaricare qualsiasi file; sui Mac compatibili chiede
+comunque all'app scaricata di partire prima di copiare qualcosa in `/Applications`.
 
 **Se preferisci scaricare a mano** invece di dare uno script in pasto a una shell, prendi l'archivio
 da [Releases](../../releases). Otium è **firmata ad-hoc e non notarizzata**: una firma ad-hoc non
@@ -211,11 +211,11 @@ append-only in JSON Lines che puoi leggere con qualsiasi cosa.
 
 ## Compilarla da sé
 
-Servono macOS 15+ e Xcode (o i Command Line Tools):
+Servono un Mac con Apple Silicon, macOS 15+ e Xcode (o i Command Line Tools):
 
 ```bash
 git clone https://github.com/xmasyx/otium.git && cd otium
-Scripts/build-app.sh          # dist/Otium.app: universale (arm64 + x86_64), firmata ad-hoc
+Scripts/build-app.sh          # dist/Otium.app: arm64 (Apple Silicon), firmata ad-hoc
 open dist/Otium.app
 ```
 

@@ -21,9 +21,10 @@ the quarantine flag and launches it. [Read the script](Scripts/install.sh) befor
 shell — it is short, and the one line worth confirming yourself is the `xattr` that clears
 quarantine. Building from source is [further down](#build-it-yourself).
 
-**What it needs:** macOS 15 or newer, on either processor. The release is a universal binary, so
-`lipo -archs Otium.app/Contents/MacOS/Otium` answers `x86_64 arm64`, and the installer asks the
-downloaded app to run on your Mac before it copies anything into `/Applications`.
+**What it needs:** macOS 15 or newer on an Apple Silicon Mac. The release binary carries only
+arm64, so `lipo -archs Otium.app/Contents/MacOS/Otium` answers `arm64`. The installer refuses an
+Intel Mac before downloading anything, and still asks the downloaded app to run before copying
+anything into `/Applications`.
 
 **If you prefer to download by hand** rather than pipe a script into a shell, grab the archive from
 [Releases](../../releases). Otium is **signed ad-hoc and not notarized**: an ad-hoc signature
@@ -208,11 +209,11 @@ append-only JSON Lines log you can read with anything.
 
 ## Build it yourself
 
-macOS 15+ and Xcode (or the Command Line Tools):
+macOS 15+ on an Apple Silicon Mac, and Xcode (or the Command Line Tools):
 
 ```bash
 git clone https://github.com/xmasyx/otium.git && cd otium
-Scripts/build-app.sh          # dist/Otium.app: universal (arm64 + x86_64), ad-hoc signed
+Scripts/build-app.sh          # dist/Otium.app: arm64 (Apple Silicon), ad-hoc signed
 open dist/Otium.app
 ```
 
