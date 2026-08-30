@@ -51,6 +51,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var summary = DailySummary()
     @Published private(set) var loginItemState: LoginItem.State = .notRegistered
     @Published var escapeText: String = ""
+    /// Condiviso fra il controllo giornaliero, la voce di menu e la finestra dell'esito.
+    @MainActor lazy var updater = Updater()
     /// La frase di questa pausa. **Si estrae una volta sola, quando la pausa comincia**, e resta
     /// ferma finché dura: calcolarla dentro la vista significherebbe ripescarla a ogni ridisegno,
     /// e il testo cambierebbe sotto gli occhi mentre lo leggi.

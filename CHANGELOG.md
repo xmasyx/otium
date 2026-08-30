@@ -5,6 +5,12 @@ move. This file records what changed between released versions, newest first.
 
 ## [Unreleased]
 
+### Added
+
+- **Updates from the menu.** Otium checks GitHub once a day without blocking startup and can
+  update a Homebrew installation on request, clear quarantine from its own new bundle and
+  relaunch. Manual installations open the matching release page instead.
+
 ### Fixed
 
 - **Intel Macs are refused before download.** The installer falsely promised that "an Intel Mac

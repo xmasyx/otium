@@ -101,6 +101,81 @@ extension View {
     func livrea() -> some View { tint(Palette.accentOnWindow) }
 }
 
+/// La finestra piccola dell'esito: stessa carta, inchiostro e accento delle altre finestre.
+struct UpdateView: View {
+    @ObservedObject var updater: Updater
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            switch updater.state {
+            case .idle:
+                Text(UpdateStrings.checkUnavailable)
+                    .foregroundStyle(Palette.textDim)
+                actionButton(UpdateStrings.retryButton) { updater.checkNow() }
+
+            case .checking:
+                Text(UpdateStrings.checking)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Palette.text)
+
+            case .upToDate(let current):
+                Text(UpdateStrings.upToDate(current))
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Palette.text)
+
+            case .available(let version, let action):
+                Text(UpdateStrings.available(version))
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Palette.text)
+                switch action {
+                case .upgradeAndRelaunch:
+                    actionButton(UpdateStrings.upgradeButton) { updater.perform(action) }
+                case .openReleasePage:
+                    actionButton(UpdateStrings.downloadButton) { updater.perform(action) }
+                }
+
+            case .upgrading(let line):
+                Text(UpdateStrings.upgrading)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Palette.text)
+                Text(line)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(Palette.textDim)
+                    .lineLimit(1)
+                    .truncationMode(.head)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+            case .failed(let reason):
+                Text(reason)
+                    .foregroundStyle(Palette.textDim)
+                    .fixedSize(horizontal: false, vertical: true)
+                actionButton(UpdateStrings.retryButton) { updater.checkNow() }
+            }
+        }
+        .font(.system(size: 13))
+        .foregroundStyle(Palette.text)
+        .padding(24)
+        .frame(width: 420, alignment: .topLeading)
+        .frame(minHeight: 142, alignment: .topLeading)
+        .background(Palette.windowPaper)
+        .livrea()
+    }
+
+    private func actionButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Palette.onAccentOnWindow)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Palette.accentOnWindow))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+    }
+}
+
 // MARK: - La schermata di blocco
 
 struct BreakView: View {

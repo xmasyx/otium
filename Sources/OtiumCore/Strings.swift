@@ -40,6 +40,94 @@ public enum L {
     }
 }
 
+// MARK: - Aggiornamenti
+
+/// Tutte le parole del modulo aggiornamenti, nelle due lingue di Otium.
+public enum UpdateStrings {
+    public static var menuItem: String {
+        L.t("Verifica aggiornamenti…", "Check for updates…")
+    }
+
+    public static var windowTitle: String {
+        L.t("Aggiornamenti di Otium", "Otium Updates")
+    }
+
+    public static var checking: String {
+        L.t("Controllo…", "Checking…")
+    }
+
+    public static func upToDate(_ current: String) -> String {
+        L.t("Aggiornata, \(current)", "Up to date, \(current)", interpolated: true)
+    }
+
+    public static func available(_ version: String) -> String {
+        L.t("C'è la \(version)", "There's \(version)", interpolated: true)
+    }
+
+    public static var upgradeButton: String {
+        L.t("Aggiorna e riavvia", "Update and relaunch")
+    }
+
+    public static var downloadButton: String {
+        L.t("Scarica", "Download")
+    }
+
+    public static var retryButton: String {
+        L.t("Verifica di nuovo", "Check again")
+    }
+
+    public static var checkUnavailable: String {
+        L.t("Non sono riuscito a verificare gli aggiornamenti.",
+            "I couldn't check for updates.")
+    }
+
+    public static var upgrading: String {
+        L.t("Aggiornamento in corso", "Updating")
+    }
+
+    public static var preparing: String {
+        L.t("Preparo Homebrew…", "Preparing Homebrew…")
+    }
+
+    public static var brewMissing: String {
+        L.t("Homebrew non è disponibile; scarica invece la versione nuova.",
+            "Homebrew is not available; download the release instead.")
+    }
+
+    public static var processFailed: String {
+        L.t("Homebrew si è fermato senza una ragione", "Homebrew stopped without a reason")
+    }
+
+    public static var invalidURL: String {
+        L.t("indirizzo degli aggiornamenti non valido", "invalid update URL")
+    }
+
+    public static var badResponse: String {
+        L.t("il servizio degli aggiornamenti ha restituito un errore",
+            "the update server returned an error")
+    }
+
+    public static var releaseWithoutTag: String {
+        L.t("alla versione pubblicata manca il numero", "the release has no version tag")
+    }
+
+    public static func logCheckFailed(_ reason: String) -> String {
+        L.t("controllo aggiornamenti non riuscito: \(reason)",
+            "update check failed: \(reason)", interpolated: true)
+    }
+
+    public static func logUpgradeFailed(_ reason: String) -> String {
+        L.t("aggiornamento non riuscito: \(reason)",
+            "update failed: \(reason)", interpolated: true)
+    }
+
+    public static func logQuarantineKept(_ reason: String) -> String {
+        L.t("aggiornata, ma il contrassegno di quarantena è rimasto sulla copia nuova: \(reason)",
+            "updated, but the quarantine flag stayed on the new copy: \(reason)",
+            interpolated: true)
+    }
+}
+
 /// L'articolo davanti a un numero, in italiano.
 ///
 /// «Oggi fai il 85%» è sbagliato: ottantacinque comincia per vocale, quindi vuole l'elisione —

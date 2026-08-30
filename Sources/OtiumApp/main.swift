@@ -16,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var paceWindow: NSWindow?
     private var growthWindow: NSWindow?
     private var doctorWindow: NSWindow?
+    private var updatesWindow: NSWindow?
     private var refreshTimer: Timer?
     /// L'ultima scritta consegnata alla barra: serve a non riscriverla identica ogni secondo.
     private var lastStatusTitle: String?
@@ -61,6 +62,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         updateStatusTitle()
 
         model.start()
+        if !ProbeMode.active,
+           !CommandLine.arguments.dropFirst().contains(where: { $0.hasPrefix("--mostra-") }) {
+            // La GET parte su un task e non trattiene né l'avvio né il menu. Le sonde, le rese e
+            // tutti i rami `--mostra-*` non parlano con la rete.
+            Task { @MainActor [weak self] in self?.model.updater.checkIfDue() }
+        }
 
         // Da qualunque app, senza permessi. Se il tasto è già di qualcun altro non si finge che
         // vada: si dice, perché una scorciatoia che non c'è e nessuno lo sa è il difetto che ⌘S
@@ -1779,6 +1786,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         prefs.keyEquivalentModifierMask = []
         menu.addItem(prefs)
         menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: UpdateStrings.menuItem,
+                                action: #selector(showUpdates), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: L.t("Esci da Otium", "Quit Otium"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         for item in menu.items where item.action != nil && item.target == nil {
@@ -2033,6 +2042,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         present(prefsWindow)
     }
 
+    @MainActor @objc private func showUpdates() {
+        model.updater.checkNow()
+        if updatesWindow == nil {
+            let hosting = NSHostingView(rootView: UpdateView(updater: model.updater))
+            hosting.frame = NSRect(x: 0, y: 0, width: 420, height: hosting.fittingSize.height)
+            updatesWindow = makeWindow(title: UpdateStrings.windowTitle, content: hosting)
+        }
+        present(updatesWindow)
+    }
+
     /// Una finestra che ci sta **dentro lo schermo**, e che si può ridimensionare.
     ///
     /// Difetto segnalato il 2026-07-27 sulle fonti: `fittingSize` di una `ScrollView` è l'altezza
@@ -2116,12 +2135,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // Durante una pausa la politica è del blocco, che se la riprende da solo alla chiusura:
         // metterci mano qui vorrebbe dire due padroni per la stessa impostazione.
         guard model.phase != .breaking else { return }
-        // **Tutte e nove, non cinque.** Ne mancavano quattro — diagnostica, primo avvio, ritmo,
+        // **Tutte le finestre, non cinque.** Ne mancavano quattro — diagnostica, primo avvio, ritmo,
         // crescita — e una finestra fuori dall'elenco fa dire «non c'e' piu' niente aperto» a
         // schermo pieno di roba. Trovato con un grep sulle variabili di finestra il 2026-07-31,
         // mentre cercavo l'icona nel Dock: non era la causa di quella, era il suo vicino di casa.
         let ancoraAperte = [prefsWindow, evidenceWindow, statsWindow, seatedWindow, declareWindow,
-                            doctorWindow, onboardingWindow, paceWindow, growthWindow]
+                            doctorWindow, onboardingWindow, paceWindow, growthWindow, updatesWindow]
             .compactMap { $0 }
             .contains { $0.isVisible }
         guard !ancoraAperte else { return }
@@ -2149,6 +2168,16 @@ func impostaLinguaDaTerminale() {
     L.language = arguments.contains("--inglese")
         ? .english
         : (SettingsStore.load().language ?? AppLanguage.systemDefault)
+}
+
+// Il banco non costruisce `AppModel`: misura soltanto aggiornamenti e non deve interrogare login
+// item, radar o registro. Il dispatcher serve alla rete asincrona e ai processi, poi `runBench` esce.
+if arguments.contains("--bench-updates") {
+    Task { @MainActor in
+        let updater = Updater()
+        exit(await updater.runBench())
+    }
+    dispatchMain()
 }
 
 // **Prima di qualunque altra cosa**, perché il lock dell'istanza unica e il primo `AppModel`
