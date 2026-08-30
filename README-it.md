@@ -12,11 +12,32 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/licenza-PolyForm%20Noncommercial-green?style=flat-square" alt="PolyForm Noncommercial"></a>
 </p>
 
+## Installazione
+
+```bash
+brew install --cask xmasyx/tap/otium
+xattr -dr com.apple.quarantine /Applications/Otium.app   # una volta sola: l'app non è notarizzata
+```
+
+La seconda riga serve una volta sola, perché Otium è firmata con il certificato proprio del
+progetto e non è notarizzata da Apple: senza, macOS rifiuta di aprirla (Impostazioni di Sistema →
+Privacy e sicurezza → *Apri comunque* fa la stessa cosa). Da lì in poi Otium si aggiorna dal suo
+menu con **Verifica aggiornamenti…**: lancia `brew upgrade`, toglie il contrassegno alla copia
+nuova e si riavvia.
+
+Se prima usavi `install.sh`, passa l'installazione esistente a Homebrew con:
+
+```bash
+brew install --cask --force xmasyx/tap/otium
+```
+
+L'installatore originale resta disponibile come alternativa:
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/xmasyx/otium/main/Scripts/install.sh | bash
 ```
 
-L'installazione è tutta qui: scarica l'ultima release, mette l'app in `/Applications`, toglie la
+Quell'installatore scarica l'ultima release, mette l'app in `/Applications`, toglie la
 quarantena e la avvia. [Leggi lo script](Scripts/install.sh) prima di darlo in pasto a una shell,
 perché è corto e la riga che conviene guardare con i tuoi occhi è l'`xattr` che toglie la
 quarantena. Chi preferisce compilare trova le istruzioni più sotto.
@@ -27,11 +48,12 @@ un Mac Intel l'installatore si ferma prima di scaricare qualsiasi file; sui Mac 
 comunque all'app scaricata di partire prima di copiare qualcosa in `/Applications`.
 
 **Se preferisci scaricare a mano** invece di dare uno script in pasto a una shell, prendi l'archivio
-da [Releases](../../releases). Otium è **firmata ad-hoc e non notarizzata**: una firma ad-hoc non
-porta nessun certificato e nessun Team ID, e la sua identità cambia a ogni ricostruzione. Puoi
-verificarlo sul file che hai scaricato — `codesign -dvv Otium.app` risponde `Signature=adhoc` e
-`TeamIdentifier=not set`. La notarizzazione vuol dire iscriversi all'Apple Developer Program a
-99 $ l'anno, e questo è un progetto gratuito con [licenza non commerciale](LICENSE).
+da [Releases](../../releases). Otium è **firmata con il certificato stabile proprio del progetto e
+non notarizzata**: grazie al certificato macOS vede la stessa identità in ogni release, invece di
+vederla cambiare a ogni ricostruzione. Puoi verificarlo sul file che hai scaricato —
+`codesign -dvv Otium.app` include `Authority=Otium Dev`. La notarizzazione vuol dire iscriversi
+all'Apple Developer Program a 99 $ l'anno, e questo è un progetto gratuito con
+[licenza non commerciale](LICENSE).
 macOS mette un flag di *quarantena* su tutto quello che arriva da internet, e su un'app che Apple non
 ha notarizzato Gatekeeper non ti dà una scelta: rifiuta la prima apertura. Il flag si toglie a mano,
 ed è la stessa cosa che fa l'installatore al posto tuo:

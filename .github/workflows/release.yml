@@ -20,6 +20,23 @@ jobs:
     runs-on: macos-15
 
     steps:
+      # Un rilascio ad-hoc cambia identità a ogni build e macOS azzera i permessi già concessi.
+      # Questo preflight viene prima perfino del checkout: senza la chiave non esiste un fallback
+      # accettabile e il runner deve dirlo prima di spendere tempo in una build che non può uscire.
+      - name: Signing secrets preflight
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: |
+          if [[ -z "$MACOS_CERT_P12" ]]; then
+            echo "::error::manca MACOS_CERT_P12: Scripts/make-signing-cert.sh crea l'identità; esportala da Accesso Portachiavi come .p12; base64 -i cert.p12 | pbcopy; incolla il risultato nel secret del repository"
+            exit 1
+          fi
+          if [[ -z "$MACOS_CERT_PASSWORD" ]]; then
+            echo "::error::manca MACOS_CERT_PASSWORD: salva nel secret del repository la password usata per esportare il .p12"
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
 
       - name: Select Xcode
@@ -30,9 +47,45 @@ jobs:
       - name: Run tests
         run: swift test
 
+      # `-T` da solo non basta: senza la partition list il primo codesign aspetta una finestra di
+      # Portachiavi invisibile sul runner. È un blocco già pagato, non una cautela teorica.
+      - name: Import signing certificate
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/otium-signing.keychain-db"
+          KEYCHAIN_PASSWORD="otium-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          P12="$RUNNER_TEMP/otium-signing.p12"
+          CERT="$RUNNER_TEMP/otium-signing.pem"
+
+          printf '%s' "$MACOS_CERT_P12" | base64 -D > "$P12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          EXISTING_KEYCHAINS=()
+          while IFS= read -r existing; do
+            EXISTING_KEYCHAINS+=("$existing")
+          done < <(security list-keychains -d user \
+            | sed -E 's/^[[:space:]]*"//; s/"[[:space:]]*$//')
+          security list-keychains -d user -s "$KEYCHAIN" "${EXISTING_KEYCHAINS[@]}"
+          security import "$P12" -k "$KEYCHAIN" -P "$MACOS_CERT_PASSWORD" -A -T /usr/bin/codesign
+          # Un certificato autofirmato importato non è ancora *fidato*, e `find-identity -v` scarta
+          # le identità non fidate: senza questa riga la firma non troverebbe «Otium Dev» e
+          # build-app.sh uscirebbe 6. La fiducia si scrive nel dominio di amministrazione con
+          # `sudo`, non in quello dell'utente: la forma utente apre una finestra di autorizzazione
+          # che su un runner senza schermo nessuno può chiudere.
+          security find-certificate -c "Otium Dev" -p "$KEYCHAIN" > "$CERT"
+          sudo security add-trusted-cert -d -r trustRoot -p codeSign \
+            -k /Library/Keychains/System.keychain "$CERT"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security find-identity -v -p codesigning "$KEYCHAIN" | grep -q "Otium Dev" \
+            || { echo "::error::il .p12 non contiene l'identità di firma Otium Dev"; exit 1; }
+
       - name: Build Otium.app
         env:
           OTIUM_SKIP_INSTALL: "1"        # a CI runner has no /Applications to own
+          OTIUM_RELEASE: "1"             # ad-hoc is forbidden for a published artifact
         run: |
           # On a tag, the tag IS the version — the app must not be free to say
           # something else. Off a tag there is no version to claim.
@@ -40,6 +93,12 @@ jobs:
             export OTIUM_VERSION="${GITHUB_REF_NAME#v}"
           fi
           ./Scripts/build-app.sh
+
+      - name: Verify the signature
+        run: |
+          APP=dist/Otium.app
+          codesign -dv --verbose=2 "$APP" 2>&1 | grep -q 'Authority=Otium Dev'
+          codesign --verify --deep --strict "$APP"
 
       # A bundle that cannot start is indistinguishable from a healthy one until
       # someone downloads it. Ask the binary itself before shipping it.
@@ -88,6 +147,8 @@ jobs:
           trap 'hdiutil detach "$MNT" -quiet 2>/dev/null || true' EXIT
           test -x "$MNT/Otium.app/Contents/MacOS/Otium" \
             || { echo "::error::no executable inside the DMG"; exit 1; }
+          codesign -dv --verbose=2 "$MNT/Otium.app" 2>&1 | grep -q 'Authority=Otium Dev' \
+            || { echo "::error::the app inside the DMG is not signed by Otium Dev"; exit 1; }
           codesign --verify --deep --strict "$MNT/Otium.app" \
             || { echo "::error::the signature does not hold inside the DMG"; exit 1; }
           echo "DMG=$DMG" >> "$GITHUB_ENV"
@@ -107,3 +168,11 @@ jobs:
             Otium.zip
             ${{ env.DMG }}
           generate_release_notes: true
+
+      # Il portachiavi contiene la chiave privata del rilascio: si elimina anche quando un cancello
+      # precedente va rosso, non soltanto nel percorso felice.
+      - name: Delete temporary keychain
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/otium-signing.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/otium-signing.p12" "$RUNNER_TEMP/otium-signing.pem"

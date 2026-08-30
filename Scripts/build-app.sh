@@ -1,8 +1,7 @@
 #!/bin/bash
-# Costruisce Otium.app — bundle arm64 per Apple Silicon, avviabile con doppio clic,
-# firmato ad-hoc, oppure con l'identità locale «Otium Dev» se l'hai creata con
-# Scripts/make-signing-cert.sh. Sul runner di GitHub quell'identità non c'è, quindi le
-# release pubblicate sono firmate ad-hoc: è il ramo `else` qui sotto.
+# Costruisce Otium.app — bundle arm64 per Apple Silicon, avviabile con doppio clic.
+# Usa l'identità locale «Otium Dev» se c'è; senza, conserva la firma ad-hoc per lo sviluppo
+# locale, mentre OTIUM_RELEASE=1 la vieta perché un artefatto pubblicato deve avere identità stabile.
 # Uso: Scripts/build-app.sh [cartella-destinazione]   (default: ./dist)
 
 set -euo pipefail
@@ -135,10 +134,18 @@ if security find-identity -v -p codesigning 2>/dev/null | grep -q "$IDENTITY"; t
     # del caporale come parte del nome, e con `set -u` lo script muore su una variabile
     # che esiste (provato qui il 2026-08-02).
     echo "▸ firma con identità stabile «${IDENTITY}»…"
-    codesign --force --sign "$IDENTITY" --timestamp=none "$APP"
+    codesign --force --deep --sign "$IDENTITY" --timestamp=none "$APP"
+elif [[ "${OTIUM_RELEASE:-0}" == "1" ]]; then
+    # Un artefatto pubblicato NON può essere firmato ad-hoc, e il motivo non è estetico: la firma
+    # ad-hoc cambia identità a ogni ricostruzione, quindi macOS tratta ogni aggiornamento come
+    # un'app diversa e azzera i permessi che l'utente aveva concesso. Meglio fermarsi qui che
+    # spedire un artefatto che si rompe da solo al primo aggiornamento.
+    echo "✗ manca l'identità stabile «${IDENTITY}»: un artefatto di rilascio non si firma ad-hoc" >&2
+    echo "  creala una volta sola con Scripts/make-signing-cert.sh" >&2
+    exit 6
 else
-    echo "▸ firma ad-hoc (lancia una volta Scripts/make-signing-cert.sh per quella stabile)…"
-    codesign --force --sign - --timestamp=none "$APP" >/dev/null 2>&1 \
+    echo "▸ firma ad-hoc (per quella stabile: Scripts/make-signing-cert.sh)…"
+    codesign --force --deep --sign - --timestamp=none "$APP" >/dev/null 2>&1 \
         || echo "  (firma saltata: non blocca l'avvio in locale)"
 fi
 

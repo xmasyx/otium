@@ -4,9 +4,9 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/xmasyx/otium/main/Scripts/install.sh | bash
 #
-# Downloads the latest release, puts Otium.app in /Applications, clears the
-# quarantine flag (release builds are signed ad-hoc, never notarized) and
-# launches it.
+# Downloads the latest release, puts Otium.app in /Applications and clears the
+# quarantine flag: releases are signed with the project's own certificate, not notarized.
+# Then it launches the app.
 #
 #   install.sh              install or update to the latest release
 #   install.sh --version X  install a specific tag (e.g. v1.0.0)
