@@ -12,7 +12,7 @@ APP="$DEST/Otium.app"
 # La versione la può dettare il chiamante: sul runner di GitHub il tag È la
 # versione, e un binario libero di dire un altro numero è un binario che mente
 # nella pagina della release. In locale resta il valore scritto qui.
-VERSION="${OTIUM_VERSION:-1.1.0}"
+VERSION="${OTIUM_VERSION:-1.2.0}"
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 
 cd "$ROOT"

@@ -3,7 +3,7 @@
 Otium is a break enforcer: it counts your real screen time and locks the screen until you
 move. This file records what changed between released versions, newest first.
 
-## [Unreleased]
+## [1.2.0] — 2026-08-30
 
 ### Added
 
