@@ -119,7 +119,7 @@ jobs:
       - name: Pin the signing identity
         run: |
           APP="dist/Otium.app"
-          REQ='identifier "app.otium.mac" and certificate leaf = H"95070bfe16ee4a9682b5ae9b13066f1c7195b451"'
+          REQ='identifier "app.otium.mac" and certificate leaf = H"12f7b56a59fa42199b554c5e48239ac6b8427810"'
           codesign --verify --strict -R="$REQ" "$APP" \
             || { echo "::error::il bundle non soddisfa il designated requirement fissato: un certificato diverso azzererebbe i permessi gia concessi"; exit 1; }
 

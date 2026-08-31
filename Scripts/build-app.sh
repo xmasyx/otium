@@ -12,7 +12,7 @@ APP="$DEST/Otium.app"
 # La versione la può dettare il chiamante: sul runner di GitHub il tag È la
 # versione, e un binario libero di dire un altro numero è un binario che mente
 # nella pagina della release. In locale resta il valore scritto qui.
-VERSION="${OTIUM_VERSION:-1.2.0}"
+VERSION="${OTIUM_VERSION:-1.2.1}"
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 
 cd "$ROOT"
@@ -129,12 +129,18 @@ PLIST
 # `SMAppService` — vedi `LoginItem` in SystemProbes.swift. La firma stabile resta perché è
 # comunque la cosa giusta, non perché curi quello.
 IDENTITY="Otium Dev"
-if security find-identity -v -p codesigning 2>/dev/null | grep -q "$IDENTITY"; then
+
+# Si firma con l'IMPRONTA, non col nome: dal 30/08/2026 sul Mac convivono due portachiavi
+# con certificati omonimi e `codesign -s "<nome>"` esce «ambiguous» senza firmare. `find-identity
+# -v` elenca solo le identità con chiave privata usabile, quindi l'impronta che ne esce è
+# l'unica con cui si può davvero firmare.
+SIGN_HASH="$(security find-identity -v -p codesigning 2>/dev/null | awk -v n="\"${IDENTITY}\"" 'index($0, n) { print $2; exit }')"
+if [[ -n "${SIGN_HASH:-}" ]]; then
     # Le graffe non sono decorative: «${IDENTITY}» senza graffe fa leggere a bash i byte
     # del caporale come parte del nome, e con `set -u` lo script muore su una variabile
     # che esiste (provato qui il 2026-08-02).
     echo "▸ firma con identità stabile «${IDENTITY}»…"
-    codesign --force --deep --sign "$IDENTITY" --timestamp=none "$APP"
+    codesign --force --deep --sign "$SIGN_HASH" --timestamp=none "$APP"
 elif [[ "${OTIUM_RELEASE:-0}" == "1" ]]; then
     # Un artefatto pubblicato NON può essere firmato ad-hoc, e il motivo non è estetico: la firma
     # ad-hoc cambia identità a ogni ricostruzione, quindi macOS tratta ogni aggiornamento come

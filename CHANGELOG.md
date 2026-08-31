@@ -3,6 +3,18 @@
 Otium is a break enforcer: it counts your real screen time and locks the screen until you
 move. This file records what changed between released versions, newest first.
 
+## [1.2.1] — 2026-08-31
+
+### Changed
+
+- **New signing identity.** The self-signed certificate Otium is built with was regenerated and the
+  release workflow pins the new one. Otium asks for no system permissions, so nothing has to be
+  granted again.
+- `Scripts/make-signing-cert.sh` keeps the `.p12` it creates instead of deleting it, so the identity
+  can be restored rather than recreated. `Scripts/build-app.sh` signs by certificate fingerprint
+  instead of by name, which is ambiguous when two keychains hold a certificate with the same
+  common name.
+
 ## [1.2.0] — 2026-08-30
 
 ### Added
