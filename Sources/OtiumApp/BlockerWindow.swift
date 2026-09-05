@@ -267,9 +267,14 @@ final class WarningHUD {
     /// La frase dell'avvio: stesso angolo delle altre notifiche, pannello un po' più alto
     /// perché una riga di Seneca non sta in due righe da barra dei menu.
     func showQuote(_ phrase: Phrase, seconds: Double = 12) {
+        // **Uno schermo solo per la finestra e per il suo contenuto.** Letto qui una volta e
+        // passato a tutti e due: se la vista lo leggesse per conto suo, una lettura a cavallo di
+        // un cambio di monitor darebbe una scatola di una taglia e un testo di un'altra, che è
+        // la forma del difetto del 2026-08-14.
+        let schermo = Schermo.attuale
         present(
             NSHostingView(rootView: Dismissible(onDismiss: { [weak self] in self?.hide() }) {
-                QuoteHUDView(phrase: phrase)
+                QuoteHUDView(phrase: phrase, schermo: schermo)
             }),
             // 132 erano un'altezza scritta a mano che una frase di due righe non riempiva: la
             // scatola sembrava vuota e grossa il doppio del necessario. Adesso 92 è solo il
@@ -277,7 +282,8 @@ final class WarningHUD {
             // contenuto, quindi una frase lunga alza il pannello invece di essere tagliata.
             // La larghezza viene da `QuoteWrap.Pannello`: la scatola e la colonna del testo devono
             // nascere dallo stesso numero, o tornano a divergere come il 2026-08-14.
-            size: NSSize(width: QuoteWrap.Pannello.scatola, height: 92),
+            size: NSSize(width: QuoteWrap.Pannello.geometria(su: schermo).scatola,
+                         height: schermo.misura(92)),
             sound: nil,
             volume: 0,
             seconds: seconds

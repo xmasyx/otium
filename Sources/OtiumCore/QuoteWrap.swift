@@ -28,8 +28,10 @@ import AppKit
 /// **Perché i tagli si scrivono nel testo invece di lasciarli calcolare a SwiftUI.** Un `Text` non
 /// espone i propri tagli e non accetta suggerimenti: l'unico modo di deciderli è consegnargli le
 /// righe già fatte. Vale finché la colonna renderizzata è larga **almeno** quanto quella su cui i
-/// tagli sono stati calcolati, ed è vero per costruzione — le tre superfici hanno larghezze fisse
-/// (1000, 620, 470) e lo schermo Mac più stretto in circolazione ne lascia 1184.
+/// tagli sono stati calcolati, e dal 2026-09-06 è vero per costruzione in un modo più forte di
+/// prima: le tre colonne non sono più costanti scritte qui, le calcola `Schermo` dalla macchina
+/// vera, quindi il righello che taglia le righe e quello che le disegna sono lo stesso numero
+/// anche su un monitor che non abbiamo mai visto.
 public enum QuoteWrap {
 
     // MARK: - Le tre colonne
@@ -53,12 +55,29 @@ public enum QuoteWrap {
         }
     }
 
-    /// La fase di riposo: la frase è la pagina, 1000 punti di colonna.
-    public static let riposo = Colonna(nome: "riposo", larghezza: 1000, corpoBase: 40,   // lingua: ok nome di sonda, non va a schermo
-                                       corpoRidotto: (corpo: 30, oltre: 95))
+    /// La fase di riposo: la frase è la pagina.
+    ///
+    /// **I numeri sono quelli dello schermo di riferimento**, portati sulla macchina vera da
+    /// `Schermo.misura`. Sul 16" del principale la scala vale 1 e questi restano esattamente i
+    /// valori di sempre — colonna 1000, corpo 40, corpo 30 oltre i 95 caratteri — quindi la
+    /// riparazione del 6/09 non ha spostato la pagina su cui il disegno è stato scelto.
+    public static func riposo(su schermo: Schermo = .attuale) -> Colonna {
+        Colonna(nome: "riposo", larghezza: schermo.misura(1000),   // lingua: ok nome di sonda, non va a schermo
+                corpoBase: schermo.misura(40),
+                corpoRidotto: (corpo: schermo.misura(30), oltre: 95))
+    }
+
     /// La frase durante l'esercizio, in sordina sotto il conteggio.
-    public static let esercizio = Colonna(nome: "esercizio", larghezza: 620, corpoBase: 18,   // lingua: ok nome di sonda, non va a schermo
-                                          corpoRidotto: nil)
+    public static func esercizio(su schermo: Schermo = .attuale) -> Colonna {
+        Colonna(nome: "esercizio", larghezza: schermo.misura(620),   // lingua: ok nome di sonda, non va a schermo
+                corpoBase: schermo.misura(18), corpoRidotto: nil)
+    }
+
+    /// **La soglia dei 95 caratteri non scala, ed è voluto.** Il corpo ridotto esiste perché una
+    /// frase lunga occuperebbe troppe righe, e siccome colonna e corpo crescono insieme il numero
+    /// di righe di una frase non dipende dalla scala: la stessa frase riempie le stesse righe su
+    /// ogni schermo. Una soglia scalata cambierebbe il corpo di frasi che non ne hanno bisogno.
+    ///
     /// La geometria del pannello della frase d'avvio, **in un posto solo**.
     ///
     /// **Perché sta qui e non nella vista** (2026-08-14, visto
@@ -78,20 +97,34 @@ public enum QuoteWrap {
     /// Adesso i quattro numeri stanno qui e la vista li legge: non può più esistere una seconda
     /// aritmetica che diverge in silenzio. Lo `Spacer` è stato tolto, e la sua funzione (tenere
     /// il testo a sinistra) la fa un `frame(maxWidth:alignment:)`, che non aggiunge intervalli.
-    public enum Pannello {
-        public static let scatola: CGFloat = 470
-        public static let respiro: CGFloat = 18
-        public static let barra: CGFloat = 4
-        public static let stacco: CGFloat = 14
+    ///
+    /// **Dal 2026-09-06 i quattro numeri passano dalla scala** invece di essere costanti, e la
+    /// sottrazione avviene fra i valori **già arrotondati**: la colonna resta esattamente quello
+    /// che la scatola disegnata lascia libero, su qualunque schermo.
+    public struct Pannello: Sendable {
+        public let scatola: CGFloat
+        public let respiro: CGFloat
+        public let barra: CGFloat
+        public let stacco: CGFloat
         /// Quel che resta per il testo, ed è **la stessa sottrazione** che disegna la scatola.
-        public static let colonna: CGFloat = scatola - respiro * 2 - barra - stacco
+        public var colonna: CGFloat { scatola - respiro * 2 - barra - stacco }
+
+        public static func geometria(su schermo: Schermo = .attuale) -> Pannello {
+            Pannello(scatola: schermo.misura(470), respiro: schermo.misura(18),
+                     barra: schermo.misura(4), stacco: schermo.misura(14))
+        }
     }
 
     /// Il pannello della frase d'avvio. La larghezza viene da `Pannello`, mai riscritta a mano.
-    public static let pannello = Colonna(nome: "pannello", larghezza: Pannello.colonna,
-                                         corpoBase: 15, corpoRidotto: nil)
+    public static func pannello(su schermo: Schermo = .attuale) -> Colonna {
+        Colonna(nome: "pannello", larghezza: Pannello.geometria(su: schermo).colonna,   // lingua: ok nome di sonda, non va a schermo
+                corpoBase: schermo.misura(15), corpoRidotto: nil)
+    }
 
-    public static let colonne: [Colonna] = [riposo, esercizio, pannello]
+    /// Le tre superfici, sulla macchina data.
+    public static func colonne(su schermo: Schermo = .attuale) -> [Colonna] {
+        [riposo(su: schermo), esercizio(su: schermo), pannello(su: schermo)]
+    }
 
     // MARK: - Il carattere
 

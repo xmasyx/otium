@@ -79,6 +79,15 @@ enum Doctor {
         intestazione(L.t("sistema", "system"), "macOS \(ProcessInfo.processInfo.operatingSystemVersionString)")
         intestazione(L.t("binario", "binary"), Self.senzaNome(eseguibile))
         intestazione(L.t("dati", "data"), Self.senzaNome(Paths.supportDirectory.path))
+        // **Il numero che decide le proporzioni si mostra, non si tiene nascosto** (regola di
+        // casa: quando l'app legge il sistema invece di chiedere, fa vedere la lettura che ha
+        // deciso, o la scelta sembra arbitraria). Qui si legge perché la pagina della pausa è
+        // grande così: schermo in punti e scala rispetto al 16" su cui è stata disegnata.
+        let schermo = Schermo.attuale
+        intestazione(L.t("schermo", "screen"),
+                     String(format: "%.0f×%.0f pt · %@ %.2f",
+                            schermo.larghezza, schermo.altezza,
+                            L.t("scala", "scale"), schermo.scala))
         lines.append("")
 
         // ── La cartella dei dati: senza scrittura qui, l'app conta e non registra

@@ -61,6 +61,12 @@ final class AppModel: ObservableObject {
     /// Quale periodo mostrano le statistiche. Sta qui e non nella vista perché la finestra si
     /// ricostruisce a ogni apertura.
     @Published var statsPeriod: StatsPeriod = .day
+    /// **La macchina su cui stiamo disegnando.** Sta qui, e non letto al volo dentro le viste,
+    /// perché è pubblicato: quando l'utente attacca un monitor o cambia risoluzione questo valore
+    /// cambia una volta sola e tutte le pagine si ridisegnano insieme. Una lettura sparsa nelle
+    /// viste darebbe invece pagine miste, metà con la scala vecchia e metà con la nuova.
+    @Published private(set) var schermo: Schermo = .attuale
+
     /// Cosa è successo all'avvio: conto ripreso o ripartito. Si dice, non si fa in silenzio.
     private(set) var resumeOutcome: SessionEngine.Resume?
 
@@ -96,6 +102,23 @@ final class AppModel: ObservableObject {
     /// un mazzo pieno e le prime frasi tornerebbero spesso — proprio il difetto da curare.
     private var decks = DeckStore.load()
     private var rng = SystemRandomNumberGenerator()
+
+    /// Impone uno schermo che non è quello vero: serve alle sonde che guardano la pagina come la
+    /// vedrebbe un'altra macchina. Non passa da `rileggi`, che riporterebbe subito il sistema.
+    @MainActor func imponiSchermo(_ nuovo: Schermo) {
+        Schermo.imponi(nuovo)
+        schermo = nuovo
+    }
+
+    /// Rilegge lo schermo dal sistema e, **solo se è cambiato davvero**, lo pubblica.
+    ///
+    /// La guardia non è un'ottimizzazione: `didChangeScreenParameters` arriva anche per cose che
+    /// non c'entrano con noi (il Dock che si sposta, una scrivania che cambia), e ripubblicare a
+    /// ogni annuncio ridisegnerebbe la schermata di blocco mentre qualcuno la sta leggendo.
+    @MainActor func aggiornaSchermo() {
+        guard Schermo.rileggi() else { return }
+        schermo = .attuale
+    }
 
     init(settings: Settings = SettingsStore.load(), ledger: Ledger = Ledger()) {
         var s = settings

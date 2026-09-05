@@ -180,6 +180,10 @@ struct UpdateView: View {
 
 struct BreakView: View {
     @ObservedObject var model: AppModel
+
+    /// La macchina su cui stiamo disegnando, presa dal modello perché di lì arriva anche
+    /// l'annuncio quando cambia. Ogni misura di questa pagina ci passa attraverso.
+    private var schermo: Schermo { model.schermo }
     @State private var showEscape = false
     @State private var escArmed = false
     /// Il pannellino «quante ne hai fatte», che compare solo quando dici «non tutte».
@@ -227,7 +231,13 @@ struct BreakView: View {
                     // usciva dallo schermo da tutte e due le parti: sopra spariva l'intestazione,
                     // sotto le vie d'uscita. Visto nella fotografia, che è l'unico posto dove una
                     // colonna troppo alta si vede.
-                    Spacer(minLength: 8).frame(maxHeight: plan.isZen && !model.exerciseDone ? 8 : 140)
+                    // **I 140 punti sono la misura del 16", non una costante universale**
+                    // (2026-09-06): su uno schermo più alto la stessa molla lascia in mezzo un
+                    // vuoto che cresce, ed è il difetto che si vede in fotografia fra la frase e
+                    // il cronometro. Adesso scala con la pagina come tutto il resto.
+                    Spacer(minLength: schermo.misura(8))
+                        .frame(maxHeight: plan.isZen && !model.exerciseDone
+                               ? schermo.misura(8) : schermo.misura(140))
                     // Il crossfade: le due facce si scambiano dentro la stessa `ZStack`, quindi
                     // una sfuma mentre l'altra compare invece di sostituirla di scatto.
                     ZStack {
@@ -246,11 +256,11 @@ struct BreakView: View {
                             exercise(plan).transition(.opacity.combined(with: .offset(y: -10)))
                         }
                     }
-                    Spacer(minLength: 8)
+                    Spacer(minLength: schermo.misura(8))
                     controls(plan)
                     footer
                 }
-                .padding(48)
+                .padding(schermo.misura(48))
                 // Legata alla sola `exerciseDone`: il cronometro cambia ogni secondo e non deve
                 // trascinarsi dietro nessuna animazione.
                 .animation(.easeInOut(duration: 0.6), value: model.exerciseDone)
@@ -277,7 +287,7 @@ struct BreakView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(Palette.dim)
                 }
-                .padding(48)
+                .padding(schermo.misura(48))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -496,7 +506,7 @@ struct BreakView: View {
             // colonna nuova qui sarebbe una superficie senza guardia.
             eyesClosedHint
             if let phrase = model.currentPhrase {
-                QuoteBlock(phrase: phrase)
+                QuoteBlock(phrase: phrase, schermo: schermo)
             }
             Text(breathFooterLine(plan, protocollo))
                 .font(.system(size: 13, design: .rounded))
@@ -1005,7 +1015,7 @@ struct BreakView: View {
     @ViewBuilder
     private var restBody: some View {
         if let phrase = model.currentPhrase {
-            RestQuote(phrase: phrase, zen: model.plan?.isZen == true)
+            RestQuote(phrase: phrase, zen: model.plan?.isZen == true, schermo: schermo)
         } else {
             // Il mazzo può essere vuoto solo se il file delle frasi è illeggibile, cioè quasi
             // mai. Ma «quasi mai» disegnava uno schermo nero muto ed è esattamente la ferita del
@@ -1453,26 +1463,38 @@ struct RestQuote: View {
     /// arriva **dopo** che il colore ha già smesso di parlare.
     var zen = false
 
-    /// Larghezza vera della fase di riposo: 1440 di schermo meno i 48+48 di margine, arrotondati
-    /// al valore che la vista impone. Serve al provino per misurare la stessa cosa che si vede.
-    static let width: CGFloat = QuoteWrap.riposo.larghezza
+    /// **Lo schermo entra dalla porta principale, non lo si va a cercare dentro il corpo della
+    /// vista.** Così la sonda può disegnare la stessa pagina per una macchina che non è questa, e
+    /// una pagina costruita resta coerente anche se nel frattempo l'utente stacca il monitor: si
+    /// ricostruisce la vista intera, non metà.
+    var schermo: Schermo = .attuale
 
-    /// Il corpo scende sulle frasi lunghe: la soglia è misurata, non stimata (vedi sopra), e vive
-    /// in `QuoteWrap.riposo` perché è la stessa che decide i tagli.
-    static func corpo(_ phrase: Phrase) -> CGFloat { QuoteWrap.riposo.corpo(phrase.localizedText) }
+    /// Larghezza della colonna nella fase di riposo, sulla macchina data. Viene da `QuoteWrap`
+    /// perché è **la stessa** che decide dove vanno a capo le righe.
+    static func width(su schermo: Schermo = .attuale) -> CGFloat {
+        QuoteWrap.riposo(su: schermo).larghezza
+    }
+
+    /// Il corpo scende sulle frasi lunghe: la soglia è misurata, non stimata, e vive in
+    /// `QuoteWrap.riposo` perché è la stessa che decide i tagli.
+    static func corpo(_ phrase: Phrase, su schermo: Schermo = .attuale) -> CGFloat {
+        QuoteWrap.riposo(su: schermo).corpo(phrase.localizedText)
+    }
 
     var body: some View {
-        VStack(spacing: 24) {
-            Text(QuoteWrap.wrapped(phrase.displayText, width: Self.width, size: Self.corpo(phrase)))
-                .font(.system(size: Self.corpo(phrase), design: .serif))
+        let larghezza = Self.width(su: schermo)
+        let corpo = Self.corpo(phrase, su: schermo)
+        VStack(spacing: schermo.misura(24)) {
+            Text(QuoteWrap.wrapped(phrase.displayText, width: larghezza, size: corpo))
+                .font(.system(size: corpo, design: .serif))
                 .foregroundStyle(zen ? Palette.accent.opacity(0.92) : Palette.paper.opacity(0.94))
                 .multilineTextAlignment(.center)
-                .lineSpacing(10)
+                .lineSpacing(schermo.misura(10))
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: Self.width)
+                .frame(maxWidth: larghezza)
             if phrase.kind != .voce {
                 Text(phrase.localizedCredit)
-                    .font(.system(size: 15, design: .rounded))
+                    .font(.system(size: schermo.misura(15), design: .rounded))
                     .foregroundStyle(Palette.dim)
             }
         }
@@ -1482,11 +1504,19 @@ struct RestQuote: View {
 struct QuoteBlock: View {
     let phrase: Phrase
 
-    static let width: CGFloat = QuoteWrap.esercizio.larghezza
-    static let corpo: CGFloat = QuoteWrap.esercizio.corpoBase
+    var schermo: Schermo = .attuale
+
+    static func width(su schermo: Schermo = .attuale) -> CGFloat {
+        QuoteWrap.esercizio(su: schermo).larghezza
+    }
+    static func corpo(su schermo: Schermo = .attuale) -> CGFloat {
+        QuoteWrap.esercizio(su: schermo).corpoBase
+    }
 
     var body: some View {
-        VStack(spacing: 6) {
+        let larghezza = Self.width(su: schermo)
+        let corpo = Self.corpo(su: schermo)
+        VStack(spacing: schermo.misura(6)) {
             // **La voce dell'app non porta i caporali e non porta una firma.** I caporali dicono
             // «questo lo ha detto qualcun altro» e «anonimo» dice «qualcuno l'ha detto e non
             // sappiamo chi»: su una riga scritta per Otium sono due affermazioni false.
@@ -1495,15 +1525,15 @@ struct QuoteBlock: View {
             // messo il lineare per la voce e le grazie per le citazioni: due caratteri sulla
             // stessa schermata sono un cambio di tono che nessuno ha chiesto, e la distinzione la
             // fanno già i caporali che non ci sono.
-            Text(QuoteWrap.wrapped(phrase.displayText, width: Self.width, size: Self.corpo))
-                .font(.system(size: Self.corpo, design: .serif))
+            Text(QuoteWrap.wrapped(phrase.displayText, width: larghezza, size: corpo))
+                .font(.system(size: corpo, design: .serif))
                 .foregroundStyle(Palette.paper.opacity(0.62))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: Self.width)
+                .frame(maxWidth: larghezza)
             if phrase.kind != .voce {
                 Text(phrase.localizedCredit)
-                    .font(.system(size: 11))
+                    .font(.system(size: schermo.misura(11)))
                     .foregroundStyle(Palette.dim)
             }
         }
@@ -1619,8 +1649,17 @@ struct Dismissible<Content: View>: View {
 struct QuoteHUDView: View {
     let phrase: Phrase
 
-    static let width: CGFloat = QuoteWrap.pannello.larghezza
-    static let corpo: CGFloat = QuoteWrap.pannello.corpoBase
+    /// Il pannello vive in una finestra sua, costruita al momento: qui lo schermo arriva già
+    /// deciso da chi la costruisce, così la scatola disegnata e la colonna su cui sono stati
+    /// calcolati i tagli vengono dallo stesso numero.
+    var schermo: Schermo = .attuale
+
+    static func width(su schermo: Schermo = .attuale) -> CGFloat {
+        QuoteWrap.pannello(su: schermo).larghezza
+    }
+    static func corpo(su schermo: Schermo = .attuale) -> CGFloat {
+        QuoteWrap.pannello(su: schermo).corpoBase
+    }
 
     /// Chi l'ha detta, un pelo sotto la frase e più in sordina.
     private var credito: some View {
@@ -1635,10 +1674,12 @@ struct QuoteHUDView: View {
         // nell'`HStack`, cioè due intervalli da 14, mentre il calcolo della colonna ne toglieva
         // uno solo. Quattordici punti di differenza bastavano a far spezzare di nuovo a `Text`
         // righe già impaginate. La storia per esteso sta accanto alle costanti.
-        HStack(spacing: QuoteWrap.Pannello.stacco) {
+        let geometria = QuoteWrap.Pannello.geometria(su: schermo)
+        let corpo = Self.corpo(su: schermo)
+        HStack(spacing: geometria.stacco) {
             RoundedRectangle(cornerRadius: 2).fill(Palette.accent)
-                .frame(width: QuoteWrap.Pannello.barra)
-            VStack(alignment: .leading, spacing: 6) {
+                .frame(width: geometria.barra)
+            VStack(alignment: .leading, spacing: schermo.misura(6)) {
                 // **Il blocco si centra come un tutt'uno, e va bene così.**
                 //
                 // Provata e scartata la via opposta il 2026-08-03: un contrappeso invisibile
@@ -1649,13 +1690,13 @@ struct QuoteHUDView: View {
                 // di 132 punti, in cui una frase di due righe ballava. Tolta quella, il blocco
                 // centrato è la lettura giusta — e la frase, che occupa quasi tutto, di fatto
                 // ci sta sopra.
-                Text(QuoteWrap.wrapped(phrase.displayText, width: Self.width, size: Self.corpo))
-                    .font(.system(size: Self.corpo, design: .serif))
+                Text(QuoteWrap.wrapped(phrase.displayText, width: geometria.colonna, size: corpo))
+                    .font(.system(size: corpo, design: .serif))
                     // **L'interlinea di serie è pensata per una riga o due, non per quattro.**
                     // Sulla frase più lunga del mazzo — tre righe di serif in una colonna stretta
                     // — il blocco si legge come un muro. Tre punti d'aria fra le righe non si
                     // notano su una frase corta e salvano quella lunga.
-                    .lineSpacing(4)
+                    .lineSpacing(schermo.misura(4))
                     .fixedSize(horizontal: false, vertical: true)
                 if phrase.kind != .voce { credito }
             }
@@ -1668,9 +1709,9 @@ struct QuoteHUDView: View {
             // contenuto avido, la `fittingSize` della vista ospitata schizza a 930 punti e il
             // pannello esce largo il doppio. Un numero esatto non ha nessuna di queste due
             // ambiguità, ed è **lo stesso** su cui sono stati calcolati i tagli.
-            .frame(width: QuoteWrap.Pannello.colonna, alignment: .leading)
+            .frame(width: geometria.colonna, alignment: .leading)
         }
-        .padding(QuoteWrap.Pannello.respiro)
+        .padding(geometria.respiro)
         // **Nessuna altezza scritta qui.** Erano 132 punti fissi: una frase di due righe ci
         // ballava dentro, e una lunga sarebbe stata tagliata. Ora la detta il contenuto, con il
         // solo minimo del pannello — la stessa regola che `WarningHUD` applica già alle altre.
@@ -1679,7 +1720,7 @@ struct QuoteHUDView: View {
         // mazzo (Dhammapada, 137 caratteri) in 380 punti andava a tre righe strette e si leggeva
         // come un blocco compatto. Quaranta punti in più le tolgono una riga senza far invadere
         // al pannello mezzo schermo.
-        .frame(width: QuoteWrap.Pannello.scatola, alignment: .leading)
+        .frame(width: geometria.scatola, alignment: .leading)
         .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }

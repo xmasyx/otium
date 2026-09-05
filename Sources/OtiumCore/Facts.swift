@@ -126,9 +126,9 @@ public enum Facts {
           "fisiologia metabolica, nozione di base",
           "Skeletal muscle is the body's largest glucose disposal organ.",
           "metabolic physiology, basic knowledge"),
-        f("Contrarre le gambe attiva trasportatori del glucosio anche senza insulina: è una via indipendente.",
+        f("Contrarre le gambe attiva trasportatori del glucosio anche senza insulina: è una via indipendente dall'ormone.",
           "fisiologia dell'esercizio, meccanismo GLUT4",
-          "Contracting your legs activates glucose transporters even without insulin: it is an independent pathway.",
+          "Contracting your legs activates glucose transporters even without insulin: it is a pathway independent of the hormone.",
           "exercise physiology, the GLUT4 mechanism"),
         // **Riscritta il 2026-08-07, e il paragone è caduto.** Diceva «predice l'autonomia in età
         // avanzata meglio di molti esami del sangue»: «gli esami del sangue» non sono una
@@ -148,9 +148,9 @@ public enum Facts {
           "studi prospettici su forza di presa e mortalità",
           "Grip strength is one of the simplest and most robust predictors of mortality there is.",
           "prospective studies on grip strength and mortality"),
-        f("La massa muscolare persa dopo i trent'anni si riprende a qualunque età con il sovraccarico: il muscolo risponde sempre.",
+        f("La massa muscolare persa dopo i trent'anni si riprende a qualunque età allenandosi contro un carico: il muscolo risponde sempre.",
           "sarcopenia e allenamento di forza, consenso scientifico",
-          "Muscle mass lost after thirty comes back at any age with overload: muscle always responds.",
+          "Muscle mass lost after thirty comes back at any age by training against a load: muscle always responds.",
           "consensus on sarcopenia and strength training"),
         f("L'osso si costruisce dove viene caricato: senza carico si disfa, con carico si ispessisce.",
           "legge di Wolff, ortopedia",
@@ -201,11 +201,11 @@ public enum Facts {
           "ottica fisiologica, nozione di base",
           "Looking into the distance relaxes the ciliary muscle, which stays contracted for hours holding near focus.",
           "physiological optics, basic knowledge"),
-        f("La regola 20-20-20 è ovunque, ma un confronto diretto fra intervalli diversi non ha trovato differenze su sintomi e lettura.",
+        f("La regola 20-20-20 — ogni venti minuti, venti secondi a guardare a sei metri — è ovunque, ma un confronto diretto fra intervalli diversi non ha trovato differenze.",
           // Fonte resa precisa il 2026-08-08: la rivista è Optometry and Vision Science, e la
           // regola in cima al file dice di scrivere la citazione puntuale quando è davvero quella.
           "Johnson & Rosenfield, Optom Vis Sci, 2023",
-          "The 20-20-20 rule is everywhere, but a direct comparison of different intervals found no difference in symptoms or reading.",
+          "The 20-20-20 rule — every twenty minutes, twenty seconds looking six metres away — is everywhere, but a direct comparison of intervals found no difference.",
           "Johnson & Rosenfield, optometric literature, 2023"),
         f("Guardare qualcosa di naturale — anche solo dalla finestra — recupera l'attenzione meglio di guardare un altro schermo.",
           "teoria del ripristino dell'attenzione, Kaplan",
@@ -300,9 +300,9 @@ public enum Facts {
           "fisiologia respiratoria, nozione di base",
           "Breathing with the diaphragm lowers heart rate; breathing high and short raises it.",
           "respiratory physiology, basic knowledge"),
-        f("Un'espirazione più lunga dell'inspirazione attiva la risposta parasimpatica: è il modo più rapido di calmarsi.",
+        f("Un'espirazione più lunga dell'inspirazione attiva il freno del sistema nervoso, il parasimpatico: è il modo più rapido di calmarsi.",
           "fisiologia autonomica, consenso scientifico",
-          "An exhale longer than the inhale activates the parasympathetic response: it is the fastest way to calm down.",
+          "An exhale longer than the inhale engages the nervous system's brake, the parasympathetic: it is the fastest way to calm down.",
           "autonomic physiology consensus"),
         f("Molte persone davanti allo schermo trattengono il respiro senza accorgersene, soprattutto mentre leggono email.",
           "osservazione documentata come «apnea da schermo», letteratura divulgativa",
@@ -422,7 +422,7 @@ public enum Facts {
         // contestata il 2026-08-08: le sedie egizie sono del terzo millennio a.C. La frase confondeva
         // l'oggetto, antichissimo e di rango, con il suo uso di massa, che è davvero recente. Adesso
         // dice la seconda cosa e porta una data verificabile invece di una firma vaga.
-        f("Il corpo è fatto per stare in piedi, camminare e accovacciarsi. Stare seduti tutto il giorno è qualcosa di pochi anni: la prima sedia prodotta in serie è del 1859, e ne uscirono cinquanta milioni.",
+        f("Il corpo è fatto per stare in piedi, camminare e accovacciarsi. Stare seduti tutto il giorno è recente: la prima sedia prodotta in serie è del 1859, e in settant'anni ne uscirono cinquanta milioni.",
           "Thonet n. 14, 1859 · storia del design industriale",
           "The human body is built to stand, walk and squat. Sitting all day is recent: the first mass-produced chair dates from 1859, and fifty million of them were made within seventy years.",
           "Thonet No. 14, 1859 · history of industrial design"),

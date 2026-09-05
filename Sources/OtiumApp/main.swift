@@ -35,6 +35,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     func applicationDidFinishLaunching(_ notification: Notification) {
         Paths.ensureDirectory()
 
+        // **Lo schermo si legge prima di disegnare qualunque cosa.** Finché nessuno lo chiede,
+        // `Schermo.attuale` vale il riferimento, cioè il 16" su cui la pagina è stata disegnata:
+        // una pagina costruita prima di questa riga userebbe la scala di un'altra macchina.
+        Schermo.rileggi()
+        model.aggiornaSchermo()
+        // Monitor attaccato, staccato, risoluzione cambiata: il sistema lo annuncia, e l'app
+        // ridisegna con le proporzioni nuove invece di restare con quelle di prima.
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.model.aggiornaSchermo() }
+        }
+
         // **`--dark` e `--light` valgono per ogni sonda, non solo per la resa fuori schermo.**
         //
         // Stavano dentro `renderSnapshotIfRequested`, quindi `--mostra-prefs --dark` apriva la
@@ -218,6 +232,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // blocco in inglese è quella che si vede ogni mezz'ora, ed è l'unica prova che la
         // traduzione sia arrivata dove conta.
         if CommandLine.arguments.contains("--inglese") { L.language = .english }
+        // `--schermo=1280x800` — disegna la pagina come la vedrebbe un'altra macchina. È l'unico
+        // modo di **guardare** una taglia che non possediamo: i test dicono che i tagli reggono,
+        // ma un test non dice se la pagina è bella, e quella domanda si risponde solo a occhio.
+        if let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--schermo=") }),
+           let valore = arg.split(separator: "=", maxSplits: 1).last {
+            let parti = valore.split(separator: "x").compactMap { Double($0) }
+            if parti.count == 2, parti[0] > 0, parti[1] > 0 {
+                MainActor.assumeIsolated {
+                    model.imponiSchermo(Schermo(larghezza: parti[0], altezza: parti[1]))
+                }
+            }
+        }
         if CommandLine.arguments.contains("--dark") {
             NSApp.appearance = NSAppearance(named: .darkAqua)
         } else if CommandLine.arguments.contains("--light") {
@@ -318,7 +344,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             let riposo = CommandLine.arguments.contains("--riposo")
             for (i, p) in PhraseLibrary.breakPool().enumerated() {
                 let v = riposo
-                    ? NSHostingView(rootView: RestQuote(phrase: p).frame(width: RestQuote.width))
+                    ? NSHostingView(rootView: RestQuote(phrase: p).frame(width: RestQuote.width()))
                     : NSHostingView(rootView: QuoteBlock(phrase: p).frame(width: 760))
                 print("\(i)\t\(Int(v.fittingSize.height))\t\(p.localizedText.count)\t\(p.localizedText)")
             }
@@ -459,7 +485,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             host = NSHostingView(rootView: PrefsView(model: model, initialSection: voce)
                                     .frame(width: size.width, height: size.height))
         default:
-            size = NSSize(width: 1440, height: 900)
+            // **La tela della fotografia è lo schermo vero, non 1440×900** (2026-09-06). Da
+            // quando la pagina scala con la macchina, una fotografia presa su una tela finta
+            // mostrerebbe proporzioni che nessuno vedrà mai: la sonda misurerebbe una pagina che
+            // non esiste. Con `--schermo=LxA` si guarda una macchina che non è questa.
+            size = NSSize(width: Schermo.attuale.larghezza, height: Schermo.attuale.altezza)
             host = NSHostingView(rootView: BreakView(model: model).frame(width: size.width, height: size.height))
         }
         // Lo sfondo della finestra nell'app vera lo mette AppKit, non la vista: senza, uno
@@ -574,7 +604,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     /// sleep 3 && screencapture -x -R"<x,y,w,h>" pannello.png
     /// ```
     ///
-    /// Riconosce il pannello dalla larghezza, che è `QuoteWrap.Pannello.scatola`, cioè lo stesso
+    /// Riconosce il pannello dalla larghezza, che è quella di `QuoteWrap.Pannello`, cioè lo stesso
     /// numero che lo disegna.
     private func printQuotePanelRegionIfRequested() {
         guard CommandLine.arguments.contains("--regione-frase") else { return }
@@ -592,14 +622,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             // da misurare.
             guard let panel = NSApp.windows.filter({
                 $0.isVisible && $0.contentView != nil
-                    && $0.frame.width >= QuoteWrap.Pannello.scatola
+                    && $0.frame.width >= QuoteWrap.Pannello.geometria().scatola
             }).max(by: { $0.windowNumber < $1.windowNumber })
             else {
                 // Elenca cosa c'era davvero: un «non trovato» senza l'elenco manda a cercare il
                 // guasto nel posto sbagliato, ed è successo la prima volta che questa è girata.
                 let viste = NSApp.windows.map { "\($0.frame.width)x\($0.frame.height) visibile=\($0.isVisible)" }
                 FileHandle.standardError.write(
-                    "regione-frase: nessun pannello largo \(QuoteWrap.Pannello.scatola). Finestre: \(viste)\n"
+                    "regione-frase: nessun pannello largo \(QuoteWrap.Pannello.geometria().scatola). Finestre: \(viste)\n"
                         .data(using: .utf8)!)
                 NSApp.terminate(nil); return
             }
@@ -621,7 +651,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             let schermo = (panel.screen ?? NSScreen.main)?.frame ?? .zero
             let f = panel.frame
             let regione = "\(Int(f.minX)),\(Int(schermo.height - f.maxY)),"
-                + "\(Int(QuoteWrap.Pannello.scatola)),\(Int(f.height))\n"
+                + "\(Int(QuoteWrap.Pannello.geometria().scatola)),\(Int(f.height))\n"
             // Scritto sul descrittore, non con `print`: verso una pipe lo stdout di Swift è a
             // buffer pieno, e chi legge il rettangolo per fotografare sta appunto leggendo una
             // pipe. Con `print` il file resta vuoto finché il processo non muore, cioè proprio
@@ -2396,8 +2426,15 @@ if arguments.contains("--remove-legacy-agent") {
 if CommandLine.arguments.contains("--tagli") {
     let verboso = CommandLine.arguments.contains("--verboso")
     var totali: [String: (Int, Int)] = [:]
-    for colonna in QuoteWrap.colonne {
-        let nome = colonna.nome
+    var etichette: [String] = []
+    // **La sonda gira su tutte le taglie di Mac, non solo su questa** (2026-09-06). Finché le
+    // colonne erano tre numeri fissi bastava misurarle una volta; adesso che le calcola la scala
+    // della macchina, «zero difetti» su questo schermo non dice niente sull'altro. L'elenco delle
+    // taglie vive in `Schermo`, non qui, per non averne due versioni.
+    for taglia in Schermo.taglieDiProva {
+      for colonna in QuoteWrap.colonne(su: taglia.schermo) {
+        let nome = "\(colonna.nome) · \(taglia.nome)"
+        etichette.append(nome)
         var difettiAvido = 0, difettiScelto = 0
         for (i, p) in PhraseLibrary.breakPool(includingUser: false).enumerated() {
             let w = colonna.larghezza
@@ -2422,11 +2459,12 @@ if CommandLine.arguments.contains("--tagli") {
             }
         }
         totali[nome] = (difettiAvido, difettiScelto)
+      }
     }
     print("\n=== TAGLI ===")
-    for colonna in QuoteWrap.colonne {
-        let (a, s) = totali[colonna.nome] ?? (0, 0)
-        print("\(colonna.nome)\tavido: \(a) difetti\tscelto: \(s) difetti")
+    for nome in etichette {
+        let (a, s) = totali[nome] ?? (0, 0)
+        print("\(nome)\tavido: \(a) difetti\tscelto: \(s) difetti")
     }
     exit(0)
 }
