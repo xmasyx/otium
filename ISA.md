@@ -2,7 +2,7 @@
 slug: otium
 title: Otium — pause forzate con allenamento integrato per macOS
 phase: climbing
-progress: 272/276
+progress: 275/279
 iteration: 30
 context_sufficient: true
 interview_invoked: false
@@ -2624,3 +2624,9 @@ alto**, non l'origine AppKit, che scivolava a ogni cambio d'altezza. Corretta da
 secondaria del pannello si chiama «Rinvia 2 minuti» e non «Non posso adesso», perché è un rinvio e
 la frase d'uscita nel pannello non si può scrivere. Prezzo dichiarato: nel pannello non funzionano le
 scorciatoie da tastiera (`canBecomeKey` è falso per costruzione).
+
+**Coda della sera (sue tre osservazioni sulla 1.4.0 installata), chiuse in `1c0076c`:**
+
+- [x] **ISC-240** Nel pannello le alternative sono centrate riga per riga. *Evidenza:* `foto/pannello-centrato-hover.png`.
+- [x] **ISC-241** Ogni elemento cliccabile del pannello si vede sotto il puntatore: velo bianco 12% + mano. *Evidenza:* luminanza misurata sulla foto, 58,7 sotto il puntatore contro 32,0 e 32,8 le vicine (prima: 34,0 contro 32,0).
+- [x] **ISC-242** La riga sopra al cronometro a esercizio fatto è una riga della voce di Otium (`PhraseLibrary.restPool`, solo `voce`), diversa a ogni pausa e mai la citazione già a schermo. *Evidenza:* `RestPoolTests` + `foto/riposo-voce.png`.
