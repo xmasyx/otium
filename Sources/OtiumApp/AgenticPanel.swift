@@ -381,7 +381,10 @@ struct AgenticPanelView: View {
     private func p(_ valore: CGFloat) -> CGFloat { schermo.misura(valore) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: p(12)) {
+        // Tutto centrato, come lo scudo: intestazione e barra tengono la larghezza intera, il resto
+        // sta sull'asse. Il 6/09 sera il numero stava a sinistra e le alternative al centro, e lui
+        // l'ha visto subito: «bisogna mantenere l'armonia».
+        VStack(alignment: .center, spacing: p(12)) {
             if let plan = model.plan {
                 intestazione(plan)
                 barra(plan)
@@ -400,7 +403,7 @@ struct AgenticPanelView: View {
             }
         }
         .padding(p(18))
-        .frame(width: schermo.misura(360), alignment: .leading)
+        .frame(width: schermo.misura(360), alignment: .center)
         .background(
             RoundedRectangle(cornerRadius: p(16), style: .continuous)
                 .fill(Palette.ink)
@@ -451,7 +454,7 @@ struct AgenticPanelView: View {
     /// scudo: la logica è quella di `Hold`, letta qui a ogni ridisegno invece che contata a parte.
     @ViewBuilder
     private func corpo(_ plan: BreakPlan) -> some View {
-        VStack(alignment: .leading, spacing: p(4)) {
+        VStack(alignment: .center, spacing: p(4)) {
             HStack(alignment: .firstTextBaseline, spacing: p(10)) {
                 Text(numeroGrande(plan))
                     .font(.system(size: p(56), weight: .bold, design: .rounded))
@@ -470,11 +473,13 @@ struct AgenticPanelView: View {
                 // farebbe quattro righe.
                 .font(.system(size: p(model.exerciseDone ? 14 : 20), weight: .medium, design: .rounded))
                 .foregroundStyle(Palette.paper)
+                .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             if !model.exerciseDone {
                 Text(plan.exercise.kind.cue)
                     .font(.system(size: p(12)))
                     .foregroundStyle(Palette.dim)
+                    .multilineTextAlignment(.center)
                     // Tre righe: l'istruzione più lunga del corpus ci sta, e un'istruzione che
                     // cresce senza limite spingerebbe i pulsanti fuori dal pannello.
                     .lineLimit(3)
@@ -587,7 +592,7 @@ struct AgenticPanelView: View {
             // (regola di casa, §5 delle app Mac). Nello scudo la riga c'è; qui il pulsante nasceva
             // grigio e muto, e la fotografia del 2026-09-06 lo mostra. Stesse parole dello scudo,
             // perché è lo stesso conto: il minimo di movimento, non il tempo della pausa.
-            VStack(alignment: .leading, spacing: p(4)) {
+            VStack(alignment: .center, spacing: p(4)) {
                 primario(model.moreStationsAhead ? L.t("Fatte tutte — avanti", "All done — next")
                                                  : L.t("Fatte tutte", "All done"),
                          acceso: model.canFinishNow) { model.markExerciseDone() }
@@ -641,7 +646,6 @@ struct AgenticPanelView: View {
             if model.engine.canLeaveCircuit {
                 minore(L.t("Basta così", "That's enough")) { model.leaveCircuit() }
             }
-            Spacer()
         }
     }
 

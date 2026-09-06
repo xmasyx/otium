@@ -20,7 +20,7 @@ move. This file records what changed between released versions, newest first.
 - **The rest line speaks with Otium's own voice.** Once the exercise is confirmed, the line above
   the timer used to be the same sentence every time («Stand up and look far away…»); it now draws
   one of the app's own lines per break, never the quote already on screen.
-- **Agentic panel: alternatives are centred row by row, and everything clickable lights up under
+- **Agentic panel: number, name, cue, alternatives and actions sit on one centred axis, and everything clickable lights up under
   the pointer** (measured: the hovered pill reads 59 against 32 for its neighbours).
 ### Changed
 
