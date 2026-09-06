@@ -3,6 +3,33 @@
 Otium is a break enforcer: it counts your real screen time and locks the screen until you
 move. This file records what changed between released versions, newest first.
 
+## [1.3.0] — 2026-09-06
+
+### Changed
+
+- **The break screen adapts to the screen it is on.** Column, type size, spacing, radii, stroke
+  widths and the breathing halo were fixed numbers chosen on one 16" laptop, and nothing in the
+  code ever read the display. Otium now reads it and derives a single scale from the narrower side,
+  clamped between 0.62 and 1.45 — below that the type stops being comfortable to read, above it a
+  line grows too long for the eye to find its way back. On the reference display the scale is
+  exactly 1, so that page is unchanged, and a test asserts it value by value. The layout also
+  follows an external display being plugged in or the resolution changing.
+- **The break page distributes its air instead of pooling it.** The free space now belongs to the
+  content, which is centred in it with a little breathing room below so it sits at the optical
+  centre rather than the geometric one. Before, a fixed spring pinned the phrase near the top and
+  left one large gap between the phrase and the timer — between the two things you actually look
+  at. As a side effect the two faces of the break no longer shift during the crossfade, because
+  both are now centred in the same band.
+
+### Fixed
+
+- **Five facts named something without saying what it is.** The 20-20-20 rule now states what it
+  asks for; the fifty million mass-produced chairs now carry the seventy years they were made in
+  (the English text already did, the Italian did not); "an independent pathway" says independent of
+  what; "overload" and "the parasympathetic response" are glossed in plain words.
+- On a small display the breathing halo drew the square of its own frame around the light, because
+  the gradient radii stayed fixed while the frame scaled.
+
 ## [1.2.1] — 2026-08-31
 
 ### Changed
