@@ -17,6 +17,13 @@ move. This file records what changed between released versions, newest first.
 
 ### Changed
 
+- **The rest line speaks with Otium's own voice.** Once the exercise is confirmed, the line above
+  the timer used to be the same sentence every time («Stand up and look far away…»); it now draws
+  one of the app's own lines per break, never the quote already on screen.
+- **Agentic panel: alternatives are centred row by row, and everything clickable lights up under
+  the pointer** (measured: the hovered pill reads 59 against 32 for its neighbours).
+### Changed
+
 - **At most five alternatives per exercise.** Seven push-up variants in a 4+3 grid overflowed the
   text column; the ceiling now holds across the whole catalogue (eight exercises trimmed), and the
   push-up keeps the five closest by difficulty.

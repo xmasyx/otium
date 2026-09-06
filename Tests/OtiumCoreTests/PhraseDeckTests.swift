@@ -257,3 +257,16 @@ final class PhraseKindSpreadTests: XCTestCase {
         }
     }
 }
+
+// MARK: - Il pool del riposo (2026-09-06)
+
+/// La riga sopra al cronometro, a esercizio fatto, viene dalla voce dell'app: righe scritte per
+/// Otium, mai citazioni né fatti, perché la citazione grande sta già sopra.
+final class RestPoolTests: XCTestCase {
+    func testTheRestPoolIsTheAppVoiceOnly() {
+        let pool = PhraseLibrary.restPool()
+        XCTAssertGreaterThan(pool.count, 10, "abbastanza righe da non ripetersi in una giornata")
+        XCTAssertTrue(pool.allSatisfy { $0.kind == .voce })
+        XCTAssertFalse(pool.contains { $0.displayText.hasPrefix("«") }, "niente caporali: è l'app che parla")
+    }
+}

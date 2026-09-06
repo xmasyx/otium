@@ -1111,8 +1111,13 @@ struct BreakView: View {
             // tutte e due — è così che il cronometro qui sotto non si sposta al cambio di faccia.
             ZStack {
                 if model.exerciseDone && !model.canReturnToWork {
-                    Text(L.t("Alzati e guarda lontano. Il resto della pausa è tuo.",
-                             "Stand up and look far away. The rest of the break is yours."))
+                    // Una riga della voce di Otium, diversa a ogni pausa; la frase fissa resta il
+                    // ripiego di un pool vuoto, che è quasi mai.
+                    Text(model.restPhrase?.localizedText
+                         ?? L.t("Alzati e guarda lontano. Il resto della pausa è tuo.",
+                                "Stand up and look far away. The rest of the break is yours."))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
                         .font(.system(size: p(13), design: .rounded))
                         .foregroundStyle(Palette.accent.opacity(0.85))
                 }

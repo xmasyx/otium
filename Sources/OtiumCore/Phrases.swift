@@ -223,6 +223,17 @@ public enum PhraseLibrary {
         Quotes.all.map(\.phrase) + Mindful.all + Facts.all + (includingUser ? userPhrases() : [])
     }
 
+    /// **Il pool del riposo: la voce dell'app, e basta.** Nella fase in cui l'esercizio è fatto e
+    /// il cronometro corre, la riga sopra al tempo diceva sempre «Alzati e guarda lontano. Il resto
+    /// della pausa è tuo.» (sua richiesta, 2026-09-06 sera: «dovrebbe darmi una delle frasi che
+    /// abbiamo selezionato per Otium»). Le righe di `voce` sono esattamente questo: istruzioni
+    /// scritte per Otium, in imperativo, senza caporali né firma. Citazioni e fatti restano fuori,
+    /// perché lì sopra c'è già la citazione grande e due voci diverse nella stessa schermata si
+    /// contraddicono nel registro.
+    public static func restPool() -> [Phrase] {
+        Mindful.all.filter { $0.kind == .voce }
+    }
+
     /// Il pool dell'avvio: niente fatti scientifici. All'avvio si legge una riga sola, e deve
     /// essere quella che dà il tono alla giornata, non un dato.
     public static func launchPool(includingUser: Bool = true) -> [Phrase] {

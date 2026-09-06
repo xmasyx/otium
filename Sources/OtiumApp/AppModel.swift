@@ -57,6 +57,9 @@ final class AppModel: ObservableObject {
     /// ferma finché dura: calcolarla dentro la vista significherebbe ripescarla a ogni ridisegno,
     /// e il testo cambierebbe sotto gli occhi mentre lo leggi.
     @Published private(set) var currentPhrase: Phrase?
+    /// La riga del riposo, una per pausa, dalla voce dell'app (`PhraseLibrary.restPool`). Estratta
+    /// insieme alla citazione, così le due non coincidono mai nella stessa schermata.
+    @Published private(set) var restPhrase: Phrase?
     @Published private(set) var launchPhrase: Phrase?
     /// Quale periodo mostrano le statistiche. Sta qui e non nella vista perché la finestra si
     /// ricostruisce a ogni apertura.
@@ -447,6 +450,9 @@ final class AppModel: ObservableObject {
             hud.hide()
             escapeText = ""
             currentPhrase = drawPhrase(launch: false)
+            restPhrase = PhraseLibrary.restPool()
+                .filter { $0.id != currentPhrase?.id }
+                .randomElement(using: &rng)
             // **Una sola delle due superfici, decisa dal piano.** Non da `settings.agenticMode`
             // letto adesso: il piano è la fotografia di cosa ti è stato chiesto, e girare
             // l'interruttore a pausa aperta non deve spostarla da sotto le mani.

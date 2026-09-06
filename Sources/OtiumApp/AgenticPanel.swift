@@ -264,6 +264,42 @@ private final class PannelloOspite<V: View>: NSHostingView<V> {
 /// etichette **a schermo**, con il carattere e il corpo veri, e quella misura la conosce solo il
 /// motore di layout. `VariantLayout.rows`, che invece è aritmetica pura, resta nel nucleo con il
 /// suo test — e continua a governare lo scudo.
+/// **Si vede che si può cliccare prima di cliccare.** Sopra una pastiglia o un pulsante lo sfondo
+/// si accende e il puntatore diventa la mano: senza, il pannello sembrava un cartello (sua
+/// osservazione, 6/09 sera: «non si capisce quando si passa sopra che è cliccabile»). Vive in un
+/// modificatore e non nei tre pulsanti perché il gesto è uno solo e deve suonare uguale ovunque.
+private struct Sfiorabile: ViewModifier {
+    let acceso: Bool
+    /// La forma su cui si accende il velo; `nil` per un testo nudo, che si schiarisce e basta.
+    let forma: AnyShape?
+    @State private var sopra = false
+
+    func body(content: Content) -> some View {
+        content
+            // Misurato in fotografia (6/09): con la sola luminosità a 0,12 la pastiglia sotto il
+            // puntatore stava a 34 contro 32 delle vicine, cioè invisibile. Il velo bianco al 12%
+            // sopra uno sfondo al 6% lo raddoppia, e si vede.
+            .overlay {
+                if let forma, sopra, acceso {
+                    forma.fill(Color.white.opacity(0.12)).allowsHitTesting(false)
+                }
+            }
+            .brightness(sopra && acceso && forma == nil ? 0.35 : 0)
+            .animation(.easeOut(duration: 0.12), value: sopra)
+            .onHover { dentro in
+                sopra = dentro
+                if acceso { dentro ? NSCursor.pointingHand.push() : NSCursor.pop() }
+            }
+    }
+}
+
+private extension View {
+    func sfiorabile<S: Shape>(_ forma: S, acceso: Bool = true) -> some View {
+        modifier(Sfiorabile(acceso: acceso, forma: AnyShape(forma)))
+    }
+    func sfiorabile(acceso: Bool = true) -> some View { modifier(Sfiorabile(acceso: acceso, forma: nil)) }
+}
+
 private struct FilaCheVaACapo: Layout {
     let spazioX: CGFloat
     let spazioY: CGFloat
@@ -305,14 +341,20 @@ private struct FilaCheVaACapo: Layout {
             larga = max(larga, largaRiga)
         }
         alta += spazioY * CGFloat(max(0, tutte.count - 1))
-        return CGSize(width: min(larghezza, larga), height: alta)
+        // La larghezza è quella della colonna, non del contenuto: così le righe si possono centrare
+        // dentro (sua osservazione, 6/09 sera: «devono essere centrate o almeno occupare lo spazio»).
+        return CGSize(width: larghezza.isFinite ? larghezza : larga, height: alta)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         var y = bounds.minY
         for riga in righe(subviews, larghezza: bounds.width) {
-            var x = bounds.minX
             let alta: CGFloat = riga.map { $0.1.height }.max() ?? 0
+            var largaRiga: CGFloat = spazioX * CGFloat(max(0, riga.count - 1))
+            for (_, misura) in riga { largaRiga += misura.width }
+            // Ogni riga centrata nella colonna: una fila corta a sinistra e una lunga sotto si
+            // leggevano come un elenco interrotto, non come una scelta.
+            var x = bounds.minX + max(0, (bounds.width - largaRiga) / 2)
             for (indice, misura) in riga {
                 subviews[indice].place(at: CGPoint(x: x, y: y + (alta - misura.height) / 2),
                                        proposal: ProposedViewSize(misura))
@@ -422,9 +464,11 @@ struct AgenticPanelView: View {
                 }
             }
             Text(model.exerciseDone
-                 ? L.t("Alzati e guarda lontano.", "Stand up and look far away.")
+                 ? (model.restPhrase?.localizedText ?? L.t("Alzati e guarda lontano.", "Stand up and look far away."))
                  : plan.exercise.title)
-                .font(.system(size: p(20), weight: .medium, design: .rounded))
+                // La riga della voce è una frase, non un titolo: a 20 punti in 360 di colonna
+                // farebbe quattro righe.
+                .font(.system(size: p(model.exerciseDone ? 14 : 20), weight: .medium, design: .rounded))
                 .foregroundStyle(Palette.paper)
                 .fixedSize(horizontal: false, vertical: true)
             if !model.exerciseDone {
@@ -520,6 +564,7 @@ struct AgenticPanelView: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .sfiorabile(Capsule())
     }
 
     /// L'azione primaria, a tutta larghezza. Gli stati sono quelli dello scudo, nello stesso
@@ -575,6 +620,7 @@ struct AgenticPanelView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .sfiorabile(RoundedRectangle(cornerRadius: p(10), style: .continuous), acceso: acceso)
         .disabled(!acceso)
     }
 
@@ -608,6 +654,7 @@ struct AgenticPanelView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .sfiorabile()
     }
 
     private func orologio(_ secondi: Double) -> String {
