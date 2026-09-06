@@ -235,9 +235,7 @@ struct BreakView: View {
                     // (2026-09-06): su uno schermo più alto la stessa molla lascia in mezzo un
                     // vuoto che cresce, ed è il difetto che si vede in fotografia fra la frase e
                     // il cronometro. Adesso scala con la pagina come tutto il resto.
-                    Spacer(minLength: schermo.misura(8))
-                        .frame(maxHeight: plan.isZen && !model.exerciseDone
-                               ? schermo.misura(8) : schermo.misura(140))
+
                     // Il crossfade: le due facce si scambiano dentro la stessa `ZStack`, quindi
                     // una sfuma mentre l'altra compare invece di sostituirla di scatto.
                     ZStack {
@@ -256,7 +254,29 @@ struct BreakView: View {
                             exercise(plan).transition(.opacity.combined(with: .offset(y: -10)))
                         }
                     }
-                    Spacer(minLength: schermo.misura(8))
+                    // **Lo spazio libero appartiene al contenuto, non alle molle** (2026-09-06,
+                    // guardando la fotografia con lui). Prima c'erano due molle, una tappata a
+                    // 140 punti sopra e una libera sotto: il risultato era la frase appoggiata
+                    // in alto e **un buco di quattrocento punti** in mezzo alla pagina, che è la
+                    // cosa che si vede e che nessun numero diceva.
+                    //
+                    // Adesso la fascia centrale prende tutto lo spazio che avanza e ci centra
+                    // dentro il contenuto. **E le due facce non saltano più**: il difetto che
+                    // aveva fatto tappare la molla ad agosto era che una faccia si centrava e
+                    // l'altra no, quindi i due baricentri non coincidevano. Centrandole
+                    // entrambe nella stessa fascia coincidono per costruzione.
+                    //
+                    // In Zen resta appoggiato in alto: lì l'alone è grande il doppio e centrarlo
+                    // lo farebbe uscire dallo schermo da tutte e due le parti invece che da una.
+                    // **Il centro ottico sta sopra il centro geometrico.** Centrato esatto, il
+                    // contenuto misurava 223 punti d'aria sopra e 112 sotto (bande di inchiostro
+                    // sulla fotografia, 6/09): l'intestazione è alta poco e non pesa, quindi il
+                    // blocco sembrava basso. Questi punti di respiro sotto lo tirano su della
+                    // metà del loro valore e pareggiano le due arie. Vale per tutte e due le
+                    // facce, quindi i baricentri restano coincidenti.
+                    .padding(.bottom, schermo.misura(55))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity,
+                           alignment: plan.isZen && !model.exerciseDone ? .top : .center)
                     controls(plan)
                     footer
                 }
