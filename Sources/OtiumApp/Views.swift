@@ -422,45 +422,15 @@ struct BreakView: View {
                     .font(.system(size: p(13), design: .rounded))
                     .foregroundStyle(Palette.dim)
             }
-            // Se ti interrompo perché credo che tu sia fermo davanti allo schermo, ti dico
-            // esattamente cosa ho riconosciuto. Un'app che agisce su una deduzione e non la
-            // mostra è un'app a cui non puoi dare torto.
-            if let presence = model.engine.lastPresence {
-                HStack(spacing: p(8)) {
-                    Image(systemName: Self.presenceIcon(presence.kind))
-                        .foregroundStyle(Palette.dim)
-                    Text(Self.presenceLabel(presence))
-                        .foregroundStyle(Palette.dim)
-                    Spacer()
-                }
-                .font(.system(size: p(12)))
-            }
-        }
-    }
-
-    /// **Uno `switch` esaustivo, non un ternario.** Con due soli rami `.call` diceva «fermo su un
-    /// documento» mentre eri al telefono, e `.terminal` avrebbe ereditato in silenzio la stessa
-    /// frase sbagliata. Così il compilatore obbliga chi aggiunge un tipo a scriverne la riga.
-    static func presenceIcon(_ kind: PresenceKind) -> String {
-        switch kind {
-        case .media: return "play.rectangle"
-        case .reading: return "doc.text"
-        case .terminal: return "terminal"
-        case .call: return "phone"
-        }
-    }
-
-    static func presenceLabel(_ presence: PresenceSignal) -> String {
-        let detail = presence.detail
-        switch presence.kind {
-        case .media:
-            return L.t("fermo davanti a un video: \(detail)", "still, watching a video: \(detail)")
-        case .reading:
-            return L.t("fermo su un documento: \(detail)", "still, on a document: \(detail)")
-        case .terminal:
-            return L.t("fermo a leggere l'output: \(detail)", "still, reading output: \(detail)")
-        case .call:
-            return L.t("in conversazione: \(detail)", "on a call: \(detail)")
+            // **La riga della presenza è uscita di qui il 2026-09-06** («non penso serva», parole
+            // sue guardando la fotografia). Nominava quello che avevo riconosciuto — il video, il
+            // documento, il terminale — cioè spiegava una mia deduzione nell'istante in cui a te
+            // serve solo sapere quanto dura la pausa e cosa devi fare. Il motore continua a
+            // registrare `lastPresence`, perché su quel segnale si decide *se* interrompere: è la
+            // spiegazione a schermo a non servire, non la misura.
+            //
+            // Le frasi non stanno nemmeno in un commento: il falsificatore di ISC-230 è un grep su
+            // `Sources`, e citarle qui lo terrebbe rosso per sempre su testo che non esiste più.
         }
     }
 
@@ -1256,7 +1226,10 @@ struct BreakView: View {
 
             // Uscire dal circuito resta possibile a metà: le stazioni già confermate restano
             // fatte, e la pausa si chiude con l'esercizio singolo che le toccava.
-            if plan.circuitActive && !model.canReturnToWork {
+            // **La condizione la sa il motore, non la vista** (2026-09-06): `!canReturnToWork` è
+            // vero anche a circuito completo finché il tempo non è scaduto, e lì sotto «Circuito
+            // completo — 4 esercizi» restava un link per uscire da una cosa già finita.
+            if model.engine.canLeaveCircuit {
                 Button(L.t("Basta così, torno all'esercizio singolo", "That's enough, back to the single exercise")) { model.leaveCircuit() }
                     .buttonStyle(.plain)
                     .font(.system(size: p(12)))
@@ -2478,6 +2451,14 @@ struct PrefsView: View {
             conNota(L.t("Le pause chiedono un respiro guidato invece di un esercizio: si fa da seduti, senza cambiarsi e senza farsi notare. Vale sia per le micro-pause sia per quelle piene.",
                         "Breaks ask for guided breathing instead of an exercise: you do it seated, without changing clothes and without being noticed. It applies to both micro-breaks and full ones.")) {
                 Toggle(L.t("Modalità Zen", "Zen mode"), isOn: vivo(\.zenMode))
+            }
+            // **Sta qui accanto a Zen perché è la stessa domanda con un'altra risposta**: le due
+            // modalità nascono tutte e due da «non posso fare la pausa come al solito adesso».
+            // Zen cambia cosa ti chiede, Agentic cambia dove te lo chiede — e con Agentic acceso
+            // la pausa torna a essere un esercizio, perché lui l'ha chiesta così.
+            conNota(L.t("La pausa non copre lo schermo: un pannello spostabile, gli agenti nel browser continuano.",
+                        "The break does not cover the screen: a panel you can drag, and the agents in your browser keep going.")) {
+                Toggle(L.t("Modalità Agentic", "Agentic mode"), isOn: vivo(\.agenticMode))
             }
         }
 

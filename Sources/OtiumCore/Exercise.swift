@@ -565,9 +565,13 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
     /// un'altra decisione da prendere ogni mezz'ora.
     public var variants: [ExerciseKind] {
         switch self {
+        // **Cinque, non sette** (2026-09-06, fotografia dei push-up): sette pastiglie in 4+3
+        // sbordavano dalla colonna del testo. Restano le cinque **più vicine per difficoltà** —
+        // due sotto, tre sopra — perché è la vicinanza che rende utile un'alternativa dentro la
+        // pausa: escono il muro, che è due gradini sotto e si ritrova dalle ginocchia, e i dips
+        // su sedia, che sono un altro movimento e si ritrovano dalla rotazione.
         case .pushUp:
-            return [.kneePushUp, .inclinePushUp, .wallPushUp, .diamondPushUp, .archerPushUp,
-                    .benchDip, .pikePushUp]
+            return [.kneePushUp, .inclinePushUp, .diamondPushUp, .pikePushUp, .archerPushUp]
         // Dalle regressioni si sale **e** si scende: chi è partito dal muro deve poter provare le
         // ginocchia senza cercarle nelle preferenze, e chi ha sbagliato a scegliere deve poter
         // tornare indietro dentro la pausa, non alla prossima.
@@ -584,8 +588,12 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
         // fatti lo stesso il 2026-08-04, fuori menu, e il registro ha scritto squat.
         // La sedia al muro entra fra le alternative delle gambe per lo stesso motivo dei
         // polpacci: e' quella che si puo' fare quando non puoi ne' muoverti ne' andare a terra.
+        // Sotto il tetto delle cinque esce **il jump squat**, che è l'unico esplosivo del
+        // gruppo: sta già con i suoi, fra gli esercizi a ritmo, e da lì lo si raggiunge. Quello
+        // che resta è coerente — forza a corpo libero più le due «senza spazio», sedia al muro e
+        // polpacci — mentre togliere una di quelle avrebbe tolto il caso del treno e della coda.
         case .squat:
-            return [.splitSquat, .jumpSquat, .lunge, .gluteBridge, .calfRaise, .wallSit]
+            return [.splitSquat, .lunge, .gluteBridge, .calfRaise, .wallSit]
         case .lunge:
             return [.splitSquat, .squat, .gluteBridge, .calfRaise]
         case .splitSquat:
@@ -617,10 +625,18 @@ public enum ExerciseKind: String, Codable, CaseIterable, Sendable {
             return [.squatThrust, .jumpSquat, .mountainClimber, .crossMountainClimber, .highKnees]
         case .squatThrust:
             return [.burpee, .jumpSquat, .mountainClimber, .crossMountainClimber, .highKnees]
-        case .jumpingJack, .jumpSquat, .mountainClimber, .crossMountainClimber, .highKnees,
-             .stepUp:
-            return [.burpee, .squatThrust, .jumpingJack, .jumpSquat, .mountainClimber,
-                    .crossMountainClimber, .highKnees, .stepUp]
+        // **Qui il tetto delle cinque morde più che altrove**, perché la famiglia è di otto e
+        // «tutti tranne me» faceva sette. Il taglio segue la posizione del corpo, che è la sola
+        // cosa che cambia davvero quando scegli un'alternativa al volo: chi sta in piedi tiene
+        // gli altri in piedi e prende dal gruppo a terra i due più semplici (squat thrust e
+        // mountain climber), lasciando fuori il burpee, che è il più duro, e la versione
+        // incrociata, che è una rifinitura del mountain climber. Chi è già a terra tiene l'altro
+        // a terra e lascia fuori il salto e la sedia, che chiedono di rialzarsi.
+        case .jumpingJack, .jumpSquat, .highKnees, .stepUp:
+            return [.jumpingJack, .jumpSquat, .highKnees, .stepUp, .squatThrust, .mountainClimber]
+                .filter { $0 != self }
+        case .mountainClimber, .crossMountainClimber:
+            return [.mountainClimber, .crossMountainClimber, .burpee, .squatThrust, .jumpingJack, .highKnees]
                 .filter { $0 != self }
         }
     }
@@ -645,9 +661,15 @@ public enum VariantLayout {
     /// **Era 3, è 4 dal 2026-08-04.** Il numero che conta è quattro perché quattro è il caso più
     /// frequente nel corpus (lo squat, la sedia, il polpaccio), e spezzato 2+2 dava una griglia
     /// invece di una scelta. Visto guardando la schermata: *«voglio che siano
-    /// messe in fila, non due sopra e due sotto, risulta brutto così»*. Il push-up con le sue
-    /// sette varianti resta su due righe, 4+3, perché sette in fila non ci starebbero.
+    /// messe in fila, non due sopra e due sotto, risulta brutto così»*. Il caso più numeroso è
+    /// **cinque** dal 2026-09-06, e sta su due righe 3+2: le sette dei push-up non esistono più,
+    /// perché in 4+3 uscivano dalla colonna del testo — vedi `maxOffered` qui sotto.
     public static let singleRowLimit = 4
+
+    /// Oltre questo numero le alternative non si offrono: la fila di sopra sborda dalla colonna
+    /// del testo (visto in fotografia sui push-up, sette varianti in 4+3, 2026-09-06). Il corpus
+    /// deve rispettarlo esercizio per esercizio: il test enumera `ExerciseKind.allCases`.
+    public static let maxOffered = 5
 
     public static func rows<T>(_ items: [T]) -> [[T]] {
         if items.isEmpty { return [] }

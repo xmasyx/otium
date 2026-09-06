@@ -259,6 +259,11 @@ public struct Settings: Codable, Equatable, Sendable {
     /// per quando quel lavoro non è socialmente possibile. Accenderla da sola sarebbe come decidere
     /// al posto tuo che il tuo ufficio è un open space.
     public var zenMode: Bool
+    /// **Modalità Agentic: la pausa non copre lo schermo.** Al posto dello scudo compare un pannello
+    /// compatto e spostabile che non prende mai il fuoco, così gli agenti che lavorano nel browser
+    /// continuano. Spenta di serie: lo scudo è la ragione per cui l'app esiste, e il pannello è il
+    /// ripiego per le ore in cui coprire lo schermo costa più di quanto la pausa valga.
+    public var agenticMode: Bool
     /// **Il respiro delle micro-pause**, di serie il respiro ciclico.
     ///
     /// Non è la stessa scelta della pausa piena, e la ragione è nei numeri: in 87 secondi utili
@@ -372,6 +377,7 @@ public struct Settings: Codable, Equatable, Sendable {
         maxAutoDefers: Int = 6,
         autoDeferSeconds: Double = 5 * 60,
         zenMode: Bool = false,
+        agenticMode: Bool = false,
         zenProtocolShort: BreathProtocol = .sospiro,
         zenProtocolLong: BreathProtocol = .risonanza,
         zenBreathSeconds: Double = 90,
@@ -408,6 +414,7 @@ public struct Settings: Codable, Equatable, Sendable {
         self.maxAutoDefers = max(0, maxAutoDefers)
         self.autoDeferSeconds = autoDeferSeconds
         self.zenMode = zenMode
+        self.agenticMode = agenticMode
         self.zenProtocolShort = zenProtocolShort
         self.zenProtocolLong = zenProtocolLong
         self.zenBreathSeconds = max(20, zenBreathSeconds)
@@ -543,6 +550,7 @@ public struct Settings: Codable, Equatable, Sendable {
         // **Assente vuol dire spenta**, che è il default, e qui è anche l'unica lettura sicura: un
         // file scritto prima di questa versione appartiene a qualcuno che si allenava nelle pause.
         zenMode = (try? c.decode(Bool.self, forKey: .zenMode)) ?? d.zenMode
+        agenticMode = (try? c.decode(Bool.self, forKey: .agenticMode)) ?? d.agenticMode
         // **La chiave vecchia non si butta.** `zenProtocol` era una sola per tutte le pause, ed è
         // vissuta poche ore, ma un file scritto in quelle ore esiste: chi l'aveva scelto se lo
         // ritrova su tutte e due, invece di vederlo sparire senza sapere perché.

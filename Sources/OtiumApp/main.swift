@@ -23,6 +23,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     /// La voce «Modalità Zen» del menu, tenuta per riferimento e non ritrovata per titolo: il
     /// titolo è tradotto e cambierebbe con la lingua, il riferimento no.
     private weak var zenItem: NSMenuItem?
+    /// La voce «Modalità Agentic», tenuta per riferimento come la gemella Zen e per lo stesso
+    /// motivo: il titolo è tradotto, il riferimento no.
+    private weak var agenticItem: NSMenuItem?
     private var statsHotKey: GlobalHotKey?
 
     /// La scorciatoia globale delle statistiche, scelta il 2026-07-28: **⌃S**.
@@ -138,7 +141,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // nessun menu.
         if !CommandLine.arguments.contains(where: {
             $0.hasPrefix("--snapshot") || $0.hasPrefix("--demo-hud") || $0.hasPrefix("--scatta-menu")
-                || $0.hasPrefix("--segno-zen")
+                // `--agentic-demo` entra in questa lista per la stessa ragione di `--scatta-menu`:
+                // la frase d'avvio si apre nello **stesso angolo in alto a destra** del pannello e
+                // gliela pianta davanti per dodici secondi. Visto nella prima fotografia del
+                // 2026-09-06, dove copriva intestazione e cronometro.
+                || $0.hasPrefix("--segno-zen") || $0.hasPrefix("--agentic-demo")
         }) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
                 self?.model.showLaunchQuote()
@@ -169,6 +176,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         }
 
         runDemoIfRequested()
+        runAgenticDemoIfRequested()
         runHudDemoIfRequested()
         renderSnapshotIfRequested()
         captureWindowIfRequested()
@@ -235,15 +243,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // `--schermo=1280x800` — disegna la pagina come la vedrebbe un'altra macchina. È l'unico
         // modo di **guardare** una taglia che non possediamo: i test dicono che i tagli reggono,
         // ma un test non dice se la pagina è bella, e quella domanda si risponde solo a occhio.
-        if let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--schermo=") }),
-           let valore = arg.split(separator: "=", maxSplits: 1).last {
-            let parti = valore.split(separator: "x").compactMap { Double($0) }
-            if parti.count == 2, parti[0] > 0, parti[1] > 0 {
-                MainActor.assumeIsolated {
-                    model.imponiSchermo(Schermo(larghezza: parti[0], altezza: parti[1]))
-                }
-            }
-        }
+        applicaSchermoRichiesto()
         if CommandLine.arguments.contains("--dark") {
             NSApp.appearance = NSAppearance(named: .darkAqua)
         } else if CommandLine.arguments.contains("--light") {
@@ -303,7 +303,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             // `--fatto` fotografa la **seconda faccia** della pausa: esercizio confermato, la
             // frase che prende la pagina, il conto che scende. Senza, la resa mostra sempre e
             // solo il primo minuto e mezzo, cioè metà della schermata che l'app disegna.
-            if CommandLine.arguments.contains("--fatto") { model.fastForwardToRest() }
+            // Nel circuito «fatto» vuol dire tutte le stazioni: la fotografia che serve (2026-09-06) è
+            // quella del circuito completo, dove il link «Basta così» non deve più esserci.
+            if CommandLine.arguments.contains("--fatto") {
+                repeat { model.fastForwardToRest() } while model.moreStationsAhead && !model.exerciseDone
+                if !model.exerciseDone { model.fastForwardToRest() }
+            }
             // `--frase=<n>` fissa quale frase disegnare: senza, la fotografia mostra quella che
             // esce dal mazzo, e una prova sull'impaginazione di un testo preciso diventa una
             // caccia. L'indice è quello che stampa `--tagli`.
@@ -1509,8 +1514,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
               ? "RISULTATO ZEN: PASS — spunta e segno nella barra dicono sempre quello che fa il motore"
               : "RISULTATO ZEN: FAIL")
 
+        // **La spunta della modalità Agentic, con gli stessi due poli di Zen** (2026-09-06). Il
+        // secondo polo è quello che vale: la stessa impostazione si gira anche dalle Preferenze,
+        // e una spunta che descrive lo stato di mezz'ora fa è peggio di nessuna spunta. Non c'è
+        // il segno nella barra, perché questa modalità non ne ha uno: metterlo in questa sonda
+        // sarebbe scrivere una riga che misura una cosa che abbiamo deciso di non fare.
+        var agenticOk = agenticItem != nil && agenticItem?.state == .off && !model.settings.agenticMode
+        print("agentic · spenta di serie: \(agenticOk ? "sì" : "NO")")
+        toggleAgentic()
+        let agAcceso = model.settings.agenticMode && agenticItem?.state == .on
+        print("agentic · un clic la accende, spunta compresa: \(agAcceso ? "sì" : "NO")")
+        toggleAgentic()
+        let agSpento = !model.settings.agenticMode && agenticItem?.state == .off
+        print("agentic · un altro clic la spegne: \(agSpento ? "sì" : "NO")")
+        var agFuori = model.settings
+        agFuori.agenticMode = true
+        model.update(settings: agFuori)
+        let agPrimaDiRiaprire = agenticItem?.state == .on
+        if let menu { menuWillOpen(menu) }
+        let agRiallineata = agenticItem?.state == .on
+        print("agentic · cambiata dalle Preferenze, la spunta si allinea riaprendo il menu: "
+              + "\(agRiallineata ? "sì" : "NO") (prima di riaprire era \(agPrimaDiRiaprire ? "già on" : "off"))")
+        agenticOk = agenticOk && agAcceso && agSpento && agRiallineata
+        print(agenticOk
+              ? "RISULTATO AGENTIC: PASS — la spunta dice sempre quello che fa il motore"
+              : "RISULTATO AGENTIC: FAIL")
+
         NSApp.terminate(nil)
-        exit(ok && zenOk ? 0 : 1)
+        exit(ok && zenOk && agenticOk ? 0 : 1)
     }
 
     /// `--sleep-probe` — mentre il Mac dorme o lo schermo è bloccato, lo scudo si toglie di mezzo
@@ -1613,6 +1644,92 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         print(fits ? "STA NELLO SCHERMO" : "ESCE DALLO SCHERMO")
         print("ridimensionabile: \(window.styleMask.contains(.resizable) ? "sì" : "no")")
         NSApp.terminate(nil)
+    }
+
+    /// `--schermo=1280x800` — disegna la pagina come la vedrebbe un'altra macchina.
+    ///
+    /// **Sta in una funzione e non dentro una sonda sola** da quando le sonde che vogliono
+    /// guardare una taglia diversa sono due (`--snapshot` e `--agentic-demo`): ricopiarne le
+    /// quattro righe avrebbe fatto divergere le due sonde alla prima modifica, e la seconda
+    /// avrebbe ignorato il flag **in silenzio**, che è il modo in cui questo difetto si presenta.
+    private func applicaSchermoRichiesto() {
+        guard let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--schermo=") }),
+              let valore = arg.split(separator: "=", maxSplits: 1).last else { return }
+        let parti = valore.split(separator: "x").compactMap { Double($0) }
+        guard parti.count == 2, parti[0] > 0, parti[1] > 0 else { return }
+        MainActor.assumeIsolated {
+            model.imponiSchermo(Schermo(larghezza: parti[0], altezza: parti[1]))
+        }
+    }
+
+    /// `--agentic-demo[=secondi]` — apre la pausa **nel pannello** e misura la sola cosa che
+    /// questa modalità promette: che l'app in primo piano resti quella di prima.
+    ///
+    /// **La misura vale solo se c'è qualcosa davanti.** Si lancia con Chrome o un terminale a
+    /// fuoco: `frontmost` deve dire lo stesso identificatore prima e dopo, e `isKey` deve restare
+    /// falso. Se cambiano, non è pronto — e il commento nel codice che dice «non prende il fuoco»
+    /// diventa un'affermazione, non un fatto.
+    ///
+    /// **Si guarda due volte, subito e dopo tre secondi**, perché `orderFrontRegardless` è
+    /// asincrona come tutto ciò che riguarda le finestre: una lettura sola presa nell'istante
+    /// giusto darebbe un verde per fortuna di tempi (regola di casa pagata su Kalamos il 16/08).
+    /// `--origine=x,y` impone la posizione, anche fuori schermo: è il caso che il ritaglio esiste
+    /// per curare, e a mano non si sa produrre.
+    private func runAgenticDemoIfRequested() {
+        guard let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--agentic-demo") })
+        else { return }
+        let secondi = arg.split(separator: "=").last.flatMap { Double($0) } ?? 20
+        applicaSchermoRichiesto()
+
+        // **L'orologio si ferma, o la sonda misura un pannello che non c'è più.**
+        //
+        // Misurato il 2026-09-06, ed è la ragione per cui questa riga esiste: il battito legge
+        // l'inattività del Mac, e durante una sonda il Mac è fermo per definizione — nessuno lo
+        // sta toccando. Superata la soglia il motore chiude la pausa come **pausa naturale**, il
+        // pannello si smonta da solo, e la riga «dopo 3 s» stampava `frame=—` mentre le
+        // fotografie uscivano vuote. Non è un difetto del pannello: è il motore che fa il suo
+        // mestiere su un Mac fermo. Stessa mossa di `--snapshot`, per la stessa ragione.
+        model.stop()
+
+        var s = model.settings
+        s.agenticMode = true
+        model.update(settings: s)
+
+        func chiDavanti() -> String {
+            NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "?"
+        }
+        func cornice() -> String {
+            guard let f = model.agenticPanelFrame else { return "—" }
+            return String(format: "%.0f,%.0f,%.0f,%.0f", f.minX, f.minY, f.width, f.height)
+        }
+        func riga(_ quando: String) {
+            print("\(quando) · frontmost=\(chiDavanti()) isKey=\(model.agenticPanelIsKey) frame=\(cornice())")   // lingua: ok sonda di sviluppo (--agentic-demo)
+        }
+
+        // L'auto-spegnimento è armato **prima** che il pannello si apra, come in `--demo-break`:
+        // una sonda che dipende da qualcuno che la chiude a mano è una sonda che resta aperta.
+        let killswitch = Timer(timeInterval: max(5, secondi), repeats: false) { _ in
+            NSApp.terminate(nil)
+        }
+        RunLoop.main.add(killswitch, forMode: .common)
+
+        riga("prima")   // lingua: ok sonda di sviluppo (--agentic-demo)
+        model.forceBreakNow(kind: .micro)
+        if let origine = CommandLine.arguments.first(where: { $0.hasPrefix("--origine=") })?
+            .split(separator: "=", maxSplits: 1).last {
+            let parti = origine.split(separator: ",").compactMap { Double($0) }
+            if parti.count == 2 {
+                model.agenticPanelImponi(origine: NSPoint(x: parti[0], y: parti[1]))
+            }
+        }
+        riga("dopo")   // lingua: ok sonda di sviluppo (--agentic-demo)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { riga("dopo 3 s") }   // lingua: ok sonda di sviluppo (--agentic-demo)
+        // Una lettura un secondo prima di chiudere: è quella che vede l'effetto di un click posato
+        // sul pannello a metà corsa (fase del motore compresa), la prova che il pannello non-key
+        // riceve il mouse (madre, 2026-09-06).
+        DispatchQueue.main.asyncAfter(deadline: .now() + max(4, secondi - 1)) {
+            riga("alla fine · fase=\(self.model.engine.phase)")   // lingua: ok sonda di sviluppo (--agentic-demo)
+        }
     }
 
     /// `--demo-break[=secondi]` — apre subito la schermata di blocco e **si spegne da solo**
@@ -1780,6 +1897,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         menu.addItem(zen)
         zenItem = zen
 
+        // **Accanto a Zen perché risponde alla stessa domanda** — che cosa succede alla prossima
+        // pausa — e perché si decide nello stesso momento: gli agenti stanno lavorando nel
+        // browser adesso, non stamattina quando hai aperto le Preferenze (sua richiesta,
+        // 2026-09-06). Le due modalità non si escludono a vicenda nel menu, ma nel piano sì:
+        // con Agentic acceso la pausa è a esercizio, e Zen resta acceso per quando lo spegni.
+        let agentic = NSMenuItem(title: L.t("Modalità Agentic", "Agentic mode"),
+                                 action: #selector(toggleAgentic), keyEquivalent: "")
+        agentic.state = model.settings.agenticMode ? .on : .off
+        menu.addItem(agentic)
+        agenticItem = agentic
+
         // Due pannelli invece di due sottomenu: servono due informazioni per volta (quale
         // esercizio, quante ripetizioni), e un menu sa fare una domanda sola.
         menu.addItem(NSMenuItem(title: L.t("Sono già al computer da…", "I've been at the computer for…"), action: #selector(showSeated), keyEquivalent: ""))
@@ -1838,6 +1966,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         // impostazione si gira anche dalle Preferenze, e un segno di spunta che descrive lo stato
         // di mezz'ora fa è peggio di nessun segno.
         zenItem?.state = model.settings.zenMode ? .on : .off
+        agenticItem?.state = model.settings.agenticMode ? .on : .off
     }
 
     /// **Accende e spegne la modalità Zen scrivendo sul disco subito**, come fa l'interruttore
@@ -1860,6 +1989,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                            "I could not save the preferences"),
                 subtitle: L.t("La modalità Zen vale adesso, ma al prossimo avvio torna com'era.",
                               "Zen mode applies now, but it will revert on the next launch.")
+            )
+        }
+    }
+
+    /// La gemella di `toggleZen`, scritta con la stessa forma: si salva subito sul disco, perché
+    /// la pausa che arriva fra due minuti deve già essere quella giusta, e un salvataggio fallito
+    /// si dice, perché la differenza si vedrebbe solo al prossimo avvio.
+    @objc private func toggleAgentic() {
+        var s = model.settings
+        s.agenticMode.toggle()
+        let scritto = model.update(settings: s)
+        agenticItem?.state = model.settings.agenticMode ? .on : .off
+        if !scritto {
+            model.announce(
+                title: L.t("Non sono riuscito a salvare le preferenze",
+                           "I could not save the preferences"),
+                subtitle: L.t("La modalità Agentic vale adesso, ma al prossimo avvio torna com'era.",
+                              "Agentic mode applies now, but it will revert on the next launch.")
             )
         }
     }

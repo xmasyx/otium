@@ -3,6 +3,30 @@
 Otium is a break enforcer: it counts your real screen time and locks the screen until you
 move. This file records what changed between released versions, newest first.
 
+## [1.4.0] — 2026-09-06
+
+### Added
+
+- **Agentic mode.** A break no longer has to cover the screen. With the mode on (menu bar or
+  Settings, next to Zen) the break appears as a single compact, draggable panel that never takes
+  focus: the app in front keeps receiving keyboard and mouse, so agents driving a browser carry on
+  while you do your reps. The panel shows the exercise, the count, the timer with its bar, the
+  circuit strip and up to five alternatives; it remembers where you put it and comes back on
+  screen if the display changed. The break itself is unchanged: it still ends only when the exercise
+  is confirmed and the time is up, and the ledger marks these breaks `agentic`.
+
+### Changed
+
+- **At most five alternatives per exercise.** Seven push-up variants in a 4+3 grid overflowed the
+  text column; the ceiling now holds across the whole catalogue (eight exercises trimmed), and the
+  push-up keeps the five closest by difficulty.
+- **«That's enough, back to the single exercise» disappears once the circuit is complete.**
+
+### Removed
+
+- The «still, reading output: …» line in the break header. It stated a stillness the app could
+  not know, and it added nothing to the break.
+
 ## [1.3.0] — 2026-09-06
 
 ### Changed

@@ -24,6 +24,11 @@ public struct BreakPlan: Equatable, Sendable {
     /// fotografia di cosa ti è stato chiesto, e cambiare preferenza a metà pausa non deve
     /// riscrivere la pausa in corso.
     public var breathSeconds: Double = 0
+    /// **Questa pausa non copre lo schermo** (modalità Agentic, fotografata nel piano come `breath`:
+    /// cambiare preferenza a metà pausa non riscrive la pausa in corso). La popola `buildPlan`
+    /// leggendo `Settings.agenticMode` nell'istante in cui il piano nasce; da lì in poi è la
+    /// pausa a dire dove si vede, non l'interruttore.
+    public var agentic: Bool = false
 
     /// La domanda che le viste devono fare, invece di leggere `breath != nil` in dodici punti.
     public var isZen: Bool { breath != nil }
@@ -658,7 +663,13 @@ public struct SessionEngine {
         // Si **ricostruisce** invece di rattoppare i tre campi, perché rattoppare significherebbe
         // ricordarsi di tutto: il respiro, la durata, il circuito da svuotare o da rifare. Il piano
         // è deterministico sull'indice, quindi ricostruirlo non fa avanzare niente.
-        if settings.zenMode != piano.isZen {
+        //
+        // **E lo stesso vale per Agentic**, con una riga in più: il respiro atteso adesso non è
+        // `settings.zenMode` ma quello che `buildPlan` produrrebbe, cioè Zen **meno** Agentic.
+        // Scritto altrimenti, con tutte e due accese il confronto resterebbe disallineato per
+        // sempre e la pausa si ricostruirebbe a ogni avvio senza motivo.
+        let respiroAtteso = settings.zenMode && !settings.agenticMode
+        if respiroAtteso != piano.isZen || settings.agenticMode != piano.agentic {
             piano = buildPlan(index: piano.index, kind: piano.kind, now: now)
         }
         plan = piano
@@ -780,6 +791,7 @@ public struct SessionEngine {
             exercise: exercise,
             circuit: circuit
         )
+        piano.agentic = settings.agenticMode
         // **In modalità Zen il piano porta un respiro, e l'esercizio resta dov'è.**
         //
         // Non si azzera `exercise`, e la tentazione c'era: un piano senza esercizio sembra più
@@ -788,7 +800,12 @@ public struct SessionEngine {
         // rendere opzionale un campo che oggi non lo è, cioè pagare in tutta l'app il prezzo di una
         // modalità che si accende e si spegne. Qui `breath` è la presenza che comanda: quando c'è,
         // la pausa chiede quello, e nessuno conta ripetizioni.
-        if settings.zenMode {
+        // **Agentic vince su Zen, e il piano resta a esercizio.** Parole sue del 2026-09-06:
+        // «una modalità che mi indica solamente esercizi da fare». Un respiro guidato dentro un
+        // pannello da 360 punti non è né il respiro — che vive dell'alone grande al centro dello
+        // schermo — né l'esercizio: sarebbe la peggiore delle due cose. Chi accende Agentic sta
+        // chiedendo di continuare a lavorare mentre si muove, e il respiro non è quel mestiere.
+        if settings.zenMode, !settings.agenticMode {
             piano.breath = settings.zenProtocol(for: kind)
             // Mai più lungo della pausa che lo contiene, meno la preparazione: su una micro-pausa
             // da 90 secondi un respiro da 90 sforerebbe, e il pulsante resterebbe spento a respiro
@@ -956,9 +973,25 @@ public struct SessionEngine {
     /// «Basta così, torno all'esercizio singolo.» Le stazioni già confermate restano fatte — sono
     /// già nel registro, scritte nel momento in cui le hai confermate — e la pausa torna a
     /// chiudersi con un esercizio solo.
+    /// **Uscire dal circuito ha senso solo finché il circuito non è finito.** A stazioni tutte
+    /// confermate il link «Basta così» restava a schermo (fotografia del 2026-09-06): la vista deve
+    /// chiedere qui, non ricavarlo da `canReturnToWork`.
+    ///
+    /// La condizione che chiude la porta è `!exerciseDone`: l'ultima stazione confermata la alza, e
+    /// da lì «torno all'esercizio singolo» non porta più da nessuna parte, perché l'esercizio
+    /// singolo è già fatto. A metà resta vera, ed è quella metà a tenere vivo il link.
+    public var canLeaveCircuit: Bool {
+        guard phase == .breaking, let current = plan else { return false }
+        return current.circuitActive && !exerciseDone
+    }
+
+    /// **Il motore rifiuta quello che la vista non offre.** Chiedere l'uscita da un circuito già
+    /// finito azzererebbe `exerciseDone` e riaprirebbe un esercizio che il registro ha già
+    /// scritto: una vista sbagliata costerebbe una riga di storico falsa, non solo un link di
+    /// troppo. Per questo il cancello è lo stesso di `canLeaveCircuit`, letto qui.
     @discardableResult
     public mutating func leaveCircuit() -> Bool {
-        guard phase == .breaking, var current = plan, current.circuitActive else { return false }
+        guard canLeaveCircuit, var current = plan else { return false }
         current.circuitActive = false
         current.stationIndex = 0
         current.exercise = singleExercise ?? current.exercise

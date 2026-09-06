@@ -328,11 +328,18 @@ final class VariantTests: XCTestCase {
         return engine
     }
 
+    /// **Aggiornato il 2026-09-06 (ISC-231): i dip su sedia sono usciti dalle alternative del
+    /// push-up.** Non è una perdita: sotto il tetto delle cinque restano le più vicine per
+    /// difficoltà, e i dip — che sono un altro movimento — si raggiungono dalla rotazione e dalle
+    /// alternative degli altri esercizi di spinta, dove continuano a comparire.
     func testPushUpOffersTheVariantsThatWereAskedFor() {
         let variants = ExerciseKind.pushUp.variants
         XCTAssertTrue(variants.contains(.diamondPushUp))
         XCTAssertTrue(variants.contains(.archerPushUp))
-        XCTAssertTrue(variants.contains(.benchDip), "i dip su sedia (bench dips)")
+        XCTAssertTrue(variants.contains(.pikePushUp))
+        XCTAssertFalse(variants.contains(.benchDip), "usciti col tetto delle cinque")
+        XCTAssertTrue(ExerciseKind.diamondPushUp.variants.contains(.benchDip),
+                      "ma restano raggiungibili dagli altri esercizi di spinta")
         XCTAssertFalse(variants.contains(.pushUp), "un esercizio non è variante di sé stesso")
     }
 

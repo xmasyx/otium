@@ -21,7 +21,7 @@ enum ProbeMode {
     private static let flags = [
         "--orphan-probe", "--sleep-probe", "--radar-probe", "--menu-probe", "--confirm-probe",
         "--flush-probe", "--window-probe", "--snapshot", "--demo-break", "--demo-hud", "--presence",
-        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo", "--demo-ritmo", "--mostra-crescita", "--demo-crescita", "--lsof-probe", "--mostra-prefs", "--scatta", "--scatta-menu", "--scatta-barra", "--misura-barra", "--segno-zen", "--stats-probe", "--registro-finto", "--cadenza-finta", "--circuito-subito", "--conto-probe", "--prova-suono",   // lingua: ok nomi di flag da riga di comando, non testo a schermo
+        "--hotkey-probe", "--policy-probe", "--circuit-probe", "--mostra-ritmo", "--demo-ritmo", "--mostra-crescita", "--demo-crescita", "--lsof-probe", "--mostra-prefs", "--scatta", "--scatta-menu", "--scatta-barra", "--misura-barra", "--segno-zen", "--stats-probe", "--registro-finto", "--cadenza-finta", "--circuito-subito", "--conto-probe", "--prova-suono", "--agentic-demo",   // lingua: ok nomi di flag da riga di comando, non testo a schermo
     ]
 
     static var active: Bool {
@@ -96,6 +96,10 @@ final class AppModel: ObservableObject {
     private(set) var environmentSamples = 0
 
     private lazy var blocker = BlockerController(model: self)
+    /// **La seconda superficie della pausa**, quella che non copre lo schermo (modalità Agentic,
+    /// 2026-09-06). Vive accanto allo scudo e non al posto suo: quale delle due si apre lo decide
+    /// il piano, che ha fotografato la modalità alla nascita.
+    private lazy var agenticPanel = AgenticPanelController(model: self)
     private lazy var hud = WarningHUD()
 
     /// I mazzi delle frasi, che sopravvivono alla chiusura: senza, ogni riavvio ricomincerebbe da
@@ -335,10 +339,29 @@ final class AppModel: ObservableObject {
     ///
     /// Vale in una direzione sola. «Non sto bloccando → libera» è una rete; «sto bloccando →
     /// copri» resterebbe la stessa fragilità al contrario, ed è compito di `.breakStarted`.
+    /// **Le superfici della pausa si chiudono insieme, sempre.**
+    ///
+    /// Da quando ce ne sono due (lo scudo e il pannello Agentic) ogni `blocker.hide()` sparso per
+    /// il file sarebbe diventato un posto in cui dimenticare l'altra: è **esattamente** la forma
+    /// del guasto del 27-28 luglio, dove uno dei sei gestori non chiamava `hide()` e restava a
+    /// schermo un rettangolo nero orfano. Un nome solo qui, e i sei punti non possono più
+    /// divergere fra loro.
+    func hideBreakSurfaces() {
+        blocker.hide()
+        agenticPanel.hide()
+    }
+
+    /// **Le tre cose che `--agentic-demo` deve poter leggere, e nient'altro.** Il pannello resta
+    /// privato: una sonda che potesse costruirselo misurerebbe la propria copia, non quella che
+    /// apre la pausa vera.
+    var agenticPanelFrame: NSRect? { agenticPanel.frame }
+    var agenticPanelIsKey: Bool { agenticPanel.isKey }
+    func agenticPanelImponi(origine: NSPoint) { agenticPanel.imponi(origine: origine) }
+
     private func reconcileBlocker() {
         guard !headless, SafetyNets.modelReconcile else { return }
         if engine.phase != .breaking {
-            blocker.hide()
+            hideBreakSurfaces()
             // **Fuori dalla pausa non esiste una tenuta in corso.** Un conto che sopravvive alla
             // schermata che lo mostrava suonerebbe «finito» a qualcuno tornato a lavorare dieci
             // secondi prima. Sta qui e non nei sei punti che chiudono una pausa, perché una rete
@@ -424,7 +447,12 @@ final class AppModel: ObservableObject {
             hud.hide()
             escapeText = ""
             currentPhrase = drawPhrase(launch: false)
-            if !headless { blocker.show(plan: plan) }
+            // **Una sola delle due superfici, decisa dal piano.** Non da `settings.agenticMode`
+            // letto adesso: il piano è la fotografia di cosa ti è stato chiesto, e girare
+            // l'interruttore a pausa aperta non deve spostarla da sotto le mani.
+            if !headless {
+                if plan.agentic { agenticPanel.show(plan: plan) } else { blocker.show(plan: plan) }
+            }
             // In Zen il respiro comincia con la pausa: vedi `startBreath`.
             if plan.isZen { startBreath() }
         case .exerciseConfirmed:
@@ -434,7 +462,7 @@ final class AppModel: ObservableObject {
             break
         case .breakCompleted(let plan):
             hud.hide()
-            blocker.hide()
+            hideBreakSurfaces()
             // Il momento che merita di più i complimenti è questo: la pausa l'hai fatta davvero,
             // sotto il blocco, non l'hai dichiarata.
             // Il totale è già comprensivo di questo esercizio: la riga delle ripetizioni è stata
@@ -449,9 +477,9 @@ final class AppModel: ObservableObject {
                      silent: true)
         case .breakSkipped:
             hud.hide()
-            blocker.hide()
+            hideBreakSurfaces()
         case .postponed(let plan):
-            blocker.hide()
+            hideBreakSurfaces()
             // **Muto: l'hai premuto tu.** Il suono avvisa di qualcosa che non ti aspetti, e il
             // rinvio l'hai appena chiesto — la riga che compare basta a dire che e' stato preso.
             // La regola era gia' scritta per la chiusura della pausa (`announce(silent:)`) e qui
@@ -460,7 +488,7 @@ final class AppModel: ObservableObject {
             hud.show(title: L.t("Rinviata di 2 minuti", "Postponed by 2 minutes"),
                      subtitle: upcomingTarget(plan, capitalized: true), sound: nil)
         case .autoDeferred(let plan, let reason):
-            blocker.hide()
+            hideBreakSurfaces()
             // Muto anche questo, e per un motivo in piu': l'auto-rinvio scatta **mentre sei in
             // call**, cioe' nell'unico momento in cui un suono di sistema non lo senti solo tu.
             hud.show(title: L.t("Pausa rimandata — \(reason)", "Break deferred — \(reason)"),
@@ -1000,7 +1028,7 @@ final class AppModel: ObservableObject {
         for event in events { handle(event, now: Date()) }
         if events.isEmpty {
             hud.hide()
-            blocker.hide()
+            hideBreakSurfaces()
         }
         reconcileBlocker()
         objectWillChange.send()
@@ -1035,7 +1063,7 @@ final class AppModel: ObservableObject {
 
     func togglePaused() {
         engine.setPaused(engine.phase != .paused)
-        if engine.phase == .paused { blocker.hide(); hud.hide() }
+        if engine.phase == .paused { hideBreakSurfaces(); hud.hide() }
         objectWillChange.send()
     }
 

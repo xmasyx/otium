@@ -427,6 +427,22 @@ final class CircuitTests: XCTestCase {
 
     /// Porta la stazione in corso fino alla conferma, passando il tempo minimo.
     @discardableResult
+    /// **«Basta così» sparisce quando il circuito è finito** (fotografia del 2026-09-06: «Circuito
+    /// completo — 4 esercizi» e sotto il link per uscirne). Uscire da un circuito completo non
+    /// vuol dire niente; a metà invece resta possibile, ed è il polo che tiene vivo il link.
+    func testLeavingTheCircuitIsOfferedMidwayAndNotOnceComplete() {
+        var engine = engineInLongBreak()
+        engine.startCircuit()
+        guard let stations = engine.plan?.circuit.count, stations > 1 else { return XCTFail("nessun circuito") }
+        XCTAssertTrue(engine.canLeaveCircuit, "a metà si può uscire")
+        for _ in 0..<stations { advanceThroughStation(&engine) }
+        XCTAssertTrue(engine.exerciseDone, "tutte le stazioni confermate")
+        XCTAssertTrue(engine.plan?.circuitActive ?? false, "il circuito resta quello che hai fatto")
+        XCTAssertFalse(engine.canLeaveCircuit, "circuito completo: uscirne non ha senso")
+        XCTAssertFalse(engine.leaveCircuit(), "e il motore lo rifiuta, non solo la vista")
+        XCTAssertTrue(engine.exerciseDone, "rifiutare non riapre l'esercizio")
+    }
+
     private func advanceThroughStation(_ engine: inout SessionEngine) -> [EngineEvent] {
         let needed = engine.plan?.exercise.minimumSeconds ?? 0
         advance(&engine, seconds: needed + 1)

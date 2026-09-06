@@ -1,9 +1,9 @@
 ---
 slug: otium
 title: Otium — pause forzate con allenamento integrato per macOS
-phase: complete
-progress: 261/265
-iteration: 29
+phase: climbing
+progress: 271/276
+iteration: 30
 context_sufficient: true
 interview_invoked: false
 principal_stated_goal: "voglio creare qualcosa che sia in grado di monitorare il tempo reale che spendo davanti al computer mentre uso lifeos o altri tipi di lavori e che dopo un tempo determinato, che dobbiamo valutare insieme quale sia il miglior tempo scientificamente e con studi, obbligare a fare una pausa di un tempo altrettanto studiato e che durante questa pausa mi obblighi a fare un tot numero di squat, pushups, burpees, jumpingjacks o quello che è meglio così da integrare allenamento all'interno delle sessioni di lavoro. e che se non vengono eseguite lo schermo rimane bloccato o qualcosa del genere. non serve la telecamera, già il richiamo permette di essere in condizione di scelta"
@@ -2537,3 +2537,90 @@ storico del principale confrontava un file del 2026-07-31 con la costante viva d
 ricostruito, `dist/Otium.app` alle 14:34; **`/Applications/Otium.app` è ancora quello delle 23:51
 di ieri**, perché lo script si rifiuta di sostituire un'app in esecuzione: la consegna si chiude
 quando lui esce da Otium e lo script gira una seconda volta.
+
+### Iterazione 30 — quattro fotografie e la modalità Agentic (2026-09-06)
+
+Sua richiesta, con quattro screenshot cerchiati: *«diverse cose da risolvere su otium […] Inoltre
+vorrei mettere una modalità che mi indica solamente esercizi da fare, mi mette il timer in alto a
+destra però non oscura la pagina così che se io ho gli agenti che stanno lavorando questi possono
+continuare perché magari stiamo usando interceptor. Agentic mode […] il tempo lo posso spostare
+sullo schermo stessa cosa per gli esercizi […] un rettangolo unico»*. Ratificato: la riga della
+presenza **si toglie del tutto** («non penso serva»), i push-up scendono a cinque alternative.
+Esecuzione: figlia Opus 5 su brief con firme e test scritti prima (`BRIEF-ITERAZIONE-30.md`);
+verifica: Fable, sul disco e in fotografia.
+
+- [x] **ISC-229** «Basta così, torno all'esercizio singolo» non compare quando il circuito è
+      completo: la vista legge `SessionEngine.canLeaveCircuit`, che è falso a stazioni tutte
+      confermate e vero a metà, e `leaveCircuit()` lo rispetta. *Falsificatore:*
+      `CircuitTests/testLeavingTheCircuitIsOfferedMidwayAndNotOnceComplete` + fotografia della
+      schermata «Circuito completo» senza il link.
+- [x] **ISC-230** La riga «fermo a leggere l'output: …» (e le sorelle video/documento/chiamata) non
+      esiste più nell'intestazione della pausa; `presenceIcon`/`presenceLabel` non restano come
+      codice morto. Il motore continua a registrare `lastPresence` (serve ai test della presenza).
+      *Falsificatore:* `grep -rn "fermo a leggere\|presenceLabel" Sources` → zero; fotografia
+      dell'intestazione con la sola etichetta della pausa.
+- [x] **ISC-231** Nessun esercizio offre più di `VariantLayout.maxOffered = 5` alternative, su tutto
+      `ExerciseKind.allCases`; i push-up tengono le cinque più vicine per difficoltà
+      (ginocchia, inclinati · diamond, pike, archer); lo squat scende a cinque. *Falsificatore:*
+      `VariantCeilingTests` (enumerazione) + fotografia dei push-up in 3+2 dentro la colonna.
+- [x] **ISC-232** `Settings.agenticMode` esiste, è spenta di serie, sopravvive al disco e un file
+      senza la chiave si legge spento. *Falsificatore:* `AgenticModeTests` (tre test sulla
+      preferenza).
+- [x] **ISC-233** Il piano fotografa la modalità alla nascita (`BreakPlan.agentic`), cambiarla a
+      pausa aperta non riscrive la pausa in corso, **Agentic vince su Zen** (piano a esercizio,
+      `breath == nil`), e la riga `completed` del registro porta il gettone `agentic` unito con `+`
+      agli altri. *Falsificatore:* `AgenticModeTests` (piano, Zen nei due poli, registro nei due
+      poli).
+- [x] **ISC-234** In modalità Agentic la pausa non chiama lo scudo: compare **un solo pannello**
+      compatto (`NSPanel` borderless + `nonactivatingPanel`, livello `.statusBar`, su tutti gli
+      Space) che **non prende il fuoco**: l'app in primo piano prima di `show` è la stessa dopo, e
+      il pannello non è `keyWindow`. Niente `NSApp.activate`, niente opzioni chiosco, niente timer
+      che si rimette davanti. *Falsificatore:* `--agentic-demo` stampa `frontmostApplication`
+      prima/dopo e `isKeyWindow`; fotografia del pannello sopra Chrome con la pagina che continua a
+      ricevere input (grep zero `activate(`/`kioskOptions` in `AgenticPanel.swift`).
+- [x] **ISC-235** Il pannello si sposta trascinandolo da qualunque punto della sua superficie
+      (`isMovableByWindowBackground`), ricorda la posizione fra una pausa e l'altra
+      (`UserDefaults`), la riporta dentro lo schermo se il monitor è cambiato, e di serie sta in
+      alto a destra. *Falsificatore:* `--agentic-demo --origine=x,y` rilegge il frame; una posizione
+      fuori schermo rientra; coppia di fotografie prima/dopo un trascinamento vero.
+- [x] **ISC-236** Il pannello dice tutto quello che serve a fare la pausa e niente di più:
+      etichetta della pausa, cronometro con barra, numero grande, nome, istruzione, azione primaria
+      («Fatte tutte» / avvio della tenuta), striscia del circuito quando attivo, alternative
+      compatte (≤5), «Non posso adesso». **Ogni misura passa da `Schermo`**: zero numeri nudi in
+      `.font(.system(size:` / `.frame(` / `.padding(` fuori da `misura(` o `p(`. Niente frase, niente
+      Zen. *Falsificatore:* grep sul file + fotografie a `--schermo=1728x1117` e `--schermo=1440x900`.
+- [x] **ISC-237** L'interruttore sta nel menu della barra (spunta, come «Modalità Zen») e in
+      Impostazioni accanto a Zen; `--doctor` riporta lo stato. *Falsificatore:* la sonda del menu
+      nei due poli (stesso schema di `zenOk` in `main.swift`) + fotografia del menu con la spunta.
+- [x] **ISC-238** `Anti:` La modalità cambia **dove** si vede la pausa, mai **cosa** chiede: con
+      Agentic acceso «torna al lavoro» resta esercizio confermato **e** tempo scaduto; con Agentic
+      spento il percorso dello scudo è byte-identico a prima (`blocker.show` chiamato, kiosk
+      intatto). *Falsificatore:* `AgenticModeTests/testAnAgenticBreakStillNeedsExerciseAndTimeToEnd`
+      + `git diff` di `BlockerWindow.swift` vuoto.
+- [~] **ISC-239** Consegna: suite intera verde (`swift test`), `Scripts/build-app.sh` eseguito,
+      bundle installato o parcheggiato con la ragione scritta, tutto committato con pathspec.
+      *Falsificatore:* output di `swift test` con zero failures; `codesign -dv /Applications/Otium.app`;
+      `git status --short` pulito sui file toccati.
+
+**Chiuse il 2026-09-06, sera.** Esecuzione: figlia Opus 5 (`otium-it30`); verifica: Fable, sul disco.
+Suite **483 verdi** (erano 474 + i nuovi; i tre rossi di partenza chiusi, due test vecchi riscritti
+sul corpus a cinque). Evidenza per claim, in una riga: ISC-229 `CircuitTests/testLeavingTheCircuit…`
++ `foto/circuito-completo.png` (link assente) · ISC-230 grep zero + `foto/pushups.png` (intestazione
+nuda) · ISC-231 `VariantCeilingTests` su `allCases`, otto esercizi tagliati (push-up, squat,
+jumpingJack, jumpSquat, mountainClimber, crossMountainClimber, highKnees, stepUp), `foto/pushups.png`
+in 3+2 · ISC-232/233/238 `AgenticModeTests` (11 test) · ISC-234 `--agentic-demo` rieseguita dalla
+madre: `frontmost` invariato in tre letture, `isKey=false`; **click vero posato sul pannello →
+`fase=postponed`, pannello chiuso, fuoco intatto** (era il NOT RUN della figlia) · ISC-235
+`--origine=-800,-800 → 0,74`, `--schermo=1440x900 → 290×297`; il trascinamento con la mano resta
+suo · ISC-236 grep zero numeri nudi, `foto/pannello-1728.png` e `-1440.png` · ISC-237
+`--menu-probe` PASS nei due poli, `--doctor` riga «Agentic spenta» · ISC-239 **parziale**: bundle
+1.4.0 firmato «Otium Dev» in `dist/Otium.app.attesa` perché l'app gira; si installa quando esce.
+Brief, referto e fotografie: `~/.claude/LIFEOS/MEMORY/WORK/20260906-otium-iterazione-30/`.
+
+Decisioni fuori brief, adottate: il pannello dice perché il pulsante è spento («ancora N s»); le
+alternative nel pannello vanno a capo sulla larghezza misurata, non con `VariantLayout.rows` (in 360
+punti «sollevamento gambe» usciva dal bordo, visto in foto); la posizione ricordata è il **bordo
+alto**, non l'origine AppKit, che scivolava a ogni cambio d'altezza. Corretta dalla madre: l'azione
+secondaria del pannello si chiama «Rinvia 2 minuti» e non «Non posso adesso», perché è un rinvio e
+la frase d'uscita nel pannello non si può scrivere. Prezzo dichiarato: nel pannello non funzionano le
+scorciatoie da tastiera (`canBecomeKey` è falso per costruzione).

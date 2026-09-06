@@ -123,6 +123,11 @@ enum Doctor {
         // ── La scorciatoia globale
         riga(L.t("scorciatoia ⌃S", "⌃S shortcut"), scorciatoia())
 
+        // ── Le due modalità che cambiano com'è fatta la pausa. Non sono guasti, sono scelte:
+        // stanno qui perché «la pausa non mi copre più lo schermo» è una segnalazione che si
+        // spiega in una riga, e senza questa riga si spiegherebbe leggendo un file JSON.
+        riga(L.t("modalità della pausa", "break mode"), modalita())
+
         if !fixes.isEmpty {
             lines.append("")
             lines.append(L.t("Da fare:", "To do:"))
@@ -326,6 +331,16 @@ enum Doctor {
                          "the old LaunchAgent is still installed: \(LoginItem.legacyPlistURL.path)"),
                      fix: L.t("apri Otium.app una volta — lo toglie da sola — oppure: launchctl bootout gui/$(id -u)/\(LoginItem.legacyLabel) && rm \(LoginItem.legacyPlistURL.path)",
                               "open Otium.app once — it removes it automatically — or run: launchctl bootout gui/$(id -u)/\(LoginItem.legacyLabel) && rm \(LoginItem.legacyPlistURL.path)"))
+    }
+
+    /// Sempre `ok`: sono impostazioni tue, e un'impostazione scelta non fa fallire un doctor.
+    private static func modalita() -> Verdict {
+        let s = SettingsStore.load()
+        let zen = s.zenMode ? L.t("Zen accesa", "Zen on") : L.t("Zen spenta", "Zen off")
+        let agentic = s.agenticMode
+            ? L.t("Agentic accesa (pannello, schermo libero)", "Agentic on (panel, screen free)")
+            : L.t("Agentic spenta (schermo coperto)", "Agentic off (screen covered)")
+        return .ok("\(zen) · \(agentic)")
     }
 
     private static func primoAvvio() -> Verdict {

@@ -245,7 +245,11 @@ public final class Ledger: @unchecked Sendable {
                 // Chi l'ha chiesta finisce nel motivo: senza, il registro dice *che* una pausa
                 // è avvenuta ma non *perché*, e «me ne ha proposta un'altra, perché?» resta
                 // senza risposta anche avendo il file davanti.
+                // Il gettone della modalità sta **in mezzo agli altri**, non al posto loro: una
+                // pausa Agentic resta una pausa con l'esercizio che ti è stato chiesto, e le
+                // statistiche devono poter contare le due cose separatamente.
                 reason: [plan.circuitActive ? "circuito" : nil,
+                         plan.agentic ? "agentic" : nil,
                          plan.requested ? "richiesta" : nil]
                         .compactMap { $0 }.joined(separator: "+").nilIfEmpty
             )
