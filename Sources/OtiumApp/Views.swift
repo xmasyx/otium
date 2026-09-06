@@ -184,6 +184,18 @@ struct BreakView: View {
     /// La macchina su cui stiamo disegnando, presa dal modello perché di lì arriva anche
     /// l'annuncio quando cambia. Ogni misura di questa pagina ci passa attraverso.
     private var schermo: Schermo { model.schermo }
+
+    /// **Una misura del disegno, portata su questa macchina.** Nome corto di proposito: in questa
+    /// pagina ci passa ogni corpo, ogni spazio e ogni raggio, e un nome lungo l'avrebbe resa
+    /// illeggibile — cioè avrebbe fatto scrivere il numero nudo alla prima occasione, che è il
+    /// difetto che il 6/09 abbiamo appena finito di togliere.
+    ///
+    /// **Perché scala anche la tipografia, e non solo la colonna.** Fino a stamattina scalava
+    /// solo la frase, e il resto della pagina — il numero grande, l'alone del respiro, i comandi
+    /// — restava alle misure del 16". Su un portatile da 13" quei pezzi fissi occupavano
+    /// proporzionalmente molto di più, e la colonna Zen usciva dallo schermo: intestazione e
+    /// pulsanti tagliati via, visto in fotografia. Una pagina si scala tutta o non si scala.
+    private func p(_ valore: CGFloat) -> CGFloat { schermo.misura(valore) }
     @State private var showEscape = false
     @State private var escArmed = false
     /// Il pannellino «quante ne hai fatte», che compare solo quando dici «non tutte».
@@ -214,7 +226,7 @@ struct BreakView: View {
                 // anche quando sono vuote. Senza, il cronometro e i pulsanti saltavano di una
                 // trentina di punti nel momento esatto della transizione, ed era la cosa che
                 // rendeva netto un passaggio che deve essere una dissolvenza.
-                VStack(spacing: 0) {
+                VStack(spacing: p(0)) {
                     ZStack {
                         if plan.isZen { header(plan) }
                         else if model.exerciseDone { restHeader(plan) }
@@ -249,9 +261,9 @@ struct BreakView: View {
                         if let respiro = plan.breath, !model.exerciseDone {
                             breathBody(plan, respiro)
                         } else if model.exerciseDone {
-                            restBody.transition(.opacity.combined(with: .offset(y: 10)))
+                            restBody.transition(.opacity.combined(with: .offset(y: p(10))))
                         } else {
-                            exercise(plan).transition(.opacity.combined(with: .offset(y: -10)))
+                            exercise(plan).transition(.opacity.combined(with: .offset(y: p(-10))))
                         }
                     }
                     // **Lo spazio libero appartiene al contenuto, non alle molle** (2026-09-06,
@@ -275,8 +287,7 @@ struct BreakView: View {
                     // metà del loro valore e pareggiano le due arie. Vale per tutte e due le
                     // facce, quindi i baricentri restano coincidenti.
                     .padding(.bottom, schermo.misura(55))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity,
-                           alignment: plan.isZen && !model.exerciseDone ? .top : .center)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                     controls(plan)
                     footer
                 }
@@ -292,19 +303,19 @@ struct BreakView: View {
                 // senza `else` disegnava esattamente niente: uno schermo nero che non dice cosa
                 // sia, non dice come uscirne, e non si distingue da un Mac morto. Se un domani
                 // entrambe le reti a monte fallissero, qui c'è comunque una via d'uscita visibile.
-                VStack(spacing: 16) {
+                VStack(spacing: p(16)) {
                     Text(L.t("La pausa è finita.", "The break is over."))
-                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .font(.system(size: p(22), weight: .semibold, design: .rounded))
                         .foregroundStyle(Palette.paper)
                     Text(L.t("Lo schermo si sta liberando. Se resta qui, premi il pulsante.",
                              "The screen is clearing. If it stays here, press the button."))
-                        .font(.system(size: 13))
+                        .font(.system(size: p(13)))
                         .foregroundStyle(Palette.dim)
                     // Il pulsante grande, non quello discreto: questa è l'ultima uscita prima del
                     // tasto di accensione, e un'uscita d'emergenza si deve **vedere da lontano**.
                     primary(L.t("Sblocca lo schermo", "Unlock the screen"), enabled: true) { model.emergencyExit() }
                     Text(L.t("Puoi anche premere Esc due volte.", "You can also press Esc twice."))
-                        .font(.system(size: 11))
+                        .font(.system(size: p(11)))
                         .foregroundStyle(Palette.dim)
                 }
                 .padding(schermo.misura(48))
@@ -330,28 +341,28 @@ struct BreakView: View {
     private func partialPanel(_ plan: BreakPlan) -> some View {
         ZStack {
             Palette.ink.opacity(0.92).ignoresSafeArea()
-            VStack(spacing: 18) {
+            VStack(spacing: p(18)) {
                 Text(L.t("Quante ne hai fatte?", "How many did you do?"))
-                    .font(.system(size: 22, weight: .semibold, design: .rounded))
+                    .font(.system(size: p(22), weight: .semibold, design: .rounded))
                     .foregroundStyle(Palette.paper)
                 Text(L.t("Contano lo stesso. Serve a non chiederti la prossima volta più di quanto riesci.",
                          "They count all the same. It's so we don't ask you for more than you can do next time."))
-                    .font(.system(size: 12))
+                    .font(.system(size: p(12)))
                     .foregroundStyle(Palette.dim)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 380)
 
-                HStack(spacing: 22) {
+                HStack(spacing: p(22)) {
                     stepperButton("minus") { partialReps = max(0, partialReps - 1) }
                     Text("\(partialReps)")
-                        .font(.system(size: 56, weight: .bold, design: .rounded))
+                        .font(.system(size: p(56), weight: .bold, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(Palette.accent)
                         .frame(minWidth: 110)
                     stepperButton("plus") { partialReps = min(plan.exercise.reps, partialReps + 1) }
                 }
 
-                HStack(spacing: 14) {
+                HStack(spacing: p(14)) {
                     SecondaryButton(title: L.t("Annulla", "Cancel"), systemImage: "xmark") {
                         partialSheet = false
                     }
@@ -361,7 +372,7 @@ struct BreakView: View {
                     }
                 }
             }
-            .padding(40)
+            .padding(p(40))
         }
         .onAppear { partialReps = max(0, plan.exercise.reps - 1) }
     }
@@ -374,8 +385,8 @@ struct BreakView: View {
             Image(systemName: symbol)
                 .accessibilityLabel(symbol == "plus" ? L.t("una in più", "one more")
                                                      : L.t("una in meno", "one less"))
-                .font(.system(size: 20, weight: .semibold))
-                .frame(width: 48, height: 48)
+                .font(.system(size: p(20), weight: .semibold))
+                .frame(width: p(48), height: p(48))
                 .foregroundStyle(Palette.paper)
                 .background(Circle().fill(Color.white.opacity(0.10)))
                 .contentShape(Circle())
@@ -398,31 +409,31 @@ struct BreakView: View {
     }
 
     private func header(_ plan: BreakPlan) -> some View {
-        VStack(spacing: 10) {
+        VStack(spacing: p(10)) {
             HStack {
                 Text(plan.isZen
                      ? L.t("PAUSA ZEN", "ZEN BREAK")
                      : (plan.kind == .long ? Self.durationLabel(plan) : L.t("MICRO-PAUSA", "MICRO-BREAK")))
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: p(13), weight: .semibold, design: .rounded))
                     .tracking(2)
                     .foregroundStyle(Palette.accent)
                 Spacer()
                 Text(todayBadge(plan))
-                    .font(.system(size: 13, design: .rounded))
+                    .font(.system(size: p(13), design: .rounded))
                     .foregroundStyle(Palette.dim)
             }
             // Se ti interrompo perché credo che tu sia fermo davanti allo schermo, ti dico
             // esattamente cosa ho riconosciuto. Un'app che agisce su una deduzione e non la
             // mostra è un'app a cui non puoi dare torto.
             if let presence = model.engine.lastPresence {
-                HStack(spacing: 8) {
+                HStack(spacing: p(8)) {
                     Image(systemName: Self.presenceIcon(presence.kind))
                         .foregroundStyle(Palette.dim)
                     Text(Self.presenceLabel(presence))
                         .foregroundStyle(Palette.dim)
                     Spacer()
                 }
-                .font(.system(size: 12))
+                .font(.system(size: p(12)))
             }
         }
     }
@@ -454,7 +465,7 @@ struct BreakView: View {
     }
 
     private func exercise(_ plan: BreakPlan) -> some View {
-        VStack(spacing: 20) {
+        VStack(spacing: p(20)) {
             if plan.circuitActive { circuitTrack(plan) }
             // Il numero grande è quello **da eseguire adesso**: per gli esercizi a lati alterni è
             // il per lato, non il totale. Su una tenuta invece il numero grande **scende**, e chi
@@ -463,18 +474,18 @@ struct BreakView: View {
                 holdFace(plan)
             } else {
                 Text("\(plan.exercise.displayReps)")
-                    .font(.system(size: 140, weight: .bold, design: .rounded))
+                    .font(.system(size: p(140), weight: .bold, design: .rounded))
                     .foregroundStyle(Palette.paper)
                     .monospacedDigit()
             }
             // Per una tenuta il numero grande è in secondi: senza l'unità, «45 plank» si legge
             // come quarantacinque plank.
             Text(plan.exercise.title)
-                .font(.system(size: 44, weight: .medium, design: .rounded))
+                .font(.system(size: p(44), weight: .medium, design: .rounded))
                 .foregroundStyle(Palette.paper)
                 .multilineTextAlignment(.center)
             Text(plan.exercise.kind.cue)
-                .font(.system(size: 17))
+                .font(.system(size: p(17)))
                 .foregroundStyle(Palette.dim)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 560)
@@ -491,7 +502,7 @@ struct BreakView: View {
                            "\(plan.exercise.displayReps) s per side. Two taps warn you \(Int(Hold.switchWarningSeconds)) s before the switch, then you get \(Int(Hold.switchPrepareSeconds)) s to turn over, and a different sound ends it.")
                      : L.t("Il tempo scende da solo e un suono chiude, non devi guardare lo schermo.",
                            "The time counts down on its own and a sound ends it: you do not have to watch the screen."))
-                    .font(.system(size: 14))
+                    .font(.system(size: p(14)))
                     .foregroundStyle(Palette.accent.opacity(0.85))
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 560)
@@ -519,7 +530,7 @@ struct BreakView: View {
     /// schermata che chiede di rallentare, una riga da leggere è esattamente ciò che serve agli
     /// occhi mentre il resto del corpo non fa niente.
     private func breathBody(_ plan: BreakPlan, _ protocollo: BreathProtocol) -> some View {
-        VStack(spacing: 26) {
+        VStack(spacing: p(26)) {
             breathCircle(protocollo)
             // **La stessa `QuoteBlock` dell'altra faccia, non una copia.** Così i tagli di riga di
             // questa schermata li governa la stessa colonna che il cancello `--tagli` misura: una
@@ -529,7 +540,7 @@ struct BreakView: View {
                 QuoteBlock(phrase: phrase, schermo: schermo)
             }
             Text(breathFooterLine(plan, protocollo))
-                .font(.system(size: 13, design: .rounded))
+                .font(.system(size: p(13), design: .rounded))
                 .foregroundStyle(Palette.dim)
                 .monospacedDigit()
         }
@@ -552,14 +563,14 @@ struct BreakView: View {
             if ciclo >= 3, ciclo <= 6 {
                 Text(L.t("Se puoi, da qui in poi chiudi gli occhi. Il ritmo ce l'hai.",
                          "From here on close your eyes if you can. You have the rhythm."))
-                    .font(.system(size: 13, design: .rounded))
+                    .font(.system(size: p(13), design: .rounded))
                     .foregroundStyle(Palette.accent.opacity(0.85))
                     .transition(.opacity)
             }
         }
         // Altezza riservata, come le tre fessure dei comandi: comparendo e sparendo dentro uno
         // spazio suo non sposta di diciassette punti tutto quello che ha sotto.
-        .frame(height: 17)
+        .frame(height: p(17))
         .animation(.easeInOut(duration: 0.8), value: ciclo >= 3 && ciclo <= 6)
     }
 
@@ -637,7 +648,7 @@ struct BreakView: View {
     /// riga da diagramma. La geometria resta quadrata perché è quella a mostrare i quattro tempi.
     private func squareShape(scale: Double, sideIndex: Int, sideProgress: Double,
                              label: String, sub: String) -> some View {
-        let lato: CGFloat = 320
+        let lato: CGFloat = p(320)
         let pienezza = min(1, max(0, (scale - 0.62) / 0.38))
         return ZStack {
             // L'alone, identico a quello del respiro ciclico: è ciò che rende le due facce la
@@ -651,12 +662,16 @@ struct BreakView: View {
                     Palette.accent.opacity(0),
                 ],
                 center: .center,
-                startRadius: 6,
-                endRadius: 168
+                // **Anche i raggi del gradiente scalano** (6/09): lasciandoli fissi, su un 13"
+                // il cerchio di luce arrivava esattamente al bordo della sua cornice e la
+                // sfocatura ne disegnava il quadrato, visibile in fotografia. Un alone si scala
+                // dentro e fuori, o smette di essere un alone.
+                startRadius: p(6),
+                endRadius: p(168)
             )
-            .frame(width: 470, height: 470)
+            .frame(width: p(470), height: p(470))
             .scaleEffect(0.86 + 0.18 * pienezza)
-            .blur(radius: 16)
+            .blur(radius: p(16))
 
             // Il binario spento: dice dov'è il giro anche quando è appena cominciato.
             //
@@ -668,7 +683,7 @@ struct BreakView: View {
             // e un binario stondato sotto a un tratto dritto si vede subito che sono due disegni
             // diversi. La morbidezza la porta il bagliore, non il raggio.
             Rectangle()
-                .stroke(Palette.accent.opacity(0.13), lineWidth: 2)
+                .stroke(Palette.accent.opacity(0.13), lineWidth: p(2))
                 .frame(width: lato, height: lato)
 
             // Il tratto vivo, disegnato due volte: una copia larga e sfocata fa il bagliore, quella
@@ -685,19 +700,19 @@ struct BreakView: View {
                     SquareSide(index: i)
                         .trim(from: 0, to: quanto)
                         .stroke(Palette.accent.opacity(0.5),
-                                style: StrokeStyle(lineWidth: 9, lineCap: .butt))
-                        .blur(radius: 7)
+                                style: StrokeStyle(lineWidth: p(9), lineCap: .butt))
+                        .blur(radius: p(7))
                     SquareSide(index: i)
                         .trim(from: 0, to: quanto)
                         .stroke(Palette.accent.opacity(0.9),
-                                style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                                style: StrokeStyle(lineWidth: p(3), lineCap: .round))
                 }
                 .frame(width: lato, height: lato)
             }
 
-            VStack(spacing: 6) {
+            VStack(spacing: p(6)) {
                 Text(label.uppercased())
-                    .font(.system(size: 26, weight: .medium, design: .rounded))
+                    .font(.system(size: p(26), weight: .medium, design: .rounded))
                     .tracking(6)
                     .foregroundStyle(Palette.paper.opacity(0.92))
                     .lineLimit(1)
@@ -705,13 +720,13 @@ struct BreakView: View {
                     .frame(maxWidth: 380)
                 if !sub.isEmpty {
                     Text(sub)
-                        .font(.system(size: 64, weight: .light, design: .rounded))
+                        .font(.system(size: p(64), weight: .light, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(Palette.accent)
                 }
             }
         }
-        .frame(height: 400)
+        .frame(height: p(400))
         .animation(.linear(duration: 0.1), value: sideProgress)
     }
 
@@ -771,19 +786,19 @@ struct BreakView: View {
                     Palette.accent.opacity(0),
                 ],
                 center: .center,
-                startRadius: 10,
-                endRadius: 232
+                startRadius: p(10),
+                endRadius: p(232)
             )
-            .frame(width: 470, height: 470)
+            .frame(width: p(470), height: p(470))
             .scaleEffect(scale)
-            .blur(radius: 16)
+            .blur(radius: p(16))
             .offset(y: quota)
 
-            VStack(spacing: 6) {
+            VStack(spacing: p(6)) {
                 // Maiuscoletto spaziato, come nell'unico riferimento che guida davvero: una parola
                 // al centro di un alone va vista in un colpo, non letta.
                 Text(label.uppercased())
-                    .font(.system(size: 26, weight: .medium, design: .rounded))
+                    .font(.system(size: p(26), weight: .medium, design: .rounded))
                     .tracking(6)
                     .foregroundStyle(Palette.paper.opacity(0.92))
                     .lineLimit(1)
@@ -791,14 +806,14 @@ struct BreakView: View {
                     .frame(maxWidth: 460)
                 if !sub.isEmpty {
                     Text(sub)
-                        .font(.system(size: 64, weight: .light, design: .rounded))
+                        .font(.system(size: p(64), weight: .light, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(Palette.accent)
                 }
             }
             .offset(y: quota)
         }
-        .frame(height: 400)
+        .frame(height: p(400))
         // Si muove da sola a ogni ridisegno, dieci volte al secondo: l'animazione serve solo a
         // smussare i decimi, quindi è corta quanto il battito. Più lunga e l'alone resterebbe
         // indietro rispetto alla parola, che è la cosa che stai seguendo.
@@ -835,18 +850,18 @@ struct BreakView: View {
             // pulsante sta in fondo, dove stanno tutti i pulsanti grandi: messo qui spezzava la
             // frase in due, e si leggeva «25 — Pronto — secondi di plank».
             Text("\(plan.exercise.displayReps)")
-                .font(.system(size: 140, weight: .bold, design: .rounded))
+                .font(.system(size: p(140), weight: .bold, design: .rounded))
                 .foregroundStyle(Palette.paper)
                 .monospacedDigit()
 
         case .preparing(let left):
-            VStack(spacing: 10) {
+            VStack(spacing: p(10)) {
                 Text("\(left)")
-                    .font(.system(size: 140, weight: .bold, design: .rounded))
+                    .font(.system(size: p(140), weight: .bold, design: .rounded))
                     .foregroundStyle(Palette.accent)
                     .monospacedDigit()
                 Text(L.t("preparati", "get ready"))
-                    .font(.system(size: 20, weight: .medium, design: .rounded))
+                    .font(.system(size: p(20), weight: .medium, design: .rounded))
                     .foregroundStyle(Palette.dim)
                     .tracking(2)
             }
@@ -857,20 +872,20 @@ struct BreakView: View {
             let left = model.hold?.secondsLeftOnCurrentSide(at: now) ?? 0
             let mancaPoco = plan.exercise.kind.isPerSide && side == 1
                 && Double(left) <= Hold.switchWarningSeconds
-            VStack(spacing: 10) {
+            VStack(spacing: p(10)) {
                 Text("\(left)")
-                    .font(.system(size: 140, weight: .bold, design: .rounded))
+                    .font(.system(size: p(140), weight: .bold, design: .rounded))
                     .foregroundStyle(mancaPoco ? Palette.accent : Palette.paper)
                     .monospacedDigit()
                 if plan.exercise.kind.isPerSide {
                     Text(mancaPoco
                          ? L.t("cambia lato fra \(left)", "switch sides in \(left)")
                          : L.t("lato \(side) di 2 — tieni la posizione", "side \(side) of 2 — hold"))
-                        .font(.system(size: 20, weight: .medium, design: .rounded))
+                        .font(.system(size: p(20), weight: .medium, design: .rounded))
                         .foregroundStyle(mancaPoco ? Palette.accent : Palette.dim)
                 } else {
                     Text(L.t("tieni la posizione", "hold"))
-                        .font(.system(size: 20, weight: .medium, design: .rounded))
+                        .font(.system(size: p(20), weight: .medium, design: .rounded))
                         .foregroundStyle(Palette.dim)
                         .tracking(2)
                 }
@@ -880,13 +895,13 @@ struct BreakView: View {
             // **Il cambio di lato ha la faccia della preparazione, ed è voluto.** È la stessa cosa
             // che stai facendo — ti stai mettendo in posizione — e riconoscerla senza leggerla è
             // il punto: da terra, girato, quello che ti arriva è il colore e un numero che scende.
-            VStack(spacing: 10) {
+            VStack(spacing: p(10)) {
                 Text("\(left)")
-                    .font(.system(size: 140, weight: .bold, design: .rounded))
+                    .font(.system(size: p(140), weight: .bold, design: .rounded))
                     .foregroundStyle(Palette.accent)
                     .monospacedDigit()
                 Text(L.t("cambia lato", "switch sides"))
-                    .font(.system(size: 20, weight: .medium, design: .rounded))
+                    .font(.system(size: p(20), weight: .medium, design: .rounded))
                     .foregroundStyle(Palette.accent)
                     .tracking(2)
             }
@@ -906,15 +921,15 @@ struct BreakView: View {
     @ViewBuilder
     private func circuitOffer(_ plan: BreakPlan) -> some View {
         if model.canStartCircuit {
-            VStack(spacing: 8) {
+            VStack(spacing: p(8)) {
                 Button { model.startCircuit() } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "figure.strengthtraining.functional").font(.system(size: 13))
+                    HStack(spacing: p(8)) {
+                        Image(systemName: "figure.strengthtraining.functional").font(.system(size: p(13)))
                         Text(L.t("Fai il microcircuito — \(plan.circuit.count) esercizi", "Do the circuit — \(plan.circuit.count) exercises"))
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(size: p(14), weight: .semibold, design: .rounded))
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 11)
+                    .padding(.horizontal, p(20))
+                    .padding(.vertical, p(11))
                     .foregroundStyle(Palette.paper)
                     .background(Capsule().fill(Palette.accent.opacity(0.22)))
                     .overlay(Capsule().stroke(Palette.accent.opacity(0.55), lineWidth: 1))
@@ -923,32 +938,32 @@ struct BreakView: View {
                 .buttonStyle(.plain)
 
                 Text(plan.circuit.map(\.label).joined(separator: " · "))
-                    .font(.system(size: 12))
+                    .font(.system(size: p(12)))
                     .foregroundStyle(Palette.dim)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 620)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.top, 10)
+            .padding(.top, p(10))
         }
     }
 
     /// Dove sei dentro il circuito: quattro pallini con la stazione in corso accesa.
     private func circuitTrack(_ plan: BreakPlan) -> some View {
-        VStack(spacing: 10) {
+        VStack(spacing: p(10)) {
             Text(L.t("CIRCUITO · STAZIONE \(plan.stationIndex + 1) DI \(plan.circuit.count)", "CIRCUIT · STATION \(plan.stationIndex + 1) OF \(plan.circuit.count)"))
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: p(12), weight: .semibold, design: .rounded))
                 .tracking(1.8)
                 .foregroundStyle(Palette.accent)
 
-            HStack(spacing: 10) {
+            HStack(spacing: p(10)) {
                 ForEach(Array(plan.circuit.enumerated()), id: \.offset) { index, station in
                     let done = index < plan.stationIndex
                     let current = index == plan.stationIndex
                     Text(station.kind.localizedName)
-                        .font(.system(size: 12, weight: current ? .semibold : .regular, design: .rounded))
-                        .padding(.horizontal, 11)
-                        .padding(.vertical, 5)
+                        .font(.system(size: p(12), weight: current ? .semibold : .regular, design: .rounded))
+                        .padding(.horizontal, p(11))
+                        .padding(.vertical, p(5))
                         .foregroundStyle(current ? Palette.ink : Palette.paper.opacity(done ? 0.45 : 0.75))
                         .background(
                             Capsule().fill(current ? Palette.accent : Color.white.opacity(done ? 0.04 : 0.08))
@@ -967,15 +982,15 @@ struct BreakView: View {
     /// Prende il posto di «PAUSA PIENA», che a esercizio fatto risponde a una domanda scaduta.
     private func restHeader(_ plan: BreakPlan) -> some View {
         HStack {
-            HStack(spacing: 7) {
-                Image(systemName: "checkmark.circle.fill").font(.system(size: 13))
+            HStack(spacing: p(7)) {
+                Image(systemName: "checkmark.circle.fill").font(.system(size: p(13)))
                 Text(doneLabel(plan))
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: p(13), weight: .semibold, design: .rounded))
             }
             .foregroundStyle(Palette.accent)
             Spacer()
             Text(todayBadge(plan))
-                .font(.system(size: 13, design: .rounded))
+                .font(.system(size: p(13), design: .rounded))
                 .foregroundStyle(Palette.dim)
         }
     }
@@ -1041,7 +1056,7 @@ struct BreakView: View {
             // mai. Ma «quasi mai» disegnava uno schermo nero muto ed è esattamente la ferita del
             // 27-28 luglio: qui la fase di riposo ha comunque qualcosa da dire.
             Text(L.t("Alzati e guarda lontano.", "Stand up and look far away."))
-                .font(.system(size: 30, design: .serif))
+                .font(.system(size: p(30), design: .serif))
                 .foregroundStyle(Palette.paper.opacity(0.8))
         }
     }
@@ -1066,15 +1081,15 @@ struct BreakView: View {
     private func variantRow(singleLine: Bool) -> some View {
         let options = model.variants
         if !options.isEmpty {
-            VStack(spacing: 8) {
+            VStack(spacing: p(8)) {
                 Text(L.t("oppure", "or"))
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .font(.system(size: p(11), weight: .medium, design: .rounded))
                     .tracking(1.5)
                     .foregroundStyle(Palette.dim)
-                VStack(spacing: 10) {
+                VStack(spacing: p(10)) {
                     let righe: [[Exercise]] = singleLine ? [options] : VariantLayout.rows(options)
                     ForEach(Array(righe.enumerated()), id: \.offset) { riga in
-                        HStack(spacing: 12) {
+                        HStack(spacing: p(12)) {
                             ForEach(riga.element, id: \.kind) { option in
                                 variantButton(option)
                             }
@@ -1082,7 +1097,7 @@ struct BreakView: View {
                     }
                 }
             }
-            .padding(.top, 6)
+            .padding(.top, p(6))
         }
     }
 
@@ -1092,22 +1107,22 @@ struct BreakView: View {
     /// risponde a volte sembra un'app rotta.
     private func variantButton(_ option: Exercise) -> some View {
         Button { model.swapExercise(to: option.kind) } label: {
-            VStack(spacing: 2) {
+            VStack(spacing: p(2)) {
                 Text(option.kind.localizedName)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: p(12), weight: .medium, design: .rounded))
                 Text(option.kind.isPerSide
                      ? L.t("\(option.displayReps) per lato", "\(option.displayReps) per side")
                      : "\(option.displayReps)")
-                    .font(.system(size: 11, design: .rounded))
+                    .font(.system(size: p(11), design: .rounded))
                     .foregroundStyle(Palette.accent.opacity(0.85))
                     .monospacedDigit()
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
+            .padding(.horizontal, p(12))
+            .padding(.vertical, p(7))
             .foregroundStyle(Palette.paper.opacity(0.8))
-            .background(RoundedRectangle(cornerRadius: 9).fill(Color.white.opacity(0.06)))
-            .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.white.opacity(0.14)))
-            .contentShape(RoundedRectangle(cornerRadius: 9))
+            .background(RoundedRectangle(cornerRadius: p(9)).fill(Color.white.opacity(0.06)))
+            .overlay(RoundedRectangle(cornerRadius: p(9)).stroke(Color.white.opacity(0.14)))
+            .contentShape(RoundedRectangle(cornerRadius: p(9)))
         }
         .buttonStyle(.plain)
     }
@@ -1119,7 +1134,7 @@ struct BreakView: View {
     /// uno solo, va da 90 a 0, e il pulsante si accende quando arriva in fondo.
     @ViewBuilder
     private func controls(_ plan: BreakPlan) -> some View {
-        VStack(spacing: 13) {
+        VStack(spacing: p(13)) {
             // Sopra il cronometro e non sotto il pulsante: nella fase di riposo è l'istruzione
             // della schermata, e un'istruzione sotto il suo pulsante arriva a cose fatte.
             // Fessura ad altezza fissa: piena nel riposo, vuota nell'esercizio, alta uguale in
@@ -1128,14 +1143,14 @@ struct BreakView: View {
                 if model.exerciseDone && !model.canReturnToWork {
                     Text(L.t("Alzati e guarda lontano. Il resto della pausa è tuo.",
                              "Stand up and look far away. The rest of the break is yours."))
-                        .font(.system(size: 13, design: .rounded))
+                        .font(.system(size: p(13), design: .rounded))
                         .foregroundStyle(Palette.accent.opacity(0.85))
                 }
             }
-            .frame(height: 17)
+            .frame(height: p(17))
 
             Text(clock(model.secondsLeftOfBreak))
-                .font(.system(size: 34, weight: .light, design: .rounded))
+                .font(.system(size: p(34), weight: .light, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(model.canReturnToWork ? Palette.accent : Palette.dim)
 
@@ -1186,9 +1201,9 @@ struct BreakView: View {
                 // doppio Esc, che è l'uscita d'emergenza e va contata come tale.
                 Button(L.t("Interrompi il conto", "Stop the count")) { model.stopHold() }
                     .buttonStyle(.plain)
-                    .font(.system(size: 13))
+                    .font(.system(size: p(13)))
                     .foregroundStyle(Palette.dim)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, p(14))
                     .contentShape(Rectangle())
             } else {
                 primary(model.moreStationsAhead ? L.t("Fatte tutte — avanti", "All done — next")
@@ -1221,7 +1236,7 @@ struct BreakView: View {
                         if model.settings.progressBeyondFull {
                             Button(L.t("Non tutte…", "Almost done…")) { partialSheet = true }
                                 .buttonStyle(.plain)
-                                .font(.system(size: 12))
+                                .font(.system(size: p(12)))
                                 .foregroundStyle(Palette.dim)
                         }
                     } else {
@@ -1231,33 +1246,33 @@ struct BreakView: View {
                         // numeri nudi uno sopra l'altro erano la parte confusa.
                         Text(L.t("ancora \(Int(model.secondsUntilCanFinish.rounded(.up))) s di movimento",
                                  "\(Int(model.secondsUntilCanFinish.rounded(.up))) s of movement to go"))
-                            .font(.system(size: 12))
+                            .font(.system(size: p(12)))
                             .foregroundStyle(Palette.dim)
                             .monospacedDigit()
                     }
                 }
             }
-            .frame(height: 17)
+            .frame(height: p(17))
 
             // Uscire dal circuito resta possibile a metà: le stazioni già confermate restano
             // fatte, e la pausa si chiude con l'esercizio singolo che le toccava.
             if plan.circuitActive && !model.canReturnToWork {
                 Button(L.t("Basta così, torno all'esercizio singolo", "That's enough, back to the single exercise")) { model.leaveCircuit() }
                     .buttonStyle(.plain)
-                    .font(.system(size: 12))
+                    .font(.system(size: p(12)))
                     .foregroundStyle(Palette.dim)
             }
 
             // La scala, proposta e mai imposta: cambiare movimento è una decisione, e trovarsi
             // i diamond push-up senza averli chiesti è il modo di far spegnere l'app.
             if let su = model.harderSuggestion, !model.exerciseDone {
-                VStack(spacing: 6) {
+                VStack(spacing: p(6)) {
                     Text(su.reason == .ceiling
                          ? L.t("Più ripetizioni non ci stanno in questa pausa. Da qui si sale di movimento.",
                                "More reps don't fit in this break. From here you step up the movement.")
                          : L.t("Questo ormai lo fai. Vuoi provare la versione più dura?",
                                "You've got this one. Want to try the harder version?"))
-                        .font(.system(size: 12))
+                        .font(.system(size: p(12)))
                         .foregroundStyle(Palette.dim)
                     SecondaryButton(title: L.t("Passa a \(su.kind.localizedName)",
                                                "Step up to \(su.kind.localizedName)"),
@@ -1281,7 +1296,7 @@ struct BreakView: View {
     private func primary(_ title: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 19, weight: .semibold, design: .rounded))
+                .font(.system(size: p(19), weight: .semibold, design: .rounded))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
@@ -1290,13 +1305,13 @@ struct BreakView: View {
                 // linea del piede: «3 archer push-ups per side — 17 s to go» tagliata a metà,
                 // vista il 2026-07-30. Il minimo tiene la forma quando l'etichetta
                 // è corta, il resto lo decide il contenuto.
-                .padding(.horizontal, 26)
-                .padding(.vertical, 15)
+                .padding(.horizontal, p(26))
+                .padding(.vertical, p(15))
                 .frame(minWidth: 300, minHeight: 54)
                 .fixedSize(horizontal: false, vertical: true)
                 .foregroundStyle(enabled ? Palette.ink : Palette.dim)
                 .background(
-                    RoundedRectangle(cornerRadius: 14)
+                    RoundedRectangle(cornerRadius: p(14))
                         .fill(enabled ? Palette.accent : Color.white.opacity(0.07))
                 )
                 .contentShape(Rectangle())
@@ -1309,23 +1324,23 @@ struct BreakView: View {
     private func progressBar(_ plan: BreakPlan) -> some View {
         let fraction = min(1.0, max(0.0, model.breakElapsed / max(1, plan.duration)))
         return ZStack(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 3)
+            RoundedRectangle(cornerRadius: p(3))
                 .fill(Color.white.opacity(0.10))
-                .frame(width: 420, height: 6)
-            RoundedRectangle(cornerRadius: 3)
+                .frame(width: p(420), height: p(6))
+            RoundedRectangle(cornerRadius: p(3))
                 .fill(Palette.accent)
                 .frame(width: 420 * fraction, height: 6)
         }
     }
 
     private var footer: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: p(12)) {
             // Aria fra il pulsante grande e la linea del piede. Ne serviva: nello screenshot del
             // 2026-07-30 il pulsante e la linea si toccavano, e la parte bassa sembrava schiacciata
             // contro il bordo mentre a metà schermo restava un vuoto grande il doppio.
-            Spacer().frame(height: 6)
+            Spacer().frame(height: p(6))
 
-            Divider().overlay(Color.white.opacity(0.08)).frame(width: 620)
+            Divider().overlay(Color.white.opacity(0.08)).frame(width: p(620))
 
             // **Il perché resta, ma su una riga sola, e solo mentre devi muoverti.**
             //
@@ -1345,10 +1360,10 @@ struct BreakView: View {
             // d'emergenza stanno allo stesso punto dello schermo in tutte e due le facce.
             ZStack {
                 if !model.exerciseDone {
-                    VStack(spacing: 8) {
+                    VStack(spacing: p(8)) {
                 Text(L.t("Perché: \(model.currentStudy.localizedGoverns) — \(model.currentStudy.shortCitation), \(String(model.currentStudy.year)).",
                          "Why: \(model.currentStudy.localizedGoverns) — \(model.currentStudy.shortCitation), \(String(model.currentStudy.year))."))
-                    .font(.system(size: 12))
+                    .font(.system(size: p(12)))
                     .foregroundStyle(Palette.dim)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 620)
@@ -1359,15 +1374,15 @@ struct BreakView: View {
                 // farlo dovrebbe pure smontare il blocco. Gli studi si leggono da fermi, dopo, e
                 // sono già cliccabili nella finestra delle fonti.
                 Text(L.t("Gli articoli per esteso, con il link, sono in Otium ▸ Le fonti.", "Full articles, with links, are in Otium ▸ The sources."))
-                    .font(.system(size: 11))
+                    .font(.system(size: p(11)))
                     .foregroundStyle(Palette.dim)
                     .multilineTextAlignment(.center)
                     }
                 }
             }
-            .frame(height: 38)
+            .frame(height: p(38))
 
-            HStack(spacing: 14) {
+            HStack(spacing: p(14)) {
                 if model.canPostpone {
                     SecondaryButton(title: L.t("Rinvia 2 minuti", "Postpone 2 minutes"), systemImage: "clock.arrow.circlepath") {
                         model.postpone()
@@ -1386,34 +1401,34 @@ struct BreakView: View {
             }
 
             if escArmed {
-                VStack(spacing: 6) {
+                VStack(spacing: p(6)) {
                     Text(L.t("Premi Esc di nuovo per uscire subito.", "Press Esc again to exit now."))
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.system(size: p(13), weight: .medium, design: .rounded))
                         .foregroundStyle(Palette.paper)
                     Text(L.t("L'uscita d'emergenza viene contata e compare nelle statistiche.", "The emergency exit is counted and shows up in your statistics."))
-                        .font(.system(size: 11)).foregroundStyle(Palette.dim)
+                        .font(.system(size: p(11))).foregroundStyle(Palette.dim)
                 }
-                .padding(.top, 4)
+                .padding(.top, p(4))
             }
 
             if showEscape {
-                VStack(spacing: 8) {
+                VStack(spacing: p(8)) {
                     Text(L.t("Per saltare questa pausa scrivi per intero: «\(model.settings.escapePhrase)»", "To skip this break, type in full: «\(model.settings.escapePhrase)»"))
-                        .font(.system(size: 12))
+                        .font(.system(size: p(12)))
                         .foregroundStyle(Palette.dim)
                     TextField("", text: $model.escapeText)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 15, design: .monospaced))
+                        .font(.system(size: p(15), design: .monospaced))
                         .foregroundStyle(Palette.paper)
-                        .padding(8)
-                        .frame(width: 320)
+                        .padding(p(8))
+                        .frame(width: p(320))
                         .background(Color.white.opacity(0.08))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: p(8)))
                         .focused($escapeFocused)
                         .onSubmit { model.attemptEscape() }
                     Text(L.t("Ogni salto finisce nel registro. Non è un giudizio, è un dato.",
                      "Every skip goes into the log. It is not a judgement: it is data."))
-                        .font(.system(size: 11))
+                        .font(.system(size: p(11)))
                         .foregroundStyle(Palette.dim)
                 }
             }
