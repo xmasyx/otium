@@ -322,7 +322,33 @@ private struct FilaCheVaACapo: Layout {
             riga.append((indice, misura))
         }
         if !riga.isEmpty { tutte.append(riga) }
-        return tutte
+        return bilanciate(tutte, larghezza: larghezza)
+    }
+
+    /// **Quattro voci fanno 2+2, non 3+1** (sua correzione, 6/09 sera). L'impacchettamento greedy
+    /// riempie la prima riga e lascia l'ultima con gli avanzi, che si legge come un elenco
+    /// interrotto. A parità di numero di righe si ridistribuisce alla pari, col peso in alto
+    /// (3+2, 3+2+2), e si tiene solo se ogni riga così ripartita entra davvero nella colonna:
+    /// etichette lunghe possono non starci, e allora resta il greedy, che è sempre valido.
+    private func bilanciate(_ greedy: [[(Int, CGSize)]], larghezza: CGFloat) -> [[(Int, CGSize)]] {
+        guard greedy.count > 1, larghezza.isFinite else { return greedy }
+        let voci = greedy.flatMap { $0 }
+        let righe = greedy.count
+        let base = voci.count / righe
+        let inPiu = voci.count % righe
+        var proposta: [[(Int, CGSize)]] = []
+        var indice = 0
+        for r in 0..<righe {
+            let quante = base + (r < inPiu ? 1 : 0)
+            proposta.append(Array(voci[indice..<(indice + quante)]))
+            indice += quante
+        }
+        let entraTutto = proposta.allSatisfy { riga in
+            var larga: CGFloat = spazioX * CGFloat(max(0, riga.count - 1))
+            for (_, misura) in riga { larga += misura.width }
+            return larga <= larghezza
+        }
+        return entraTutto ? proposta : greedy
     }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
