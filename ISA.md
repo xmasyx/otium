@@ -2,7 +2,7 @@
 slug: otium
 title: Otium — pause forzate con allenamento integrato per macOS
 phase: climbing
-progress: 275/279
+progress: 277/281
 iteration: 30
 context_sufficient: true
 interview_invoked: false
@@ -2630,3 +2630,5 @@ scorciatoie da tastiera (`canBecomeKey` è falso per costruzione).
 - [x] **ISC-240** Nel pannello le alternative sono centrate riga per riga. *Evidenza:* `foto/pannello-centrato-hover.png`.
 - [x] **ISC-241** Ogni elemento cliccabile del pannello si vede sotto il puntatore: velo bianco 12% + mano. *Evidenza:* luminanza misurata sulla foto, 58,7 sotto il puntatore contro 32,0 e 32,8 le vicine (prima: 34,0 contro 32,0).
 - [x] **ISC-242** La riga sopra al cronometro a esercizio fatto è una riga della voce di Otium (`PhraseLibrary.restPool`, solo `voce`), diversa a ogni pausa e mai la citazione già a schermo. *Evidenza:* `RestPoolTests` + `foto/riposo-voce.png`.
+- [x] **ISC-243** Il pannello sta su un asse solo: numero, nome, istruzione, alternative e azioni centrati; intestazione e barra a larghezza intera. *Evidenza:* `foto/pannello-centrato.png` (`01b2fb1`).
+- [x] **ISC-244** Le righe delle alternative si bilanciano a parità di righe (4 → 2+2, 7 → 3+2+2), e solo se ogni riga entra nella colonna. *Evidenza:* `foto/pannello-2e2.png` (`cf9749b`).
