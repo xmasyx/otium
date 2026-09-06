@@ -2,7 +2,7 @@
 slug: otium
 title: Otium — pause forzate con allenamento integrato per macOS
 phase: climbing
-progress: 271/276
+progress: 272/276
 iteration: 30
 context_sufficient: true
 interview_invoked: false
@@ -2597,7 +2597,7 @@ verifica: Fable, sul disco e in fotografia.
       spento il percorso dello scudo è byte-identico a prima (`blocker.show` chiamato, kiosk
       intatto). *Falsificatore:* `AgenticModeTests/testAnAgenticBreakStillNeedsExerciseAndTimeToEnd`
       + `git diff` di `BlockerWindow.swift` vuoto.
-- [~] **ISC-239** Consegna: suite intera verde (`swift test`), `Scripts/build-app.sh` eseguito,
+- [x] **ISC-239** Consegna: suite intera verde (`swift test`), `Scripts/build-app.sh` eseguito,
       bundle installato o parcheggiato con la ragione scritta, tutto committato con pathspec.
       *Falsificatore:* output di `swift test` con zero failures; `codesign -dv /Applications/Otium.app`;
       `git status --short` pulito sui file toccati.
@@ -2613,8 +2613,8 @@ madre: `frontmost` invariato in tre letture, `isKey=false`; **click vero posato 
 `fase=postponed`, pannello chiuso, fuoco intatto** (era il NOT RUN della figlia) · ISC-235
 `--origine=-800,-800 → 0,74`, `--schermo=1440x900 → 290×297`; il trascinamento con la mano resta
 suo · ISC-236 grep zero numeri nudi, `foto/pannello-1728.png` e `-1440.png` · ISC-237
-`--menu-probe` PASS nei due poli, `--doctor` riga «Agentic spenta» · ISC-239 **parziale**: bundle
-1.4.0 firmato «Otium Dev» in `dist/Otium.app.attesa` perché l'app gira; si installa quando esce.
+`--menu-probe` PASS nei due poli, `--doctor` riga «Agentic spenta» · ISC-239 chiusa alle 17:40: `ad285ff` pushato su `main`,
+`/Applications/Otium.app` dice 1.4.0, firma «Otium Dev», zero quarantena, riaperta e viva.
 Brief, referto e fotografie: `~/.claude/LIFEOS/MEMORY/WORK/20260906-otium-iterazione-30/`.
 
 Decisioni fuori brief, adottate: il pannello dice perché il pulsante è spento («ancora N s»); le
