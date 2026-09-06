@@ -74,6 +74,10 @@ public enum SkipReason: String, Codable, Equatable, Sendable {
     case failsafe
     /// Uscita d'emergenza: due Esc, o il pulsante. Immediata, ma **contata e segnalata**.
     case emergency
+    /// «Salta la pausa» dal pannello Agentic (2026-09-06). Lì la frase non si può scrivere, il
+    /// pannello non prende la tastiera, e chiamarla emergenza sarebbe gonfiare quel conto: è un
+    /// salto, registrato come tale.
+    case agenticPanel
 }
 
 /// Lo stato della rotazione, che deve sopravvivere alla chiusura dell'app.
@@ -1112,6 +1116,13 @@ public struct SessionEngine {
     public mutating func emergencyExit() -> [EngineEvent] {
         guard phase == .breaking || phase == .warning, let current = plan else { return [] }
         return finish(current, event: .breakSkipped(current, .emergency))
+    }
+
+    /// Il salto dal pannello Agentic: solo dentro una pausa che il pannello sta mostrando.
+    @discardableResult
+    public mutating func skipFromAgenticPanel() -> [EngineEvent] {
+        guard phase == .breaking, let current = plan, current.agentic else { return [] }
+        return finish(current, event: .breakSkipped(current, .agenticPanel))
     }
 
     /// L'uscita con frase. La frase va digitata per esteso: è attrito, non un pulsante.

@@ -1029,6 +1029,13 @@ final class AppModel: ObservableObject {
     /// niente. È esattamente lo stato in cui ci si trovava inchiodati il 27 e 28 luglio. Da qui in
     /// avanti, quando non c'è niente da chiudere lo scudo si smonta comunque: un'uscita
     /// d'emergenza che funziona solo a motore coerente non è un'uscita d'emergenza.
+    func skipFromAgenticPanel() {
+        let events = engine.skipFromAgenticPanel()
+        for event in events { handle(event, now: Date()) }
+        reconcileBlocker()
+        objectWillChange.send()
+    }
+
     func emergencyExit() {
         let events = engine.emergencyExit()
         for event in events { handle(event, now: Date()) }

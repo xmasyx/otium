@@ -131,3 +131,33 @@ final class AgenticModeTests: XCTestCase {
         XCTAssertFalse(gettoni.contains("agentic"))
     }
 }
+
+// MARK: - «Salta la pausa» dal pannello (2026-09-06 sera)
+
+final class AgenticSkipTests: XCTestCase {
+    private func engine(agentic: Bool) -> SessionEngine {
+        var s = Settings(); s.agenticMode = agentic
+        var e = SessionEngine(settings: s, maxCredibleElapsed: 10_000)
+        e.forceBreakNow(now: Date(), kind: .micro)
+        return e
+    }
+
+    /// Il salto chiude la pausa e lascia nel registro il suo motivo, non «emergenza».
+    func testSkippingFromThePanelEndsTheBreakWithItsOwnReason() {
+        var e = engine(agentic: true)
+        let eventi = e.skipFromAgenticPanel()
+        guard case .breakSkipped(_, let motivo)? = eventi.first else { return XCTFail("nessun salto: \(eventi)") }
+        XCTAssertEqual(motivo, .agenticPanel)
+        XCTAssertNotEqual(e.phase, .breaking)
+        let riga = Ledger.entry(for: eventi.first!, now: Date())
+        XCTAssertEqual(riga?.type, .skipped)
+        XCTAssertTrue(riga?.reason?.contains("agenticPanel") ?? false, "motivo: \(riga?.reason ?? "nil")")
+    }
+
+    /// Il polo negativo: sotto lo scudo quel salto non esiste, e il motore lo rifiuta.
+    func testThePanelSkipDoesNothingUnderTheShield() {
+        var e = engine(agentic: false)
+        XCTAssertEqual(e.skipFromAgenticPanel(), [])
+        XCTAssertEqual(e.phase, .breaking)
+    }
+}

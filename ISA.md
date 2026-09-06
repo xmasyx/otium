@@ -2,7 +2,7 @@
 slug: otium
 title: Otium — pause forzate con allenamento integrato per macOS
 phase: climbing
-progress: 277/281
+progress: 278/282
 iteration: 30
 context_sufficient: true
 interview_invoked: false
@@ -2632,3 +2632,4 @@ scorciatoie da tastiera (`canBecomeKey` è falso per costruzione).
 - [x] **ISC-242** La riga sopra al cronometro a esercizio fatto è una riga della voce di Otium (`PhraseLibrary.restPool`, solo `voce`), diversa a ogni pausa e mai la citazione già a schermo. *Evidenza:* `RestPoolTests` + `foto/riposo-voce.png`.
 - [x] **ISC-243** Il pannello sta su un asse solo: numero, nome, istruzione, alternative e azioni centrati; intestazione e barra a larghezza intera. *Evidenza:* `foto/pannello-centrato.png` (`01b2fb1`).
 - [x] **ISC-244** Le righe delle alternative si bilanciano a parità di righe (4 → 2+2, 7 → 3+2+2), e solo se ogni riga entra nella colonna. *Evidenza:* `foto/pannello-2e2.png` (`cf9749b`).
+- [x] **ISC-245** Nel pannello «Rinvia 2 minuti» sta in basso a sinistra e «Salta la pausa» in basso a destra; il salto chiude la pausa con il motivo `agenticPanel` nel registro e non esiste sotto lo scudo. *Evidenza:* `AgenticSkipTests` (due poli) + `foto/pannello-angoli.png`.

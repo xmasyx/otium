@@ -662,16 +662,20 @@ struct AgenticPanelView: View {
     /// esiste nello scudo perché lì l'unica alternativa sarebbe il tasto di accensione.
     @ViewBuilder
     private func viaDUscita(_ plan: BreakPlan) -> some View {
+        // Due angoli, due gesti opposti (sua disposizione, 6/09 sera): a sinistra il rinvio, che
+        // tiene la pausa; a destra il salto, che la chiude. In mezzo, se c'è, l'uscita dal circuito.
+        // Il salto qui non passa dalla frase d'uscita perché il pannello non prende la tastiera, e
+        // non è un'emergenza: ha il suo motivo nel registro.
         HStack(spacing: p(12)) {
-            // Le stesse parole dello scudo, per lo stesso gesto: lì «Non posso adesso» apre la frase
-            // d'uscita e salta la pausa, e qui una frase non si può scrivere (il pannello non prende la
-            // tastiera). Questo è un rinvio, e si chiama come il rinvio (madre, 2026-09-06).
             if model.canPostpone {
                 minore(L.t("Rinvia 2 minuti", "Postpone 2 minutes")) { model.postpone() }
             }
+            Spacer(minLength: 0)
             if model.engine.canLeaveCircuit {
                 minore(L.t("Basta così", "That's enough")) { model.leaveCircuit() }
+                Spacer(minLength: 0)
             }
+            minore(L.t("Salta la pausa", "Skip the break")) { model.skipFromAgenticPanel() }
         }
     }
 

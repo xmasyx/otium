@@ -22,6 +22,9 @@ move. This file records what changed between released versions, newest first.
   one of the app's own lines per break, never the quote already on screen.
 - **Agentic panel: number, name, cue, alternatives and actions sit on one centred axis, and everything clickable lights up under
   the pointer** (measured: the hovered pill reads 59 against 32 for its neighbours).
+- **Agentic panel: «Postpone 2 minutes» sits bottom-left, «Skip the break» bottom-right.** The
+  skip has its own ledger reason (`agenticPanel`): the panel cannot take the escape phrase, and it
+  is not an emergency.
 ### Changed
 
 - **At most five alternatives per exercise.** Seven push-up variants in a 4+3 grid overflowed the
